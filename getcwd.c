@@ -56,7 +56,7 @@
 
 #include "config.h"
 #include <sys/param.h>
-#include "sb_path_max.h"
+#include "localdecls.h"
 
 
 #if !defined __GNU_LIBRARY__ && !defined STDC_HEADERS

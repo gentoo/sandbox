@@ -64,7 +64,7 @@
 #include <unistd.h>
 #include <utime.h>
 #include "config.h"
-#include "sb_path_max.h"
+#include "localdecls.h"
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>

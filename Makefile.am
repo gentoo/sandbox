@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
 dist_pkgdata_DATA	= sandbox.bashrc
-EXTRA_DIST			= sandbox.bashrc canonicalize.c create-localdecls libctest.c
+EXTRA_DIST			= sandbox.bashrc canonicalize.c libctest.c
 AM_CFLAGS			= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT -DLIBC_VERSION=\"$(LIBC_VERSION)\"
 
 lib_LTLIBRARIES 		= libsandbox.la

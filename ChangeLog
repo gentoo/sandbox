@@ -2,6 +2,10 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  06 Dec 2004; Brian Harring <ferringb@gentoo.org> Makefile.am, libsandbox.c,
+  canonicalize.c, getcwd.c: Fixed compilation *again*.  Hopefully cvs is done
+  having the hick-ups.
+
   04 Dec 2004; Brian Harring <ferringb@gentoo.org> libsandbox.c, getcwd.c,
   Makefile.am:  Fixed compilation.
 

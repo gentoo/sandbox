@@ -31,7 +31,7 @@
 #include <stddef.h>
 
 #include "config.h"
-#include "sb_path_max.h"
+#include "localdecls.h"
 
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
