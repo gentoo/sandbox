@@ -2,6 +2,10 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  22 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Allow lchown a symlink in write-allowed path pointing to write-denied
+  target.
+
   21 Mar 2005; Marius Mauch <genone@gentoo.org> libsandbox.c:
   Also show resolved symlink names in the log.
 
