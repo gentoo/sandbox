@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  09 Mar 2005; Brian Harring <ferringb@gentoo.org> sandbox.c: Fixed the 
+  infamous "pids file is not a regular file" w/out newline bug.
+
   09 Mar 2005; Brian Harring <ferringb@gentoo.org> Makefile.am, configure.in:
   Correct libc_version path detection, since it was screwing up if libdir != 
   "/lib/".
