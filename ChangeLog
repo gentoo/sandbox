@@ -2,6 +2,21 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c:
+  Fixup the constructor/destructor function names again (they should be _init()
+  and _fini() it seems, and not being called caused sandbox_lib_path to be
+  unset, and thus breaking the execve() wrapper's LD_PRELOAD protection).
+  Add both the path in given SANDBOX_x variable, as well as its symlink
+  resolved path in init_env_entries().  Modify filter_path() to be able to
+  resolve paths without resolving symlinks, as well as to be able to resolve
+  symlinks.  Fix a possible segfault in check_access().  Add symlink resolving
+  to check_access() resolving bug #31019.  Add 'hack' for unlink, as the fix
+  for bug #31019 cause access violations if we try to remove a symlink that is
+  not in protected path, but points to a protected path.  Fix a memory leak in
+  sandbox.c (sandbox_pids_file in main()).  Fix the realpath() calls in main()
+  (sandbox.c) being unchecked.  Fix the debug logname not having the pid in it
+  (pid_string was uninitialized).  General syntax cleanups.
+
   09 Mar 2005; Brian Harring <ferringb@gentoo.org> sandbox.c: Fixed the 
   infamous "pids file is not a regular file" w/out newline bug.
 

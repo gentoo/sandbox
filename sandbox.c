@@ -463,7 +463,7 @@ int spawn_shell(char *argv_bash[])
 
 int main(int argc, char **argv)
 {
-	int i = 0, success = 1;
+	int ret = 0, i = 0, success = 1;
 #ifdef USE_LD_SO_PRELOAD
 	int preload_file = -1;
 #endif
@@ -640,6 +640,7 @@ int main(int argc, char **argv)
 
 		setenv(ENV_SANDBOX_LOG, sandbox_log, 1);
 
+		sprintf(pid_string, "%d", getpid());
 		snprintf(sandbox_debug_log, sizeof(sandbox_debug_log), "%s%s%s",
 			 DEBUG_LOG_FILE_PREFIX, pid_string, LOG_FILE_EXT);
 		setenv(ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log, 1);
@@ -650,20 +651,20 @@ int main(int argc, char **argv)
 			setenv("HOME", home_dir, 1);
 		}
 
-		/* drobbins: we need to expand these paths using realpath() so that PORTAGE_TMPDIR
-		 * can contain symlinks (example, /var is a symlink, /var/tmp is a symlink.)  Without
-		 * this, access is denied to /var/tmp, hurtin' ebuilds.
-		 */
-
-		{
-			char *e;
-			e = getenv("PORTAGE_TMPDIR");
-			if (e && (strlen(e) < sizeof(portage_tmp_dir) - 1) && (strlen(e) > 1))
-				realpath(e, portage_tmp_dir);
-
+		if (NULL == realpath(getenv("PORTAGE_TMPDIR") ? getenv("PORTAGE_TMPDIR")
+		                                              : "/var/tmp/portage",
+					portage_tmp_dir)) {
+			perror(">>> get portage_tmp_dir");
+			exit(1);
 		}
-		realpath("/var/tmp", var_tmp_dir);
-		realpath("/tmp", tmp_dir);
+		if (NULL == realpath("/var/tmp", var_tmp_dir)) {
+			perror(">>> get var_tmp_dir");
+			exit(1);
+		}
+		if (NULL == realpath("/tmp", tmp_dir)) {
+			perror(">>> get tmp_dir");
+			exit(1);
+		}
 
 		setenv(ENV_SANDBOX_DIR, sandbox_dir, 1);
 		setenv(ENV_SANDBOX_LIB, sandbox_lib, 1);
@@ -829,6 +830,8 @@ int main(int argc, char **argv)
 		} else if (print_debug) {
 			printf("--------------------------------------------------------------------------------\n");
 		}
+
+		free(sandbox_pids_file);
 
 		if ((sandbox_log_presence) || (!success))
 			return 1;
