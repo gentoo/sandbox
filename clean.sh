@@ -7,7 +7,7 @@ for f in \
 	aclocal.m4* autom4te.cache \
 	configure config.* \
 	depcomp install-sh ltmain.sh missing mkinstalldirs libtool \
-	compile sandbox stamp-* localdecls.h ;
+	compile sandbox stamp-* ;
 do
 	rm -rf $f
 done

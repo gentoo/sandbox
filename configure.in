@@ -45,4 +45,27 @@ rmdir setenv strcasecmp strchr strdup \
 strerror strndup strrchr strspn strstr \
 ])
 
+dnl
+dnl FIXME: the following needs to be made portable
+dnl
+
+dnl when using libc5, (f)trucate's offset argument type is size_t with
+dnl libc5, but it's off_t with libc6 (glibc2).
+AC_MSG_CHECKING(truncate argument type)
+if grep -q 'truncate.*size_t' /usr/include/unistd.h ; then
+	AC_MSG_RESULT(size_t)
+	AC_DEFINE(TRUNCATE_T, size_t, [truncate arg type])
+else
+	AC_MSG_RESULT(off_t)
+	AC_DEFINE(TRUNCATE_T, off_t, [truncate arg type])
+fi
+
+AC_MSG_CHECKING(Checking libc version)
+echo "int main(void) { return 0; }" > libctest.c
+gcc -Wall -o libctest libctest.c
+LIBC_VERSION=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | awk '{print $1}'`
+rm -f libctest
+AC_SUBST(LIBC_VERSION)
+AC_MSG_RESULT(${LIBC_VERSION})
+
 AC_OUTPUT([Makefile])
