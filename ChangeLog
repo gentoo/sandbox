@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  21 Mar 2005; Marius Mauch <genone@gentoo.org> libsandbox.c:
+  Also show resolved symlink names in the log.
+
   14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, libsandbox.c:
   Seems -nostdlib was the problem with the constructor/destructor - remove it
   from Makefile.am, and change the constructor/destructor names again.

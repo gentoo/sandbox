@@ -1341,7 +1341,12 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				func, (int)(10 - strlen(func)), "", absolute_path);
 
 			if (NULL != log_path) {
-				sprintf(buffer, "%s:%*s%s\n", func, (int)(10 - strlen(func)), "", absolute_path);
+				if (0 != strncmp(absolute_path, filter_path(absolute_path, 1), strlen(absolute_path))) {
+					sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func, (int)(10-strlen(func)), "", 
+							absolute_path, filter_path(absolute_path, 1));
+				} else {
+					sprintf(buffer, "%s:%*s%s\n", func, (int)(10 - strlen(func)), "", absolute_path);
+				}
 				// log_path somehow gets corrupted.  figuring out why would be good.
 				dpath = strdup(log_path);
 				if ((0 == lstat(log_path, &log_stat)) &&
