@@ -70,7 +70,7 @@ get_sandbox_lib(char *sb_path)
 #ifdef SB_HAVE_64BIT_ARCH
         snprintf(path, sizeof(path), "%s", LIB_NAME);
 #else
-	snprintf(path, sizeof(path), "/lib/%s", LIB_NAME);
+	snprintf(path, sizeof(path), "%s/%s", LIBSANDBOX_PATH,LIB_NAME);
 	if (file_exist(path, 0) <= 0) {
 		snprintf(path, sizeof(path), "%s%s", sb_path, LIB_NAME);
 	}

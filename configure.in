@@ -2,7 +2,7 @@ AC_PREREQ(2.59)
 AC_INIT(sandbox, 1.1, dev-portage@gentoo.org)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([canonicalize.c])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -10,7 +10,6 @@ AC_PROG_LIBTOOL
 
 AC_PREFIX_DEFAULT([/usr])
 # Checks for libraries.
-
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT

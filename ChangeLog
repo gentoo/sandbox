@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  20 Nov 2004; Brian Harring <ferringb@gentoo.org> Makefile.am, sandbox_futils.c:
+  Removal of more hardcoded paths.
+
   20 Nov 2004; Brian Harring <ferringb@gentoo.org> Makefile.am, configure.in,
   sandbox_futils.c: tweaks to install sandbox.bashrc, and use it.
 
