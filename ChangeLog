@@ -2,6 +2,11 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  01 Dec 2004; Brian Harring <ferringb@gentoo.org> aclocal.m4:
+  Gutted the bugger so it stops checking for a c++ and fortran compiler.
+  Do *not* regenerate aclocal.m4 for making a release until a better 
+  solution is created.
+
   20 Nov 2004; Brian Harring <ferringb@gentoo.org> Makefile.am, sandbox_futils.c:
   Removal of more hardcoded paths.
 

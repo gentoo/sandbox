@@ -65,9 +65,6 @@ dnl AC_LIBTOOL_GCJ immediately, otherwise, hook it in at the end of both.
 # ----------------
 AC_DEFUN([_AC_PROG_LIBTOOL],
 [AC_REQUIRE([AC_LIBTOOL_SETUP])dnl
-AC_BEFORE([$0],[AC_LIBTOOL_CXX])dnl
-AC_BEFORE([$0],[AC_LIBTOOL_F77])dnl
-AC_BEFORE([$0],[AC_LIBTOOL_GCJ])dnl
 
 # This can be used to rebuild libtool when needed
 LIBTOOL_DEPS="$ac_aux_dir/ltmain.sh"
@@ -1729,27 +1726,15 @@ if test -f "$ltmain" && test -n "$tagnames"; then
 
       case $tagname in
       CXX)
-	if test -n "$CXX" && test "X$CXX" != "Xno"; then
-	  AC_LIBTOOL_LANG_CXX_CONFIG
-	else
 	  tagname=""
-	fi
 	;;
 
       F77)
-	if test -n "$F77" && test "X$F77" != "Xno"; then
-	  AC_LIBTOOL_LANG_F77_CONFIG
-	else
 	  tagname=""
-	fi
 	;;
 
       GCJ)
-	if test -n "$GCJ" && test "X$GCJ" != "Xno"; then
-	  AC_LIBTOOL_LANG_GCJ_CONFIG
-	else
 	  tagname=""
-	fi
 	;;
 
       RC)
