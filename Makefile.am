@@ -11,6 +11,7 @@ sandbox_SOURCES		= sandbox.c sandbox.h sandbox_futils.c getcwd.c
 
 BUILT_SOURCES		= localdecls.h
 
+dist_data_DATA		= canonicalize.c
 
 localdecls.h:	Makefile
 	./create-localdecls
