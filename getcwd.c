@@ -216,7 +216,7 @@ extern char *alloca();
 #endif
 
 #ifndef SB_PATH_MAX
-# include "localdecls.h"
+//# include "localdecls.h"
 # define OUTSIDE_LIBSANDBOX
 #endif
 

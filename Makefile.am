@@ -12,4 +12,4 @@ libsandbox_la_CFLAGS	= -Wc,-nostdlib -D_REENTRANT -D_GNU_SOURCE \
 
 bin_PROGRAMS		= sandbox
 sandbox_SOURCES		= sandbox.c sandbox.h sandbox_futils.c getcwd.c
-sandbox_CFLAGS		= -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" -DLIBSANDBOX_PATH=\"$(libdir)\"
+sandbox_CFLAGS		= -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" -DLIBSANDBOX_PATH=\"$(libdir)\" -DOUTSIDE_LIBSANDBOX

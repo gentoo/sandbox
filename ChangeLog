@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  04 Dec 2004; Brian Harring <ferringb@gentoo.org> libsandbox.c, getcwd.c,
+  Makefile.am:  Fixed compilation.
+
   01 Dec 2004; Brian Harring <ferringb@gentoo.org> aclocal.m4:
   Gutted the bugger so it stops checking for a c++ and fortran compiler.
   Do *not* regenerate aclocal.m4 for making a release until a better 
