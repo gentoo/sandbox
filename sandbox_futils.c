@@ -28,6 +28,7 @@
 #include <pwd.h>
 
 #include "sandbox.h"
+#include "config.h"
 
 /* BEGIN Prototypes */
 int file_security_check(char *filename);
@@ -91,7 +92,7 @@ get_sandbox_rc(char *sb_path)
 {
 	char path[255];
 
-	snprintf(path, sizeof(path), "/usr/lib/portage/lib/%s", BASHRC_NAME);
+	snprintf(path, sizeof(path), "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
 	if (file_exist(path, 0) <= 0) {
 		snprintf(path, sizeof(path), "%s%s", sb_path, BASHRC_NAME);
 	}

@@ -2,7 +2,10 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
-  19 Nov 2004; Brian harring <ferringb@gentoo.org>:
+  20 Nov 2004; Brian Harring <ferringb@gentoo.org> Makefile.am, configure.in,
+  sandbox_futils.c: tweaks to install sandbox.bashrc, and use it.
+
+  19 Nov 2004; Brian Harring <ferringb@gentoo.org>:
   Sandbox is now autotooled, create-localdecls needs to be killed and the code
   shifted into configure.in.  Currently builds *one* libsandbox.so- if multiple
   are desired (-m64 and -m32 for amd64), the ebuild should do it (imo).
