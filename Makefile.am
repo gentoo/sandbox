@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
-EXTRA_DIST			= sandbox.bashrc canonicalize.c libctest.c
+EXTRA_DIST		= sandbox.bashrc canonicalize.c libctest.c
 CLEANFILES		= symbols.h
 
 AM_CPPFLAGS		= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
@@ -9,7 +9,7 @@ AM_CPPFLAGS		= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
 
 dist_pkgdata_DATA	= sandbox.bashrc
 
-lib_LTLIBRARIES 		= libsandbox.la
+lib_LTLIBRARIES 	= libsandbox.la
 nodist_EXTRA_libsandbox_la_SOURCES = symbols.h
 libsandbox_la_SOURCES 	= libsandbox.c sandbox_futils.c localdecls.h
 libsandbox_la_LDFLAGS 	= -Wc,-nostdlib -Wc,-nodefaultlibs -lc -ldl

@@ -31,7 +31,7 @@
 
 /* Modified: 26 July 2003; Martin Schlemmer <azarah@gentoo.org>
  * 
- *  Cleaned up unneeded stuff.  Add a wrapper to try and detect when
+ *  Cleaned up unneeded stuff.	Add a wrapper to try and detect when
  *  we have a kernel whose getcwd system call do not handle directory
  *  names longer than PATH_MAX, and if so, use our generic version.
  *  To work truly with > PATH_MAX lengh CWDs, I had to increase the
@@ -66,16 +66,16 @@ extern int errno;
 # define __set_errno(val) errno = (val)
 #endif
 
-#ifndef	NULL
+#ifndef NULL
 # define NULL	0
 #endif
 
 #if defined USGr3 && !defined DIRENT
 # define DIRENT
-#endif													/* USGr3 */
+#endif		/* USGr3 */
 #if defined Xenix && !defined SYSNDIR
 # define SYSNDIR
-#endif													/* Xenix */
+#endif		/* Xenix */
 
 #if defined POSIX || defined DIRENT || defined __GNU_LIBRARY__
 # include <dirent.h>
@@ -85,20 +85,20 @@ extern int errno;
 #  define HAVE_D_NAMLEN
 #  define D_NAMLEN(d) ((d)->d_namlen)
 # endif
-#else														/* not POSIX or DIRENT */
+#else		/* not POSIX or DIRENT */
 # define dirent		direct
 # define D_NAMLEN(d)	((d)->d_namlen)
 # define HAVE_D_NAMLEN
 # if defined USG && !defined sgi
 #  if defined SYSNDIR
 #   include <sys/ndir.h>
-#  else													/* Not SYSNDIR */
+#  else		/* Not SYSNDIR */
 #   include "ndir.h"
-#  endif												/* SYSNDIR */
-# else													/* not USG */
+#  endif	/* SYSNDIR */
+# else		/* not USG */
 #  include <sys/dir.h>
-# endif													/* USG */
-#endif													/* POSIX or DIRENT or __GNU_LIBRARY__ */
+# endif		/* USG */
+#endif		/* POSIX or DIRENT or __GNU_LIBRARY__ */
 
 #if defined HAVE_UNISTD_H || defined __GNU_LIBRARY__
 # include <unistd.h>
@@ -108,9 +108,9 @@ extern int errno;
 # include <stdlib.h>
 # include <string.h>
 # define ANSI_STRING
-#else														/* No standard headers.  */
+#else		/* No standard headers.  */
 
-# ifdef	USG
+# ifdef USG
 
 #  include <string.h>
 #  ifdef NEED_MEMORY_H
@@ -118,13 +118,13 @@ extern int errno;
 #  endif
 #  define	ANSI_STRING
 
-# else													/* Not USG.  */
+# else		/* Not USG.  */
 
 #  ifdef NeXT
 
 #   include <string.h>
 
-#  else													/* Not NeXT.  */
+#  else		/* Not NeXT.  */
 
 #   include <strings.h>
 
@@ -138,19 +138,19 @@ extern void bzero();
 extern void bcopy();
 #   endif
 
-#  endif												/* NeXT. */
+#  endif	/* NeXT. */
 
-# endif													/* USG.  */
+# endif		/* USG.  */
 
 extern char *malloc(), *realloc();
 extern void free();
 
-#endif													/* Standard headers.  */
+#endif		/* Standard headers.  */
 
-#ifndef	ANSI_STRING
+#ifndef ANSI_STRING
 # define memcpy(d, s, n)	bcopy((s), (d), (n))
 # define memmove memcpy
-#endif													/* Not ANSI_STRING.  */
+#endif		/* Not ANSI_STRING.  */
 
 #ifndef MAX
 # define MAX(a, b) ((a) < (b) ? (b) : (a))
@@ -165,18 +165,18 @@ extern void free();
 
 #if !defined __alloca && !defined __GNU_LIBRARY__
 
-# ifdef	__GNUC__
+# ifdef __GNUC__
 #  undef alloca
 #  define alloca(n)	__builtin_alloca (n)
-# else													/* Not GCC.  */
+# else		/* Not GCC.  */
 #  if	defined sparc || defined HAVE_ALLOCA_H
 #   include <alloca.h>
-#  else													/* Not sparc or HAVE_ALLOCA_H.  */
+#  else		/* Not sparc or HAVE_ALLOCA_H.	*/
 #   ifndef _AIX
 extern char *alloca();
-#   endif												/* Not _AIX.  */
-#  endif												/* sparc or HAVE_ALLOCA_H.  */
-# endif													/* GCC.  */
+#   endif	/* Not _AIX.  */
+#  endif	/* sparc or HAVE_ALLOCA_H.  */
+# endif		/* GCC.  */
 
 # define __alloca	alloca
 
@@ -189,7 +189,7 @@ extern char *alloca();
 #endif
 
 #ifndef PATH_MAX
-# ifdef	MAXPATHLEN
+# ifdef MAXPATHLEN
 #  define PATH_MAX MAXPATHLEN
 # else
 #  define PATH_MAX 1024
@@ -197,8 +197,8 @@ extern char *alloca();
 #endif
 
 #if !defined STDC_HEADERS && !defined __GNU_LIBRARY__
-# undef	size_t
-# define size_t	unsigned int
+# undef size_t
+# define size_t unsigned int
 #endif
 
 #if !__STDC__ && !defined const
@@ -225,7 +225,7 @@ extern char *alloca();
 
 /* Get the pathname of the current working directory, and put it in SIZE
    bytes of BUF.  Returns NULL if the directory couldn't be determined or
-   SIZE was too small.  If successful, returns BUF.  In GNU, if BUF is
+   SIZE was too small.	If successful, returns BUF.  In GNU, if BUF is
    NULL, an array is allocated with `malloc'; the array is SIZE bytes long,
    unless SIZE == 0, in which case it is as big as necessary.  */
 
@@ -385,7 +385,7 @@ size_t size;
 				char name[dotlist + dotsize - dotp + 1 + _D_ALLOC_NAMLEN(d)];
 #ifdef HAVE_MEMPCPY
 				char *tmp = mempcpy(name, dotp,
-														dotlist + dotsize - dotp);
+							dotlist + dotsize - dotp);
 				*tmp++ = '/';
 				strcpy(tmp, d->d_name);
 #else
@@ -434,10 +434,9 @@ size_t size;
 
 					/* Move current contents up to the end of the buffer.
 					   This is guaranteed to be non-overlapping.  */
-					pathp =
-							memcpy(tmp + allocated -
-										 (path + oldsize - pathp),
-										 tmp + (pathp - path), path + oldsize - pathp);
+					pathp = memcpy(tmp + allocated -
+							 (path + oldsize - pathp),
+							 tmp + (pathp - path), path + oldsize - pathp);
 					path = tmp;
 				}
 			}
@@ -459,7 +458,7 @@ size_t size;
 
 	memmove(path, pathp, path + allocated - pathp);
 
-	/* Restore errno on successful return.  */
+	/* Restore errno on successful return.	*/
 	__set_errno(prev_errno);
 
 	return path;
@@ -505,4 +504,4 @@ size_t size;
 	return tmpbuf;
 }
 
-// vim:expandtab noai:cindent ai
+// vim:noexpandtab noai:cindent ai

@@ -38,9 +38,8 @@ int cleaned_up = 0;
 int print_debug = 0;
 int stop_called = 0;
 
-/* Read pids file, and load active pids into an array.  Return number of pids in array */
-int
-load_active_pids(int fd, int **pids)
+/* Read pids file, and load active pids into an array.	Return number of pids in array */
+int load_active_pids(int fd, int **pids)
 {
 	char *data = NULL;
 	char *ptr = NULL, *ptr2 = NULL;
@@ -53,7 +52,7 @@ load_active_pids(int fd, int **pids)
 	len = file_length(fd);
 
 	/* Allocate and zero datablock to read pids file */
-	data = (char *) malloc((len + 1) * sizeof (char));
+	data = (char *)malloc((len + 1) * sizeof(char));
 	memset(data, 0, len + 1);
 
 	/* Start at beginning of file */
@@ -69,7 +68,7 @@ load_active_pids(int fd, int **pids)
 		/* Find new line */
 		ptr2 = strchr(ptr, '\n');
 		if (ptr2 == NULL)
-			break;										/* No more PIDs */
+			break;	/* No more PIDs */
 
 		/* Clear the \n. And  ptr  should have a null-terminated decimal string */
 		ptr2[0] = 0;
@@ -78,7 +77,7 @@ load_active_pids(int fd, int **pids)
 
 		/* If the PID is still alive, add it to our array */
 		if ((0 != my_pid) && (0 == kill(my_pid, 0))) {
-			pids[0] = (int *) realloc(pids[0], (num_pids + 1) * sizeof (int));
+			pids[0] = (int *)realloc(pids[0], (num_pids + 1) * sizeof(int));
 			pids[0][num_pids] = my_pid;
 			num_pids++;
 		}
@@ -95,8 +94,7 @@ load_active_pids(int fd, int **pids)
 }
 
 /* Read ld.so.preload file, and loads dirs into an array.  Return number of entries in array */
-int
-load_preload_libs(int fd, char ***preloads)
+int load_preload_libs(int fd, char ***preloads)
 {
 	char *data = NULL;
 	char *ptr = NULL, *ptr2 = NULL;
@@ -108,7 +106,7 @@ load_preload_libs(int fd, char ***preloads)
 	len = file_length(fd);
 
 	/* Allocate and zero datablock to read pids file */
-	data = (char *) malloc((len + 1) * sizeof (char));
+	data = (char *)malloc((len + 1) * sizeof(char));
 	memset(data, 0, len + 1);
 
 	/* Start at beginning of file */
@@ -133,14 +131,13 @@ load_preload_libs(int fd, char ***preloads)
 
 		/* If listing does not match our libname, add it to the array */
 		if ((strlen(ptr)) && (NULL == strstr(ptr, LIB_NAME))) {
-			preloads[0] =
-					(char **) realloc(preloads[0], (num_entries + 1) * sizeof (char **));
+			preloads[0] = (char **)realloc(preloads[0], (num_entries + 1) * sizeof(char **));
 			preloads[0][num_entries] = strdup(ptr);
 			num_entries++;
 		}
 
 		if (NULL == ptr2)
-			break;										/* No more PIDs */
+			break;	/* No more PIDs */
 
 		/* Put ptr past the NULL we just wrote */
 		ptr = ptr2 + 1;
@@ -153,8 +150,7 @@ load_preload_libs(int fd, char ***preloads)
 	return num_entries;
 }
 
-void
-cleanup()
+void cleanup()
 {
 	int i = 0;
 	int success = 1;
@@ -221,10 +217,7 @@ cleanup()
 				if (num_of_preloads > 0) {
 					for (i = 0; i < num_of_preloads; i++) {
 						sprintf(preload_entry, "%s\n", preload_array[i]);
-						if (write
-								(preload_file,
-								 preload_entry,
-								 strlen(preload_entry)) != strlen(preload_entry)) {
+						if (write(preload_file, preload_entry, strlen(preload_entry)) != strlen(preload_entry)) {
 							perror(">>> /etc/ld.so.preload file write");
 							success = 0;
 							break;
@@ -256,8 +249,7 @@ cleanup()
 				if (pids_array[i] != getpid()) {
 					sprintf(pid_string, "%d\n", pids_array[i]);
 
-					if (write(pids_file, pid_string, strlen(pid_string)) !=
-							strlen(pid_string)) {
+					if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
 						perror(">>> pids file write");
 						success = 0;
 						break;
@@ -286,38 +278,35 @@ cleanup()
 		return;
 }
 
-void
-stop(int signum)
+void stop(int signum)
 {
 	if (stop_called == 0) {
 		stop_called = 1;
 		printf("Caught signal %d in pid %d\r\n", signum, getpid());
-	cleanup();
+		cleanup();
 	} else {
 		fprintf(stderr, "Pid %d alreadly caught signal and is still cleaning up\n", getpid());
 	}
 }
 
-void
-setenv_sandbox_write(char *home_dir, char *portage_tmp_dir, char *var_tmp_dir,
-										 char *tmp_dir)
+void setenv_sandbox_write(char *home_dir, char *portage_tmp_dir, char *var_tmp_dir, char *tmp_dir)
 {
 	char buf[1024];
-	
+
 	/* bzero out entire buffer then append trailing 0 */
 	memset(buf, 0, sizeof(buf));
 
 	if (!getenv(ENV_SANDBOX_WRITE)) {
 		/* these could go into make.globals later on */
 		snprintf(buf, sizeof(buf),
-			"%s:%s/.gconfd/lock:%s/.bash_history:",		\
-			"/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"	\
-			"/dev/vc/:/dev/tty:/tmp/:"			\
-			"/dev/shm/ngpt:/var/log/scrollkeeper.log:"	\
-			"/usr/tmp/conftest:/usr/lib/conftest:"		\
-			"/usr/lib32/conftest:/usr/lib64/conftest:"	\
-			"/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
-			home_dir, home_dir);
+			 "%s:%s/.gconfd/lock:%s/.bash_history:",
+			 "/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"
+			 "/dev/vc/:/dev/tty:/tmp/:"
+			 "/dev/shm/ngpt:/var/log/scrollkeeper.log:"
+			 "/usr/tmp/conftest:/usr/lib/conftest:"
+			 "/usr/lib32/conftest:/usr/lib64/conftest:"
+			 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
+			 home_dir, home_dir);
 
 		if (NULL == portage_tmp_dir) {
 			strncat(buf, tmp_dir, sizeof(buf));
@@ -337,8 +326,7 @@ setenv_sandbox_write(char *home_dir, char *portage_tmp_dir, char *var_tmp_dir,
 	}
 }
 
-void
-setenv_sandbox_predict(char *home_dir)
+void setenv_sandbox_predict(char *home_dir)
 {
 	char buf[1024];
 
@@ -346,23 +334,22 @@ setenv_sandbox_predict(char *home_dir)
 
 	if (!getenv(ENV_SANDBOX_PREDICT)) {
 		/* these should go into make.globals later on */
-		snprintf(buf, sizeof(buf), "%s/.:"	\
-				"/usr/lib/python2.0/:"	\
-				"/usr/lib/python2.1/:"	\
-				"/usr/lib/python2.2/:"	\
-				"/usr/lib/python2.3/:"	\
-				"/usr/lib/python2.4/:"	\
-				"/usr/lib/python2.5/:"	\
-				"/usr/lib/python3.0/:",
-			home_dir);
+		snprintf(buf, sizeof(buf), "%s/.:"
+			 "/usr/lib/python2.0/:"
+			 "/usr/lib/python2.1/:"
+			 "/usr/lib/python2.2/:"
+			 "/usr/lib/python2.3/:"
+			 "/usr/lib/python2.4/:"
+			 "/usr/lib/python2.5/:"
+			 "/usr/lib/python3.0/:",
+			 home_dir);
 
 		buf[sizeof(buf) - 1] = '\0';
 		setenv(ENV_SANDBOX_PREDICT, buf, 1);
 	}
 }
 
-int
-print_sandbox_log(char *sandbox_log)
+int print_sandbox_log(char *sandbox_log)
 {
 	int sandbox_log_file = -1;
 	char *beep_count_env = NULL;
@@ -375,26 +362,29 @@ print_sandbox_log(char *sandbox_log)
 		return 0;
 
 	len = file_length(sandbox_log_file);
-	buffer = (char *) malloc((len + 1) * sizeof (char));
+	buffer = (char *)malloc((len + 1) * sizeof(char));
 	memset(buffer, 0, len + 1);
 	read(sandbox_log_file, buffer, len);
 	file_close(sandbox_log_file);
 
-	color = ( (getenv("NOCOLOR") != NULL) ? 0 : 1);
+	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
-	if (color) printf("\e[31;01m");
+	if (color)
+		printf("\e[31;01m");
 	printf("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------");
-	if (color) printf("\033[0m");
-	if (color) printf("\e[31;01m");
+	if (color)
+		printf("\033[0m");
+	if (color)
+		printf("\e[31;01m");
 	printf("\nLOG FILE = \"%s\"", sandbox_log);
-	if (color) printf("\033[0m");
+	if (color)
+		printf("\033[0m");
 	printf("\n\n");
 	printf("%s", buffer);
 	if (buffer)
 		free(buffer);
 	buffer = NULL;
-	printf
-			("\e[31;01m--------------------------------------------------------------------------------\033[0m\n");
+	printf("\e[31;01m--------------------------------------------------------------------------------\033[0m\n");
 
 	beep_count_env = getenv(ENV_SANDBOX_BEEP);
 	if (beep_count_env)
@@ -410,8 +400,7 @@ print_sandbox_log(char *sandbox_log)
 	return 1;
 }
 
-int
-spawn_shell(char *argv_bash[])
+int spawn_shell(char *argv_bash[])
 {
 #ifdef USE_SYSTEM_SHELL
 	int i = 0;
@@ -425,7 +414,7 @@ spawn_shell(char *argv_bash[])
 			break;
 		if (NULL != sh)
 			len = strlen(sh);
-		sh = (char *) realloc(sh, len + strlen(argv_bash[i]) + 5);
+		sh = (char *)realloc(sh, len + strlen(argv_bash[i]) + 5);
 		if (first) {
 			sh[0] = 0;
 			first = 0;
@@ -472,8 +461,7 @@ spawn_shell(char *argv_bash[])
 #endif
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int i = 0, success = 1;
 #ifdef USE_LD_SO_PRELOAD
@@ -513,13 +501,12 @@ main(int argc, char **argv)
 		print_debug = 1;
 
 	if (print_debug)
-		printf
-				("========================== Gentoo linux path sandbox ===========================\n");
+		printf("========================== Gentoo linux path sandbox ===========================\n");
 
 	/* check if a sandbox is already running */
 	if (NULL != getenv(ENV_SANDBOX_ON)) {
-		fprintf(stderr,
-						"Not launching a new sandbox instance\nAnother one is already running in this process hierarchy.\n");
+		fprintf(stderr, "Not launching a new sandbox instance\n");
+		fprintf(stderr, "Another one is already running in this process hierarchy.\n");
 		exit(1);
 	} else {
 
@@ -558,14 +545,12 @@ main(int argc, char **argv)
 
 #ifndef SB_HAVE_64BIT_ARCH
 		if (file_exist(sandbox_lib, 0) <= 0) {
-			fprintf(stderr, "Could not open the sandbox library at '%s'.\n",
-							sandbox_lib);
+			fprintf(stderr, "Could not open the sandbox library at '%s'.\n", sandbox_lib);
 			return -1;
-		} 
+		}
 #endif
 		if (file_exist(sandbox_rc, 0) <= 0) {
-			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n",
-							sandbox_rc);
+			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n", sandbox_rc);
 			return -1;
 		}
 #ifdef USE_LD_SO_PRELOAD
@@ -584,7 +569,7 @@ main(int argc, char **argv)
 			preload_file = file_open("/etc/ld.so.preload", "r+", 1, 0644);
 			if (-1 == preload_file) {
 				preload_adaptable = 0;
-/*      exit(1);*/
+/*	exit(1);*/
 			}
 		} else {
 			/* Avoid permissions warnings if we're not root */
@@ -603,18 +588,15 @@ main(int argc, char **argv)
 			for (i = 0; i < num_of_preloads + 1; i++) {
 				/* First entry should be our sandbox library */
 				if (0 == i) {
-					if (write
-							(preload_file, sandbox_lib,
-							 strlen(sandbox_lib)) != strlen(sandbox_lib)) {
+					if (write(preload_file, sandbox_lib, strlen(sandbox_lib)) != strlen(sandbox_lib)) {
 						perror(">>> /etc/ld.so.preload file write");
 						success = 0;
 						break;
 					}
 				} else {
 					/* Output all other preload entries */
-					if (write
-							(preload_file, preload_array[i - 1],
-							 strlen(preload_array[i - 1])) != strlen(preload_array[i - 1])) {
+					if (write(preload_file, preload_array[i - 1],
+						  strlen(preload_array[i - 1])) != strlen(preload_array[i - 1])) {
 						perror(">>> /etc/ld.so.preload file write");
 						success = 0;
 						break;
@@ -659,7 +641,7 @@ main(int argc, char **argv)
 		setenv(ENV_SANDBOX_LOG, sandbox_log, 1);
 
 		snprintf(sandbox_debug_log, sizeof(sandbox_debug_log), "%s%s%s",
-						 DEBUG_LOG_FILE_PREFIX, pid_string, LOG_FILE_EXT);
+			 DEBUG_LOG_FILE_PREFIX, pid_string, LOG_FILE_EXT);
 		setenv(ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log, 1);
 
 		home_dir = getenv("HOME");
@@ -673,9 +655,10 @@ main(int argc, char **argv)
 		 * this, access is denied to /var/tmp, hurtin' ebuilds.
 		 */
 
-		{	char *e;
+		{
+			char *e;
 			e = getenv("PORTAGE_TMPDIR");
-			if ( e && ( strlen(e) < sizeof(portage_tmp_dir)-1 ) && (strlen(e) > 1) )
+			if (e && (strlen(e) < sizeof(portage_tmp_dir) - 1) && (strlen(e) > 1))
 				realpath(e, portage_tmp_dir);
 
 		}
@@ -702,7 +685,7 @@ main(int argc, char **argv)
 		if (NULL != portage_tmp_dir)
 			chdir(portage_tmp_dir);
 
-		argv_bash = (char **) malloc(6 * sizeof (char *));
+		argv_bash = (char **)malloc(6 * sizeof(char *));
 		argv_bash[0] = strdup("/bin/bash");
 		argv_bash[1] = strdup("-rcfile");
 		argv_bash[2] = strdup(sandbox_rc);
@@ -712,7 +695,7 @@ main(int argc, char **argv)
 		else
 			argv_bash[3] = strdup(run_str);	/* "-c" */
 
-		argv_bash[4] = NULL;				/* strdup(run_arg); */
+		argv_bash[4] = NULL;	/* strdup(run_arg); */
 		argv_bash[5] = NULL;
 
 		if (argc >= 2) {
@@ -722,9 +705,7 @@ main(int argc, char **argv)
 				else
 					len = strlen(argv_bash[4]);
 
-				argv_bash[4] =
-						(char *) realloc(argv_bash[4],
-														 (len + strlen(argv[i]) + 2) * sizeof (char));
+				argv_bash[4] = (char *)realloc(argv_bash[4], (len + strlen(argv[i]) + 2) * sizeof(char));
 
 				if (0 == len)
 					argv_bash[4][0] = 0;
@@ -775,8 +756,7 @@ main(int argc, char **argv)
 				else
 					sprintf(pid_string, "%d\n", pids_array[i]);
 
-				if (write(pids_file, pid_string, strlen(pid_string)) !=
-						strlen(pid_string)) {
+				if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
 					perror(">>> pids file write");
 					success = 0;
 					break;
@@ -801,8 +781,7 @@ main(int argc, char **argv)
 		/* STARTING PROTECTED ENVIRONMENT */
 		if (print_debug) {
 			printf("The protected environment has been started.\n");
-			printf
-					("--------------------------------------------------------------------------------\n");
+			printf("--------------------------------------------------------------------------------\n");
 		}
 
 		if (print_debug)
@@ -831,8 +810,7 @@ main(int argc, char **argv)
 		cleanup();
 
 		if (print_debug) {
-			printf
-					("========================== Gentoo linux path sandbox ===========================\n");
+			printf("========================== Gentoo linux path sandbox ===========================\n");
 			printf("The protected environment has been shut down.\n");
 		}
 
@@ -849,8 +827,7 @@ main(int argc, char **argv)
 
 			sandbox_log_file = -1;
 		} else if (print_debug) {
-			printf
-					("--------------------------------------------------------------------------------\n");
+			printf("--------------------------------------------------------------------------------\n");
 		}
 
 		if ((sandbox_log_presence) || (!success))
@@ -860,4 +837,4 @@ main(int argc, char **argv)
 	}
 }
 
-// vim:expandtab noai:cindent ai
+// vim:noexpandtab noai:cindent ai

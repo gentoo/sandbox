@@ -46,7 +46,7 @@
    returns the name in RESOLVED.  If the name cannot be resolved and
    RESOLVED is non-NULL, it contains the path of the first component
    that cannot be resolved.  If the path can be resolved, RESOLVED
-   holds the same value as the value returned.  */
+   holds the same value as the value returned.	*/
 
 /* Modified: 19 Aug 2002; Martin Schlemmer <azarah@gentoo.org>
  * 
@@ -56,7 +56,7 @@
  *  
  */
 
-char *
+static char *
 erealpath(const char *name, char *resolved)
 {
 	char *rpath, *dest;
@@ -65,7 +65,7 @@ erealpath(const char *name, char *resolved)
 
 	if (name == NULL) {
 		/* As per Single Unix Specification V2 we must return an error if
-		   either parameter is a null pointer.  We extend this to allow
+		   either parameter is a null pointer.	We extend this to allow
 		   the RESOLVED parameter to be NULL in case the we are expected to
 		   allocate the room for the return value.  */
 		__set_errno(EINVAL);
@@ -110,7 +110,7 @@ erealpath(const char *name, char *resolved)
 		while (*start == '/')
 			++start;
 
-		/* Find end of path component.  */
+		/* Find end of path component.	*/
 		for (end = start; *end && *end != '/'; ++end)
 			/* Nothing.  */ ;
 
