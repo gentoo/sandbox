@@ -14,3 +14,5 @@ BUILT_SOURCES		= localdecls.h
 
 localdecls.h:	Makefile
 	./create-localdecls
+
+AUTOMAKE_OPTIONS	= dist-bzip2
