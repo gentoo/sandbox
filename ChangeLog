@@ -2,6 +2,10 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, libsandbox.c:
+  Seems -nostdlib was the problem with the constructor/destructor - remove it
+  from Makefile.am, and change the constructor/destructor names again.
+
   14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Also rename the _init() and _fini() declarations.
 
