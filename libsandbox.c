@@ -136,8 +136,8 @@ typedef struct {
 	int num_write_denied_prefixes;
 } sbcontext_t;
 
-void __attribute__ ((constructor)) my_init(void);
-void __attribute__ ((destructor)) my_fini(void);
+void __attribute__ ((constructor)) _init(void);
+void __attribute__ ((destructor)) _fini(void);
 
 /* glibc modified realpath() functions */
 static char *erealpath(const char *name, char *resolved);

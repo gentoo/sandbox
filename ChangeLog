@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Also rename the _init() and _fini() declarations.
+
   14 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c:
   Fixup the constructor/destructor function names again (they should be _init()
   and _fini() it seems, and not being called caused sandbox_lib_path to be
