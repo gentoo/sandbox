@@ -5,11 +5,17 @@ AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
 AC_PROG_CC
+AC_ISC_POSIX
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PROG_AWK
+
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
 AC_PREFIX_DEFAULT([/usr])
+
 # Checks for libraries.
 # Checks for header files.
 AC_FUNC_ALLOCA
@@ -63,7 +69,7 @@ fi
 AC_MSG_CHECKING(Checking libc version)
 echo "int main(void) { return 0; }" > libctest.c
 gcc -Wall -o libctest libctest.c
-LIBC_VERSION=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | awk '{print $1}'`
+LIBC_VERSION=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | ${AWK} '{print $1}'`
 rm -f libctest
 AC_SUBST(LIBC_VERSION)
 AC_MSG_RESULT(${LIBC_VERSION})

@@ -163,14 +163,14 @@ erealpath(const char *name, char *resolved)
 #endif
 	*dest = '\0';
 
-	return resolved ? memcpy(resolved, rpath, dest - rpath + 1) : rpath;
+	return resolved ? rpath : memcpy(resolved, rpath, dest - rpath + 1);
 
 error:
 	if (resolved)
-		strcpy(resolved, rpath);
+		strncpy(resolved, rpath, path_max - 1);
 	else
 		free(rpath);
 	return NULL;
 }
 
-// vim:expandtab noai:cindent ai
+// vim:noexpandtab noai:cindent ai

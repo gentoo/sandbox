@@ -65,6 +65,7 @@
 #include <utime.h>
 #include "config.h"
 #include "localdecls.h"
+#include "symbols.h"
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
@@ -95,7 +96,8 @@
 #define check_dlsym(name) \
 { \
   int old_errno=errno; \
-  if (!true_ ## name) true_ ## name=get_dlsym(#name); \
+  if (!true_ ## name) \
+	true_ ## name = get_dlsym(symname_ ## name, symver_ ## name); \
   errno=old_errno; \
 }
 
@@ -133,13 +135,16 @@ typedef struct {
 	int num_write_denied_prefixes;
 } sbcontext_t;
 
+void __attribute__ ((constructor)) my_init(void);
+void __attribute__ ((destructor)) my_fini(void);
+
 /* glibc modified realpath() functions */
-char *erealpath(const char *name, char *resolved);
+static char *erealpath(const char *name, char *resolved);
 /* glibc modified getcwd() functions */
-char *egetcwd(char *, size_t);
+static char *egetcwd(char *, size_t);
 
 static void init_wrappers(void);
-static void *get_dlsym(const char *);
+static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static int check_access(sbcontext_t *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
@@ -208,58 +213,72 @@ static int (*true_execve) (const char *, char *const[], char *const[]);
  * Initialize the shabang
  */
 
-static void
-init_wrappers(void)
+static void init_wrappers(void)
 {
-	void *libc_handle = NULL;
-
-#ifdef BROKEN_RTLD_NEXT
-//  printf ("RTLD_LAZY");
-	libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-#else
-//  printf ("RTLD_NEXT");
-	libc_handle = RTLD_NEXT;
-#endif
-
-	true_chmod = dlsym(libc_handle, "chmod");
-	true_chown = dlsym(libc_handle, "chown");
-	true_creat = dlsym(libc_handle, "creat");
-	true_fopen = dlsym(libc_handle, "fopen");
-	true_lchown = dlsym(libc_handle, "lchown");
-	true_link = dlsym(libc_handle, "link");
-	true_mkdir = dlsym(libc_handle, "mkdir");
-	true_opendir = dlsym(libc_handle, "opendir");
+	check_dlsym(chmod);
+	check_dlsym(chown);
+	check_dlsym(creat);
+	check_dlsym(fopen);
+	check_dlsym(lchown);
+	check_dlsym(link);
+	check_dlsym(mkdir);
+	check_dlsym(opendir);
 #ifdef WRAP_MKNOD
-	true___xmknod = dlsym(libc_handle, "__xmknod");
+	check_dlsym(__xmknod);
 #endif
-	true_open = dlsym(libc_handle, "open");
-	true_rename = dlsym(libc_handle, "rename");
-	true_rmdir = dlsym(libc_handle, "rmdir");
-	true_symlink = dlsym(libc_handle, "symlink");
-	true_truncate = dlsym(libc_handle, "truncate");
-	true_unlink = dlsym(libc_handle, "unlink");
+	check_dlsym(open);
+	check_dlsym(rename);
+	check_dlsym(rmdir);
+	check_dlsym(symlink);
+	check_dlsym(truncate);
+	check_dlsym(unlink);
 
 #if (GLIBC_MINOR >= 1)
-	true_creat64 = dlsym(libc_handle, "creat64");
-	true_fopen64 = dlsym(libc_handle, "fopen64");
-	true_open64 = dlsym(libc_handle, "open64");
-	true_truncate64 = dlsym(libc_handle, "truncate64");
+	check_dlsym(creat64);
+	check_dlsym(fopen64);
+	check_dlsym(open64);
+	check_dlsym(truncate64);
 #endif
 
-	true_execve = dlsym(libc_handle, "execve");
+	check_dlsym(execve);
 }
 
-void __attribute__ ((constructor)) my_init(void);
-void __attribute__ ((destructor)) my_fini(void);
+static void *libc_handle = NULL;
 
-void __attribute__ ((destructor))
-my_fini(void)
+static void *get_dlsym(const char *symname, const char *symver)
+{
+	void *symaddr = NULL;
+
+	if (NULL == libc_handle) {
+#ifdef BROKEN_RTLD_NEXT
+	libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
+		if (!libc_handle) {
+			printf("libsandbox.so: Can't dlopen libc: %s\n", dlerror());
+			abort();
+		}
+#else
+	libc_handle = RTLD_NEXT;
+#endif
+	}
+
+	if (NULL == symver)
+		symaddr = dlsym(libc_handle, symname);
+	else
+		symaddr = dlvsym(libc_handle, symname, symver);
+	if (!symaddr) {
+		printf("libsandbox.so: Can't resolve %s: %s\n", symname, dlerror());
+		abort();
+	}
+
+	return symaddr;
+}
+
+void __attribute__ ((destructor)) my_fini(void)
 {
     free(sandbox_pids_file);
 }
 
-void __attribute__ ((constructor))
-my_init(void)
+void __attribute__ ((constructor)) my_init(void)
 {
 	int old_errno = errno;
 	char *tmp_string = NULL;
@@ -340,37 +359,11 @@ canonicalize(const char *path, char *resolved_path)
 	return 0;
 }
 
-static void *
-get_dlsym(const char *symname)
-{
-	void *libc_handle = NULL;
-	void *symaddr = NULL;
-
-#ifdef BROKEN_RTLD_NEXT
-	libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-	if (!libc_handle) {
-		printf("libsandbox.so: Can't dlopen libc: %s\n", dlerror());
-		abort();
-	}
-#else
-	libc_handle = RTLD_NEXT;
-#endif
-
-	symaddr = dlsym(libc_handle, symname);
-	if (!symaddr) {
-		printf("libsandbox.so: Can't resolve %s: %s\n", symname, dlerror());
-		abort();
-	}
-
-	return symaddr;
-}
-
 /*
  * Wrapper Functions
  */
 
-int
-chmod(const char *path, mode_t mode)
+int chmod(const char *path, mode_t mode)
 {
 	int result = -1;
 	char canonic[SB_PATH_MAX];
@@ -757,15 +750,24 @@ execve(const char *filename, char *const argv[], char *const envp[])
 	if FUNCTION_SANDBOX_SAFE
 		("execve", canonic) {
 		while (envp[count] != NULL) {
+			/* Check if we do not have to do anything */
 			if (strstr(envp[count], "LD_PRELOAD=") == envp[count]) {
 				if (NULL != strstr(envp[count], sandbox_lib)) {
-					my_env = (char **) envp;
+					my_env = (char **)envp;
 					kill_env = 0;
-					break;
-				} else {
+					goto end_loop;
+				}
+			}
+
+			/* If LD_PRELOAD is set and sandbox_lib not in it */
+			if (((strstr(envp[count], "LD_PRELOAD=") == envp[count]) &&
+			     (NULL == strstr(envp[count], sandbox_lib))) ||
+			    /* Or  LD_PRELOAD is not set, and this is the last loop */
+			    ((strstr(envp[count], "LD_PRELOAD=") != envp[count]) &&
+			     (NULL == envp[count + 1]))) {
 					int i = 0;
-					const int max_envp_len =
-							strlen(envp[count]) + strlen(sandbox_lib) + 1;
+				int add_ldpreload = 0;
+				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1;
 
 					/* Fail safe ... */
 					if (max_envp_len > 4096) {
@@ -775,31 +777,35 @@ execve(const char *filename, char *const argv[], char *const envp[])
 					}
 
 					/* Calculate envp size */
-					my_env = (char **) envp;
+				my_env = (char **)envp;
 					do
-						env_len += 1;
-					while (*my_env++);
+					env_len++;
+				while (NULL != *my_env++);
 
-					my_env = (char **) malloc((env_len + 2) * sizeof (char *));
+				/* Should we add LD_PRELOAD ? */
+				if (strstr(envp[count], "LD_PRELOAD=") != envp[count])
+					add_ldpreload = 1;
+
+				my_env = (char **)calloc(env_len + add_ldpreload, sizeof(char *));
 					if (NULL == my_env) {
 						errno = ENOMEM;
 						return result;
 					}
 					/* Copy envp to my_env */
 					do
-						my_env[i] = envp[i];
-					while (envp[i++]);
+					/* Leave a space for LD_PRELOAD if needed */
+					my_env[i + add_ldpreload] = envp[i];
+				while (NULL != envp[i++]);
 
-					/* Set tmp_str to envp[count] */
-					strncpy(tmp_str, envp[count], max_envp_len - 1);
+				/* Add 'LD_PRELOAD=' to the beginning of our new string */
+				snprintf(tmp_str, max_envp_len, "LD_PRELOAD=%s", sandbox_lib);
 
 					/* LD_PRELOAD already have variables other than sandbox_lib,
 					 * thus we have to add sandbox_lib seperated via a whitespace. */
-					if (0 != strncmp(envp[count], "LD_PRELOAD=", max_envp_len - 1)) {
-						strncat(tmp_str, " ", max_envp_len - strlen(tmp_str));
-						strncat(tmp_str, sandbox_lib, max_envp_len - strlen(tmp_str));
-					} else {
-						strncat(tmp_str, sandbox_lib, max_envp_len - strlen(tmp_str));
+				if (0 == add_ldpreload) {
+					snprintf(&(tmp_str[strlen(tmp_str)]),
+						 max_envp_len - strlen(tmp_str) + 1, " %s",
+						 &(envp[count][strlen("LD_PRELOAD=")]));
 					}
 
 					/* Valid string? */
@@ -807,20 +813,25 @@ execve(const char *filename, char *const argv[], char *const envp[])
 
 					/* Ok, replace my_env[count] with our version that contains
 					 * sandbox_lib ... */
+				if (1 == add_ldpreload)
+					/* We reserved a space for LD_PRELOAD above */
+					my_env[0] = tmp_str;
+				else
 					my_env[count] = tmp_str;
 
-					break;
-				}
+				goto end_loop;
 			}
 			count++;
 		}
 
+	      end_loop:
 		errno = old_errno;
 		check_dlsym(execve);
 		result = true_execve(filename, argv, my_env);
 		old_errno = errno;
 
 		if (my_env && kill_env) {
+			free(tmp_str);
 			free(my_env);
 			my_env = NULL;
 		}

@@ -334,7 +334,7 @@ size_t size;
 				if (new == NULL)
 					goto lose;
 #ifdef HAVE_MEMPCPY
-				dotp = mempcpy(new, dots, dotsize);
+				dotp = (char *)mempcpy(new, dots, dotsize);
 #else
 				memcpy(new, dots, dotsize);
 				dotp = &new[dotsize];

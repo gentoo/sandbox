@@ -2,6 +2,14 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  02 May 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
+  configure.in getcwd.c libsandbox.c symbols.in:
+  Fix inverse test logic in canonicalize.c, use a strncpy.  Fix gcc warning in
+  getcwd.c.  Add symbols.in and logic to Makefile.am to generate symbol versions
+  for glibc and other libc's that use this.  Update libsandbox.c to use these
+  symbol versions if available.  Fix exec wrapper to re-export LD_PRELOAD if the
+  process unset it.
+
   01 May 2005; Brian Harring <ferringb@gentoo.org> libsandbox.c: 
   killed off _init and _fini in favor of 
   void __attribute__ ((constructor)) init_func and

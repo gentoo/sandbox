@@ -1,15 +1,50 @@
 AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
-dist_pkgdata_DATA	= sandbox.bashrc
 EXTRA_DIST			= sandbox.bashrc canonicalize.c libctest.c
-AM_CFLAGS			= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT -DLIBC_VERSION=\"$(LIBC_VERSION)\"
+CLEANFILES		= symbols.h
+
+AM_CPPFLAGS		= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
+			  -DLIBC_VERSION=\"$(LIBC_VERSION)\" \
+			  -DLIBSANDBOX_PATH=\"$(libdir)\" \
+			  -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\"
+
+dist_pkgdata_DATA	= sandbox.bashrc
 
 lib_LTLIBRARIES 		= libsandbox.la
+nodist_EXTRA_libsandbox_la_SOURCES = symbols.h
 libsandbox_la_SOURCES 	= libsandbox.c sandbox_futils.c localdecls.h
-libsandbox_la_LDFLAGS 	= -Wc,-nostdlib -lc -ldl
-libsandbox_la_CFLAGS	= -Wc,-nostdlib -D_REENTRANT -D_GNU_SOURCE \
-	-DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
-	-DLIBSANDBOX_PATH=\"$(libdir)\"
+libsandbox_la_LDFLAGS 	= -Wc,-nostdlib -Wc,-nodefaultlibs -lc -ldl
+# We need -fexceptions here, else we do not catch exceptions
+# (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
+libsandbox_la_CFLAGS	= -fexceptions
 
 bin_PROGRAMS		= sandbox
 sandbox_SOURCES		= sandbox.c sandbox.h sandbox_futils.c getcwd.c
-sandbox_CFLAGS		= -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" -DLIBSANDBOX_PATH=\"$(libdir)\" -DOUTSIDE_LIBSANDBOX
+sandbox_CFLAGS		= -DOUTSIDE_LIBSANDBOX
+
+libsandbox.c: symbols.h
+
+# Basically generates symbols.h from the function names in symbols.in.
+# Not sure if we can count on the latest version the only symbol
+# countaining '@@' ...
+symbols.h: symbols.in
+	@echo "Generating $@"; \
+	if [ ! -e "$(libdir)/$(LIBC_VERSION)" ]; then\
+		echo -e "\n*** Cannot find $(libdir)/$(LIBC_VERSION)!\n"; \
+		exit 1; \
+	fi; \
+	echo "#ifndef __symbol_h" > $@; \
+	echo -e "#define __symbol_h\n" >> $@; \
+	for x in `cat $^`; do \
+		sym=`readelf -s "$(libdir)/$(LIBC_VERSION)" 2>/dev/null | \
+			awk '{ print $$8 }' | \
+			grep "^$${x}@@" | \
+			cut -d'@' -f3`; \
+		echo "#define symname_$${x} \"$${x}\"" >> $@; \
+		if [ -n "$${sym}" ]; then \
+			echo "#define symver_$${x} \"$${sym}\"" >> $@; \
+		else \
+			echo "#define symver_$${x} NULL" >> $@; \
+		fi; \
+	done; \
+	echo -e "\n#endif /* __symbol_h */" >> $@
+
