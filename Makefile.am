@@ -16,11 +16,13 @@ sandbox_CFLAGS		= -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\"	\
 
 BUILT_SOURCES		= localdecls.h
 
-dist_data_DATA		= canonicalize.c create-localdecls libctest.c
 dist_pkgdata_DATA	= sandbox.bashrc
 
 localdecls.h:	Makefile
 	./create-localdecls
 
 AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
-EXTRA_DIST		= sandbox.bashrc
+EXTRA_DIST		= sandbox.bashrc canonicalize.c create-localdecls libctest.c
+
+libctest.c:
+canonicalize.c:
