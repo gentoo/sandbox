@@ -2,17 +2,21 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
-  02 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  09 Mar 2005; Brian Harring <ferringb@gentoo.org> Makefile.am, configure.in:
+  Correct libc_version path detection, since it was screwing up if libdir != 
+  "/lib/".
+
+  02 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Hack to make sure sandboxed process cannot remove a device node, bug #79836.
 
-  02 May 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am:
+  02 Mar 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am:
   Fix symbols.in not added to dist.
 
-  02 May 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
+  02 Mar 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
   getcwd.c, libsandbox.c, sandbox.c, sandbox.h, sandbox_futils.c:
   White space fixes.
 
-  02 May 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
+  02 Mar 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
   configure.in, getcwd.c, libsandbox.c, symbols.in:
   Fix inverse test logic in canonicalize.c, use a strncpy.  Fix gcc warning in
   getcwd.c.  Add symbols.in and logic to Makefile.am to generate symbol versions
@@ -20,7 +24,7 @@
   symbol versions if available.  Fix exec wrapper to re-export LD_PRELOAD if the
   process unset it.
 
-  01 May 2005; Brian Harring <ferringb@gentoo.org> libsandbox.c: 
+  01 Mar 2005; Brian Harring <ferringb@gentoo.org> libsandbox.c: 
   killed off _init and _fini in favor of 
   void __attribute__ ((constructor)) init_func and
   void __attribute__ ((destructor)) closing_func.  _(init|func) were deprecated.

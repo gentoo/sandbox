@@ -27,14 +27,14 @@ libsandbox.c: symbols.h
 # countaining '@@' ...
 symbols.h: symbols.in
 	@echo "Generating $@"; \
-	if [ ! -e "$(libdir)/$(LIBC_VERSION)" ]; then\
-		echo -e "\n*** Cannot find $(libdir)/$(LIBC_VERSION)!\n"; \
+	if [ ! -e "$(LIBC_PATH)" ]; then\
+		echo -e "\n*** Cannot find $(LIBC_PATH)!\n"; \
 		exit 1; \
 	fi; \
 	echo "#ifndef __symbol_h" > $@; \
 	echo -e "#define __symbol_h\n" >> $@; \
 	for x in `cat $^`; do \
-		sym=`readelf -s "$(libdir)/$(LIBC_VERSION)" 2>/dev/null | \
+		sym=`readelf -s "$(LIBC_PATH)" 2>/dev/null | \
 			awk '{ print $$8 }' | \
 			grep "^$${x}@@" | \
 			cut -d'@' -f3`; \

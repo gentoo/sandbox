@@ -70,8 +70,10 @@ AC_MSG_CHECKING(Checking libc version)
 echo "int main(void) { return 0; }" > libctest.c
 gcc -Wall -o libctest libctest.c
 LIBC_VERSION=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | ${AWK} '{print $1}'`
+LIBC_PATH=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | ${AWK} '{print $3}'`
 rm -f libctest
 AC_SUBST(LIBC_VERSION)
+AC_SUBST(LIBC_PATH)
 AC_MSG_RESULT(${LIBC_VERSION})
 
 AC_OUTPUT([Makefile])
