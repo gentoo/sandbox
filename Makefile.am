@@ -16,4 +16,4 @@ dist_data_DATA		= canonicalize.c create-localdecls libctest.c
 localdecls.h:	Makefile
 	./create-localdecls
 
-AUTOMAKE_OPTIONS	= dist-bzip2
+AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
