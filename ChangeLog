@@ -2,6 +2,14 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  19 Nov 2004; Brian harring <ferringb@gentoo.org>:
+  Sandbox is now autotooled, create-localdecls needs to be killed and the code
+  shifted into configure.in.  Currently builds *one* libsandbox.so- if multiple
+  are desired (-m64 and -m32 for amd64), the ebuild should do it (imo).
+  To get to a point of testing, automake && autoconf; created requisite files w/
+  a(utomake|clocal)-1.8, and autoconf 2.59.  Installs to /usr/, instead of 
+  /lib and /usr/lib/portage/bin.
+
   14 Nov 2004; Brian Harring <ferringb@gentoo.org> libsandbox.c, sandbox.c:
   closing out bug #70225, potential overflow of the sandbox_pids_file var.
 
