@@ -2,6 +2,9 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  02 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Hack to make sure sandboxed process cannot remove a device node, bug #79836.
+
   02 May 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am:
   Fix symbols.in not added to dist.
 

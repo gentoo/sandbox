@@ -459,7 +459,6 @@ int link(const char *oldpath, const char *newpath)
 }
 
 int mkdir(const char *pathname, mode_t mode)
-// returns 0 success, or -1 if an error occurred
 {
 	int result = -1, my_errno = errno;
 	char canonic[SB_PATH_MAX];
@@ -619,6 +618,13 @@ int unlink(const char *pathname)
 	char canonic[SB_PATH_MAX];
 
 	canonicalize_int(pathname, canonic);
+
+	/* Hack to make sure sandboxed process cannot remove a device node,
+	 * bug #79836. */
+	if (0 == strncmp(canonic, "/dev/", 5)) {
+		errno = EACCES;
+		return result;
+	}
 
 	if FUNCTION_SANDBOX_SAFE
 		("unlink", canonic) {
@@ -1066,7 +1072,6 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 				    (0 == strncmp(func, "ftruncate", 9)) ||
 				    (0 == strncmp(func, "truncate64", 10)) ||
 				    (0 == strncmp(func, "ftruncate64", 11)))) {
-				struct stat tmp_stat;
 
 				for (i = 0; i < sbcontext->num_write_denied_prefixes; i++) {
 					if (NULL != sbcontext->write_denied_prefixes[i]) {
@@ -1092,14 +1097,6 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 					}
 
 					if (-1 == result) {
-						/* hack to prevent mkdir of existing dirs to show errors */
-						if (0 == strncmp(func, "mkdir", 5)) {
-							if (0 == stat(filtered_path, &tmp_stat)) {
-								sbcontext->show_access_violation = 0;
-								result = 0;
-							}
-						}
-
 						if (-1 == result) {
 							for (i = 0; i < sbcontext->num_predict_prefixes; i++) {
 								if (NULL != sbcontext->predict_prefixes[i]) {
