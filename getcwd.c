@@ -45,9 +45,6 @@
 #pragma alloca
 #endif
 
-#ifdef	HAVE_CONFIG_H
-# include "config.h"
-#endif
 
 #include <errno.h>
 #include <sys/types.h>
@@ -56,6 +53,11 @@
 #ifdef	STDC_HEADERS
 # include <stddef.h>
 #endif
+
+#include "config.h"
+#include <sys/param.h>
+#include "sb_path_max.h"
+
 
 #if !defined __GNU_LIBRARY__ && !defined STDC_HEADERS
 extern int errno;
@@ -213,11 +215,6 @@ extern char *alloca();
 
 #ifndef GETCWD_RETURN_TYPE
 # define GETCWD_RETURN_TYPE char *
-#endif
-
-#ifndef SB_PATH_MAX
-//# include "localdecls.h"
-# define OUTSIDE_LIBSANDBOX
 #endif
 
 #ifndef __LIBC

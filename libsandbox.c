@@ -49,7 +49,6 @@
 # define __xmknod xxx___xmknod
 #endif
 
-#include "config.h"
 #include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -64,6 +63,8 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include <utime.h>
+#include "config.h"
+#include "sb_path_max.h"
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
