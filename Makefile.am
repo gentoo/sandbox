@@ -39,6 +39,7 @@ symbols.h: symbols.in
 		sym=`readelf -s "$(LIBC_PATH)" 2>/dev/null | \
 			awk '{ print $$8 }' | \
 			grep "^$${x}@@" | \
+			sort -u | \
 			cut -d'@' -f3`; \
 		echo "#define symname_$${x} \"$${x}\"" >> $@; \
 		if [ -n "$${sym}" ]; then \
