@@ -49,6 +49,7 @@
 # define __xmknod xxx___xmknod
 #endif
 
+#include "config.h"
 #include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
