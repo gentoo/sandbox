@@ -249,14 +249,17 @@ init_wrappers(void)
 	true_execve = dlsym(libc_handle, "execve");
 }
 
-void
-_fini(void)
+void __attribute__ ((constructor)) my_init(void);
+void __attribute__ ((destructor)) my_fini(void);
+
+void __attribute__ ((destructor))
+my_fini(void)
 {
     free(sandbox_pids_file);
 }
 
-void
-_init(void)
+void __attribute__ ((constructor))
+my_init(void)
 {
 	int old_errno = errno;
 	char *tmp_string = NULL;
@@ -279,6 +282,8 @@ _init(void)
 
 	errno = old_errno;
 }
+
+
 
 static int
 canonicalize(const char *path, char *resolved_path)
