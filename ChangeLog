@@ -2,6 +2,12 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  23 Apr 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
+  getcwd.c, libsandbox.c, localdecls.h, sandbox.h, sandbox_futils.c:
+  Make sure all functions used in libsandbox.c is declared static.  Define
+  SB_STATIC in localdecls.h for this.  Include sandbox_futils.c rather than
+  linking with its object.  Hopefully this will fix bug #90153.
+
   22 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Allow lchown a symlink in write-allowed path pointing to write-denied
   target.

@@ -10,7 +10,7 @@ AM_CPPFLAGS		= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
 dist_pkgdata_DATA	= sandbox.bashrc
 
 lib_LTLIBRARIES 	= libsandbox.la
-libsandbox_la_SOURCES 	= libsandbox.c sandbox_futils.c localdecls.h
+libsandbox_la_SOURCES 	= libsandbox.c localdecls.h
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 libsandbox_la_LDFLAGS 	= -nodefaultlibs -lc -ldl

@@ -31,13 +31,13 @@
 #include "config.h"
 
 /* BEGIN Prototypes */
-int file_security_check(char *filename);
+SB_STATIC int file_security_check(char *filename);
 /* END   Prototypes */
 
 /* glibc modified getcwd() functions */
-char *egetcwd(char *, size_t);
+SB_STATIC char *egetcwd(char *, size_t);
 
-char *get_sandbox_path(char *argv0)
+SB_STATIC char *get_sandbox_path(char *argv0)
 {
 	char path[255];
 	char *cwd = NULL;
@@ -60,7 +60,7 @@ char *get_sandbox_path(char *argv0)
 	return (sb_dirname(path));
 }
 
-char *get_sandbox_lib(char *sb_path)
+SB_STATIC char *get_sandbox_lib(char *sb_path)
 {
 	char path[255];
 
@@ -75,7 +75,7 @@ char *get_sandbox_lib(char *sb_path)
 	return (strdup(path));
 }
 
-char *get_sandbox_pids_file(void)
+SB_STATIC char *get_sandbox_pids_file(void)
 {
 	if (0 < getenv("SANDBOX_PIDS_FILE")) {
 		return (strdup(getenv("SANDBOX_PIDS_FILE")));
@@ -83,7 +83,7 @@ char *get_sandbox_pids_file(void)
 	return (strdup(PIDS_FILE));
 }
 
-char *get_sandbox_rc(char *sb_path)
+SB_STATIC char *get_sandbox_rc(char *sb_path)
 {
 	char path[255];
 
@@ -94,7 +94,7 @@ char *get_sandbox_rc(char *sb_path)
 	return (strdup(path));
 }
 
-char *get_sandbox_log()
+SB_STATIC char *get_sandbox_log()
 {
 	char path[255];
 	char *sandbox_log_env = NULL;
@@ -111,7 +111,7 @@ char *get_sandbox_log()
 }
 
 /* Obtain base directory name. Do not allow trailing / */
-char *sb_dirname(const char *path)
+SB_STATIC char *sb_dirname(const char *path)
 {
 	char *ret = NULL;
 	char *ptr = NULL;
@@ -152,7 +152,7 @@ char *sb_dirname(const char *path)
 }
 
 /*
-char* dirname(const char* path)
+SB_STATIC char* dirname(const char* path)
 {
   char* base = NULL;
   unsigned int length = 0;
@@ -176,7 +176,7 @@ char* dirname(const char* path)
 }*/
 
 /* Convert text (string) modes to integer values */
-int file_getmode(char *mode)
+SB_STATIC int file_getmode(char *mode)
 {
 	int mde = 0;
 	if (0 == strcasecmp(mode, "r+")) {
@@ -198,13 +198,13 @@ int file_getmode(char *mode)
 }
 
 /* Get current position in file */
-long file_tell(int fp)
+SB_STATIC long file_tell(int fp)
 {
 	return (lseek(fp, 0L, SEEK_CUR));
 }
 
 /* lock the file, preferrably the POSIX way */
-int file_lock(int fd, int lock, char *filename)
+SB_STATIC int file_lock(int fd, int lock, char *filename)
 {
 	int err;
 #ifdef USE_FLOCK
@@ -230,7 +230,7 @@ int file_lock(int fd, int lock, char *filename)
 }
 
 /* unlock the file, preferrably the POSIX way */
-int file_unlock(int fd)
+SB_STATIC int file_unlock(int fd)
 {
 #ifdef USE_FLOCK
 	if (flock(fd, LOCK_UN) < 0) {
@@ -255,7 +255,7 @@ int file_unlock(int fd)
 /* Auto-determine from how the file was opened, what kind of lock to lock
  * the file with
  */
-int file_locktype(char *mode)
+SB_STATIC int file_locktype(char *mode)
 {
 #ifdef USE_FLOCK
 	if (NULL != (strchr(mode, 'w')) || (NULL != strchr(mode, '+'))
@@ -273,7 +273,7 @@ int file_locktype(char *mode)
 /* Use standard fopen style modes to open the specified file.  Also auto-determines and
  * locks the file either in shared or exclusive mode depending on opening mode
  */
-int file_open(char *filename, char *mode, int perm_specified, ...)
+SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...)
 {
 	int fd;
 	char error[250];
@@ -338,7 +338,7 @@ int file_open(char *filename, char *mode, int perm_specified, ...)
 }
 
 /* Close and unlock file */
-void file_close(int fd)
+SB_STATIC void file_close(int fd)
 {
 	if (-1 != fd) {
 		file_unlock(fd);
@@ -347,7 +347,7 @@ void file_close(int fd)
 }
 
 /* Return length of file */
-long file_length(int fd)
+SB_STATIC long file_length(int fd)
 {
 	long pos, len;
 	pos = file_tell(fd);
@@ -357,7 +357,7 @@ long file_length(int fd)
 }
 
 /* Zero out file */
-int file_truncate(int fd)
+SB_STATIC int file_truncate(int fd)
 {
 	lseek(fd, 0L, SEEK_SET);
 	if (ftruncate(fd, 0) < 0) {
@@ -368,7 +368,7 @@ int file_truncate(int fd)
 }
 
 /* Check to see if a file exists Return: 1 success, 0 file not found, -1 error */
-int file_exist(char *filename, int checkmode)
+SB_STATIC int file_exist(char *filename, int checkmode)
 {
 	struct stat mystat;
 
@@ -402,7 +402,7 @@ int file_exist(char *filename, int checkmode)
 	return 1;
 }
 
-int file_security_check(char *filename)
+SB_STATIC int file_security_check(char *filename)
 {				/* 0 == fine, >0 == problem */
 	struct stat stat_buf;
 	struct group *group_buf;

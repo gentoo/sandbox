@@ -229,7 +229,7 @@ extern char *alloca();
    NULL, an array is allocated with `malloc'; the array is SIZE bytes long,
    unless SIZE == 0, in which case it is as big as necessary.  */
 
-GETCWD_RETURN_TYPE
+SB_STATIC GETCWD_RETURN_TYPE
 __egetcwd(buf, size)
 char *buf;
 size_t size;
@@ -472,7 +472,7 @@ lose2:
 	return NULL;
 }
 
-GETCWD_RETURN_TYPE
+SB_STATIC GETCWD_RETURN_TYPE
 egetcwd(buf, size)
 char *buf;
 size_t size;

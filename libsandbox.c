@@ -140,7 +140,7 @@ void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
 /* glibc modified realpath() functions */
-static char *erealpath(const char *name, char *resolved);
+static char *erealpath(const char *, char *);
 /* glibc modified getcwd() functions */
 static char *egetcwd(char *, size_t);
 
@@ -1498,5 +1498,6 @@ static int before_syscall_open_char(const char *func, const char *file, const ch
 
 #include "getcwd.c"
 #include "canonicalize.c"
+#include "sandbox_futils.c"
 
 // vim:noexpandtab noai:cindent ai

@@ -56,7 +56,7 @@
  *  
  */
 
-static char *
+SB_STATIC char *
 erealpath(const char *name, char *resolved)
 {
 	char *rpath, *dest;

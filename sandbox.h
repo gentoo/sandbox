@@ -10,6 +10,8 @@
 #ifndef __SANDBOX_H__
 #define __SANDBOX_H__
 
+#include "localdecls.h"
+
 /* Uncomment below to use flock instead of fcntl (POSIX way) to lock/unlock files */
 /* #define USE_FLOCK */
 
@@ -46,22 +48,22 @@
 
 #define DEFAULT_BEEP_COUNT	3
 
-char *get_sandbox_path(char *argv0);
-char *get_sandbox_lib(char *sb_path);
-char *get_sandbox_pids_file(void);
-char *get_sandbox_rc(char *sb_path);
-char *get_sandbox_log();
-char *sb_dirname(const char *path);
-int file_getmode(char *mode);
-long file_tell(int fp);
-int file_lock(int fd, int lock, char *filename);
-int file_unlock(int fd);
-int file_locktype(char *mode);
-int file_open(char *filename, char *mode, int perm_specified, ...);
-void file_close(int fd);
-long file_length(int fd);
-int file_truncate(int fd);
-int file_exist(char *filename, int checkmode);
+SB_STATIC char *get_sandbox_path(char *argv0);
+SB_STATIC char *get_sandbox_lib(char *sb_path);
+SB_STATIC char *get_sandbox_pids_file(void);
+SB_STATIC char *get_sandbox_rc(char *sb_path);
+SB_STATIC char *get_sandbox_log();
+SB_STATIC char *sb_dirname(const char *path);
+SB_STATIC int file_getmode(char *mode);
+SB_STATIC long file_tell(int fp);
+SB_STATIC int file_lock(int fd, int lock, char *filename);
+SB_STATIC int file_unlock(int fd);
+SB_STATIC int file_locktype(char *mode);
+SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...);
+SB_STATIC void file_close(int fd);
+SB_STATIC long file_length(int fd);
+SB_STATIC int file_truncate(int fd);
+SB_STATIC int file_exist(char *filename, int checkmode);
 
 #endif
 
