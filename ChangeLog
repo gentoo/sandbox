@@ -2,6 +2,8 @@
 # Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+* sandbox-1.2.1
+
   23 Apr 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
   getcwd.c, libsandbox.c, localdecls.h, sandbox.h, sandbox_futils.c:
   Make sure all functions used in libsandbox.c is declared static.  Define
