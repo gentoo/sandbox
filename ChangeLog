@@ -10,6 +10,8 @@
   SB_STATIC in localdecls.h for this.  Include sandbox_futils.c rather than
   linking with its object.  Hopefully this will fix bug #90153.
 
+* sandbox-1.2
+
   22 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Allow lchown a symlink in write-allowed path pointing to write-denied
   target.
