@@ -1,6 +1,9 @@
 # ChangeLog for Path Sandbox
-# Copyright 1999-2004 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
+
+  28 Apr 2005; Mike Frysinger <vapier@gentoo.org> Makefile.am, configure.in:
+  With az's help, clean up autotools to work with cross-compiling.
 
 * sandbox-1.2.2
 

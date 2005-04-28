@@ -51,14 +51,10 @@ rmdir setenv strcasecmp strchr strdup \
 strerror strndup strrchr strspn strstr \
 ])
 
-dnl
-dnl FIXME: the following needs to be made portable
-dnl
-
 dnl when using libc5, (f)trucate's offset argument type is size_t with
 dnl libc5, but it's off_t with libc6 (glibc2).
 AC_MSG_CHECKING(truncate argument type)
-if grep -q 'truncate.*size_t' /usr/include/unistd.h ; then
+if echo '#include <unistd.h>' | $CC -E - | grep -q 'truncate.*size_t' ; then
 	AC_MSG_RESULT(size_t)
 	AC_DEFINE(TRUNCATE_T, size_t, [truncate arg type])
 else
@@ -66,14 +62,30 @@ else
 	AC_DEFINE(TRUNCATE_T, off_t, [truncate arg type])
 fi
 
-AC_MSG_CHECKING(Checking libc version)
+dnl we need to handle symbols differently based upon their version, 
+dnl but we have to know which symbols the libc supports first
+AC_MSG_CHECKING(libc path)
 echo "int main(void) { return 0; }" > libctest.c
-gcc -Wall -o libctest libctest.c
-LIBC_VERSION=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | ${AWK} '{print $1}'`
-LIBC_PATH=`ldd libctest | grep libc\\.so | grep -v 'ld-uClibc' | ${AWK} '{print $3}'`
-rm -f libctest
-AC_SUBST(LIBC_VERSION)
+$CC -Wall -o libctest libctest.c
+LIBC_PATH=`$CC $CFLAGS -Wl,-verbose -o libctest libctest.c 2>&1 | \
+	gawk '/attempt to open/ { if (($4 ~ /libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}'`
+if test "$LIBC_PATH"x = x ; then
+	AC_MSG_ERROR(Unable to determine LIBC PATH)
+fi
+AC_MSG_RESULT($LIBC_PATH)
 AC_SUBST(LIBC_PATH)
-AC_MSG_RESULT(${LIBC_VERSION})
+
+dnl when intercepting libc calls, we have to know the name of the 
+dnl libc to load and search with dl*() calls
+AC_MSG_CHECKING(libc version)
+dnl the sed script at the end here looks funny but it's ok ...
+dnl they're m4 escape sequences for left and right brackets
+LIBC_VERSION=`readelf -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
+if test "$LIBC_VERSION"x = x ; then
+	AC_MSG_ERROR(Unable to determine LIBC VERSION)
+fi
+AC_MSG_RESULT($LIBC_VERSION)
+AC_DEFINE_UNQUOTED(LIBC_VERSION, "$LIBC_VERSION", [name of libc to hook into])
+rm -f libctest
 
 AC_OUTPUT([Makefile])
