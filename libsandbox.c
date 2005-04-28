@@ -1072,8 +1072,9 @@ static char *filter_path(const char *path, int follow_link)
 				}
 
 				bname = basename(tmp_str2);
-				strncat(filtered_path, "/",
-						SB_PATH_MAX - strlen(filtered_path));
+				if (filtered_path[strlen(filtered_path) - 1] != '/')
+					strncat(filtered_path, "/",
+							SB_PATH_MAX - strlen(filtered_path));
 				strncat(filtered_path, bname,
 						SB_PATH_MAX - strlen(filtered_path));
 				free(tmp_str2);
