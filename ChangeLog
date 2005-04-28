@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  29 Apr 2005; Martin Schlemmer <azarah@gentoo.org> configure.in:
+  Do not check for (*&#$(* CXX or F77.
+
   29 Apr 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Do not append '/' to pathname in filter_path() if it already ends with it.
 
