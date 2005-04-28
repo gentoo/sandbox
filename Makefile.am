@@ -1,26 +1,25 @@
-AUTOMAKE_OPTIONS	= dist-bzip2 no-dist-gzip
-EXTRA_DIST		= sandbox.bashrc canonicalize.c libctest.c symbols.in
-CLEANFILES		= symbols.h
+AUTOMAKE_OPTIONS   = dist-bzip2 no-dist-gzip
+EXTRA_DIST         = sandbox.bashrc canonicalize.c libctest.c symbols.in
+CLEANFILES         = symbols.h
 
-AM_CPPFLAGS		= -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
-			  -DLIBC_VERSION=\"$(LIBC_VERSION)\" \
-			  -DLIBSANDBOX_PATH=\"$(libdir)\" \
-			  -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\"
+AM_CPPFLAGS        = -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
+                     -DLIBSANDBOX_PATH=\"$(libdir)\" \
+                     -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\"
 
-dist_pkgdata_DATA	= sandbox.bashrc
+dist_pkgdata_DATA  = sandbox.bashrc
 
-lib_LTLIBRARIES 	= libsandbox.la
-libsandbox_la_SOURCES 	= libsandbox.c localdecls.h
+lib_LTLIBRARIES         = libsandbox.la
+libsandbox_la_SOURCES   = libsandbox.c localdecls.h
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
-libsandbox_la_LDFLAGS 	= -nodefaultlibs -lc -ldl
+libsandbox_la_LDFLAGS   = -nodefaultlibs -lc -ldl
 # We need -fexceptions here, else we do not catch exceptions
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
-libsandbox_la_CFLAGS	= -fexceptions
+libsandbox_la_CFLAGS    = -fexceptions
 
-bin_PROGRAMS		= sandbox
-sandbox_SOURCES		= sandbox.c sandbox.h sandbox_futils.c getcwd.c
-sandbox_CFLAGS		= -DOUTSIDE_LIBSANDBOX
+bin_PROGRAMS       = sandbox
+sandbox_SOURCES    = sandbox.c sandbox.h sandbox_futils.c getcwd.c
+sandbox_CFLAGS     = -DOUTSIDE_LIBSANDBOX
 
 libsandbox.c: symbols.h
 
@@ -30,7 +29,7 @@ libsandbox.c: symbols.h
 symbols.h: symbols.in
 	@echo "Generating $@"; \
 	if [ ! -e "$(LIBC_PATH)" ]; then\
-		echo -e "\n*** Cannot find $(LIBC_PATH)!\n"; \
+		echo -e "\n*** Cannot find LIBC_PATH '$(LIBC_PATH)' !\n"; \
 		exit 1; \
 	fi; \
 	echo "#ifndef __symbol_h" > $@; \
@@ -49,4 +48,3 @@ symbols.h: symbols.in
 		fi; \
 	done; \
 	echo -e "\n#endif /* __symbol_h */" >> $@
-
