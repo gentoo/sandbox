@@ -622,7 +622,8 @@ int unlink(const char *pathname)
 
 	/* XXX: Hack to make sure sandboxed process cannot remove
 	 * a device node, bug #79836. */
-	if (0 == strncmp(canonic, "/dev/", 5)) {
+	if ((0 == strncmp(canonic, "/dev/null", 9)) ||
+	    (0 == strncmp(canonic, "/dev/zero", 9))) {
 		errno = EACCES;
 		return result;
 	}
