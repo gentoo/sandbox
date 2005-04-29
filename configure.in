@@ -12,6 +12,7 @@ AC_PROG_AWK
 
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
+# Next for lines is a hack to prevent libtool checking for CXX/F77
 m4_undefine([AC_PROG_CXX])
 m4_defun([AC_PROG_CXX],[])
 m4_undefine([AC_PROG_F77])
