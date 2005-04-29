@@ -2,6 +2,8 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+* sandbox-1.2.3 (2005/04/29)
+
   29 Apr 2005; Martin Schlemmer <azarah@gentoo.org> configure.in:
   Do not check for (*&#$(* CXX or F77.
 
@@ -11,13 +13,13 @@
   28 Apr 2005; Mike Frysinger <vapier@gentoo.org> Makefile.am, configure.in:
   With az's help, clean up autotools to work with cross-compiling.
 
-* sandbox-1.2.2
+* sandbox-1.2.2 (2005/04/28)
 
   28 Apr 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Only check for /dev/{null,zero} for unlink hack, else ricers using /dev/shm
   have issues; bug #90592.
 
-* sandbox-1.2.1
+* sandbox-1.2.1 (2005/04/23)
 
   23 Apr 2005; Martin Schlemmer <azarah@gentoo.org> Makefile.am, canonicalize.c,
   getcwd.c, libsandbox.c, localdecls.h, sandbox.h, sandbox_futils.c:
@@ -25,7 +27,7 @@
   SB_STATIC in localdecls.h for this.  Include sandbox_futils.c rather than
   linking with its object.  Hopefully this will fix bug #90153.
 
-* sandbox-1.2
+* sandbox-1.2 (2005/04/23)
 
   22 Mar 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Allow lchown a symlink in write-allowed path pointing to write-denied
