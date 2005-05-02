@@ -10,7 +10,7 @@
 #define __LOCALDECLS_H__
 
 /* take care of broken ld loading */
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
 
 # if __GLIBC__ <= 2 && __GLIBC_MINOR__ <= 2
 #  define BROKEN_RTLD_NEXT
