@@ -26,28 +26,28 @@
 /* ONLY FOR DEBUGGING PURPOSES!! (strace needs it like that) */
 /* #define NO_FORK */
 
-#define LD_PRELOAD_FILE		"/etc/ld.so.preload"
-#define LIB_NAME		"libsandbox.so"
-#define BASHRC_NAME		"sandbox.bashrc"
-#define PIDS_FILE		"/tmp/sandboxpids.tmp"
-#define LOG_FILE_PREFIX		"/tmp/sandbox-"
-#define DEBUG_LOG_FILE_PREFIX	"/tmp/sandbox-debug-"
-#define LOG_FILE_EXT		".log"
+#define LD_PRELOAD_FILE        "/etc/ld.so.preload"
+#define LIB_NAME               "libsandbox.so"
+#define BASHRC_NAME            "sandbox.bashrc"
+#define PIDS_FILE              "/tmp/sandboxpids.tmp"
+#define LOG_FILE_PREFIX        "/tmp/sandbox-"
+#define DEBUG_LOG_FILE_PREFIX  "/tmp/sandbox-debug-"
+#define LOG_FILE_EXT           ".log"
 
-#define ENV_SANDBOX_DEBUG_LOG	"SANDBOX_DEBUG_LOG"
-#define ENV_SANDBOX_LOG		"SANDBOX_LOG"
-#define ENV_SANDBOX_DIR		"SANDBOX_DIR"
-#define ENV_SANDBOX_LIB		"SANDBOX_LIB"
+#define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
+#define ENV_SANDBOX_LOG        "SANDBOX_LOG"
+#define ENV_SANDBOX_DIR        "SANDBOX_DIR"
+#define ENV_SANDBOX_LIB        "SANDBOX_LIB"
 
-#define ENV_SANDBOX_DENY	"SANDBOX_DENY"
-#define ENV_SANDBOX_READ	"SANDBOX_READ"
-#define ENV_SANDBOX_WRITE	"SANDBOX_WRITE"
-#define ENV_SANDBOX_PREDICT	"SANDBOX_PREDICT"
+#define ENV_SANDBOX_DENY       "SANDBOX_DENY"
+#define ENV_SANDBOX_READ       "SANDBOX_READ"
+#define ENV_SANDBOX_WRITE      "SANDBOX_WRITE"
+#define ENV_SANDBOX_PREDICT    "SANDBOX_PREDICT"
 
-#define ENV_SANDBOX_ON		"SANDBOX_ON"
-#define ENV_SANDBOX_BEEP	"SANDBOX_BEEP"
+#define ENV_SANDBOX_ON         "SANDBOX_ON"
+#define ENV_SANDBOX_BEEP       "SANDBOX_BEEP"
 
-#define DEFAULT_BEEP_COUNT	3
+#define DEFAULT_BEEP_COUNT     3
 
 #if !HAVE_DLVSYM
 # define dlvsym(lib, sym, ver) dlsym(lib, sym)
