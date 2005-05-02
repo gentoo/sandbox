@@ -56,6 +56,13 @@ rmdir setenv strcasecmp strchr strdup \
 strerror strndup strrchr strspn strstr \
 ])
 
+dnl uClibc doesn't currently provide dlvsym() so lets
+dnl verify the toolchain supports it
+AC_CHECK_LIB(dl, dlvsym,
+	[AC_DEFINE(HAVE_DLVSYM, 1, [libdl supports dlvsym])],
+	[AC_DEFINE(HAVE_DLVSYM, 0, [libdl does not support dlvsym])]
+)
+
 dnl when using libc5, (f)trucate's offset argument type is size_t with
 dnl libc5, but it's off_t with libc6 (glibc2).
 AC_MSG_CHECKING(truncate argument type)

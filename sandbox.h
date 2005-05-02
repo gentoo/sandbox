@@ -11,6 +11,7 @@
 #define __SANDBOX_H__
 
 #include "localdecls.h"
+#include "config.h"
 
 /* Uncomment below to use flock instead of fcntl (POSIX way) to lock/unlock files */
 /* #define USE_FLOCK */
@@ -47,6 +48,10 @@
 #define ENV_SANDBOX_BEEP	"SANDBOX_BEEP"
 
 #define DEFAULT_BEEP_COUNT	3
+
+#if !HAVE_DLVSYM
+# define dlvsym(lib, sym, ver) dlsym(lib, sym)
+#endif
 
 SB_STATIC char *get_sandbox_path(char *argv0);
 SB_STATIC char *get_sandbox_lib(char *sb_path);
