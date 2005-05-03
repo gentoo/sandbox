@@ -301,7 +301,7 @@ void setenv_sandbox_write(char *home_dir, char *portage_tmp_dir, char *var_tmp_d
 		snprintf(buf, sizeof(buf),
 			 "%s:%s/.gconfd/lock:%s/.bash_history:",
 			 "/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"
-			 "/dev/vc/:/dev/tty:/tmp/:"
+			 "/dev/vc/:/dev/pty:/dev/tty:/tmp/:"
 			 "/dev/shm/ngpt:/var/log/scrollkeeper.log:"
 			 "/usr/tmp/conftest:/usr/lib/conftest:"
 			 "/usr/lib32/conftest:/usr/lib64/conftest:"

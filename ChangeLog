@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  03 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Add /dev/pty to default write list.  Noticed by Morfic.
+
   02 May 2005; Mike Frysinger <vapier@gentoo.org> configure.in, localdecls.h, 
   sandbox.h:
   uClibc doesn't support dlvsym() so add a configure check to make sure it doesn't 
