@@ -136,6 +136,8 @@ typedef struct {
 	int num_write_denied_prefixes;
 } sbcontext_t;
 
+static sbcontext_t sbcontext;
+
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
@@ -147,7 +149,8 @@ static char *egetcwd(char *, size_t);
 static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
-static int check_access(sbcontext_t *, const char *, const char *);
+static char *filter_path(const char *, int);
+static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
 static int before_syscall(const char *, const char *);
 static int before_syscall_open_int(const char *, const char *, int);
@@ -155,7 +158,6 @@ static int before_syscall_open_char(const char *, const char *, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, char *, int);
-static char *filter_path(const char *, int follow_link);
 static int is_sandbox_on();
 static int is_sandbox_pid();
 
@@ -277,6 +279,15 @@ static void *get_dlsym(const char *symname, const char *symver)
 
 void __attribute__ ((destructor)) libsb_fini(void)
 {
+	clean_env_entries(&(sbcontext.deny_prefixes),
+			&(sbcontext.num_deny_prefixes));
+	clean_env_entries(&(sbcontext.read_prefixes),
+			&(sbcontext.num_read_prefixes));
+	clean_env_entries(&(sbcontext.write_prefixes),
+			&(sbcontext.num_write_prefixes));
+	clean_env_entries(&(sbcontext.predict_prefixes),
+			&(sbcontext.num_predict_prefixes));
+
 	free(sandbox_pids_file);
 }
 
@@ -300,6 +311,17 @@ void __attribute__ ((constructor)) libsb_init(void)
 
 	/* Generate sandbox pids-file path */
 	sandbox_pids_file = get_sandbox_pids_file();
+
+	init_context(&sbcontext);
+
+	init_env_entries(&(sbcontext.deny_prefixes),
+			&(sbcontext.num_deny_prefixes), "SANDBOX_DENY", 1);
+	init_env_entries(&(sbcontext.read_prefixes),
+			&(sbcontext.num_read_prefixes), "SANDBOX_READ", 1);
+	init_env_entries(&(sbcontext.write_prefixes),
+			&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", 1);
+	init_env_entries(&(sbcontext.predict_prefixes),
+			&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", 1);
 
 	errno = old_errno;
 }
@@ -356,6 +378,76 @@ static int canonicalize(const char *path, char *resolved_path)
 
 	errno = old_errno;
 	return 0;
+}
+
+static char *filter_path(const char *path, int follow_link)
+{
+	struct stat st;
+	int old_errno = errno;
+	char *tmp_str1, *tmp_str2;
+	char *dname, *bname;
+	char *filtered_path;
+
+	if (NULL == path)
+		return NULL;
+
+	filtered_path = malloc(SB_PATH_MAX * sizeof(char));
+	if (NULL == filtered_path)
+		return NULL;
+
+	if (0 == follow_link) {
+		if (-1 == canonicalize(path, filtered_path))
+			goto error;
+	} else {
+		/* Basically we get the realpath which should resolve symlinks,
+		 * etc.  If that fails (might not exist), we try to get the
+		 * realpath of the parent directory, as that should hopefully
+		 * exist.  If all else fails, just go with canonicalize */
+		if (NULL == realpath(path, filtered_path)) {
+			tmp_str1 = strndup(path, SB_PATH_MAX - 1);
+			if (NULL == tmp_str1)
+				goto error;
+			
+			dname = dirname(tmp_str1);
+			
+			/* If not, then check if we can resolve the
+			 * parent directory */
+			if (NULL == realpath(dname, filtered_path)) {
+				/* Fall back to canonicalize */
+				if (-1 == canonicalize(path, filtered_path)) {
+					free(tmp_str1);
+					goto error;
+				}
+			} else {
+				/* OK, now add the basename to keep our access
+				 * checking happy (don't want '/usr/lib' if we
+				 * tried to do something with non-existing
+				 * file '/usr/lib/cf*' ...) */
+				tmp_str2 = strndup(path, SB_PATH_MAX - 1);
+				if (NULL == tmp_str2) {
+					free(tmp_str1);
+					goto error;
+				}
+
+				bname = basename(tmp_str2);
+				if (filtered_path[strlen(filtered_path) - 1] != '/')
+					strncat(filtered_path, "/",
+							SB_PATH_MAX - strlen(filtered_path));
+				strncat(filtered_path, bname,
+						SB_PATH_MAX - strlen(filtered_path));
+				free(tmp_str2);
+			}
+						
+			free(tmp_str1);
+		}
+	}
+	
+	errno = old_errno;
+
+	return filtered_path;
+error:
+	free(filtered_path);
+	return NULL;
 }
 
 /*
@@ -1022,94 +1114,13 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, char *en
 	errno = old_errno;
 }
 
-static char *filter_path(const char *path, int follow_link)
-{
-	struct stat st;
-	int old_errno = errno;
-	char *tmp_str1, *tmp_str2;
-	char *dname, *bname;
-	char *filtered_path;
-
-	if (NULL == path)
-		return NULL;
-
-	filtered_path = malloc(SB_PATH_MAX * sizeof(char));
-	if (NULL == filtered_path)
-		return NULL;
-
-	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path))
-			goto error;
-	} else {
-		/* Basically we get the realpath which should resolve symlinks,
-		 * etc.  If that fails (might not exist), we try to get the
-		 * realpath of the parent directory, as that should hopefully
-		 * exist.  If all else fails, just go with canonicalize */
-		if (NULL == realpath(path, filtered_path)) {
-			tmp_str1 = strndup(path, SB_PATH_MAX - 1);
-			if (NULL == tmp_str1)
-				goto error;
-			
-			dname = dirname(tmp_str1);
-			
-			/* If not, then check if we can resolve the
-			 * parent directory */
-			if (NULL == realpath(dname, filtered_path)) {
-				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path)) {
-					free(tmp_str1);
-					goto error;
-				}
-			} else {
-				/* OK, now add the basename to keep our access
-				 * checking happy (don't want '/usr/lib' if we
-				 * tried to do something with non-existing
-				 * file '/usr/lib/cf*' ...) */
-				tmp_str2 = strndup(path, SB_PATH_MAX - 1);
-				if (NULL == tmp_str2) {
-					free(tmp_str1);
-					goto error;
-				}
-
-				bname = basename(tmp_str2);
-				if (filtered_path[strlen(filtered_path) - 1] != '/')
-					strncat(filtered_path, "/",
-							SB_PATH_MAX - strlen(filtered_path));
-				strncat(filtered_path, bname,
-						SB_PATH_MAX - strlen(filtered_path));
-				free(tmp_str2);
-			}
-						
-			free(tmp_str1);
-		}
-	}
-	
-	errno = old_errno;
-
-	return filtered_path;
-error:
-	free(filtered_path);
-	return NULL;
-}
-
-static int check_access(sbcontext_t * sbcontext, const char *func, const char *path)
+static int check_access(sbcontext_t * sbcontext, const char *func, const char *path, const char *fpath)
 {
 	int old_errno = errno;
 	int result = -1;
 	int i = 0;
-	char *filtered_path = filter_path(path, 1);
 
-	if ((NULL == filtered_path) || ('/' != filtered_path[0])) {
-		errno = old_errno;
-
-		if (filtered_path)
-			free(filtered_path);
-		filtered_path = NULL;
-
-		return 0;
-	}
-
-	if ((0 == strncmp(filtered_path, "/etc/ld.so.preload", 18)) &&
+	if ((0 == strncmp(fpath, "/etc/ld.so.preload", 18)) &&
 	    (is_sandbox_pid())) {
 		result = 1;
 	}
@@ -1117,7 +1128,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 	if ((-1 == result) && (NULL != sbcontext->deny_prefixes)) {
 		for (i = 0; i < sbcontext->num_deny_prefixes; i++) {
 			if (NULL != sbcontext->deny_prefixes[i]) {
-				if (0 == strncmp(filtered_path,
+				if (0 == strncmp(fpath,
 						 sbcontext->deny_prefixes[i],
 						 strlen(sbcontext->deny_prefixes[i]))) {
 					result = 0;
@@ -1141,7 +1152,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 		     (0 == strncmp(func, "execve", 6)))) {
 			for (i = 0; i < sbcontext->num_read_prefixes; i++) {
 				if (NULL != sbcontext->read_prefixes[i]) {
-					if (0 == strncmp(filtered_path,
+					if (0 == strncmp(fpath,
 							 sbcontext->read_prefixes[i],
 							 strlen(sbcontext->read_prefixes[i]))) {
 						result = 1;
@@ -1237,7 +1248,7 @@ unlink_hack_end:
 			if (NULL != sbcontext->write_denied_prefixes) {
 				for (i = 0; i < sbcontext->num_write_denied_prefixes; i++) {
 					if (NULL != sbcontext->write_denied_prefixes[i]) {
-						if (0 == strncmp(filtered_path,
+						if (0 == strncmp(fpath,
 								 sbcontext->write_denied_prefixes[i],
 								 strlen(sbcontext->write_denied_prefixes[i]))) {
 							/* Special paths in writable context that should
@@ -1252,7 +1263,7 @@ unlink_hack_end:
 			if ((-1 == result) && (NULL != sbcontext->write_prefixes)) {
 				for (i = 0; i < sbcontext->num_write_prefixes; i++) {
 					if (NULL != sbcontext->write_prefixes[i]) {
-						if (0 == strncmp(filtered_path,
+						if (0 == strncmp(fpath,
 								 sbcontext->write_prefixes[i],
 								 strlen(sbcontext->write_prefixes[i]))) {
 							/* Falls in a writable path */
@@ -1266,7 +1277,7 @@ unlink_hack_end:
 			if ((-1 == result) && (NULL != sbcontext->predict_prefixes)) {
 				for (i = 0; i < sbcontext->num_predict_prefixes; i++) {
 					if (NULL != sbcontext->predict_prefixes[i]) {
-						if (0 == strncmp(filtered_path,
+						if (0 == strncmp(fpath,
 								 sbcontext->predict_prefixes[i],
 								 strlen(sbcontext->predict_prefixes[i]))) {
 							/* Is a known access violation, so deny access,
@@ -1285,10 +1296,6 @@ unlink_hack_end:
 		result = 0;
 	}
 
-	if (filtered_path)
-		free(filtered_path);
-	filtered_path = NULL;
-
 	errno = old_errno;
 
 	return result;
@@ -1301,6 +1308,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	struct stat log_stat;
 	char *log_path = NULL;
 	char *absolute_path = NULL;
+	char *resolved_path = NULL;
 	char *tmp_buffer = NULL;
 	int log_file = 0;
 	struct stat debug_log_stat;
@@ -1312,22 +1320,15 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	init_wrappers();
 
-#if 0
-	if ('/' == file[0]) {
-		absolute_path = malloc((strlen(file) + 1) * sizeof(char));
-		sprintf(absolute_path, "%s", file);
-	} else {
-		tmp_buffer = malloc(SB_PATH_MAX * sizeof(char));
-		if (NULL == tmp_buffer)
-			return 0;
-		egetcwd(tmp_buffer, SB_PATH_MAX - 1);
-		absolute_path = malloc((strlen(tmp_buffer) + strlen(file) + 2) * sizeof(char));
-		sprintf(absolute_path, "%s/%s", tmp_buffer, file);
-		free(tmp_buffer);
-	}
-#else
 	absolute_path = filter_path(file, 0);
-#endif
+	resolved_path = filter_path(file, 1);
+	if ((NULL == absolute_path) || (NULL == resolved_path)) {
+		if (NULL != absolute_path)
+			free(absolute_path);
+		if (NULL != resolved_path)
+			free(resolved_path);
+		return 0;
+	}
 
 	log_path = getenv("SANDBOX_LOG");
 	debug_log_env = getenv("SANDBOX_DEBUG");
@@ -1338,15 +1339,15 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	    ((NULL == debug_log_env) ||
 	     (NULL == debug_log_path) ||
 	     (0 != strncmp(absolute_path, debug_log_path, strlen(debug_log_path)))) &&
-	    (0 == check_access(sbcontext, func, absolute_path))) {
+	    (0 == check_access(sbcontext, func, absolute_path, resolved_path))) {
 		if (1 == sbcontext->show_access_violation) {
 			fprintf(stderr, "\e[31;01mACCESS DENIED\033[0m	%s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 
 			if (NULL != log_path) {
-				if (0 != strncmp(absolute_path, filter_path(absolute_path, 1), strlen(absolute_path))) {
+				if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
 					sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func, (int)(10-strlen(func)), "", 
-							absolute_path, filter_path(absolute_path, 1));
+							absolute_path, resolved_path);
 				} else {
 					sprintf(buffer, "%s:%*s%s\n", func, (int)(10 - strlen(func)), "", absolute_path);
 				}
@@ -1355,7 +1356,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				if ((0 == lstat(log_path, &log_stat)) &&
 				    (0 == S_ISREG(log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n", dpath);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath)) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
 					unsetenv("SANDBOX_LOG");
 					fprintf(stderr,	"\e[31;01mSECURITY BREACH\033[0m SANDBOX_LOG %s isn't allowed via SANDBOX_WRITE\n", dpath);
 				} else {
@@ -1380,7 +1381,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				    && (0 == S_ISREG(debug_log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n",
 						debug_log_path);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath)) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
 					unsetenv("SANDBOX_DEBUG");
 					unsetenv("SANDBOX_DEBUG_LOG");
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
@@ -1402,9 +1403,10 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 		}
 	}
 
-	if (absolute_path)
+	if (NULL != absolute_path)
 		free(absolute_path);
-	absolute_path = NULL;
+	if (NULL != resolved_path)
+		free(resolved_path);
 
 	errno = old_errno;
 
@@ -1439,7 +1441,7 @@ static int before_syscall(const char *func, const char *file)
 {
 	int old_errno = errno;
 	int result = 1;
-	static sbcontext_t sbcontext;
+//	static sbcontext_t sbcontext;
 
 	if (!strlen(file)) {
 		/* The file/directory does not exist */
@@ -1447,6 +1449,7 @@ static int before_syscall(const char *func, const char *file)
 		return 0;
 	}
 
+#if 0
 	init_context(&sbcontext);
 
 	init_env_entries(&(sbcontext.deny_prefixes),
@@ -1457,9 +1460,11 @@ static int before_syscall(const char *func, const char *file)
 			&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", 1);
 	init_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", 1);
+#endif
 
 	result = check_syscall(&sbcontext, func, file);
 
+#if 0
 	clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 	clean_env_entries(&(sbcontext.read_prefixes),
@@ -1468,6 +1473,7 @@ static int before_syscall(const char *func, const char *file)
 			&(sbcontext.num_write_prefixes));
 	clean_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes));
+#endif
 
 	errno = old_errno;
 
