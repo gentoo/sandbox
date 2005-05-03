@@ -4,7 +4,7 @@
 
   03 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Do not init the env entries with each call, as it creates too many calls to
-  lstat, etc.  Should speedup things a bit.
+  lstat, etc.  Should speedup things a bit, bug #91040.
 
   03 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Add /dev/pty to default write list.  Noticed by Morfic.
