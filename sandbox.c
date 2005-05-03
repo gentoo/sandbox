@@ -668,6 +668,7 @@ int main(int argc, char **argv)
 
 		setenv(ENV_SANDBOX_DIR, sandbox_dir, 1);
 		setenv(ENV_SANDBOX_LIB, sandbox_lib, 1);
+		setenv(ENV_SANDBOX_BASHRC, sandbox_rc, 1);
 		setenv("LD_PRELOAD", sandbox_lib, 1);
 
 		if (!getenv(ENV_SANDBOX_DENY))
