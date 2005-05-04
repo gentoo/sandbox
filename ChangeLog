@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  05 May 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, libctest.c:
+  We create libctest.c via configure, so no need to keep it around.  Do some
+  cleanup related to libctest.c and libctest during configure.
+
   04 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Add rename support of symlinks pointing to protected files/directories.
 

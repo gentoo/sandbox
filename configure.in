@@ -81,6 +81,7 @@ echo "int main(void) { return 0; }" > libctest.c
 $CC -Wall -o libctest libctest.c
 LIBC_PATH=`$CC $CFLAGS -Wl,-verbose -o libctest libctest.c 2>&1 | \
 	$AWK '/attempt to open/ { if (($4 ~ /libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}'`
+rm -f libctest.c
 if test "$LIBC_PATH"x = x ; then
 	AC_MSG_ERROR(Unable to determine LIBC PATH)
 fi
@@ -93,11 +94,11 @@ AC_MSG_CHECKING(libc version)
 dnl the sed script at the end here looks funny but it's ok ...
 dnl they're m4 escape sequences for left and right brackets
 LIBC_VERSION=`readelf -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
+rm -f libctest
 if test "$LIBC_VERSION"x = x ; then
 	AC_MSG_ERROR(Unable to determine LIBC VERSION)
 fi
 AC_MSG_RESULT($LIBC_VERSION)
 AC_DEFINE_UNQUOTED(LIBC_VERSION, "$LIBC_VERSION", [name of libc to hook into])
-rm -f libctest
 
 AC_OUTPUT([Makefile])
