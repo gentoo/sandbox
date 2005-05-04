@@ -138,6 +138,8 @@ typedef struct {
 
 static sbcontext_t sbcontext;
 
+static int sb_init = 0;
+
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
@@ -322,6 +324,8 @@ void __attribute__ ((constructor)) libsb_init(void)
 			&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", 1);
 	init_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", 1);
+
+	sb_init = 1;
 
 	errno = old_errno;
 }
@@ -1030,7 +1034,10 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, char *en
 	char *prefixes_env = getenv(env);
 
 	if (NULL == prefixes_env) {
-		fprintf(stderr, "Sandbox error : the %s environmental variable should be defined.\n", env);
+		/* Do not warn if this is in init stage, as we might get
+		 * issues due to LD_PRELOAD already set (bug #91431). */
+		if (1 == sb_init)
+			fprintf(stderr, "Sandbox error : the %s environmental variable should be defined.\n", env);
 	} else {
 		char *buffer = NULL;
 		int prefixes_env_length = strlen(prefixes_env);
@@ -1449,31 +1456,24 @@ static int before_syscall(const char *func, const char *file)
 		return 0;
 	}
 
-#if 0
-	init_context(&sbcontext);
-
-	init_env_entries(&(sbcontext.deny_prefixes),
-			&(sbcontext.num_deny_prefixes), "SANDBOX_DENY", 1);
-	init_env_entries(&(sbcontext.read_prefixes),
-			&(sbcontext.num_read_prefixes), "SANDBOX_READ", 1);
-	init_env_entries(&(sbcontext.write_prefixes),
-			&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", 1);
-	init_env_entries(&(sbcontext.predict_prefixes),
-			&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", 1);
-#endif
+	if (NULL == sbcontext.deny_prefixes)
+		init_env_entries(&(sbcontext.deny_prefixes),
+				&(sbcontext.num_deny_prefixes),
+				"SANDBOX_DENY", 1);
+	if (NULL == sbcontext.read_prefixes)
+		init_env_entries(&(sbcontext.read_prefixes),
+				&(sbcontext.num_read_prefixes),
+				"SANDBOX_READ", 1);
+	if (NULL == sbcontext.write_prefixes)
+		init_env_entries(&(sbcontext.write_prefixes),
+				&(sbcontext.num_write_prefixes),
+				"SANDBOX_WRITE", 1);
+	if (NULL == sbcontext.predict_prefixes)
+		init_env_entries(&(sbcontext.predict_prefixes),
+				&(sbcontext.num_predict_prefixes),
+				"SANDBOX_PREDICT", 1);
 
 	result = check_syscall(&sbcontext, func, file);
-
-#if 0
-	clean_env_entries(&(sbcontext.deny_prefixes),
-			&(sbcontext.num_deny_prefixes));
-	clean_env_entries(&(sbcontext.read_prefixes),
-			&(sbcontext.num_read_prefixes));
-	clean_env_entries(&(sbcontext.write_prefixes),
-			&(sbcontext.num_write_prefixes));
-	clean_env_entries(&(sbcontext.predict_prefixes),
-			&(sbcontext.num_predict_prefixes));
-#endif
 
 	errno = old_errno;
 

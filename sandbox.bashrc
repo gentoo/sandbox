@@ -3,6 +3,12 @@
 # Author : Geert Bevin <gbevin@uwyn.com>
 # $Header$
 source /etc/profile
-export LD_PRELOAD="$SANDBOX_LIB"
-alias make="make LD_PRELOAD=$SANDBOX_LIB"
-alias su="su -c '/bin/bash -rcfile $SANDBOX_BASHRC'"
+
+if [[ -n ${LD_PRELOAD} && ${LD_PRELOAD} != *$SANDBOX_LIB* ]] ; then
+	export LD_PRELOAD="${SANDBOX_LIB} ${LD_PRELOAD}"
+elif [[ -z ${LD_PRELOAD} ]] ; then
+	export LD_PRELOAD="${SANDBOX_LIB}"
+fi
+
+alias make="make LD_PRELOAD=${LD_PRELOAD}"
+alias su="su -c '/bin/bash -rcfile ${SANDBOX_BASHRC}'"
