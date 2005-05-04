@@ -1199,7 +1199,8 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 			 * symlink, and give access only if the resolved path
 			 * of the symlink's parent also have write access. */
 			if (((0 == strncmp(func, "unlink", 6)) ||
-			     (0 == strncmp(func, "lchown", 6))) &&
+			     (0 == strncmp(func, "lchown", 6)) ||
+			     (0 == strncmp(func, "rename", 6))) &&
 			    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
 				int hresult = -1;
 			

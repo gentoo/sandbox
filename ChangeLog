@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  04 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Add rename support of symlinks pointing to protected files/directories.
+
 * sandbox-1.2.5 (2005/05/04)
 
   04 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
