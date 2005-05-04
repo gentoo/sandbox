@@ -2,6 +2,8 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+* sandbox-1.2.5 (2005/05/04)
+
   04 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
   sandbox.bashrc:
   Do not reset already set LD_PRELOAD when starting sandbox.  If LD_PRELOAD is
