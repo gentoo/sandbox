@@ -137,7 +137,7 @@ typedef struct {
 } sbcontext_t;
 
 static sbcontext_t sbcontext;
-
+static char **cached_env_vars;
 static int sb_init = 0;
 
 void __attribute__ ((constructor)) libsb_init(void);
@@ -159,7 +159,7 @@ static int before_syscall_open_int(const char *, const char *, int);
 static int before_syscall_open_char(const char *, const char *, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
-static void init_env_entries(char ***, int *, char *, int);
+static void init_env_entries(char ***, int *, const char *, const char *, int);
 static int is_sandbox_on();
 static int is_sandbox_pid();
 
@@ -281,6 +281,14 @@ static void *get_dlsym(const char *symname, const char *symver)
 
 void __attribute__ ((destructor)) libsb_fini(void)
 {
+	int x;
+	if(NULL != cached_env_vars) {
+		for(x=0; x < 4; x++) {
+			if(NULL != cached_env_vars[x])
+				free(cached_env_vars[x]);
+		}
+		free(cached_env_vars);
+	}
 	clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 	clean_env_entries(&(sbcontext.read_prefixes),
@@ -314,18 +322,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 	/* Generate sandbox pids-file path */
 	sandbox_pids_file = get_sandbox_pids_file();
 
-	init_context(&sbcontext);
-
-	init_env_entries(&(sbcontext.deny_prefixes),
-			&(sbcontext.num_deny_prefixes), "SANDBOX_DENY", 1);
-	init_env_entries(&(sbcontext.read_prefixes),
-			&(sbcontext.num_read_prefixes), "SANDBOX_READ", 1);
-	init_env_entries(&(sbcontext.write_prefixes),
-			&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", 1);
-	init_env_entries(&(sbcontext.predict_prefixes),
-			&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", 1);
-
-	sb_init = 1;
+//	sb_init = 1;
 
 	errno = old_errno;
 }
@@ -1028,16 +1025,23 @@ static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 #define pfx_array	(*prefixes_array)
 #define pfx_item	((*prefixes_array)[(*prefixes_num)])
 
-static void init_env_entries(char ***prefixes_array, int *prefixes_num, char *env, int warn)
+static void init_env_entries(char ***prefixes_array, int *prefixes_num, const char *env, const char *prefixes_env, int warn)
 {
 	int old_errno = errno;
-	char *prefixes_env = getenv(env);
+//	char *prefixes_env = getenv(env);
 
 	if (NULL == prefixes_env) {
 		/* Do not warn if this is in init stage, as we might get
 		 * issues due to LD_PRELOAD already set (bug #91431). */
 		if (1 == sb_init)
 			fprintf(stderr, "Sandbox error : the %s environmental variable should be defined.\n", env);
+		if(pfx_array) {
+			int x;
+			for(x=0; x < pfx_num; x++) 
+				free(pfx_item);
+			free(pfx_array);
+		}
+		pfx_num = 0;
 	} else {
 		char *buffer = NULL;
 		int prefixes_env_length = strlen(prefixes_env);
@@ -1450,6 +1454,10 @@ static int before_syscall(const char *func, const char *file)
 	int old_errno = errno;
 	int result = 1;
 //	static sbcontext_t sbcontext;
+	char *deny = getenv("SANDBOX_DENY");
+	char *read = getenv("SANDBOX_READ");
+	char *write = getenv("SANDBOX_WRITE");
+	char *predict = getenv("SANDBOX_PREDICT");
 
 	if (!strlen(file)) {
 		/* The file/directory does not exist */
@@ -1457,22 +1465,85 @@ static int before_syscall(const char *func, const char *file)
 		return 0;
 	}
 
-	if (NULL == sbcontext.deny_prefixes)
-		init_env_entries(&(sbcontext.deny_prefixes),
-				&(sbcontext.num_deny_prefixes),
-				"SANDBOX_DENY", 1);
-	if (NULL == sbcontext.read_prefixes)
-		init_env_entries(&(sbcontext.read_prefixes),
-				&(sbcontext.num_read_prefixes),
-				"SANDBOX_READ", 1);
-	if (NULL == sbcontext.write_prefixes)
-		init_env_entries(&(sbcontext.write_prefixes),
-				&(sbcontext.num_write_prefixes),
-				"SANDBOX_WRITE", 1);
-	if (NULL == sbcontext.predict_prefixes)
-		init_env_entries(&(sbcontext.predict_prefixes),
-				&(sbcontext.num_predict_prefixes),
-				"SANDBOX_PREDICT", 1);
+	if(sb_init == 0) {
+		init_context(&sbcontext);
+		cached_env_vars = malloc(sizeof(char *)*4);
+		cached_env_vars[0] = cached_env_vars[1] = cached_env_vars[2] = cached_env_vars[3] = NULL;
+		sb_init=1;
+	}
+
+	if((deny == NULL && cached_env_vars[0] != deny) || cached_env_vars[0] == NULL ||
+		strcmp(cached_env_vars[0], deny) != 0) {
+
+		clean_env_entries(&(sbcontext.deny_prefixes),
+			&(sbcontext.num_deny_prefixes));
+
+		if(NULL != cached_env_vars[0])
+			free(cached_env_vars[0]);
+
+		if(NULL != deny) {
+			init_env_entries(&(sbcontext.deny_prefixes),
+				&(sbcontext.num_deny_prefixes), "SANDBOX_DENY", deny, 1);
+			cached_env_vars[0] = strdup(deny);
+		} else {
+			cached_env_vars[0] = NULL;
+		}
+	}
+
+	if((read == NULL && cached_env_vars[1] != read) || cached_env_vars[1] == NULL || 
+		strcmp(cached_env_vars[1], read) != 0) {
+
+		clean_env_entries(&(sbcontext.read_prefixes),
+			&(sbcontext.num_read_prefixes));
+
+		if(NULL != cached_env_vars[1])
+			free(cached_env_vars[1]);
+
+		if(NULL != read) {
+			init_env_entries(&(sbcontext.read_prefixes),
+				&(sbcontext.num_read_prefixes), "SANDBOX_READ", read, 1);
+			cached_env_vars[1] = strdup(read);
+		} else {
+			cached_env_vars[1] = NULL;
+		}
+	}
+
+	if((write == NULL && cached_env_vars[2] != write) || cached_env_vars[2] == NULL ||
+		strcmp(cached_env_vars[2], write) != 0) {
+
+		clean_env_entries(&(sbcontext.write_prefixes),
+			&(sbcontext.num_write_prefixes));
+
+		if(NULL != cached_env_vars[2])
+			free(cached_env_vars[2]);
+
+		if(NULL != write) {
+			init_env_entries(&(sbcontext.write_prefixes),
+				&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", write, 1);
+			cached_env_vars[2] = strdup(write);
+		} else {
+			cached_env_vars[2] = NULL;
+		}
+	}
+
+	if((predict == NULL && cached_env_vars[3] != predict) || cached_env_vars[3] == NULL ||
+		strcmp(cached_env_vars[3], predict) != 0) {
+
+		clean_env_entries(&(sbcontext.predict_prefixes),
+			&(sbcontext.num_predict_prefixes));
+
+		if(NULL != cached_env_vars[3])
+			free(cached_env_vars[3]);
+
+		if(NULL != predict) {
+			init_env_entries(&(sbcontext.predict_prefixes),
+				&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", predict, 1);
+			cached_env_vars[3] = strdup(predict);
+		} else {
+			cached_env_vars[3] = NULL;
+		}
+
+	}
 
 	result = check_syscall(&sbcontext, func, file);
 

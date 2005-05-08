@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  08 May 2005; Brian Harring <ferringb@gentoo.org> libsandbox.c:
+  rewrote the sbcontext caching code so it accounts for env changes since lib
+  initialization.
+
   05 May 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, libctest.c:
   We create libctest.c via configure, so no need to keep it around.  Do some
   cleanup related to libctest.c and libctest during configure.
