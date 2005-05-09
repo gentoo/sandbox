@@ -676,7 +676,7 @@ int main(int argc, char **argv)
 				perror(">>> Out of memory (LD_PRELOAD)");
 				exit(1);
 			}
-			strncpy(tmp_string, sandbox_lib, sizeof(sandbox_lib));
+			strncpy(tmp_string, sandbox_lib, strlen(sandbox_lib));
 			strncat(tmp_string, " ", 1);
 			strncat(tmp_string, getenv("LD_PRELOAD"), strlen(getenv("LD_PRELOAD")));
 			setenv("LD_PRELOAD", tmp_string, 1);

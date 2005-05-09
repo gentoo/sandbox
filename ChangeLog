@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  09 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Fix typo (sizeof -> strlen).
+
   08 May 2005; Brian Harring <ferringb@gentoo.org> libsandbox.c:
   rewrote the sbcontext caching code so it accounts for env changes since lib
   initialization.
