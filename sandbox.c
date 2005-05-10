@@ -669,7 +669,11 @@ int main(int argc, char **argv)
 		setenv(ENV_SANDBOX_DIR, sandbox_dir, 1);
 		setenv(ENV_SANDBOX_LIB, sandbox_lib, 1);
 		setenv(ENV_SANDBOX_BASHRC, sandbox_rc, 1);
-		if (NULL != getenv("LD_PRELOAD")) {
+		if ((NULL != getenv("LD_PRELOAD")) &&
+		    /* FIXME: for now, do not use current LD_PRELOAD if
+		     * it contains libtsocks, as it breaks sandbox, bug #91541.
+		     */
+		    (NULL == strstr(getenv("LD_PRELOAD"), "libtsocks"))) {
 			tmp_string = malloc(strlen(getenv("LD_PRELOAD")) +
 					strlen(sandbox_lib) + 2);
 			if (NULL == tmp_string) {
