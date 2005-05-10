@@ -305,7 +305,7 @@ SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...)
 	}
 	if (NULL != group) {
 		group_struct = getgrnam(group);
-		if (NULL == group) {
+		if (NULL == group_struct) {
 			snprintf(error, sizeof(error), ">>> Could not get grp number: %s", group);
 			perror(error);
 		} else {
