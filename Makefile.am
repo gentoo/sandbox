@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS   = dist-bzip2 no-dist-gzip
-EXTRA_DIST         = sandbox.bashrc canonicalize.c libctest.c symbols.in
+EXTRA_DIST         = sandbox.bashrc canonicalize.c symbols.in
 CLEANFILES         = symbols.h
 
 AM_CPPFLAGS        = -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
