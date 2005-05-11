@@ -2,6 +2,11 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Rewrite environment stuff to only be set when execve'ing the child process
+  to try and avoid issues like bug #91541 that causes sandbox to crash if
+  we set LD_PRELOAD sandbox side already.
+
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Move print_sandbox_log() up to make things neater.
 

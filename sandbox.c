@@ -33,6 +33,8 @@
 #include <fcntl.h>
 #include "sandbox.h"
 
+#define SB_BUF_LEN 2048
+
 int preload_adaptable = 1;
 int cleaned_up = 0;
 int print_debug = 0;
@@ -234,67 +236,152 @@ void stop(int signum)
 	}
 }
 
-void setenv_sandbox_write(char *home_dir, char *portage_tmp_dir, char *var_tmp_dir, char *tmp_dir)
+void get_sandbox_write_envvar(char *buf, char *home_dir, char *portage_tmp_dir, char *var_tmp_dir, char *tmp_dir)
 {
-	char buf[1024];
-
 	/* bzero out entire buffer then append trailing 0 */
-	memset(buf, 0, sizeof(buf));
+	memset(buf, 0, SB_BUF_LEN + 1);
 
-	if (!getenv(ENV_SANDBOX_WRITE)) {
-		/* these could go into make.globals later on */
-		snprintf(buf, sizeof(buf),
-			 "%s:%s/.gconfd/lock:%s/.bash_history:",
-			 "/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"
-			 "/dev/vc/:/dev/pty:/dev/tty:/tmp/:"
-			 "/dev/shm/ngpt:/var/log/scrollkeeper.log:"
-			 "/usr/tmp/conftest:/usr/lib/conftest:"
-			 "/usr/lib32/conftest:/usr/lib64/conftest:"
-			 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
-			 home_dir, home_dir);
-
-		if (NULL == portage_tmp_dir) {
-			strncat(buf, tmp_dir, sizeof(buf));
-			strncat(buf, ":", sizeof(buf));
-			strncat(buf, var_tmp_dir, sizeof(buf));
-			strncat(buf, ":/tmp/:/var/tmp/", sizeof(buf));
-		} else {
-			strncat(buf, portage_tmp_dir, sizeof(buf));
-			strncat(buf, ":", sizeof(buf));
-			strncat(buf, tmp_dir, sizeof(buf));
-			strncat(buf, ":", sizeof(buf));
-			strncat(buf, var_tmp_dir, sizeof(buf));
-			strncat(buf, ":/tmp/:/var/tmp/", sizeof(buf));
-		}
-		buf[sizeof(buf) - 1] = '\0';
-		setenv(ENV_SANDBOX_WRITE, buf, 1);
-	}
+	/* these could go into make.globals later on */
+	snprintf(buf, SB_BUF_LEN,
+		 "%s:%s/.gconfd/lock:%s/.bash_history:%s:%s:%s:%s",
+		 "/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"
+		 "/dev/vc/:/dev/pty:/dev/tty:"
+		 "/dev/shm/ngpt:/var/log/scrollkeeper.log:"
+		 "/usr/tmp/conftest:/usr/lib/conftest:"
+		 "/usr/lib32/conftest:/usr/lib64/conftest:"
+		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
+		 home_dir, home_dir,
+		 (NULL != portage_tmp_dir) ? portage_tmp_dir : tmp_dir,
+		 tmp_dir, var_tmp_dir, "/tmp/:/var/tmp/");
 }
 
-void setenv_sandbox_predict(char *home_dir)
+void get_sandbox_predict_envvar(char *buf, char *home_dir)
 {
-	char buf[1024];
+	/* bzero out entire buffer then append trailing 0 */
+	memset(buf, 0, SB_BUF_LEN + 1);
 
-	memset(buf, 0, sizeof(buf));
-
-	if (!getenv(ENV_SANDBOX_PREDICT)) {
-		/* these should go into make.globals later on */
-		snprintf(buf, sizeof(buf), "%s/.:"
-			 "/usr/lib/python2.0/:"
-			 "/usr/lib/python2.1/:"
-			 "/usr/lib/python2.2/:"
-			 "/usr/lib/python2.3/:"
-			 "/usr/lib/python2.4/:"
-			 "/usr/lib/python2.5/:"
-			 "/usr/lib/python3.0/:",
-			 home_dir);
-
-		buf[sizeof(buf) - 1] = '\0';
-		setenv(ENV_SANDBOX_PREDICT, buf, 1);
-	}
+	/* these should go into make.globals later on */
+	snprintf(buf, SB_BUF_LEN, "%s/.:"
+		 "/usr/lib/python2.0/:"
+		 "/usr/lib/python2.1/:"
+		 "/usr/lib/python2.2/:"
+		 "/usr/lib/python2.3/:"
+		 "/usr/lib/python2.4/:"
+		 "/usr/lib/python2.5/:"
+		 "/usr/lib/python3.0/:",
+		 home_dir);
 }
 
-int spawn_shell(char *argv_bash[])
+int sandbox_setenv(char **env, char *name, char *val) {
+	char **tmp_env = env;
+	char *tmp_string = NULL;
+
+	while (NULL != *tmp_env)
+		tmp_env++;
+
+	/* strlen(name) + strlen(val) + '=' + '\0' */
+	tmp_string = calloc(strlen(name) + strlen(val) + 2, sizeof(char *));
+	if (NULL == tmp_string) {
+		perror(">>> out of memory (sandbox_setenv)");
+		exit(1);
+	}
+
+	snprintf(tmp_string, strlen(name) + strlen(val) + 2, "%s=%s",
+			name, val);
+	*tmp_env = tmp_string;
+
+	return 0;
+}
+
+/* We setup the environment child side only to prevent issues with
+ * setting LD_PRELOAD parent side */
+char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox_rc, char *sandbox_log,
+		char *sandbox_debug_log, char *sandbox_write_envvar, char *sandbox_predict_envvar)
+{
+	int env_size = 0;
+	
+	char **new_environ;
+	char **env_ptr = environ;
+	char *ld_preload_envvar = NULL;
+
+	/* Unset these, as its easier than replacing when setting up our
+	 * new environment below */
+	unsetenv(ENV_SANDBOX_DIR);
+	unsetenv(ENV_SANDBOX_LIB);
+	unsetenv(ENV_SANDBOX_BASHRC);
+	unsetenv(ENV_SANDBOX_LOG);
+	unsetenv(ENV_SANDBOX_DEBUG_LOG);
+	
+	if (NULL != getenv("LD_PRELOAD")) {
+		ld_preload_envvar = malloc(strlen(getenv("LD_PRELOAD")) +
+				strlen(sandbox_lib) + 2);
+		if (NULL == ld_preload_envvar)
+			return NULL;
+		strncpy(ld_preload_envvar, sandbox_lib, strlen(sandbox_lib));
+		strncat(ld_preload_envvar, " ", 1);
+		strncat(ld_preload_envvar, getenv("LD_PRELOAD"),
+				strlen(getenv("LD_PRELOAD")));
+	} else {
+		ld_preload_envvar = strndup(sandbox_lib, strlen(sandbox_lib));
+		if (NULL == ld_preload_envvar)
+			return NULL;
+	}
+	unsetenv("LD_PRELOAD");
+
+	while (NULL != *env_ptr) {
+		env_size++;
+		env_ptr++;
+	}
+
+	new_environ = calloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
+	if (NULL == new_environ)
+		return NULL;
+
+	/* First add our new variables to the beginning - this is due to some
+	 * weirdness that I cannot remember */
+	sandbox_setenv(new_environ, ENV_SANDBOX_DIR, sandbox_dir);
+	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_lib);
+	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_rc);
+	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_log);
+	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log);
+	sandbox_setenv(new_environ, "LD_PRELOAD", ld_preload_envvar);
+
+	if (!getenv(ENV_SANDBOX_DENY))
+		sandbox_setenv(new_environ, ENV_SANDBOX_DENY, LD_PRELOAD_FILE);
+
+	if (!getenv(ENV_SANDBOX_READ))
+		sandbox_setenv(new_environ, ENV_SANDBOX_READ, "/");
+
+	if (!getenv(ENV_SANDBOX_WRITE))
+		sandbox_setenv(new_environ, ENV_SANDBOX_WRITE, sandbox_write_envvar);
+
+	if (!getenv(ENV_SANDBOX_PREDICT))
+		sandbox_setenv(new_environ, ENV_SANDBOX_PREDICT, sandbox_predict_envvar);
+
+	/* This one should NEVER be set in ebuilds, as it is the one
+	 * private thing libsandbox.so use to test if the sandbox
+	 * should be active for this pid, or not.
+	 *
+	 * azarah (3 Aug 2002)
+	 */
+
+	sandbox_setenv(new_environ, "SANDBOX_ACTIVE", "armedandready");
+
+	env_size = 0;
+	while (NULL != new_environ[env_size])
+		env_size++;
+
+	/* Now add the rest */
+	env_ptr = environ;
+	while (NULL != *env_ptr) {
+		new_environ[env_size + (env_ptr - environ)] = *env_ptr;
+		env_ptr++;
+	}
+
+	return new_environ;
+}
+
+int spawn_shell(char *argv_bash[], char *env[])
 {
 	int pid;
 	int status = 0;
@@ -304,7 +391,7 @@ int spawn_shell(char *argv_bash[])
 
 	/* Child's process */
 	if (0 == pid) {
-		execv(argv_bash[0], argv_bash);
+		execve(argv_bash[0], argv_bash, env);
 		return 0;
 	} else if (pid < 0) {
 		return 0;
@@ -335,6 +422,9 @@ int main(int argc, char **argv)
 	char sandbox_debug_log[255];
 	char sandbox_dir[255];
 	char sandbox_lib[255];
+	char sandbox_write_envvar[SB_BUF_LEN + 1];
+	char sandbox_predict_envvar[SB_BUF_LEN + 1];
+	char **sandbox_environ;
 	char *sandbox_pids_file;
 	char sandbox_rc[255];
 	char pid_string[255];
@@ -413,12 +503,9 @@ int main(int argc, char **argv)
 			free(tmp_string);
 		tmp_string = NULL;
 
-		setenv(ENV_SANDBOX_LOG, sandbox_log, 1);
-
 		sprintf(pid_string, "%d", getpid());
 		snprintf(sandbox_debug_log, sizeof(sandbox_debug_log), "%s%s%s",
 			 DEBUG_LOG_FILE_PREFIX, pid_string, LOG_FILE_EXT);
-		setenv(ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log, 1);
 
 		home_dir = getenv("HOME");
 		if (!home_dir) {
@@ -441,39 +528,20 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 
-		setenv(ENV_SANDBOX_DIR, sandbox_dir, 1);
-		setenv(ENV_SANDBOX_LIB, sandbox_lib, 1);
-		setenv(ENV_SANDBOX_BASHRC, sandbox_rc, 1);
-		if ((NULL != getenv("LD_PRELOAD")) &&
-		    /* FIXME: for now, do not use current LD_PRELOAD if
-		     * it contains libtsocks, as it breaks sandbox, bug #91541.
-		     */
-		    (NULL == strstr(getenv("LD_PRELOAD"), "libtsocks"))) {
-			tmp_string = malloc(strlen(getenv("LD_PRELOAD")) +
-					strlen(sandbox_lib) + 2);
-			if (NULL == tmp_string) {
-				perror(">>> Out of memory (LD_PRELOAD)");
-				exit(1);
-			}
-			strncpy(tmp_string, sandbox_lib, strlen(sandbox_lib));
-			strncat(tmp_string, " ", 1);
-			strncat(tmp_string, getenv("LD_PRELOAD"), strlen(getenv("LD_PRELOAD")));
-			setenv("LD_PRELOAD", tmp_string, 1);
-			free(tmp_string);
-		} else {
-			setenv("LD_PRELOAD", sandbox_lib, 1);
+		/* Setup the environment stuff */
+		get_sandbox_write_envvar(sandbox_write_envvar, home_dir,
+				portage_tmp_dir, var_tmp_dir, tmp_dir);
+		get_sandbox_predict_envvar(sandbox_predict_envvar, home_dir);
+		sandbox_environ = sandbox_setup_environ(sandbox_dir, sandbox_lib,
+				sandbox_rc, sandbox_log, sandbox_debug_log,
+				sandbox_write_envvar, sandbox_predict_envvar);
+		if (NULL == sandbox_environ) {
+			perror(">>> out of memory (environ)");
+			exit(1);
 		}
 
-		if (!getenv(ENV_SANDBOX_DENY))
-			setenv(ENV_SANDBOX_DENY, LD_PRELOAD_FILE, 1);
-
-		if (!getenv(ENV_SANDBOX_READ))
-			setenv(ENV_SANDBOX_READ, "/", 1);
-
-		/* Set up Sandbox Write path */
-		setenv_sandbox_write(home_dir, portage_tmp_dir, var_tmp_dir, tmp_dir);
-		setenv_sandbox_predict(home_dir);
-
+		/* This one should not be child only, as we check above to see
+		 * if we are already running (check sandbox_setup_environ) */
 		setenv(ENV_SANDBOX_ON, "1", 0);
 
 		/* if the portage temp dir was present, cd into it */
@@ -500,7 +568,8 @@ int main(int argc, char **argv)
 				else
 					len = strlen(argv_bash[4]);
 
-				argv_bash[4] = (char *)realloc(argv_bash[4], (len + strlen(argv[i]) + 2) * sizeof(char));
+				argv_bash[4] = (char *)realloc(argv_bash[4],
+						(len + strlen(argv[i]) + 2) * sizeof(char));
 
 				if (0 == len)
 					argv_bash[4][0] = 0;
@@ -516,15 +585,6 @@ int main(int argc, char **argv)
 		signal(SIGINT, &stop);
 		signal(SIGQUIT, &stop);
 		signal(SIGTERM, &stop);
-
-		/* this one should NEVER be set in ebuilds, as it is the one
-		 * private thing libsandbox.so use to test if the sandbox
-		 * should be active for this pid, or not.
-		 *
-		 * azarah (3 Aug 2002)
-		 */
-
-		setenv("SANDBOX_ACTIVE", "armedandready", 1);
 
 		/* Load our PID into PIDs file */
 		success = 1;
@@ -583,7 +643,7 @@ int main(int argc, char **argv)
 			printf("Shell being started in forked process.\n");
 
 		/* Start Bash */
-		if (!spawn_shell(argv_bash)) {
+		if (!spawn_shell(argv_bash, sandbox_environ)) {
 			if (print_debug)
 				fprintf(stderr, ">>> shell process failed to spawn\n");
 			success = 0;
