@@ -93,63 +93,6 @@ int load_active_pids(int fd, int **pids)
 	return num_pids;
 }
 
-/* Read ld.so.preload file, and loads dirs into an array.  Return number of entries in array */
-int load_preload_libs(int fd, char ***preloads)
-{
-	char *data = NULL;
-	char *ptr = NULL, *ptr2 = NULL;
-	int num_entries = 0;
-	long len;
-
-	preloads[0] = NULL;
-
-	len = file_length(fd);
-
-	/* Allocate and zero datablock to read pids file */
-	data = (char *)malloc((len + 1) * sizeof(char));
-	memset(data, 0, len + 1);
-
-	/* Start at beginning of file */
-	lseek(fd, 0L, SEEK_SET);
-
-	/* read entire file into a buffer */
-	read(fd, data, len);
-
-	ptr = data;
-
-	/* Loop and read all pids */
-	while (1) {
-		/* Find new line */
-		ptr2 = strchr(ptr, '\n');
-
-		/* Clear the \n. And  ptr  should have a null-terminated decimal string
-		 * Don't break from the loop though because the last line may not
-		 * terminated with a \n
-		 */
-		if (NULL != ptr2)
-			ptr2[0] = 0;
-
-		/* If listing does not match our libname, add it to the array */
-		if ((strlen(ptr)) && (NULL == strstr(ptr, LIB_NAME))) {
-			preloads[0] = (char **)realloc(preloads[0], (num_entries + 1) * sizeof(char **));
-			preloads[0][num_entries] = strdup(ptr);
-			num_entries++;
-		}
-
-		if (NULL == ptr2)
-			break;	/* No more PIDs */
-
-		/* Put ptr past the NULL we just wrote */
-		ptr = ptr2 + 1;
-	}
-
-	if (data)
-		free(data);
-	data = NULL;
-
-	return num_entries;
-}
-
 void cleanup()
 {
 	int i = 0;

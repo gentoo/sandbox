@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Remove load_preload_libs(), as its not used anymore.
+
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:
   Remove NO_FORK stuff, as its not used, and 'strace -f' works just fine.
 
