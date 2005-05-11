@@ -158,11 +158,6 @@ void cleanup()
 	int *pids_array = NULL;
 	char pid_string[255];
 	char *sandbox_pids_file;
-#ifdef USE_LD_SO_PRELOAD
-	int preload_file = -1, num_of_preloads = 0;
-	char preload_entry[255];
-	char **preload_array = NULL;
-#endif
 
 	/* Generate sandbox pids-file path */
 	sandbox_pids_file = get_sandbox_pids_file();
@@ -196,50 +191,6 @@ void cleanup()
 		num_of_pids = load_active_pids(pids_file, &pids_array);
 		//printf("pids: %d\r\n", num_of_pids);
 
-#ifdef USE_LD_SO_PRELOAD
-		/* clean the /etc/ld.so.preload file if no other sandbox
-		 * processes are running anymore */
-		if (1 == num_of_pids) {
-			success = 1;
-
-			if (print_debug)
-				printf("Cleaning up /etc/ld.so.preload.\n");
-
-			preload_file = file_open("/etc/ld.so.preload", "r+", 1, 0644);
-			if (-1 != preload_file) {
-				/* Load all the preload libraries into an array */
-				num_of_preloads = load_preload_libs(preload_file, &preload_array);
-				//printf("num preloads: %d\r\n", num_of_preloads);
-				/* Clear file */
-				file_truncate(preload_file);
-
-				/* store the other preload libraries back into the /etc/ld.so.preload file */
-				if (num_of_preloads > 0) {
-					for (i = 0; i < num_of_preloads; i++) {
-						sprintf(preload_entry, "%s\n", preload_array[i]);
-						if (write(preload_file, preload_entry, strlen(preload_entry)) != strlen(preload_entry)) {
-							perror(">>> /etc/ld.so.preload file write");
-							success = 0;
-							break;
-						}
-					}
-				}
-
-				/* Free memory used to store preload array */
-				for (i = 0; i < num_of_preloads; i++) {
-					if (preload_array[i])
-						free(preload_array[i]);
-					preload_array[i] = NULL;
-				}
-				if (preload_array)
-					free(preload_array);
-				preload_array = NULL;
-
-				file_close(preload_file);
-				preload_file = -1;
-			}
-		}
-#endif
 
 		file_truncate(pids_file);
 
@@ -464,9 +415,6 @@ int spawn_shell(char *argv_bash[])
 int main(int argc, char **argv)
 {
 	int ret = 0, i = 0, success = 1;
-#ifdef USE_LD_SO_PRELOAD
-	int preload_file = -1;
-#endif
 	int sandbox_log_presence = 0;
 	int sandbox_log_file = -1;
 	int pids_file = -1;
@@ -491,10 +439,6 @@ int main(int argc, char **argv)
 	char *run_str = "-c";
 	char *home_dir = NULL;
 	char *tmp_string = NULL;
-#ifdef USE_LD_SO_PRELOAD
-	char **preload_array = NULL;
-	int num_of_preloads = 0;
-#endif
 
 	/* Only print info if called with no arguments .... */
 	if (argc < 2)
@@ -553,79 +497,6 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n", sandbox_rc);
 			return -1;
 		}
-#ifdef USE_LD_SO_PRELOAD
-		/* ensure that the /etc/ld.so.preload file contains an entry for the sandbox lib */
-		if (print_debug)
-			printf("Setting up the ld.so.preload file.\n");
-
-		/* check if the /etc/ld.so.preload is a regular file */
-		if (file_exist("/etc/ld.so.preload", 1) < 0) {
-			fprintf(stderr, ">>> /etc/ld.so.preload file is not a regular file\n");
-			exit(1);
-		}
-
-		if (getuid() == 0) {
-			/* Our r+ also will create the file if it doesn't exist */
-			preload_file = file_open("/etc/ld.so.preload", "r+", 1, 0644);
-			if (-1 == preload_file) {
-				preload_adaptable = 0;
-/*	exit(1);*/
-			}
-		} else {
-			/* Avoid permissions warnings if we're not root */
-			preload_adaptable = 0;
-		}
-
-		/* Only update /etc/ld.so.preload if we can write to it ... */
-		if (1 == preload_adaptable) {
-			/* Load entries of preload table */
-			num_of_preloads = load_preload_libs(preload_file, &preload_array);
-
-			/* Zero out our ld.so.preload file */
-			file_truncate(preload_file);
-
-			/* Write contents of preload file */
-			for (i = 0; i < num_of_preloads + 1; i++) {
-				/* First entry should be our sandbox library */
-				if (0 == i) {
-					if (write(preload_file, sandbox_lib, strlen(sandbox_lib)) != strlen(sandbox_lib)) {
-						perror(">>> /etc/ld.so.preload file write");
-						success = 0;
-						break;
-					}
-				} else {
-					/* Output all other preload entries */
-					if (write(preload_file, preload_array[i - 1],
-						  strlen(preload_array[i - 1])) != strlen(preload_array[i - 1])) {
-						perror(">>> /etc/ld.so.preload file write");
-						success = 0;
-						break;
-					}
-				}
-				/* Don't forget the return character after each line! */
-				if (1 != write(preload_file, "\n", 1)) {
-					perror(">>> /etc/ld.so.preload file write");
-					success = 0;
-					break;
-				}
-			}
-
-			for (i = 0; i < num_of_preloads; i++) {
-				if (preload_array[i])
-					free(preload_array[i]);
-				preload_array[i] = NULL;
-			}
-			if (preload_array)
-				free(preload_array);
-			num_of_preloads = 0;
-			preload_array = NULL;
-		}
-
-		/* That's all we needed to do with the preload file */
-		if (0 < preload_file)
-			file_close(preload_file);
-		preload_file = -1;
-#endif
 
 		/* set up the required environment variables */
 		if (print_debug)

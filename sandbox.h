@@ -19,9 +19,6 @@
 /* Uncomment below to use system() to execute the shell rather than execv */
 /* #define USE_SYSTEM_SHELL */
 
-/* Uncomment below to use /etc/ld.so.preload (could be very intrusive!!) */
-/* #define USE_LD_SO_PRELOAD */
-
 /* Uncommend to not have the protected shell forked, just run in parent process */
 /* ONLY FOR DEBUGGING PURPOSES!! (strace needs it like that) */
 /* #define NO_FORK */

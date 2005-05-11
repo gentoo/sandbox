@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:
+  Remove ld.so.preload crap - we are not going to use it again.
+
   10 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox_futils.c:
   Fix typo in code that checks if we got valid group information, causing a
   segmentation fault, bug #91637.
