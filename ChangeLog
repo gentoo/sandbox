@@ -3,6 +3,9 @@
 # $Header$
 
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:
+  Remove NO_FORK stuff, as its not used, and 'strace -f' works just fine.
+
+  11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:
   Remove USE_SYSTEM_SHELL stuff, as it is not secure, and not in use.
 
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:

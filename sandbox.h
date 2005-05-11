@@ -16,10 +16,6 @@
 /* Uncomment below to use flock instead of fcntl (POSIX way) to lock/unlock files */
 /* #define USE_FLOCK */
 
-/* Uncommend to not have the protected shell forked, just run in parent process */
-/* ONLY FOR DEBUGGING PURPOSES!! (strace needs it like that) */
-/* #define NO_FORK */
-
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
