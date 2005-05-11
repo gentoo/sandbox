@@ -39,8 +39,7 @@ SB_STATIC char *egetcwd(char *, size_t);
 
 SB_STATIC char *get_sandbox_path(char *argv0)
 {
-	char path[255];
-	char *cwd = NULL;
+	char path[SB_PATH_MAX];
 
 	memset(path, 0, sizeof(path));
 	/* ARGV[0] specifies full path */
@@ -49,11 +48,10 @@ SB_STATIC char *get_sandbox_path(char *argv0)
 
 		/* ARGV[0] specifies relative path */
 	} else {
-		egetcwd(cwd, sizeof(path) - 2);
-		snprintf(path, sizeof(path), "%s/%s", cwd, argv0);
-		if (cwd)
-			free(cwd);
-		cwd = NULL;
+		if (-1 != readlink("/proc/self/exe", path, sizeof(path)))
+			path[sizeof(path) - 1] = '\0';
+		else
+			path[0] = '\0';
 	}
 
 	/* Return just directory */
@@ -62,7 +60,7 @@ SB_STATIC char *get_sandbox_path(char *argv0)
 
 SB_STATIC char *get_sandbox_lib(char *sb_path)
 {
-	char path[255];
+	char path[SB_PATH_MAX];
 
 #ifdef SB_HAVE_64BIT_ARCH
 	snprintf(path, sizeof(path), "%s", LIB_NAME);
@@ -85,7 +83,7 @@ SB_STATIC char *get_sandbox_pids_file(void)
 
 SB_STATIC char *get_sandbox_rc(char *sb_path)
 {
-	char path[255];
+	char path[SB_PATH_MAX];
 
 	snprintf(path, sizeof(path), "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
 	if (file_exist(path, 0) <= 0) {
@@ -96,7 +94,7 @@ SB_STATIC char *get_sandbox_rc(char *sb_path)
 
 SB_STATIC char *get_sandbox_log()
 {
-	char path[255];
+	char path[SB_PATH_MAX];
 	char *sandbox_log_env = NULL;
 
 	/* THIS CHUNK BREAK THINGS BY DOING THIS:
