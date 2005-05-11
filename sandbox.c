@@ -353,41 +353,6 @@ int print_sandbox_log(char *sandbox_log)
 
 int spawn_shell(char *argv_bash[])
 {
-#ifdef USE_SYSTEM_SHELL
-	int i = 0;
-	char *sh = NULL;
-	int first = 1;
-	int ret;
-	long len = 0;
-
-	while (1) {
-		if (NULL == argv_bash[i])
-			break;
-		if (NULL != sh)
-			len = strlen(sh);
-		sh = (char *)realloc(sh, len + strlen(argv_bash[i]) + 5);
-		if (first) {
-			sh[0] = 0;
-			first = 0;
-		}
-		strcat(sh, "\"");
-		strcat(sh, argv_bash[i]);
-		strcat(sh, "\" ");
-
-		//printf("%s\n", argv_bash[i]);
-		i++;
-	}
-	printf("%s\n", sh);
-	ret = system(sh);
-	if (sh)
-		free(sh);
-	sh = NULL;
-
-	if (-1 == ret)
-		return 0;
-	return 1;
-
-#else
 # ifndef NO_FORK
 	int pid;
 	int status = 0;
