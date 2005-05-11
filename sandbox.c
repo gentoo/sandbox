@@ -353,7 +353,7 @@ int print_sandbox_log(char *sandbox_log)
 
 int spawn_shell(char *argv_bash[])
 {
-# ifndef NO_FORK
+#ifndef NO_FORK
 	int pid;
 	int status = 0;
 	int ret = 0;
@@ -362,9 +362,9 @@ int spawn_shell(char *argv_bash[])
 
 	/* Child's process */
 	if (0 == pid) {
-# endif
+#endif
 		execv(argv_bash[0], argv_bash);
-# ifndef NO_FORK
+#ifndef NO_FORK
 		return 0;
 	} else if (pid < 0) {
 		return 0;
@@ -372,9 +372,8 @@ int spawn_shell(char *argv_bash[])
 	ret = waitpid(pid, &status, 0);
 	if ((-1 == ret) || (status > 0))
 		return 0;
-# endif
-	return 1;
 #endif
+	return 1;
 }
 
 int main(int argc, char **argv)
