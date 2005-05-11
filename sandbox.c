@@ -35,7 +35,6 @@
 
 #define SB_BUF_LEN 2048
 
-int preload_adaptable = 1;
 int cleaned_up = 0;
 int print_debug = 0;
 int stop_called = 0;
@@ -108,8 +107,8 @@ void cleanup()
 	sandbox_pids_file = get_sandbox_pids_file();
 
 	/* Remove this sandbox's bash pid from the global pids
-	 * file if it has rights to adapt the ld.so.preload file */
-	if ((1 == preload_adaptable) && (0 == cleaned_up)) {
+	 * file if we have not already done so */
+	if (0 == cleaned_up) {
 		cleaned_up = 1;
 		success = 1;
 

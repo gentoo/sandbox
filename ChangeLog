@@ -3,6 +3,9 @@
 # $Header$
 
   12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Remove global preload_adaptable as it is no longer used.
+
+  12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Rewrite environment stuff to only be set when execve'ing the child process
   to try and avoid issues like bug #91541 that causes sandbox to crash if
   we set LD_PRELOAD sandbox side already.
