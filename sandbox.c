@@ -172,6 +172,57 @@ void cleanup()
 		return;
 }
 
+int print_sandbox_log(char *sandbox_log)
+{
+	int sandbox_log_file = -1;
+	char *beep_count_env = NULL;
+	int i, color, beep_count = 0;
+	long len = 0;
+	char *buffer = NULL;
+
+	sandbox_log_file = file_open(sandbox_log, "r", 1, 0664, "portage");
+	if (-1 == sandbox_log_file)
+		return 0;
+
+	len = file_length(sandbox_log_file);
+	buffer = (char *)malloc((len + 1) * sizeof(char));
+	memset(buffer, 0, len + 1);
+	read(sandbox_log_file, buffer, len);
+	file_close(sandbox_log_file);
+
+	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
+
+	if (color)
+		printf("\e[31;01m");
+	printf("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------");
+	if (color)
+		printf("\033[0m");
+	if (color)
+		printf("\e[31;01m");
+	printf("\nLOG FILE = \"%s\"", sandbox_log);
+	if (color)
+		printf("\033[0m");
+	printf("\n\n");
+	printf("%s", buffer);
+	if (buffer)
+		free(buffer);
+	buffer = NULL;
+	printf("\e[31;01m--------------------------------------------------------------------------------\033[0m\n");
+
+	beep_count_env = getenv(ENV_SANDBOX_BEEP);
+	if (beep_count_env)
+		beep_count = atoi(beep_count_env);
+	else
+		beep_count = DEFAULT_BEEP_COUNT;
+
+	for (i = 0; i < beep_count; i++) {
+		fputc('\a', stderr);
+		if (i < beep_count - 1)
+			sleep(1);
+	}
+	return 1;
+}
+
 void stop(int signum)
 {
 	if (stop_called == 0) {
@@ -241,57 +292,6 @@ void setenv_sandbox_predict(char *home_dir)
 		buf[sizeof(buf) - 1] = '\0';
 		setenv(ENV_SANDBOX_PREDICT, buf, 1);
 	}
-}
-
-int print_sandbox_log(char *sandbox_log)
-{
-	int sandbox_log_file = -1;
-	char *beep_count_env = NULL;
-	int i, color, beep_count = 0;
-	long len = 0;
-	char *buffer = NULL;
-
-	sandbox_log_file = file_open(sandbox_log, "r", 1, 0664, "portage");
-	if (-1 == sandbox_log_file)
-		return 0;
-
-	len = file_length(sandbox_log_file);
-	buffer = (char *)malloc((len + 1) * sizeof(char));
-	memset(buffer, 0, len + 1);
-	read(sandbox_log_file, buffer, len);
-	file_close(sandbox_log_file);
-
-	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
-
-	if (color)
-		printf("\e[31;01m");
-	printf("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------");
-	if (color)
-		printf("\033[0m");
-	if (color)
-		printf("\e[31;01m");
-	printf("\nLOG FILE = \"%s\"", sandbox_log);
-	if (color)
-		printf("\033[0m");
-	printf("\n\n");
-	printf("%s", buffer);
-	if (buffer)
-		free(buffer);
-	buffer = NULL;
-	printf("\e[31;01m--------------------------------------------------------------------------------\033[0m\n");
-
-	beep_count_env = getenv(ENV_SANDBOX_BEEP);
-	if (beep_count_env)
-		beep_count = atoi(beep_count_env);
-	else
-		beep_count = DEFAULT_BEEP_COUNT;
-
-	for (i = 0; i < beep_count; i++) {
-		fputc('\a', stderr);
-		if (i < beep_count - 1)
-			sleep(1);
-	}
-	return 1;
 }
 
 int spawn_shell(char *argv_bash[])

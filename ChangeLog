@@ -3,6 +3,9 @@
 # $Header$
 
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Move print_sandbox_log() up to make things neater.
+
+  11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Remove load_preload_libs(), as its not used anymore.
 
   11 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h:
