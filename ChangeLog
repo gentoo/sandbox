@@ -3,6 +3,10 @@
 # $Header$
 
   12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Set SANDBOX_ON *before* doing the child's env stuff, else its not set
+  for the child.
+
+  12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Remove global preload_adaptable as it is no longer used.
 
   12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:

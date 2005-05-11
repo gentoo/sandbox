@@ -527,7 +527,13 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 
-		/* Setup the environment stuff */
+		/* This one should not be child only, as we check above to see
+		 * if we are already running (check sandbox_setup_environ).
+		 * This needs to be set before calling sandbox_setup_environ(),
+		 * else its not set for the child */
+		setenv(ENV_SANDBOX_ON, "1", 0);
+
+		/* Setup the child environment stuff */
 		get_sandbox_write_envvar(sandbox_write_envvar, home_dir,
 				portage_tmp_dir, var_tmp_dir, tmp_dir);
 		get_sandbox_predict_envvar(sandbox_predict_envvar, home_dir);
@@ -538,10 +544,6 @@ int main(int argc, char **argv)
 			perror(">>> out of memory (environ)");
 			exit(1);
 		}
-
-		/* This one should not be child only, as we check above to see
-		 * if we are already running (check sandbox_setup_environ) */
-		setenv(ENV_SANDBOX_ON, "1", 0);
 
 		/* if the portage temp dir was present, cd into it */
 		if (NULL != portage_tmp_dir)
