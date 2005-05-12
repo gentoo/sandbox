@@ -33,8 +33,6 @@
 #include <fcntl.h>
 #include "sandbox.h"
 
-#define SB_BUF_LEN 2048
-
 int cleaned_up = 0;
 int print_debug = 0;
 int stop_called = 0;
@@ -100,7 +98,7 @@ void cleanup()
 	int success = 1;
 	int pids_file = -1, num_of_pids = 0;
 	int *pids_array = NULL;
-	char pid_string[255];
+	char pid_string[SB_BUF_LEN];
 	char *sandbox_pids_file;
 
 	/* Generate sandbox pids-file path */
@@ -238,7 +236,7 @@ void stop(int signum)
 void get_sandbox_write_envvar(char *buf, char *home_dir, char *portage_tmp_dir, char *var_tmp_dir, char *tmp_dir)
 {
 	/* bzero out entire buffer then append trailing 0 */
-	memset(buf, 0, SB_BUF_LEN + 1);
+	memset(buf, 0, SB_BUF_LEN);
 
 	/* these could go into make.globals later on */
 	snprintf(buf, SB_BUF_LEN,
@@ -257,7 +255,7 @@ void get_sandbox_write_envvar(char *buf, char *home_dir, char *portage_tmp_dir, 
 void get_sandbox_predict_envvar(char *buf, char *home_dir)
 {
 	/* bzero out entire buffer then append trailing 0 */
-	memset(buf, 0, SB_BUF_LEN + 1);
+	memset(buf, 0, SB_BUF_LEN);
 
 	/* these should go into make.globals later on */
 	snprintf(buf, SB_BUF_LEN, "%s/.:"
@@ -414,19 +412,19 @@ int main(int argc, char **argv)
 	int num_of_pids = 0;
 
 	// char run_arg[255];
-	char portage_tmp_dir[PATH_MAX];
-	char var_tmp_dir[PATH_MAX];
-	char tmp_dir[PATH_MAX];
-	char sandbox_log[255];
-	char sandbox_debug_log[255];
-	char sandbox_dir[255];
-	char sandbox_lib[255];
-	char sandbox_write_envvar[SB_BUF_LEN + 1];
-	char sandbox_predict_envvar[SB_BUF_LEN + 1];
 	char **sandbox_environ;
+	char sandbox_log[SB_PATH_MAX];
+	char sandbox_debug_log[SB_PATH_MAX];
+	char sandbox_dir[SB_PATH_MAX];
+	char sandbox_lib[SB_PATH_MAX];
+	char sandbox_rc[SB_PATH_MAX];
 	char *sandbox_pids_file;
-	char sandbox_rc[255];
-	char pid_string[255];
+	char portage_tmp_dir[SB_PATH_MAX];
+	char var_tmp_dir[SB_PATH_MAX];
+	char tmp_dir[SB_PATH_MAX];
+	char sandbox_write_envvar[SB_BUF_LEN];
+	char sandbox_predict_envvar[SB_BUF_LEN];
+	char pid_string[SB_BUF_LEN];
 	char **argv_bash = NULL;
 
 	char *run_str = "-c";

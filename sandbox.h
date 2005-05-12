@@ -40,6 +40,8 @@
 
 #define DEFAULT_BEEP_COUNT     3
 
+#define SB_BUF_LEN             2048
+
 #if !HAVE_DLVSYM
 # define dlvsym(lib, sym, ver) dlsym(lib, sym)
 #endif

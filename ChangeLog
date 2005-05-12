@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
+  sandbox_futils.c:
+  More path limit fixes.  Declare SB_BUF_LEN global and use it where needed.
+
   12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox_futils.c:
   Fix paths limited to 255 chars.  Fix get_sandbox_dir() returning a string
   with '(null)' in it if we did not call sandbox with absolute path.

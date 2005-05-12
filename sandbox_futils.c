@@ -274,7 +274,7 @@ SB_STATIC int file_locktype(char *mode)
 SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...)
 {
 	int fd;
-	char error[250];
+	char error[SB_BUF_LEN];
 	va_list ap;
 	int perm;
 	char *group = NULL;
