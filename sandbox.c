@@ -277,6 +277,8 @@ int sandbox_setenv(char **env, char *name, char *val) {
 		tmp_env++;
 
 	/* strlen(name) + strlen(val) + '=' + '\0' */
+	/* FIXME: Should probably free this at some stage - more neatness than
+	 *        a real leak that will cause issues. */
 	tmp_string = calloc(strlen(name) + strlen(val) + 2, sizeof(char *));
 	if (NULL == tmp_string) {
 		perror(">>> out of memory (sandbox_setenv)");
@@ -310,6 +312,8 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
 	
 	if (NULL != getenv("LD_PRELOAD")) {
+		/* FIXME: Should probably free this at some stage - more neatness
+		 *        than a real leak that will cause issues. */
 		ld_preload_envvar = malloc(strlen(getenv("LD_PRELOAD")) +
 				strlen(sandbox_lib) + 2);
 		if (NULL == ld_preload_envvar)
@@ -319,6 +323,8 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		strncat(ld_preload_envvar, getenv("LD_PRELOAD"),
 				strlen(getenv("LD_PRELOAD")));
 	} else {
+		/* FIXME: Should probably free this at some stage - more neatness
+		 *        than a real leak that will cause issues. */
 		ld_preload_envvar = strndup(sandbox_lib, strlen(sandbox_lib));
 		if (NULL == ld_preload_envvar)
 			return NULL;
@@ -330,6 +336,8 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		env_ptr++;
 	}
 
+	/* FIXME: Should probably free this at some stage - more neatness than
+	 *        a real leak that will cause issues. */
 	new_environ = calloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
 	if (NULL == new_environ)
 		return NULL;
