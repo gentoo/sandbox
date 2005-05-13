@@ -118,6 +118,17 @@ SB_STATIC char *get_sandbox_log(const char *tmp_dir)
 	return (strdup(path));
 }
 
+SB_STATIC int get_tmp_dir(char *tmp_dir)
+{
+	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
+					      : TMPDIR,
+				tmp_dir)) {
+		return -1;
+	}
+
+	return 0;
+}
+
 SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir)
 {
 	char path[SB_PATH_MAX];

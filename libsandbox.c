@@ -315,9 +315,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 	/* Get the path and name to this library */
 	snprintf(sandbox_lib, SB_PATH_MAX, "%s", get_sandbox_lib("/"));
 
-	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
-					      : TMPDIR,
-				tmp_dir))
+	if (-1 == get_tmp_dir(tmp_dir))
 		snprintf(tmp_dir, SB_PATH_MAX, "%s", TMPDIR);
 
 	/* Generate sandbox pids-file path */

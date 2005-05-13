@@ -33,7 +33,20 @@
 #include <fcntl.h>
 #include "sandbox.h"
 
-static char tmp_dir[SB_PATH_MAX];
+struct sandbox_info_t {
+	char sandbox_log[SB_PATH_MAX];
+	char sandbox_debug_log[SB_PATH_MAX];
+	char sandbox_dir[SB_PATH_MAX];
+	char sandbox_lib[SB_PATH_MAX];
+	char sandbox_rc[SB_PATH_MAX];
+	char *sandbox_pids_file;
+	char portage_tmp_dir[SB_PATH_MAX];
+	char var_tmp_dir[SB_PATH_MAX];
+	char tmp_dir[SB_PATH_MAX];
+	char *home_dir;
+} sandbox_info_t;
+
+static char *tmp_dir;
 
 static int cleaned_up = 0;
 static int print_debug = 0;
@@ -94,7 +107,112 @@ int load_active_pids(int fd, int **pids)
 	return num_pids;
 }
 
-void cleanup()
+int write_pids_file(struct sandbox_info_t *sandbox_info)
+{
+	int pids_file = -1;
+	int *pids_array = NULL;
+	int num_of_pids = 0;
+	int i = 0, success = 1;
+	
+	char pid_string[SB_BUF_LEN];
+	
+	if (file_exist(sandbox_info->sandbox_pids_file, 1) < 0) {
+		fprintf(stderr, ">>> %s is not a regular file\n",
+				sandbox_info->sandbox_pids_file);
+		return -1;
+	} else {
+		pids_file = file_open(sandbox_info->sandbox_pids_file,
+				"r+", 1, 0664, "portage");
+		if (-1 == pids_file)
+			return -1;
+	}
+	
+	/* Grab still active pids */
+	num_of_pids = load_active_pids(pids_file, &pids_array);
+
+	/* Zero out file */
+	file_truncate(pids_file);
+
+	/* Output active pids, and append our pid */
+	for (i = 0; i < num_of_pids + 1; i++) {
+		/* Time for our entry */
+		if (i == num_of_pids)
+			sprintf(pid_string, "%d\n", getpid());
+		else
+			sprintf(pid_string, "%d\n", pids_array[i]);
+
+		if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
+			success = 0;
+			break;
+		}
+	}
+
+	/* Clean pids_array */
+	if (pids_array)
+		free(pids_array);
+
+	/* We're done with the pids file */
+	file_close(pids_file);
+
+	if (!success)
+		return -1;
+
+	return 0;
+}
+
+int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
+{
+	if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
+						      : PORTAGE_TMPDIR,
+				sandbox_info->portage_tmp_dir)) {
+		perror(">>> get portage_tmp_dir");
+		return -1;
+	}
+	
+	if (NULL == realpath(VAR_TMPDIR, sandbox_info->var_tmp_dir)) {
+		perror(">>> get var_tmp_dir");
+		return -1;
+	}
+	
+	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
+		perror(">>> get tmp_dir");
+		return -1;
+	}
+	tmp_dir = sandbox_info->tmp_dir;
+
+	sandbox_info->home_dir = getenv("HOME");
+	if (!sandbox_info->home_dir) {
+		sandbox_info->home_dir = tmp_dir;
+		setenv("HOME", sandbox_info->home_dir, 1);
+	}
+
+	/* Generate base sandbox path */
+	snprintf(sandbox_info->sandbox_dir, SB_PATH_MAX, "%s/",
+			get_sandbox_path(argv[0]));
+
+	/* Generate sandbox lib path */
+	snprintf(sandbox_info->sandbox_lib, SB_PATH_MAX, "%s",
+			get_sandbox_lib(sandbox_info->sandbox_dir));
+
+	/* Generate sandbox pids-file path */
+	sandbox_info->sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
+
+	/* Generate sandbox bashrc path */
+	snprintf(sandbox_info->sandbox_rc, SB_PATH_MAX, "%s",
+			get_sandbox_rc(sandbox_info->sandbox_dir));
+
+	/* Generate sandbox log full path */
+	snprintf(sandbox_info->sandbox_log, SB_PATH_MAX, "%s",
+			get_sandbox_log(tmp_dir));
+
+	/* Generate sandbox debug log full path */
+	snprintf(sandbox_info->sandbox_debug_log, SB_PATH_MAX, "%s",
+			get_sandbox_debug_log(tmp_dir));
+
+	return 0;
+}
+
+void sandbox_cleanup()
 {
 	int i = 0;
 	int success = 1;
@@ -169,8 +287,6 @@ void cleanup()
 	}
 
 	free(sandbox_pids_file);
-	if (0 == success)
-		return;
 }
 
 int print_sandbox_log(char *sandbox_log)
@@ -229,13 +345,13 @@ void stop(int signum)
 	if (stop_called == 0) {
 		stop_called = 1;
 		printf("Caught signal %d in pid %d\r\n", signum, getpid());
-		cleanup();
+		sandbox_cleanup();
 	} else {
 		fprintf(stderr, "Pid %d alreadly caught signal and is still cleaning up\n", getpid());
 	}
 }
 
-void get_sandbox_write_envvar(char *buf, char *home_dir, char *portage_tmp_dir, char *var_tmp_dir, char *tmp_dir)
+void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 {
 	/* bzero out entire buffer then append trailing 0 */
 	memset(buf, 0, SB_BUF_LEN);
@@ -249,12 +365,13 @@ void get_sandbox_write_envvar(char *buf, char *home_dir, char *portage_tmp_dir, 
 		 "/usr/tmp/conftest:/usr/lib/conftest:"
 		 "/usr/lib32/conftest:/usr/lib64/conftest:"
 		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
-		 home_dir, home_dir,
-		 (NULL != portage_tmp_dir) ? portage_tmp_dir : tmp_dir,
-		 tmp_dir, var_tmp_dir, "/tmp/:/var/tmp/");
+		 sandbox_info->home_dir, sandbox_info->home_dir,
+		 (NULL != sandbox_info->portage_tmp_dir) ? sandbox_info->portage_tmp_dir : tmp_dir,
+		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
+		 "/tmp/:/var/tmp/");
 }
 
-void get_sandbox_predict_envvar(char *buf, char *home_dir)
+void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 {
 	/* bzero out entire buffer then append trailing 0 */
 	memset(buf, 0, SB_BUF_LEN);
@@ -268,7 +385,7 @@ void get_sandbox_predict_envvar(char *buf, char *home_dir)
 		 "/usr/lib/python2.4/:"
 		 "/usr/lib/python2.5/:"
 		 "/usr/lib/python3.0/:",
-		 home_dir);
+		 sandbox_info->home_dir);
 }
 
 int sandbox_setenv(char **env, char *name, char *val) {
@@ -298,8 +415,8 @@ int sandbox_setenv(char **env, char *name, char *val) {
 
 /* We setup the environment child side only to prevent issues with
  * setting LD_PRELOAD parent side */
-char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox_rc, char *sandbox_log,
-		char *sandbox_debug_log, char *sandbox_write_envvar, char *sandbox_predict_envvar)
+char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info,
+		char *sandbox_write_envvar, char *sandbox_predict_envvar)
 {
 	int env_size = 0;
 	int have_ld_preload = 0;
@@ -324,16 +441,18 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		/* FIXME: Should probably free this at some stage - more neatness
 		 *        than a real leak that will cause issues. */
 		ld_preload_envvar = calloc(strlen(orig_ld_preload_envvar) +
-				strlen(sandbox_lib) + 2, sizeof(char *));
+				strlen(sandbox_info->sandbox_lib) + 2,
+				sizeof(char *));
 		if (NULL == ld_preload_envvar)
 			return NULL;
 		snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
-				strlen(sandbox_lib) + 2, "%s %s",
-				sandbox_lib, orig_ld_preload_envvar);
+				strlen(sandbox_info->sandbox_lib) + 2, "%s %s",
+				sandbox_info->sandbox_lib, orig_ld_preload_envvar);
 	} else {
 		/* FIXME: Should probably free this at some stage - more neatness
 		 *        than a real leak that will cause issues. */
-		ld_preload_envvar = strndup(sandbox_lib, strlen(sandbox_lib));
+		ld_preload_envvar = strndup(sandbox_info->sandbox_lib,
+				strlen(sandbox_info->sandbox_lib));
 		if (NULL == ld_preload_envvar)
 			return NULL;
 	}
@@ -353,11 +472,12 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
-	sandbox_setenv(new_environ, ENV_SANDBOX_DIR, sandbox_dir);
-	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_lib);
-	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_rc);
-	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_log);
-	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log);
+	sandbox_setenv(new_environ, ENV_SANDBOX_DIR, sandbox_info->sandbox_dir);
+	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
+	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
+	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
+	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG,
+			sandbox_info->sandbox_debug_log);
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (1 != have_ld_preload)
 		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
@@ -394,8 +514,8 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr))
 			/* If LD_PRELOAD was set, and this is it in the original
 			 * environment, replace it with our new copy */
-			/* XXX:  The following works as it just add whatever as
-			 *       the last variable to nev_environ */
+			/* XXX: The following works as it just add whatever as
+			 *      the last variable to nev_environ */
 			sandbox_setenv(new_environ, ENV_LD_PRELOAD,
 					ld_preload_envvar);
 		else
@@ -430,27 +550,15 @@ int spawn_shell(char *argv_bash[], char *env[])
 
 int main(int argc, char **argv)
 {
-	int ret = 0, i = 0, success = 1;
+	int i = 0, success = 1;
 	int sandbox_log_presence = 0;
-	int pids_file = -1;
 	long len;
 
-	int *pids_array = NULL;
-	int num_of_pids = 0;
+	struct sandbox_info_t sandbox_info;
 
-	// char run_arg[255];
 	char **sandbox_environ;
-	char sandbox_log[SB_PATH_MAX];
-	char sandbox_debug_log[SB_PATH_MAX];
-	char sandbox_dir[SB_PATH_MAX];
-	char sandbox_lib[SB_PATH_MAX];
-	char sandbox_rc[SB_PATH_MAX];
-	char *sandbox_pids_file;
-	char portage_tmp_dir[SB_PATH_MAX];
-	char var_tmp_dir[SB_PATH_MAX];
 	char sandbox_write_envvar[SB_BUF_LEN];
 	char sandbox_predict_envvar[SB_BUF_LEN];
-	char pid_string[SB_BUF_LEN];
 	char **argv_bash = NULL;
 
 	char *run_str = "-c";
@@ -475,70 +583,31 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Detection of the support files.\n");
 
-		if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
-		                                              : PORTAGE_TMPDIR,
-					portage_tmp_dir)) {
-			perror(">>> get portage_tmp_dir");
+		if (-1 == sandbox_setup(argv, &sandbox_info)) {
+			perror(">>> setup");
 			exit(1);
 		}
-		if (NULL == realpath(VAR_TMPDIR, var_tmp_dir)) {
-			perror(">>> get var_tmp_dir");
-			exit(1);
-		}
-		if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
-		                                      : TMPDIR,
-					tmp_dir)) {
-			perror(">>> get tmp_dir");
-			exit(1);
-		}
-
-		/* Generate base sandbox path */
-		snprintf(sandbox_dir, SB_PATH_MAX, "%s/",
-				get_sandbox_path(argv[0]));
-
-		/* Generate sandbox lib path */
-		snprintf(sandbox_lib, SB_PATH_MAX, "%s",
-				get_sandbox_lib(sandbox_dir));
-
-		/* Generate sandbox pids-file path */
-		sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
-
-		/* Generate sandbox bashrc path */
-		snprintf(sandbox_rc, SB_PATH_MAX, "%s",
-				get_sandbox_rc(sandbox_dir));
-
+		
 		/* verify the existance of required files */
 		if (print_debug)
 			printf("Verification of the required files.\n");
 
 #ifndef SB_HAVE_64BIT_ARCH
-		if (file_exist(sandbox_lib, 0) <= 0) {
-			fprintf(stderr, "Could not open the sandbox library at '%s'.\n", sandbox_lib);
+		if (file_exist(sandbox_info.sandbox_lib, 0) <= 0) {
+			fprintf(stderr, "Could not open the sandbox library at '%s'.\n",
+					sandbox_info.sandbox_lib);
 			return -1;
 		}
 #endif
-		if (file_exist(sandbox_rc, 0) <= 0) {
-			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n", sandbox_rc);
+		if (file_exist(sandbox_info.sandbox_rc, 0) <= 0) {
+			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n",
+					sandbox_info.sandbox_rc);
 			return -1;
 		}
 
 		/* set up the required environment variables */
 		if (print_debug)
 			printf("Setting up the required environment variables.\n");
-
-		home_dir = getenv("HOME");
-		if (!home_dir) {
-			home_dir = "/tmp";
-			setenv("HOME", home_dir, 1);
-		}
-
-		/* Generate sandbox log full path */
-		snprintf(sandbox_log, SB_PATH_MAX, "%s",
-				get_sandbox_log(tmp_dir));
-
-		/* Generate sandbox debug log full path */
-		snprintf(sandbox_debug_log, SB_PATH_MAX, "%s",
-				get_sandbox_debug_log(tmp_dir));
 
 		/* This one should not be child only, as we check above to see
 		 * if we are already running (check sandbox_setup_environ).
@@ -547,11 +616,9 @@ int main(int argc, char **argv)
 		setenv(ENV_SANDBOX_ON, "1", 0);
 
 		/* Setup the child environment stuff */
-		get_sandbox_write_envvar(sandbox_write_envvar, home_dir,
-				portage_tmp_dir, var_tmp_dir, tmp_dir);
-		get_sandbox_predict_envvar(sandbox_predict_envvar, home_dir);
-		sandbox_environ = sandbox_setup_environ(sandbox_dir, sandbox_lib,
-				sandbox_rc, sandbox_log, sandbox_debug_log,
+		get_sandbox_write_envvar(sandbox_write_envvar, &sandbox_info);
+		get_sandbox_predict_envvar(sandbox_predict_envvar, &sandbox_info);
+		sandbox_environ = sandbox_setup_environ(&sandbox_info,
 				sandbox_write_envvar, sandbox_predict_envvar);
 		if (NULL == sandbox_environ) {
 			perror(">>> out of memory (environ)");
@@ -559,13 +626,13 @@ int main(int argc, char **argv)
 		}
 
 		/* if the portage temp dir was present, cd into it */
-		if (NULL != portage_tmp_dir)
-			chdir(portage_tmp_dir);
+		if (NULL != sandbox_info.portage_tmp_dir)
+			chdir(sandbox_info.portage_tmp_dir);
 
 		argv_bash = (char **)malloc(6 * sizeof(char *));
 		argv_bash[0] = strdup("/bin/bash");
 		argv_bash[1] = strdup("-rcfile");
-		argv_bash[2] = strdup(sandbox_rc);
+		argv_bash[2] = strdup(sandbox_info.sandbox_rc);
 
 		if (argc < 2)
 			argv_bash[3] = NULL;
@@ -601,48 +668,7 @@ int main(int argc, char **argv)
 		signal(SIGTERM, &stop);
 
 		/* Load our PID into PIDs file */
-		success = 1;
-		if (file_exist(sandbox_pids_file, 1) < 0) {
-			success = 0;
-			fprintf(stderr, ">>> %s is not a regular file\n", sandbox_pids_file);
-		} else {
-			pids_file = file_open(sandbox_pids_file, "r+", 1, 0664, "portage");
-			if (-1 == pids_file)
-				success = 0;
-		}
-		if (1 == success) {
-			/* Grab still active pids */
-			num_of_pids = load_active_pids(pids_file, &pids_array);
-
-			/* Zero out file */
-			file_truncate(pids_file);
-
-			/* Output active pids, and append our pid */
-			for (i = 0; i < num_of_pids + 1; i++) {
-				/* Time for our entry */
-				if (i == num_of_pids)
-					sprintf(pid_string, "%d\n", getpid());
-				else
-					sprintf(pid_string, "%d\n", pids_array[i]);
-
-				if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
-					perror(">>> pids file write");
-					success = 0;
-					break;
-				}
-			}
-			/* Clean pids_array */
-			if (pids_array)
-				free(pids_array);
-			pids_array = NULL;
-			num_of_pids = 0;
-
-			/* We're done with the pids file */
-			file_close(pids_file);
-		}
-
-		/* Something went wrong, bail out */
-		if (0 == success) {
+		if (-1 == write_pids_file(&sandbox_info)) {
 			perror(">>> pids file write");
 			exit(1);
 		}
@@ -676,29 +702,23 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Cleaning up sandbox process\n");
 
-		cleanup();
+		sandbox_cleanup();
 
 		if (print_debug) {
 			printf("========================== Gentoo linux path sandbox ===========================\n");
 			printf("The protected environment has been shut down.\n");
 		}
 
-		if (file_exist(sandbox_log, 0)) {
+		if (file_exist(sandbox_info.sandbox_log, 0)) {
 			sandbox_log_presence = 1;
 			success = 1;
-			if (!print_sandbox_log(sandbox_log))
+			if (!print_sandbox_log(sandbox_info.sandbox_log))
 				success = 0;
-
-#if 0
-			if (!success)
-				exit(1);
-#endif
-
 		} else if (print_debug) {
 			printf("--------------------------------------------------------------------------------\n");
 		}
 
-		free(sandbox_pids_file);
+		free(sandbox_info.sandbox_pids_file);
 
 		if ((sandbox_log_presence) || (!success))
 			return 1;
