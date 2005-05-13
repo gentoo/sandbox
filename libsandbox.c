@@ -118,7 +118,7 @@
     return NULL; \
 }
 
-static char sandbox_lib[255];
+static char sandbox_lib[SB_PATH_MAX];
 //static char sandbox_pids_file[255];
 static char *sandbox_pids_file;
 
@@ -304,7 +304,7 @@ void __attribute__ ((destructor)) libsb_fini(void)
 void __attribute__ ((constructor)) libsb_init(void)
 {
 	int old_errno = errno;
-	char *tmp_string = NULL;
+	char tmp_dir[SB_PATH_MAX];
 
 #ifdef SB_MEM_DEBUG
 	mtrace();
@@ -313,14 +313,15 @@ void __attribute__ ((constructor)) libsb_init(void)
 	init_wrappers();
 
 	/* Get the path and name to this library */
-	tmp_string = get_sandbox_lib("/");
-	strncpy(sandbox_lib, tmp_string, sizeof(sandbox_lib) - 1);
-	if (tmp_string)
-		free(tmp_string);
-	tmp_string = NULL;
+	snprintf(sandbox_lib, SB_PATH_MAX, "%s", get_sandbox_lib("/"));
+
+	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
+					      : TMPDIR,
+				tmp_dir))
+		snprintf(tmp_dir, SB_PATH_MAX, "%s", TMPDIR);
 
 	/* Generate sandbox pids-file path */
-	sandbox_pids_file = get_sandbox_pids_file();
+	sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
 
 //	sb_init = 1;
 

@@ -73,12 +73,16 @@ SB_STATIC char *get_sandbox_lib(char *sb_path)
 	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_pids_file(void)
+SB_STATIC char *get_sandbox_pids_file(const char *tmp_dir)
 {
+	char path[SB_PATH_MAX];
+	
 	if (0 < getenv("SANDBOX_PIDS_FILE")) {
 		return (strdup(getenv("SANDBOX_PIDS_FILE")));
 	}
-	return (strdup(PIDS_FILE));
+
+	snprintf(path, SB_PATH_MAX, "%s%s", tmp_dir, PIDS_FILE);
+	return (strdup(path));
 }
 
 SB_STATIC char *get_sandbox_rc(char *sb_path)
@@ -92,7 +96,7 @@ SB_STATIC char *get_sandbox_rc(char *sb_path)
 	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_log()
+SB_STATIC char *get_sandbox_log(const char *tmp_dir)
 {
 	char path[SB_PATH_MAX];
 	char *sandbox_log_env = NULL;
@@ -106,13 +110,15 @@ SB_STATIC char *get_sandbox_log()
 	    (NULL != strchr(sandbox_log_env, '/')))
 	    sandbox_log_env = NULL;
 
-	snprintf(path, sizeof(path) - 1, "%s%s%s%d%s", LOG_FILE_PREFIX,
-		 (sandbox_log_env == NULL ? "" : sandbox_log_env),
-		 (sandbox_log_env == NULL ? "" : "-"), getpid(), LOG_FILE_EXT);
+	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
+			tmp_dir, LOG_FILE_PREFIX,
+			(sandbox_log_env == NULL ? "" : sandbox_log_env),
+			(sandbox_log_env == NULL ? "" : "-"),
+			getpid(), LOG_FILE_EXT);
 	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_debug_log()
+SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir)
 {
 	char path[SB_PATH_MAX];
 	char *sandbox_debug_log_env = NULL;
@@ -126,9 +132,11 @@ SB_STATIC char *get_sandbox_debug_log()
 	    (NULL != strchr(sandbox_debug_log_env, '/')))
 		sandbox_debug_log_env = NULL;
 
-	snprintf(path, sizeof(path) - 1, "%sdebug-%s%s%d%s", LOG_FILE_PREFIX,
-		 (sandbox_debug_log_env == NULL ? "" : sandbox_debug_log_env),
-		 (sandbox_debug_log_env == NULL ? "" : "-"), getpid(), LOG_FILE_EXT);
+	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
+			tmp_dir, DEBUG_LOG_FILE_PREFIX,
+			(sandbox_debug_log_env == NULL ? "" : sandbox_debug_log_env),
+			(sandbox_debug_log_env == NULL ? "" : "-"),
+			getpid(), LOG_FILE_EXT);
 	return (strdup(path));
 }
 

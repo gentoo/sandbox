@@ -33,9 +33,11 @@
 #include <fcntl.h>
 #include "sandbox.h"
 
-int cleaned_up = 0;
-int print_debug = 0;
-int stop_called = 0;
+static char tmp_dir[SB_PATH_MAX];
+
+static int cleaned_up = 0;
+static int print_debug = 0;
+static int stop_called = 0;
 
 /* Read pids file, and load active pids into an array.	Return number of pids in array */
 int load_active_pids(int fd, int **pids)
@@ -102,7 +104,7 @@ void cleanup()
 	char *sandbox_pids_file;
 
 	/* Generate sandbox pids-file path */
-	sandbox_pids_file = get_sandbox_pids_file();
+	sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
 
 	/* Remove this sandbox's bash pid from the global pids
 	 * file if we have not already done so */
@@ -428,7 +430,6 @@ int main(int argc, char **argv)
 	char *sandbox_pids_file;
 	char portage_tmp_dir[SB_PATH_MAX];
 	char var_tmp_dir[SB_PATH_MAX];
-	char tmp_dir[SB_PATH_MAX];
 	char sandbox_write_envvar[SB_BUF_LEN];
 	char sandbox_predict_envvar[SB_BUF_LEN];
 	char pid_string[SB_BUF_LEN];
@@ -456,6 +457,23 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Detection of the support files.\n");
 
+		if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
+		                                              : PORTAGE_TMPDIR,
+					portage_tmp_dir)) {
+			perror(">>> get portage_tmp_dir");
+			exit(1);
+		}
+		if (NULL == realpath(VAR_TMPDIR, var_tmp_dir)) {
+			perror(">>> get var_tmp_dir");
+			exit(1);
+		}
+		if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
+		                                      : TMPDIR,
+					tmp_dir)) {
+			perror(">>> get tmp_dir");
+			exit(1);
+		}
+
 		/* Generate base sandbox path */
 		snprintf(sandbox_dir, SB_PATH_MAX, "%s/",
 				get_sandbox_path(argv[0]));
@@ -465,7 +483,7 @@ int main(int argc, char **argv)
 				get_sandbox_lib(sandbox_dir));
 
 		/* Generate sandbox pids-file path */
-		sandbox_pids_file = get_sandbox_pids_file();
+		sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
 
 		/* Generate sandbox bashrc path */
 		snprintf(sandbox_rc, SB_PATH_MAX, "%s",
@@ -490,34 +508,19 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Setting up the required environment variables.\n");
 
-		/* Generate sandbox log full path */
-		snprintf(sandbox_log, SB_PATH_MAX, "%s",
-				get_sandbox_log());
-
-		/* Generate sandbox debug log full path */
-		snprintf(sandbox_debug_log, SB_PATH_MAX, "%s",
-				get_sandbox_debug_log());
-
 		home_dir = getenv("HOME");
 		if (!home_dir) {
 			home_dir = "/tmp";
 			setenv("HOME", home_dir, 1);
 		}
 
-		if (NULL == realpath(getenv("PORTAGE_TMPDIR") ? getenv("PORTAGE_TMPDIR")
-		                                              : "/var/tmp/portage",
-					portage_tmp_dir)) {
-			perror(">>> get portage_tmp_dir");
-			exit(1);
-		}
-		if (NULL == realpath("/var/tmp", var_tmp_dir)) {
-			perror(">>> get var_tmp_dir");
-			exit(1);
-		}
-		if (NULL == realpath("/tmp", tmp_dir)) {
-			perror(">>> get tmp_dir");
-			exit(1);
-		}
+		/* Generate sandbox log full path */
+		snprintf(sandbox_log, SB_PATH_MAX, "%s",
+				get_sandbox_log(tmp_dir));
+
+		/* Generate sandbox debug log full path */
+		snprintf(sandbox_debug_log, SB_PATH_MAX, "%s",
+				get_sandbox_debug_log(tmp_dir));
 
 		/* This one should not be child only, as we check above to see
 		 * if we are already running (check sandbox_setup_environ).

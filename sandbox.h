@@ -19,10 +19,16 @@
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
-#define PIDS_FILE              "/tmp/sandboxpids.tmp"
-#define LOG_FILE_PREFIX        "/tmp/sandbox-"
-#define DEBUG_LOG_FILE_PREFIX  "/tmp/sandbox-debug-"
+#define TMPDIR                 "/tmp"
+#define VAR_TMPDIR             "/var/tmp"
+#define PORTAGE_TMPDIR         "/var/tmp/portage"
+#define PIDS_FILE              "/sandboxpids.tmp"
+#define LOG_FILE_PREFIX        "/sandbox-"
+#define DEBUG_LOG_FILE_PREFIX  "/sandbox-debug-"
 #define LOG_FILE_EXT           ".log"
+
+#define ENV_TMPDIR             "TMPDIR"
+#define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 
 #define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
 #define ENV_SANDBOX_LOG        "SANDBOX_LOG"
@@ -48,10 +54,10 @@
 
 SB_STATIC char *get_sandbox_path(char *argv0);
 SB_STATIC char *get_sandbox_lib(char *sb_path);
-SB_STATIC char *get_sandbox_pids_file(void);
+SB_STATIC char *get_sandbox_pids_file(const char *tmp_dir);
 SB_STATIC char *get_sandbox_rc(char *sb_path);
-SB_STATIC char *get_sandbox_log();
-SB_STATIC char *get_sandbox_debug_log();
+SB_STATIC char *get_sandbox_log(const char *tmp_dir);
+SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir);
 SB_STATIC char *sb_dirname(const char *path);
 SB_STATIC int file_getmode(char *mode);
 SB_STATIC long file_tell(int fp);
