@@ -97,14 +97,38 @@ SB_STATIC char *get_sandbox_log()
 	char path[SB_PATH_MAX];
 	char *sandbox_log_env = NULL;
 
+	sandbox_log_env = getenv(ENV_SANDBOX_LOG);
+	
 	/* THIS CHUNK BREAK THINGS BY DOING THIS:
 	 * SANDBOX_LOG=/tmp/sandbox-app-admin/superadduser-1.0.7-11063.log
 	 */
+	if ((NULL != sandbox_log_env) &&
+	    (NULL != strchr(sandbox_log_env, '/')))
+	    sandbox_log_env = NULL;
 
-	sandbox_log_env = getenv(ENV_SANDBOX_LOG);
 	snprintf(path, sizeof(path) - 1, "%s%s%s%d%s", LOG_FILE_PREFIX,
 		 (sandbox_log_env == NULL ? "" : sandbox_log_env),
 		 (sandbox_log_env == NULL ? "" : "-"), getpid(), LOG_FILE_EXT);
+	return (strdup(path));
+}
+
+SB_STATIC char *get_sandbox_debug_log()
+{
+	char path[SB_PATH_MAX];
+	char *sandbox_debug_log_env = NULL;
+
+	sandbox_debug_log_env = getenv(ENV_SANDBOX_DEBUG_LOG);
+	
+	/* THIS CHUNK BREAK THINGS BY DOING THIS:
+	 * SANDBOX_DEBUG_LOG=/tmp/sandbox-app-admin/superadduser-1.0.7-11063.log
+	 */
+	if ((NULL != sandbox_debug_log_env) &&
+	    (NULL != strchr(sandbox_debug_log_env, '/')))
+		sandbox_debug_log_env = NULL;
+
+	snprintf(path, sizeof(path) - 1, "%sdebug-%s%s%d%s", LOG_FILE_PREFIX,
+		 (sandbox_debug_log_env == NULL ? "" : sandbox_debug_log_env),
+		 (sandbox_debug_log_env == NULL ? "" : "-"), getpid(), LOG_FILE_EXT);
 	return (strdup(path));
 }
 

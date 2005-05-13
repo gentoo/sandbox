@@ -2,6 +2,14 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  13 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
+  sandbox_futils.c:
+  Add get_sandbox_debug_log(), and use it (add behaviour similar to SANDBOX_LOG
+  if already exported when sandbox started).  Fix get_sandbox_log() and new
+  get_sandbox_debug_log() to not use already exported environment variables if
+  they have '/' in them.  Use snprintf()'s instead of strncpy()'s.  More
+  SB_PATH_MAX fixes.
+
 * sandbox-1.2.7 (2005/05/12)
 
   12 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,

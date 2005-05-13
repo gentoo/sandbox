@@ -458,29 +458,19 @@ int main(int argc, char **argv)
 			printf("Detection of the support files.\n");
 
 		/* Generate base sandbox path */
-		tmp_string = get_sandbox_path(argv[0]);
-		strncpy(sandbox_dir, tmp_string, 254);
-		if (tmp_string)
-			free(tmp_string);
-		tmp_string = NULL;
-		strcat(sandbox_dir, "/");
+		snprintf(sandbox_dir, SB_PATH_MAX, "%s/",
+				get_sandbox_path(argv[0]));
 
 		/* Generate sandbox lib path */
-		tmp_string = get_sandbox_lib(sandbox_dir);
-		strncpy(sandbox_lib, tmp_string, 254);
-		if (tmp_string)
-			free(tmp_string);
-		tmp_string = NULL;
+		snprintf(sandbox_lib, SB_PATH_MAX, "%s",
+				get_sandbox_lib(sandbox_dir));
 
 		/* Generate sandbox pids-file path */
 		sandbox_pids_file = get_sandbox_pids_file();
 
 		/* Generate sandbox bashrc path */
-		tmp_string = get_sandbox_rc(sandbox_dir);
-		strncpy(sandbox_rc, tmp_string, 254);
-		if (tmp_string)
-			free(tmp_string);
-		tmp_string = NULL;
+		snprintf(sandbox_rc, SB_PATH_MAX, "%s",
+				get_sandbox_rc(sandbox_dir));
 
 		/* verify the existance of required files */
 		if (print_debug)
@@ -502,15 +492,12 @@ int main(int argc, char **argv)
 			printf("Setting up the required environment variables.\n");
 
 		/* Generate sandbox log full path */
-		tmp_string = get_sandbox_log();
-		strncpy(sandbox_log, tmp_string, 254);
-		if (tmp_string)
-			free(tmp_string);
-		tmp_string = NULL;
+		snprintf(sandbox_log, SB_PATH_MAX, "%s",
+				get_sandbox_log());
 
-		sprintf(pid_string, "%d", getpid());
-		snprintf(sandbox_debug_log, sizeof(sandbox_debug_log), "%s%s%s",
-			 DEBUG_LOG_FILE_PREFIX, pid_string, LOG_FILE_EXT);
+		/* Generate sandbox debug log full path */
+		snprintf(sandbox_debug_log, SB_PATH_MAX, "%s",
+				get_sandbox_debug_log());
 
 		home_dir = getenv("HOME");
 		if (!home_dir) {

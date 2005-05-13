@@ -51,6 +51,7 @@ SB_STATIC char *get_sandbox_lib(char *sb_path);
 SB_STATIC char *get_sandbox_pids_file(void);
 SB_STATIC char *get_sandbox_rc(char *sb_path);
 SB_STATIC char *get_sandbox_log();
+SB_STATIC char *get_sandbox_debug_log();
 SB_STATIC char *sb_dirname(const char *path);
 SB_STATIC int file_getmode(char *mode);
 SB_STATIC long file_tell(int fp);
