@@ -412,7 +412,6 @@ int main(int argc, char **argv)
 {
 	int ret = 0, i = 0, success = 1;
 	int sandbox_log_presence = 0;
-	int sandbox_log_file = -1;
 	int pids_file = -1;
 	long len;
 
@@ -674,7 +673,6 @@ int main(int argc, char **argv)
 				exit(1);
 #endif
 
-			sandbox_log_file = -1;
 		} else if (print_debug) {
 			printf("--------------------------------------------------------------------------------\n");
 		}

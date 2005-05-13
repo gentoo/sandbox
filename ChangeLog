@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  13 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  Remove sandbox_log_file from main() as its no longer used.
+
   13 May 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
   sandbox_futils.c:
   Add get_sandbox_debug_log(), and use it (add behaviour similar to SANDBOX_LOG
