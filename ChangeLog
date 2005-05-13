@@ -3,6 +3,10 @@
 # $Header$
 
   13 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
+  sandbox.h:
+  Various LD_PRELOAD cleanups.  Do not unset LD_PRELOAD for parent.
+
+  13 May 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
   sandbox.h, sandbox_futils.c:
   Modify get_sandbox_pids_file(), get_sandbox_log() and get_sandbox_debug_log()
   to use TMPDIR if present in environment.

@@ -275,6 +275,8 @@ int sandbox_setenv(char **env, char *name, char *val) {
 	char **tmp_env = env;
 	char *tmp_string = NULL;
 
+	/* XXX: We add the new variable to the end (no replacing).  If this
+	 *      is changed, we need to fix sandbox_setup_environ() below */
 	while (NULL != *tmp_env)
 		tmp_env++;
 
@@ -300,10 +302,12 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		char *sandbox_debug_log, char *sandbox_write_envvar, char *sandbox_predict_envvar)
 {
 	int env_size = 0;
+	int have_ld_preload = 0;
 	
 	char **new_environ;
 	char **env_ptr = environ;
 	char *ld_preload_envvar = NULL;
+	char *orig_ld_preload_envvar = NULL;
 
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
@@ -313,17 +317,19 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 	unsetenv(ENV_SANDBOX_LOG);
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
 	
-	if (NULL != getenv("LD_PRELOAD")) {
+	if (NULL != getenv(ENV_LD_PRELOAD)) {
+		have_ld_preload = 1;
+		orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
+
 		/* FIXME: Should probably free this at some stage - more neatness
 		 *        than a real leak that will cause issues. */
-		ld_preload_envvar = malloc(strlen(getenv("LD_PRELOAD")) +
-				strlen(sandbox_lib) + 2);
+		ld_preload_envvar = calloc(strlen(orig_ld_preload_envvar) +
+				strlen(sandbox_lib) + 2, sizeof(char *));
 		if (NULL == ld_preload_envvar)
 			return NULL;
-		strncpy(ld_preload_envvar, sandbox_lib, strlen(sandbox_lib));
-		strncat(ld_preload_envvar, " ", 1);
-		strncat(ld_preload_envvar, getenv("LD_PRELOAD"),
-				strlen(getenv("LD_PRELOAD")));
+		snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
+				strlen(sandbox_lib) + 2, "%s %s",
+				sandbox_lib, orig_ld_preload_envvar);
 	} else {
 		/* FIXME: Should probably free this at some stage - more neatness
 		 *        than a real leak that will cause issues. */
@@ -331,7 +337,8 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 		if (NULL == ld_preload_envvar)
 			return NULL;
 	}
-	unsetenv("LD_PRELOAD");
+	/* Do not unset this, as strange things might happen */
+	/* unsetenv(ENV_LD_PRELOAD); */
 
 	while (NULL != *env_ptr) {
 		env_size++;
@@ -351,7 +358,9 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_rc);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_log);
 	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG, sandbox_debug_log);
-	sandbox_setenv(new_environ, "LD_PRELOAD", ld_preload_envvar);
+	/* If LD_PRELOAD was not set, set it here, else do it below */
+	if (1 != have_ld_preload)
+		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
 
 	if (!getenv(ENV_SANDBOX_DENY))
 		sandbox_setenv(new_environ, ENV_SANDBOX_DENY, LD_PRELOAD_FILE);
@@ -381,7 +390,16 @@ char **sandbox_setup_environ(char *sandbox_dir, char *sandbox_lib, char *sandbox
 	/* Now add the rest */
 	env_ptr = environ;
 	while (NULL != *env_ptr) {
-		new_environ[env_size + (env_ptr - environ)] = *env_ptr;
+		if ((1 == have_ld_preload) &&
+		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr))
+			/* If LD_PRELOAD was set, and this is it in the original
+			 * environment, replace it with our new copy */
+			/* XXX:  The following works as it just add whatever as
+			 *       the last variable to nev_environ */
+			sandbox_setenv(new_environ, ENV_LD_PRELOAD,
+					ld_preload_envvar);
+		else
+			new_environ[env_size + (env_ptr - environ)] = *env_ptr;
 		env_ptr++;
 	}
 

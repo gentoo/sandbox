@@ -831,7 +831,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 		("execve", canonic) {
 		while (envp[count] != NULL) {
 			/* Check if we do not have to do anything */
-			if (strstr(envp[count], "LD_PRELOAD=") == envp[count]) {
+			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) {
 				if (NULL != strstr(envp[count], sandbox_lib)) {
 					my_env = (char **)envp;
 					kill_env = 0;
@@ -840,10 +840,10 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 			}
 
 			/* If LD_PRELOAD is set and sandbox_lib not in it */
-			if (((strstr(envp[count], "LD_PRELOAD=") == envp[count]) &&
+			if (((strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) &&
 			     (NULL == strstr(envp[count], sandbox_lib))) ||
 			    /* Or  LD_PRELOAD is not set, and this is the last loop */
-			    ((strstr(envp[count], "LD_PRELOAD=") != envp[count]) &&
+			    ((strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) &&
 			     (NULL == envp[count + 1]))) {
 				int i = 0;
 				int add_ldpreload = 0;
@@ -863,7 +863,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 				while (NULL != *my_env++);
 
 				/* Should we add LD_PRELOAD ? */
-				if (strstr(envp[count], "LD_PRELOAD=") != envp[count])
+				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count])
 					add_ldpreload = 1;
 
 				my_env = (char **)calloc(env_len + add_ldpreload, sizeof(char *));
@@ -878,14 +878,14 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 				while (NULL != envp[i++]);
 
 				/* Add 'LD_PRELOAD=' to the beginning of our new string */
-				snprintf(tmp_str, max_envp_len, "LD_PRELOAD=%s", sandbox_lib);
+				snprintf(tmp_str, max_envp_len, "%s%s", LD_PRELOAD_EQ, sandbox_lib);
 
 				/* LD_PRELOAD already have variables other than sandbox_lib,
 				 * thus we have to add sandbox_lib seperated via a whitespace. */
 				if (0 == add_ldpreload) {
 					snprintf(&(tmp_str[strlen(tmp_str)]),
 						 max_envp_len - strlen(tmp_str) + 1, " %s",
-						 &(envp[count][strlen("LD_PRELOAD=")]));
+						 &(envp[count][strlen(LD_PRELOAD_EQ)]));
 				}
 
 				/* Valid string? */

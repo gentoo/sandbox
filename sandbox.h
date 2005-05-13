@@ -16,6 +16,7 @@
 /* Uncomment below to use flock instead of fcntl (POSIX way) to lock/unlock files */
 /* #define USE_FLOCK */
 
+#define LD_PRELOAD_EQ          "LD_PRELOAD="
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
@@ -26,6 +27,8 @@
 #define LOG_FILE_PREFIX        "/sandbox-"
 #define DEBUG_LOG_FILE_PREFIX  "/sandbox-debug-"
 #define LOG_FILE_EXT           ".log"
+
+#define ENV_LD_PRELOAD         "LD_PRELOAD"
 
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
