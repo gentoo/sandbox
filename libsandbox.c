@@ -96,26 +96,26 @@
  * then try to resolve it again. */
 #define check_dlsym(name) \
 { \
-  int old_errno=errno; \
-  if (!true_ ## name) \
-	true_ ## name = get_dlsym(symname_ ## name, symver_ ## name); \
-  errno=old_errno; \
+	int old_errno=errno; \
+	if (!true_ ## name) \
+		true_ ## name = get_dlsym(symname_ ## name, symver_ ## name); \
+	errno=old_errno; \
 }
 
 /* Macro to check if we could canonicalize a path.  It returns an integer on
  * failure. */
 #define canonicalize_int(path, resolved_path) \
 { \
-  if (0 != canonicalize(path, resolved_path)) \
-    return -1; \
+	if (0 != canonicalize(path, resolved_path)) \
+		return -1; \
 }
 
 /* Macro to check if we could canonicalize a path.  It returns a NULL pointer on
  * failure. */
 #define canonicalize_ptr(path, resolved_path) \
 { \
-  if (0 != canonicalize(path, resolved_path)) \
-    return NULL; \
+	if (0 != canonicalize(path, resolved_path)) \
+		return NULL; \
 }
 
 static char sandbox_lib[SB_PATH_MAX];
@@ -902,7 +902,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 			count++;
 		}
 
-	      end_loop:
+		end_loop:
 		errno = old_errno;
 		check_dlsym(execve);
 		result = true_execve(filename, argv, my_env);
@@ -1398,9 +1398,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
 						dpath);
 				} else {
-					debug_log_file = true_open(dpath, O_APPEND | O_WRONLY |
-							           O_CREAT, S_IRUSR | S_IWUSR |
-								   S_IRGRP | S_IROTH);
+					debug_log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT,
+					                           S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 					if (debug_log_file >= 0) {
 						write(debug_log_file, buffer, strlen(buffer));
 						close(debug_log_file);
