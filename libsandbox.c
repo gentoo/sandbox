@@ -461,11 +461,10 @@ int chmod(const char *path, mode_t mode)
 
 	canonicalize_int(path, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("chmod", canonic) {
+	if FUNCTION_SANDBOX_SAFE("chmod", canonic) {
 		check_dlsym(chmod);
 		result = true_chmod(path, mode);
-		}
+	}
 
 	return result;
 }
@@ -477,11 +476,10 @@ int chown(const char *path, uid_t owner, gid_t group)
 
 	canonicalize_int(path, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("chown", canonic) {
+	if FUNCTION_SANDBOX_SAFE("chown", canonic) {
 		check_dlsym(chown);
 		result = true_chown(path, owner, group);
-		}
+	}
 
 	return result;
 }
@@ -494,11 +492,10 @@ int creat(const char *pathname, mode_t mode)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("creat", canonic) {
+	if FUNCTION_SANDBOX_SAFE("creat", canonic) {
 		check_dlsym(open);
 		result = true_open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
-		}
+	}
 
 	return result;
 }
@@ -510,11 +507,10 @@ FILE *fopen(const char *pathname, const char *mode)
 
 	canonicalize_ptr(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_CHAR
-		("fopen", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_CHAR("fopen", canonic, mode) {
 		check_dlsym(fopen);
 		result = true_fopen(pathname, mode);
-		}
+	}
 
 	return result;
 }
@@ -526,11 +522,10 @@ int lchown(const char *path, uid_t owner, gid_t group)
 
 	canonicalize_int(path, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("lchown", canonic) {
+	if FUNCTION_SANDBOX_SAFE("lchown", canonic) {
 		check_dlsym(lchown);
 		result = true_lchown(path, owner, group);
-		}
+	}
 
 	return result;
 }
@@ -543,11 +538,10 @@ int link(const char *oldpath, const char *newpath)
 	canonicalize_int(oldpath, old_canonic);
 	canonicalize_int(newpath, new_canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("link", new_canonic) {
+	if FUNCTION_SANDBOX_SAFE("link", new_canonic) {
 		check_dlsym(link);
 		result = true_link(oldpath, newpath);
-		}
+	}
 
 	return result;
 }
@@ -569,11 +563,10 @@ int mkdir(const char *pathname, mode_t mode)
 	}
 	errno = my_errno;
 
-	if FUNCTION_SANDBOX_SAFE
-		("mkdir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("mkdir", canonic) {
 		check_dlsym(mkdir);
 		result = true_mkdir(pathname, mode);
-		}
+	}
 
 	return result;
 }
@@ -585,11 +578,10 @@ DIR *opendir(const char *name)
 
 	canonicalize_ptr(name, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("opendir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("opendir", canonic) {
 		check_dlsym(opendir);
 		result = true_opendir(name);
-		}
+	}
 
 	return result;
 }
@@ -603,11 +595,10 @@ int __xmknod(const char *pathname, mode_t mode, dev_t dev)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("__xmknod", canonic) {
+	if FUNCTION_SANDBOX_SAFE("__xmknod", canonic) {
 		check_dlsym(__xmknod);
 		result = true___xmknod(pathname, mode, dev);
-		}
+	}
 
 	return result;
 }
@@ -630,11 +621,10 @@ int open(const char *pathname, int flags, ...)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_INT
-		("open", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_INT("open", canonic, flags) {
 		check_dlsym(open);
 		result = true_open(pathname, flags, mode);
-		}
+	}
 
 	return result;
 }
@@ -663,11 +653,10 @@ int rmdir(const char *pathname)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("rmdir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("rmdir", canonic) {
 		check_dlsym(rmdir);
 		result = true_rmdir(pathname);
-		}
+	}
 
 	return result;
 }
@@ -680,11 +669,10 @@ int symlink(const char *oldpath, const char *newpath)
 	canonicalize_int(oldpath, old_canonic);
 	canonicalize_int(newpath, new_canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("symlink", new_canonic) {
+	if FUNCTION_SANDBOX_SAFE("symlink", new_canonic) {
 		check_dlsym(symlink);
 		result = true_symlink(oldpath, newpath);
-		}
+	}
 
 	return result;
 }
@@ -696,11 +684,10 @@ int truncate(const char *path, TRUNCATE_T length)
 
 	canonicalize_int(path, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("truncate", canonic) {
+	if FUNCTION_SANDBOX_SAFE("truncate", canonic) {
 		check_dlsym(truncate);
 		result = true_truncate(path, length);
-		}
+	}
 
 	return result;
 }
@@ -720,11 +707,10 @@ int unlink(const char *pathname)
 		return result;
 	}
 
-	if FUNCTION_SANDBOX_SAFE
-		("unlink", canonic) {
+	if FUNCTION_SANDBOX_SAFE("unlink", canonic) {
 		check_dlsym(unlink);
 		result = true_unlink(pathname);
-		}
+	}
 
 	return result;
 }
@@ -739,11 +725,10 @@ int creat64(const char *pathname, __mode_t mode)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("creat64", canonic) {
+	if FUNCTION_SANDBOX_SAFE("creat64", canonic) {
 		check_dlsym(open64);
 		result = true_open64(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
-		}
+	}
 
 	return result;
 }
@@ -755,11 +740,10 @@ FILE *fopen64(const char *pathname, const char *mode)
 
 	canonicalize_ptr(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_CHAR
-		("fopen64", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_CHAR("fopen64", canonic, mode) {
 		check_dlsym(fopen64);
 		result = true_fopen64(pathname, mode);
-		}
+	}
 
 	return result;
 }
@@ -780,11 +764,10 @@ int open64(const char *pathname, int flags, ...)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_INT
-		("open64", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_INT("open64", canonic, flags) {
 		check_dlsym(open64);
 		result = true_open64(pathname, flags, mode);
-		}
+	}
 
 	return result;
 }
@@ -796,11 +779,10 @@ int truncate64(const char *path, __off64_t length)
 
 	canonicalize_int(path, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("truncate64", canonic) {
+	if FUNCTION_SANDBOX_SAFE("truncate64", canonic) {
 		check_dlsym(truncate64);
 		result = true_truncate64(path, length);
-		}
+	}
 
 	return result;
 }
@@ -825,8 +807,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 
 	canonicalize_int(filename, canonic);
 
-	if FUNCTION_SANDBOX_SAFE
-		("execve", canonic) {
+	if FUNCTION_SANDBOX_SAFE("execve", canonic) {
 		while (envp[count] != NULL) {
 			/* Check if we do not have to do anything */
 			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) {
@@ -910,7 +891,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 
 		if (my_env && kill_env)
 			free(my_env);
-		}
+	}
 
 	errno = old_errno;
 
