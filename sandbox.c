@@ -168,6 +168,7 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 		perror(">>> get portage_tmp_dir");
 		return -1;
 	}
+	setenv(ENV_PORTAGE_TMPDIR, sandbox_info->portage_tmp_dir, 1);
 	
 	if (NULL == realpath(VAR_TMPDIR, sandbox_info->var_tmp_dir)) {
 		perror(">>> get var_tmp_dir");
@@ -179,6 +180,7 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 		return -1;
 	}
 	tmp_dir = sandbox_info->tmp_dir;
+	setenv(ENV_TMPDIR, tmp_dir, 1);
 
 	sandbox_info->home_dir = getenv("HOME");
 	if (!sandbox_info->home_dir) {

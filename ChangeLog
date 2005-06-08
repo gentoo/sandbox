@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  08 June 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox_futils.c:
+  Do not abort if TMPDIR is not valid, but rather use '/tmp', bug #94360.  Also
+  make sure we re-export the new TMPDIR environment variable.
+
   08 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Fix incorrect free of non-malloc'd array, bug #92313 and #94020.  Fix noted
   by Marcus D. Hanwell <cryos@gentoo.org>.

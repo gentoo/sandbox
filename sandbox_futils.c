@@ -123,7 +123,8 @@ SB_STATIC int get_tmp_dir(char *tmp_dir)
 	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
 					      : TMPDIR,
 				tmp_dir)) {
-		return -1;
+		if (NULL == realpath(TMPDIR, tmp_dir))
+			return -1;
 	}
 
 	return 0;
