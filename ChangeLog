@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  08 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Fix incorrect free of non-malloc'd array, bug #92313 and #94020.  Fix noted
+  by Marcus D. Hanwell <cryos@gentoo.org>.
+
   08 June 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
   Add /dev/console to write list, bug #38588.
 

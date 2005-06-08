@@ -821,7 +821,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 	char **my_env = NULL;
 	int kill_env = 1;
 	/* We limit the size LD_PRELOAD can be here, but it should be enough */
-	char tmp_str[4096];
+	char tmp_str[SB_BUF_LEN];
 
 	canonicalize_int(filename, canonic);
 
@@ -848,7 +848,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1;
 
 				/* Fail safe ... */
-				if (max_envp_len > 4096) {
+				if (max_envp_len > SB_BUF_LEN) {
 					fprintf(stderr, "sandbox:  max_envp_len too big!\n");
 					errno = ENOMEM;
 					return result;
@@ -908,11 +908,8 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 		result = true_execve(filename, argv, my_env);
 		old_errno = errno;
 
-		if (my_env && kill_env) {
-			free(tmp_str);
+		if (my_env && kill_env)
 			free(my_env);
-			my_env = NULL;
-		}
 		}
 
 	errno = old_errno;
