@@ -360,7 +360,7 @@ void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 	snprintf(buf, SB_BUF_LEN,
 		 "%s:%s/.gconfd/lock:%s/.bash_history:%s:%s:%s:%s",
 		 "/dev/zero:/dev/fd/:/dev/null:/dev/pts/:"
-		 "/dev/vc/:/dev/pty:/dev/tty:"
+		 "/dev/vc/:/dev/pty:/dev/tty:/dev/console:"
 		 "/dev/shm/ngpt:/var/log/scrollkeeper.log:"
 		 "/usr/tmp/conftest:/usr/lib/conftest:"
 		 "/usr/lib32/conftest:/usr/lib64/conftest:"
