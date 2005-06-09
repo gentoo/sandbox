@@ -106,7 +106,8 @@
  * failure. */
 #define canonicalize_int(path, resolved_path) \
 { \
-	if (0 != canonicalize(path, resolved_path)) \
+	/* Do not fail if the canonicalized path is too long, bug #94630 */ \
+	if (0 != canonicalize(path, resolved_path, 0)) \
 		return -1; \
 }
 
@@ -114,7 +115,8 @@
  * failure. */
 #define canonicalize_ptr(path, resolved_path) \
 { \
-	if (0 != canonicalize(path, resolved_path)) \
+	/* Do not fail if the canonicalized path is too long, bug #94630 */ \
+	if (0 != canonicalize(path, resolved_path, 0)) \
 		return NULL; \
 }
 
@@ -150,7 +152,7 @@ static char *egetcwd(char *, size_t);
 
 static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
-static int canonicalize(const char *, char *);
+static int canonicalize(const char *, char *, int);
 static char *filter_path(const char *, int);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
@@ -326,7 +328,13 @@ void __attribute__ ((constructor)) libsb_init(void)
 	errno = old_errno;
 }
 
-static int canonicalize(const char *path, char *resolved_path)
+/* Be default we will fail if the path name we try to canonicalize is too long.
+ * This however could cause issues with some things (bug #94630 and #21766), so
+ * if fail_nametoolong == 0, return a null length string and do not fail.
+ * FIXME:  This is really not *safe* if you belong to the sandbox should avoid
+ *         any exploits that might want to touch the fs during compile ...
+ */
+static int canonicalize(const char *path, char *resolved_path, int fail_nametoolong)
 {
 	int old_errno = errno;
 	char *retval;
@@ -352,10 +360,26 @@ static int canonicalize(const char *path, char *resolved_path)
 		 * to the current working directory if it was not
 		 * an absolute path
 		 */
-		if (errno == ENAMETOOLONG)
-			return -1;
+		
+		if (ENAMETOOLONG == errno) {
+			if (0 == fail_nametoolong) {
+				errno = 0;
+				*resolved_path = '\0';
+				return 0;
+			} else {
+				return -1;
+			}
+		}
 
-		egetcwd(resolved_path, SB_PATH_MAX - 2);
+		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2)) {
+			if (ENAMETOOLONG == errno && 0 == fail_nametoolong) {
+				errno = 0;
+				*resolved_path = '\0';
+				return 0;
+			} else {
+				return -1;
+			}
+		}
 		strcat(resolved_path, "/");
 		strncat(resolved_path, path, SB_PATH_MAX - 1);
 
@@ -396,7 +420,7 @@ static char *filter_path(const char *path, int follow_link)
 		return NULL;
 
 	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path))
+		if (-1 == canonicalize(path, filtered_path, 1))
 			goto error;
 	} else {
 		/* Basically we get the realpath which should resolve symlinks,
@@ -414,7 +438,7 @@ static char *filter_path(const char *path, int follow_link)
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
 				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path)) {
+				if (-1 == canonicalize(path, filtered_path, 1)) {
 					free(tmp_str1);
 					goto error;
 				}
@@ -1435,10 +1459,15 @@ static int before_syscall(const char *func, const char *file)
 	char *write = getenv("SANDBOX_WRITE");
 	char *predict = getenv("SANDBOX_PREDICT");
 
-	if (!strlen(file)) {
+	if (NULL == file || 0 == strlen(file)) {
 		/* The file/directory does not exist */
+#if 0
 		errno = ENOENT;
 		return 0;
+#else
+		/* XXX: We do not care - let the function handle it */
+		return 1;
+#endif
 	}
 
 	if(sb_init == 0) {
