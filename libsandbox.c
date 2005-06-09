@@ -1312,6 +1312,18 @@ unlink_hack_end:
 				}
 			}
 
+			/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
+			 *      It needs to be here, as for each process '/proc/self'
+			 *      will differ ... */
+			if (-1 == result) {
+				char proc_self_fd[SB_PATH_MAX];
+
+				if (NULL != realpath("/proc/self/fd", proc_self_fd)) {
+					if (0 == strncmp(fpath, proc_self_fd, strlen(proc_self_fd)))
+						result = 1;
+				}
+			}
+
 			if ((-1 == result) && (NULL != sbcontext->predict_prefixes)) {
 				for (i = 0; i < sbcontext->num_predict_prefixes; i++) {
 					if (NULL != sbcontext->predict_prefixes[i]) {
