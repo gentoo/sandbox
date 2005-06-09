@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  09 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Move symlink hack down a bit to try and minimize on the amount of lstat()
+  calls we do.
+
   09 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c:
   Add hack to allow writing to /proc/self/fd (or /dev/fd), bug #91516.
 

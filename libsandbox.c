@@ -1223,12 +1223,43 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 
 			/* No need to check here, as we do it above
 			if (NULL != sbcontext->write_prefixes) { */
+			
+			if (NULL != sbcontext->write_denied_prefixes) {
+				for (i = 0; i < sbcontext->num_write_denied_prefixes; i++) {
+					if (NULL != sbcontext->write_denied_prefixes[i]) {
+						if (0 == strncmp(fpath,
+								 sbcontext->write_denied_prefixes[i],
+								 strlen(sbcontext->write_denied_prefixes[i]))) {
+							/* Special paths in writable context that should
+							 * be denied - not implemented yet */
+							result = 0;
+							break;
+						}
+					}
+				}
+			}
+
+			if ((-1 == result) && (NULL != sbcontext->write_prefixes)) {
+				for (i = 0; i < sbcontext->num_write_prefixes; i++) {
+					if (NULL != sbcontext->write_prefixes[i]) {
+						if (0 == strncmp(fpath,
+								 sbcontext->write_prefixes[i],
+								 strlen(sbcontext->write_prefixes[i]))) {
+							/* Falls in a writable path */
+							result = 1;
+							break;
+						}
+					}
+				}
+			}
+
 			/* XXX: Hack to enable us to remove symlinks pointing
 			 * to protected stuff.  First we make sure that the
 			 * passed path is writable, and if so, check if its a
 			 * symlink, and give access only if the resolved path
 			 * of the symlink's parent also have write access. */
-			if (((0 == strncmp(func, "unlink", 6)) ||
+			if ((-1 == result) &&
+			    ((0 == strncmp(func, "unlink", 6)) ||
 			     (0 == strncmp(func, "lchown", 6)) ||
 			     (0 == strncmp(func, "rename", 6))) &&
 			    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
@@ -1282,35 +1313,6 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 				}
 			}
 unlink_hack_end:
-			
-			if (NULL != sbcontext->write_denied_prefixes) {
-				for (i = 0; i < sbcontext->num_write_denied_prefixes; i++) {
-					if (NULL != sbcontext->write_denied_prefixes[i]) {
-						if (0 == strncmp(fpath,
-								 sbcontext->write_denied_prefixes[i],
-								 strlen(sbcontext->write_denied_prefixes[i]))) {
-							/* Special paths in writable context that should
-							 * be denied - not implemented yet */
-							result = 0;
-							break;
-						}
-					}
-				}
-			}
-
-			if ((-1 == result) && (NULL != sbcontext->write_prefixes)) {
-				for (i = 0; i < sbcontext->num_write_prefixes; i++) {
-					if (NULL != sbcontext->write_prefixes[i]) {
-						if (0 == strncmp(fpath,
-								 sbcontext->write_prefixes[i],
-								 strlen(sbcontext->write_prefixes[i]))) {
-							/* Falls in a writable path */
-							result = 1;
-							break;
-						}
-					}
-				}
-			}
 
 			/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
 			 *      It needs to be here, as for each process '/proc/self'
