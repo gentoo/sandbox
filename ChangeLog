@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  09 June 2005; Martin Schlemmer <azarah@gentoo.org> symbols.in, libsandbox.c:
+  Add wrapper for access() function, bug #85413.
+
   09 June 2005; Martin Schlemmer <azarah@gentoo.org> getcwd.c:
   Use generic getcwd() implementation from uclibc - should be more portable
   and looks a bit cleaner.

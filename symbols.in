@@ -7,6 +7,7 @@ link
 mkdir
 opendir
 __xmknod
+access
 open
 rename
 rmdir

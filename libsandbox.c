@@ -86,10 +86,13 @@
 #define FUNCTION_SANDBOX_SAFE(func, path) \
 	((0 == is_sandbox_on()) || (1 == before_syscall(func, path)))
 
-#define FUNCTION_SANDBOX_SAFE_INT(func, path, flags) \
+#define FUNCTION_SANDBOX_SAFE_ACCESS(func, path, flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_access(func, path, flags)))
+
+#define FUNCTION_SANDBOX_SAFE_OPEN_INT(func, path, flags) \
 	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(func, path, flags)))
 
-#define FUNCTION_SANDBOX_SAFE_CHAR(func, path, mode) \
+#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(func, path, mode) \
 	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(func, path, mode)))
 
 /* Macro to check if a wrapper is defined, if not
@@ -157,6 +160,7 @@ static char *filter_path(const char *, int);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
 static int before_syscall(const char *, const char *);
+static int before_syscall_access(const char *, const char *, int);
 static int before_syscall_open_int(const char *, const char *, int);
 static int before_syscall_open_char(const char *, const char *, const char *);
 static void clean_env_entries(char ***, int *);
@@ -187,6 +191,8 @@ static DIR *(*true_opendir) (const char *) = NULL;
 extern int __xmknod(const char *, mode_t, dev_t);
 static int (*true___xmknod) (const char *, mode_t, dev_t) = NULL;
 #endif
+extern int access(const char *, int);
+static int (*true_access) (const char *, int) = NULL;
 extern int open(const char *, int, ...);
 static int (*true_open) (const char *, int, ...) = NULL;
 extern int rename(const char *, const char *);
@@ -233,6 +239,7 @@ static void init_wrappers(void)
 #ifdef WRAP_MKNOD
 	check_dlsym(__xmknod);
 #endif
+	check_dlsym(access);
 	check_dlsym(open);
 	check_dlsym(rename);
 	check_dlsym(rmdir);
@@ -531,7 +538,7 @@ FILE *fopen(const char *pathname, const char *mode)
 
 	canonicalize_ptr(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_CHAR("fopen", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", canonic, mode) {
 		check_dlsym(fopen);
 		result = true_fopen(pathname, mode);
 	}
@@ -629,6 +636,21 @@ int __xmknod(const char *pathname, mode_t mode, dev_t dev)
 
 #endif
 
+int access(const char *pathname, int mode)
+{
+	int result = -1;
+	char canonic[SB_PATH_MAX];
+
+	canonicalize_int(pathname, canonic);
+
+	if FUNCTION_SANDBOX_SAFE_ACCESS("access", canonic, mode) {
+		check_dlsym(access);
+		result = true_access(pathname, mode);
+	}
+
+	return result;
+}
+
 /* Eventually, there is a third parameter: it's mode_t mode */
 int open(const char *pathname, int flags, ...)
 {
@@ -645,7 +667,7 @@ int open(const char *pathname, int flags, ...)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_INT("open", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", canonic, flags) {
 		check_dlsym(open);
 		result = true_open(pathname, flags, mode);
 	}
@@ -764,7 +786,7 @@ FILE *fopen64(const char *pathname, const char *mode)
 
 	canonicalize_ptr(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_CHAR("fopen64", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", canonic, mode) {
 		check_dlsym(fopen64);
 		result = true_fopen64(pathname, mode);
 	}
@@ -788,7 +810,7 @@ int open64(const char *pathname, int flags, ...)
 
 	canonicalize_int(pathname, canonic);
 
-	if FUNCTION_SANDBOX_SAFE_INT("open64", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", canonic, flags) {
 		check_dlsym(open64);
 		result = true_open64(pathname, flags, mode);
 	}
@@ -1153,7 +1175,8 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 
 	if (-1 == result) {
 		if ((NULL != sbcontext->read_prefixes) &&
-		    ((0 == strncmp(func, "open_rd", 7)) ||
+		    ((0 == strncmp(func, "access_rd", 9)) ||
+		     (0 == strncmp(func, "open_rd", 7)) ||
 		     (0 == strncmp(func, "popen", 5)) ||
 		     (0 == strncmp(func, "opendir", 7)) ||
 		     (0 == strncmp(func, "system", 6)) ||
@@ -1175,7 +1198,8 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 			}
 		}
 		if ((NULL != sbcontext->write_prefixes) &&
-		    ((0 == strncmp(func, "open_wr", 7)) ||
+		    ((0 == strncmp(func, "access_wr", 7)) ||
+		     (0 == strncmp(func, "open_wr", 7)) ||
 		     (0 == strncmp(func, "creat", 5)) ||
 		     (0 == strncmp(func, "creat64", 7)) ||
 		     (0 == strncmp(func, "mkdir", 5)) ||
@@ -1562,6 +1586,15 @@ static int before_syscall(const char *func, const char *file)
 	}
 
 	return result;
+}
+
+static int before_syscall_access(const char *func, const char *file, int flags)
+{
+	if (flags & W_OK) {
+		return before_syscall("access_wr", file);
+	} else {
+		return before_syscall("access_rd", file);
+	}
 }
 
 static int before_syscall_open_int(const char *func, const char *file, int flags)
