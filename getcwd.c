@@ -369,6 +369,7 @@ size_t size;
 #ifdef OUTSIDE_LIBSANDBOX
 		dirstream = opendir(dotp);
 #else
+		check_dlsym(opendir);
 		dirstream = true_opendir(dotp);
 #endif
 		if (dirstream == NULL)

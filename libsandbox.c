@@ -168,48 +168,48 @@ static int is_sandbox_pid();
 /* Wrapped functions */
 
 extern int chmod(const char *, mode_t);
-static int (*true_chmod) (const char *, mode_t);
+static int (*true_chmod) (const char *, mode_t) = NULL;
 extern int chown(const char *, uid_t, gid_t);
-static int (*true_chown) (const char *, uid_t, gid_t);
+static int (*true_chown) (const char *, uid_t, gid_t) = NULL;
 extern int creat(const char *, mode_t);
-static int (*true_creat) (const char *, mode_t);
+static int (*true_creat) (const char *, mode_t) = NULL;
 extern FILE *fopen(const char *, const char *);
-static FILE *(*true_fopen) (const char *, const char *);
+static FILE *(*true_fopen) (const char *, const char *) = NULL;
 extern int lchown(const char *, uid_t, gid_t);
-static int (*true_lchown) (const char *, uid_t, gid_t);
+static int (*true_lchown) (const char *, uid_t, gid_t) = NULL;
 extern int link(const char *, const char *);
-static int (*true_link) (const char *, const char *);
+static int (*true_link) (const char *, const char *) = NULL;
 extern int mkdir(const char *, mode_t);
-static int (*true_mkdir) (const char *, mode_t);
+static int (*true_mkdir) (const char *, mode_t) = NULL;
 extern DIR *opendir(const char *);
-static DIR *(*true_opendir) (const char *);
+static DIR *(*true_opendir) (const char *) = NULL;
 #ifdef WRAP_MKNOD
 extern int __xmknod(const char *, mode_t, dev_t);
-static int (*true___xmknod) (const char *, mode_t, dev_t);
+static int (*true___xmknod) (const char *, mode_t, dev_t) = NULL;
 #endif
 extern int open(const char *, int, ...);
-static int (*true_open) (const char *, int, ...);
+static int (*true_open) (const char *, int, ...) = NULL;
 extern int rename(const char *, const char *);
-static int (*true_rename) (const char *, const char *);
+static int (*true_rename) (const char *, const char *) = NULL;
 extern int rmdir(const char *);
-static int (*true_rmdir) (const char *);
+static int (*true_rmdir) (const char *) = NULL;
 extern int symlink(const char *, const char *);
-static int (*true_symlink) (const char *, const char *);
+static int (*true_symlink) (const char *, const char *) = NULL;
 extern int truncate(const char *, TRUNCATE_T);
-static int (*true_truncate) (const char *, TRUNCATE_T);
+static int (*true_truncate) (const char *, TRUNCATE_T) = NULL;
 extern int unlink(const char *);
-static int (*true_unlink) (const char *);
+static int (*true_unlink) (const char *) = NULL;
 
 #if (GLIBC_MINOR >= 1)
 
 extern int creat64(const char *, __mode_t);
-static int (*true_creat64) (const char *, __mode_t);
+static int (*true_creat64) (const char *, __mode_t) = NULL;
 extern FILE *fopen64(const char *, const char *);
-static FILE *(*true_fopen64) (const char *, const char *);
+static FILE *(*true_fopen64) (const char *, const char *) = NULL;
 extern int open64(const char *, int, ...);
-static int (*true_open64) (const char *, int, ...);
+static int (*true_open64) (const char *, int, ...) = NULL;
 extern int truncate64(const char *, __off64_t);
-static int (*true_truncate64) (const char *, __off64_t);
+static int (*true_truncate64) (const char *, __off64_t) = NULL;
 
 #endif
 
@@ -970,6 +970,7 @@ static int is_sandbox_pid()
 
 	init_wrappers();
 
+	check_dlsym(fopen);
 	pids_stream = true_fopen(sandbox_pids_file, "r");
 
 	if (NULL == pids_stream) {
@@ -1373,6 +1374,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 					unsetenv("SANDBOX_LOG");
 					fprintf(stderr,	"\e[31;01mSECURITY BREACH\033[0m SANDBOX_LOG %s isn't allowed via SANDBOX_WRITE\n", dpath);
 				} else {
+					check_dlsym(open);
 					log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 					if (log_file >= 0) {
 						write(log_file, buffer, strlen(buffer));
@@ -1400,6 +1402,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
 						dpath);
 				} else {
+					check_dlsym(open);
 					debug_log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT,
 					                           S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 					if (debug_log_file >= 0) {
