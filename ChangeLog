@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  09 June 2005; Martin Schlemmer <azarah@gentoo.org> getcwd.c:
+  Use generic getcwd() implementation from uclibc - should be more portable
+  and looks a bit cleaner.
+
   09 June 2005; Martin Schlemmer <azarah@gentoo.org> getcwd.c, libsandbox.c:
   Make sure our true_* pointers are initialized to NULL, and that we check for
   all references that they are valid.

@@ -1,482 +1,194 @@
-/* Copyright (C) 1991,92,93,94,95,96,97,98,99 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
+/* These functions find the absolute path to the current working directory.  */
 
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, write to the Free
-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307 USA.  */
-
-/* Wants:
-   AC_STDC_HEADERS
-   AC_DIR_HEADER
-   AC_UNISTD_H
-   AC_MEMORY_H
-   AC_CONST
-   AC_ALLOCA
- */
-
-/*
- * $Header$
- */
-
-/* Modified: 26 July 2003; Martin Schlemmer <azarah@gentoo.org>
- * 
- *  Cleaned up unneeded stuff.	Add a wrapper to try and detect when
- *  we have a kernel whose getcwd system call do not handle directory
- *  names longer than PATH_MAX, and if so, use our generic version.
- *  To work truly with > PATH_MAX lengh CWDs, I had to increase the
- *  size of the dots[] array.  Also prepended a 'e' to functions that
- *  I did not rip out.
- *  
- */
-
-/* AIX requires this to be the first thing in the file.  */
-#if defined _AIX && !defined __GNUC__
-#pragma alloca
-#endif
-
-
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifdef	STDC_HEADERS
-# include <stddef.h>
-#endif
+#include <dirent.h>
+#include <unistd.h>
+#include <string.h>
 
 #include "config.h"
 #include <sys/param.h>
 #include "localdecls.h"
 
+/* Modified: 08 June 2005; Martin Schlemmer <azarah@gentoo.org>
+ * 
+ *  Cleaned up unneeded stuff.	Add a wrapper to try and detect when
+ *  we have a kernel whose getcwd system call do not handle directory
+ *  names longer than PATH_MAX, and if so, use our generic version.
+ */
 
-#if !defined __GNU_LIBRARY__ && !defined STDC_HEADERS
-extern int errno;
-#endif
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
 #endif
 
-#ifndef NULL
-# define NULL	0
-#endif
+/* If the syscall is not present, we have to walk up the
+ * directory tree till we hit the root.  Now we _could_
+ * use /proc/self/cwd if /proc is mounted... That approach
+ * is left an an exercise for the reader... */
 
-#if defined USGr3 && !defined DIRENT
-# define DIRENT
-#endif		/* USGr3 */
-#if defined Xenix && !defined SYSNDIR
-# define SYSNDIR
-#endif		/* Xenix */
 
-#if defined POSIX || defined DIRENT || defined __GNU_LIBRARY__
-# include <dirent.h>
-# ifndef __GNU_LIBRARY__
-#  define D_NAMLEN(d) strlen((d)->d_name)
-# else
-#  define HAVE_D_NAMLEN
-#  define D_NAMLEN(d) ((d)->d_namlen)
-# endif
-#else		/* not POSIX or DIRENT */
-# define dirent		direct
-# define D_NAMLEN(d)	((d)->d_namlen)
-# define HAVE_D_NAMLEN
-# if defined USG && !defined sgi
-#  if defined SYSNDIR
-#   include <sys/ndir.h>
-#  else		/* Not SYSNDIR */
-#   include "ndir.h"
-#  endif	/* SYSNDIR */
-# else		/* not USG */
-#  include <sys/dir.h>
-# endif		/* USG */
-#endif		/* POSIX or DIRENT or __GNU_LIBRARY__ */
+/* Seems a few broken filesystems (like coda) don't like this */
+/*#undef FAST_DIR_SEARCH_POSSIBLE on Linux */
 
-#if defined HAVE_UNISTD_H || defined __GNU_LIBRARY__
-# include <unistd.h>
-#endif
 
-#if defined STDC_HEADERS || defined __GNU_LIBRARY__ || defined POSIX
-# include <stdlib.h>
-# include <string.h>
-# define ANSI_STRING
-#else		/* No standard headers.  */
-
-# ifdef USG
-
-#  include <string.h>
-#  ifdef NEED_MEMORY_H
-#   include <memory.h>
-#  endif
-#  define	ANSI_STRING
-
-# else		/* Not USG.  */
-
-#  ifdef NeXT
-
-#   include <string.h>
-
-#  else		/* Not NeXT.  */
-
-#   include <strings.h>
-
-#   ifndef bcmp
-extern int bcmp();
-#   endif
-#   ifndef bzero
-extern void bzero();
-#   endif
-#   ifndef bcopy
-extern void bcopy();
-#   endif
-
-#  endif	/* NeXT. */
-
-# endif		/* USG.  */
-
-extern char *malloc(), *realloc();
-extern void free();
-
-#endif		/* Standard headers.  */
-
-#ifndef ANSI_STRING
-# define memcpy(d, s, n)	bcopy((s), (d), (n))
-# define memmove memcpy
-#endif		/* Not ANSI_STRING.  */
-
-#ifndef MAX
-# define MAX(a, b) ((a) < (b) ? (b) : (a))
-#endif
-
-#ifdef _LIBC
-# ifndef mempcpy
-#  define mempcpy __mempcpy
-# endif
-# define HAVE_MEMPCPY	1
-#endif
-
-#if !defined __alloca && !defined __GNU_LIBRARY__
-
-# ifdef __GNUC__
-#  undef alloca
-#  define alloca(n)	__builtin_alloca (n)
-# else		/* Not GCC.  */
-#  if	defined sparc || defined HAVE_ALLOCA_H
-#   include <alloca.h>
-#  else		/* Not sparc or HAVE_ALLOCA_H.	*/
-#   ifndef _AIX
-extern char *alloca();
-#   endif	/* Not _AIX.  */
-#  endif	/* sparc or HAVE_ALLOCA_H.  */
-# endif		/* GCC.  */
-
-# define __alloca	alloca
-
-#endif
-
-#if defined HAVE_LIMITS_H || defined STDC_HEADERS || defined __GNU_LIBRARY__
-# include <limits.h>
-#else
-# include <sys/param.h>
-#endif
-
-#ifndef PATH_MAX
-# ifdef MAXPATHLEN
-#  define PATH_MAX MAXPATHLEN
-# else
-#  define PATH_MAX 1024
-# endif
-#endif
-
-#if !defined STDC_HEADERS && !defined __GNU_LIBRARY__
-# undef size_t
-# define size_t unsigned int
-#endif
-
-#if !__STDC__ && !defined const
-# define const
-#endif
-
-#ifndef __GNU_LIBRARY__
-# define __lstat	stat
-#endif
-
-#ifndef _LIBC
-# define __getcwd getcwd
-#endif
-
-#ifndef GETCWD_RETURN_TYPE
-# define GETCWD_RETURN_TYPE char *
-#endif
-
-#ifndef __LIBC
-# define __lstat lstat
-# define __readdir readdir
-# define __closedir closedir
-#endif
-
-/* Get the pathname of the current working directory, and put it in SIZE
-   bytes of BUF.  Returns NULL if the directory couldn't be determined or
-   SIZE was too small.	If successful, returns BUF.  In GNU, if BUF is
-   NULL, an array is allocated with `malloc'; the array is SIZE bytes long,
-   unless SIZE == 0, in which case it is as big as necessary.  */
-
-SB_STATIC GETCWD_RETURN_TYPE
-__egetcwd(buf, size)
-char *buf;
-size_t size;
+/* Routine to find the step back down */
+SB_STATIC char *search_dir(dev_t this_dev, ino_t this_ino, char *path_buf, size_t path_size)
 {
-	static const char dots[]
-			= "../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../../\
-../../../../../../../../../../../../../../../../../../../../../../../../../..";
-	const char *dotp = &dots[sizeof (dots)];
-	const char *dotlist = dots;
-	size_t dotsize = sizeof (dots) - 1;
-	dev_t rootdev, thisdev;
-	ino_t rootino, thisino;
-	char *path;
-	register char *pathp;
+	DIR *dp;
+	struct dirent *d;
+	char *ptr;
+	size_t slen;
 	struct stat st;
-	int prev_errno = errno;
-	size_t allocated = size;
 
-	if (size == 0) {
-		if (buf != NULL) {
-			__set_errno(EINVAL);
-			return NULL;
-		}
-
-		allocated = SB_PATH_MAX + 1;
-	}
-
-	if (buf != NULL)
-		path = buf;
-	else {
-		path = malloc(allocated);
-		if (path == NULL)
-			return NULL;
-	}
-
-	pathp = path + allocated;
-	*--pathp = '\0';
-
-	if (__lstat(".", &st) < 0)
-		goto lose2;
-	thisdev = st.st_dev;
-	thisino = st.st_ino;
-
-	if (__lstat("/", &st) < 0)
-		goto lose2;
-	rootdev = st.st_dev;
-	rootino = st.st_ino;
-
-	while (!(thisdev == rootdev && thisino == rootino)) {
-		register DIR *dirstream;
-		struct dirent *d;
-		dev_t dotdev;
-		ino_t dotino;
-		char mount_point;
-
-		/* Look at the parent directory.  */
-		if (dotp == dotlist) {
-			/* My, what a deep directory tree you have, Grandma.  */
-			char *new;
-			if (dotlist == dots) {
-				new = malloc(dotsize * 2 + 1);
-				if (new == NULL)
-					goto lose;
-#ifdef HAVE_MEMPCPY
-				dotp = (char *)mempcpy(new, dots, dotsize);
-#else
-				memcpy(new, dots, dotsize);
-				dotp = &new[dotsize];
+#ifdef FAST_DIR_SEARCH_POSSIBLE
+	/* The test is for ELKS lib 0.0.9, this should be fixed in the real kernel */
+	size_t slow_search = (sizeof(ino_t) != sizeof(d->d_ino));
 #endif
-			} else {
-				new = realloc((__ptr_t) dotlist, dotsize * 2 + 1);
-				if (new == NULL)
-					goto lose;
-				dotp = &new[dotsize];
-			}
-#ifdef HAVE_MEMPCPY
-			*((char *) mempcpy((char *) dotp, new, dotsize)) = '\0';
-			dotsize *= 2;
-#else
-			memcpy((char *) dotp, new, dotsize);
-			dotsize *= 2;
-			new[dotsize] = '\0';
+
+//	if (stat(path_buf, &st) < 0) {
+//		goto oops;
+//	}
+#ifdef FAST_DIR_SEARCH_POSSIBLE
+	if (this_dev != st.st_dev)
+		slow_search = 1;
 #endif
-			dotlist = new;
+
+	slen = strlen(path_buf);
+	ptr = path_buf + slen - 1;
+	if (*ptr != '/') {
+		if (slen + 2 > path_size) {
+			goto oops;
 		}
+		strcpy(++ptr, "/");
+		slen++;
+	}
+	slen++;
 
-		dotp -= 3;
-
-		/* Figure out if this directory is a mount point.  */
-		if (__lstat(dotp, &st) < 0)
-			goto lose;
-		dotdev = st.st_dev;
-		dotino = st.st_ino;
-		mount_point = dotdev != thisdev;
-
-		/* Search for the last directory.  */
 #ifdef OUTSIDE_LIBSANDBOX
-		dirstream = opendir(dotp);
+	dp = opendir(path_buf);
 #else
-		check_dlsym(opendir);
-		dirstream = true_opendir(dotp);
+	check_dlsym(opendir);
+	dp = true_opendir(path_buf);
 #endif
-		if (dirstream == NULL)
-			goto lose;
-		/* Clear errno to distinguish EOF from error if readdir returns
-		   NULL.  */
-		__set_errno(0);
-		while ((d = __readdir(dirstream)) != NULL) {
-			if (d->d_name[0] == '.' &&
-					(d->d_name[1] == '\0'
-					 || (d->d_name[1] == '.' && d->d_name[2] == '\0')))
-				continue;
-			if (mount_point || (ino_t) d->d_ino == thisino) {
-				char name[dotlist + dotsize - dotp + 1 + _D_ALLOC_NAMLEN(d)];
-#ifdef HAVE_MEMPCPY
-				char *tmp = mempcpy(name, dotp,
-							dotlist + dotsize - dotp);
-				*tmp++ = '/';
-				strcpy(tmp, d->d_name);
-#else
-				memcpy(name, dotp, dotlist + dotsize - dotp);
-				name[dotlist + dotsize - dotp] = '/';
-				strcpy(&name[dotlist + dotsize - dotp + 1], d->d_name);
-#endif
-				/* We don't fail here if we cannot stat() a directory entry.
-				   This can happen when (network) filesystems fail.  If this
-				   entry is in fact the one we are looking for we will find
-				   out soon as we reach the end of the directory without
-				   having found anything.  */
-				if (__lstat(name, &st) >= 0 && st.st_dev == thisdev
-						&& st.st_ino == thisino)
-					break;
-			}
-		}
-		if (d == NULL) {
-			int save = errno;
-			(void) __closedir(dirstream);
-			if (save == 0)
-				/* EOF on dirstream, which means that the current directory
-				   has been removed.  */
-				save = ENOENT;
-			__set_errno(save);
-			goto lose;
-		} else {
-			size_t namlen = _D_EXACT_NAMLEN(d);
-
-			if ((size_t) (pathp - path) <= namlen) {
-				if (size != 0) {
-					(void) __closedir(dirstream);
-					__set_errno(ERANGE);
-					goto lose;
-				} else {
-					char *tmp;
-					size_t oldsize = allocated;
-
-					allocated = 2 * MAX(allocated, namlen);
-					tmp = realloc(path, allocated);
-					if (tmp == NULL) {
-						(void) __closedir(dirstream);
-						__set_errno(ENOMEM);	/* closedir might have changed it. */
-						goto lose;
-					}
-
-					/* Move current contents up to the end of the buffer.
-					   This is guaranteed to be non-overlapping.  */
-					pathp = memcpy(tmp + allocated -
-							 (path + oldsize - pathp),
-							 tmp + (pathp - path), path + oldsize - pathp);
-					path = tmp;
-				}
-			}
-			pathp -= namlen;
-			(void) memcpy(pathp, d->d_name, namlen);
-			*--pathp = '/';
-			(void) __closedir(dirstream);
-		}
-
-		thisdev = dotdev;
-		thisino = dotino;
+	if (dp == 0) {
+	    goto oops;
 	}
 
-	if (pathp == &path[allocated - 1])
-		*--pathp = '/';
+	while ((d = readdir(dp)) != 0) {
+#ifdef FAST_DIR_SEARCH_POSSIBLE
+		if (slow_search || this_ino == d->d_ino) {
+#endif
+			if (slen + strlen(d->d_name) > path_size) {
+			    goto oops;
+			}
+			strcpy(ptr + 1, d->d_name);
+			if (lstat(path_buf, &st) < 0)
+				continue;
+			if (st.st_ino == this_ino && st.st_dev == this_dev) {
+				closedir(dp);
+				return path_buf;
+			}
+#ifdef FAST_DIR_SEARCH_POSSIBLE
+		}
+#endif
+	}
 
-	if (dotlist != dots)
-		free((__ptr_t) dotlist);
+	closedir(dp);
+	return 0;
 
-	memmove(path, pathp, path + allocated - pathp);
-
-	/* Restore errno on successful return.	*/
-	__set_errno(prev_errno);
-
-	return path;
-
-lose:
-	if (dotlist != dots)
-		free((__ptr_t) dotlist);
-lose2:
-	if (buf == NULL)
-		free(path);
-	return NULL;
+oops:
+	__set_errno(ERANGE);
+	return 0;
 }
 
-SB_STATIC GETCWD_RETURN_TYPE
-egetcwd(buf, size)
-char *buf;
-size_t size;
+/* Routine to go up tree */
+SB_STATIC char *recurser(char *path_buf, size_t path_size, dev_t root_dev, ino_t root_ino)
+{
+	struct stat st;
+	dev_t this_dev;
+	ino_t this_ino;
+
+	if (lstat(path_buf, &st) < 0) {
+	    if (errno != EFAULT)
+		goto oops;
+	    return 0;
+	}
+	this_dev = st.st_dev;
+	this_ino = st.st_ino;
+	if (this_dev == root_dev && this_ino == root_ino) {
+		if (path_size < 2) {
+		    goto oops;
+		}
+		strcpy(path_buf, "/");
+		return path_buf;
+	}
+	if (strlen(path_buf) + 4 > path_size) {
+	    goto oops;
+	}
+	strcat(path_buf, "/..");
+	if (recurser(path_buf, path_size, root_dev, root_ino) == 0)
+		return 0;
+
+	return search_dir(this_dev, this_ino, path_buf, path_size);
+oops:
+	__set_errno(ERANGE);
+	return 0;
+}
+
+SB_STATIC inline
+size_t __syscall_egetcwd(char * buf, unsigned long size)
+{
+    size_t len;
+    char *cwd;
+    struct stat st;
+    size_t olderrno;
+
+    olderrno = errno;
+    len = -1;
+    cwd = recurser(buf, size, st.st_dev, st.st_ino);
+    if (cwd) {
+	len = strlen(buf);
+	__set_errno(olderrno);
+    }
+    return len;
+}
+
+SB_STATIC char *__egetcwd(char *buf, size_t size)
+{
+    size_t ret;
+    char *path;
+    size_t alloc_size = size;
+
+    if (size == 0) {
+	if (buf != NULL) {
+	    __set_errno(EINVAL);
+	    return NULL;
+	}
+	alloc_size = SB_PATH_MAX;
+    }
+    path=buf;
+    if (buf == NULL) {
+	path = malloc(alloc_size);
+	if (path == NULL)
+	    return NULL;
+    }
+    ret = __syscall_egetcwd(path, alloc_size);
+    if (ret >= 0)
+    {
+	if (buf == NULL && size == 0)
+	    buf = realloc(path, ret);
+	if (buf == NULL)
+	    buf = path;
+	return buf;
+    }
+    if (buf == NULL)
+	free (path);
+    return NULL;
+}
+
+SB_STATIC char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
 	char *tmpbuf;
@@ -485,7 +197,7 @@ size_t size;
 	tmpbuf = getcwd(buf, size);
 
 	if (tmpbuf) {
-		__lstat(buf, &st);
+		lstat(buf, &st);
 	} else {
 		return tmpbuf;
 	}
@@ -505,4 +217,3 @@ size_t size;
 	return tmpbuf;
 }
 
-// vim:noexpandtab noai:cindent ai
