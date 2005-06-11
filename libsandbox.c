@@ -338,8 +338,8 @@ void __attribute__ ((constructor)) libsb_init(void)
 /* Be default we will fail if the path name we try to canonicalize is too long.
  * This however could cause issues with some things (bug #94630 and #21766), so
  * if fail_nametoolong == 0, return a null length string and do not fail.
- * FIXME:  This is really not *safe* if you belong to the sandbox should avoid
- *         any exploits that might want to touch the fs during compile ...
+ * FIXME:  This is really not *safe* if you belong to the 'sandbox should avoid
+ *         any exploits that might want to touch the fs during compile' group ...
  */
 static int canonicalize(const char *path, char *resolved_path, int fail_nametoolong)
 {
@@ -893,9 +893,9 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 				/* LD_PRELOAD already have variables other than sandbox_lib,
 				 * thus we have to add sandbox_lib seperated via a whitespace. */
 				if (0 == add_ldpreload) {
-					snprintf(&(tmp_str[strlen(tmp_str)]),
+					snprintf((char *)(tmp_str + strlen(tmp_str)),
 						 max_envp_len - strlen(tmp_str) + 1, " %s",
-						 &(envp[count][strlen(LD_PRELOAD_EQ)]));
+						 (char *)(envp[count] + strlen(LD_PRELOAD_EQ)));
 				}
 
 				/* Valid string? */

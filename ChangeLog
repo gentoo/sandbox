@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  More comment/readability cleanups.
+
   10 June 2005; Martin Schlemmer <azarah@gentoo.org> canonicalize.c, getcwd.c,
   sandbox_futils.c, libsandbox.c:
   Some strncpy/strncat and other cleanups.
