@@ -144,6 +144,7 @@ typedef struct {
 static sbcontext_t sbcontext;
 static char **cached_env_vars;
 static int sb_init = 0;
+static int sb_path_size_warning = 0;
 
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
@@ -156,7 +157,7 @@ static char *egetcwd(char *, size_t);
 static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *, int);
-static char *filter_path(const char *, int);
+static char *filter_path(const char *, int, int);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
 static int before_syscall(const char *, const char *);
@@ -411,7 +412,7 @@ static int canonicalize(const char *path, char *resolved_path, int fail_nametool
 	return 0;
 }
 
-static char *filter_path(const char *path, int follow_link)
+static char *filter_path(const char *path, int follow_link, int fail_nametoolong)
 {
 	struct stat st;
 	int old_errno = errno;
@@ -427,7 +428,7 @@ static char *filter_path(const char *path, int follow_link)
 		return NULL;
 
 	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path, 1))
+		if (-1 == canonicalize(path, filtered_path, fail_nametoolong))
 			return NULL;
 	} else {
 		/* Basically we get the realpath which should resolve symlinks,
@@ -443,7 +444,7 @@ static char *filter_path(const char *path, int follow_link)
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
 				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path, 1))
+				if (-1 == canonicalize(path, filtered_path, fail_nametoolong))
 					return NULL;
 			} else {
 				/* OK, now add the basename to keep our access
@@ -473,11 +474,8 @@ static char *filter_path(const char *path, int follow_link)
 int chmod(const char *path, mode_t mode)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(path, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("chmod", canonic) {
+	if FUNCTION_SANDBOX_SAFE("chmod", path) {
 		check_dlsym(chmod);
 		result = true_chmod(path, mode);
 	}
@@ -488,11 +486,8 @@ int chmod(const char *path, mode_t mode)
 int chown(const char *path, uid_t owner, gid_t group)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(path, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("chown", canonic) {
+	if FUNCTION_SANDBOX_SAFE("chown", path) {
 		check_dlsym(chown);
 		result = true_chown(path, owner, group);
 	}
@@ -504,11 +499,8 @@ int creat(const char *pathname, mode_t mode)
 {
 /* Is it a system call? */
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("creat", canonic) {
+	if FUNCTION_SANDBOX_SAFE("creat", pathname) {
 		check_dlsym(open);
 		result = true_open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
 	}
@@ -519,11 +511,8 @@ int creat(const char *pathname, mode_t mode)
 FILE *fopen(const char *pathname, const char *mode)
 {
 	FILE *result = NULL;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_ptr(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", pathname, mode) {
 		check_dlsym(fopen);
 		result = true_fopen(pathname, mode);
 	}
@@ -534,11 +523,8 @@ FILE *fopen(const char *pathname, const char *mode)
 int lchown(const char *path, uid_t owner, gid_t group)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(path, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("lchown", canonic) {
+	if FUNCTION_SANDBOX_SAFE("lchown", path) {
 		check_dlsym(lchown);
 		result = true_lchown(path, owner, group);
 	}
@@ -549,12 +535,8 @@ int lchown(const char *path, uid_t owner, gid_t group)
 int link(const char *oldpath, const char *newpath)
 {
 	int result = -1;
-	char old_canonic[SB_PATH_MAX], new_canonic[SB_PATH_MAX];
 
-	canonicalize_int(oldpath, old_canonic);
-	canonicalize_int(newpath, new_canonic);
-
-	if FUNCTION_SANDBOX_SAFE("link", new_canonic) {
+	if FUNCTION_SANDBOX_SAFE("link", newpath) {
 		check_dlsym(link);
 		result = true_link(oldpath, newpath);
 	}
@@ -579,7 +561,7 @@ int mkdir(const char *pathname, mode_t mode)
 	}
 	errno = my_errno;
 
-	if FUNCTION_SANDBOX_SAFE("mkdir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("mkdir", pathname) {
 		check_dlsym(mkdir);
 		result = true_mkdir(pathname, mode);
 	}
@@ -590,11 +572,8 @@ int mkdir(const char *pathname, mode_t mode)
 DIR *opendir(const char *name)
 {
 	DIR *result = NULL;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_ptr(name, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("opendir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("opendir", name) {
 		check_dlsym(opendir);
 		result = true_opendir(name);
 	}
@@ -607,11 +586,8 @@ DIR *opendir(const char *name)
 int __xmknod(const char *pathname, mode_t mode, dev_t dev)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("__xmknod", canonic) {
+	if FUNCTION_SANDBOX_SAFE("__xmknod", pathname) {
 		check_dlsym(__xmknod);
 		result = true___xmknod(pathname, mode, dev);
 	}
@@ -624,11 +600,8 @@ int __xmknod(const char *pathname, mode_t mode, dev_t dev)
 int access(const char *pathname, int mode)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE_ACCESS("access", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_ACCESS("access", pathname, mode) {
 		check_dlsym(access);
 		result = true_access(pathname, mode);
 	}
@@ -642,7 +615,6 @@ int open(const char *pathname, int flags, ...)
 	va_list ap;
 	mode_t mode = 0;
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
 	if (flags & O_CREAT) {
 		va_start(ap, flags);
@@ -650,9 +622,7 @@ int open(const char *pathname, int flags, ...)
 		va_end(ap);
 	}
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) {
 		check_dlsym(open);
 		result = true_open(pathname, flags, mode);
 	}
@@ -663,13 +633,9 @@ int open(const char *pathname, int flags, ...)
 int rename(const char *oldpath, const char *newpath)
 {
 	int result = -1;
-	char old_canonic[SB_PATH_MAX], new_canonic[SB_PATH_MAX];
 
-	canonicalize_int(oldpath, old_canonic);
-	canonicalize_int(newpath, new_canonic);
-
-	if (FUNCTION_SANDBOX_SAFE("rename", old_canonic) &&
-	    FUNCTION_SANDBOX_SAFE("rename", new_canonic)) {
+	if (FUNCTION_SANDBOX_SAFE("rename", oldpath) &&
+	    FUNCTION_SANDBOX_SAFE("rename", newpath)) {
 		check_dlsym(rename);
 		result = true_rename(oldpath, newpath);
 	}
@@ -680,11 +646,8 @@ int rename(const char *oldpath, const char *newpath)
 int rmdir(const char *pathname)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("rmdir", canonic) {
+	if FUNCTION_SANDBOX_SAFE("rmdir", pathname) {
 		check_dlsym(rmdir);
 		result = true_rmdir(pathname);
 	}
@@ -695,12 +658,8 @@ int rmdir(const char *pathname)
 int symlink(const char *oldpath, const char *newpath)
 {
 	int result = -1;
-	char old_canonic[SB_PATH_MAX], new_canonic[SB_PATH_MAX];
 
-	canonicalize_int(oldpath, old_canonic);
-	canonicalize_int(newpath, new_canonic);
-
-	if FUNCTION_SANDBOX_SAFE("symlink", new_canonic) {
+	if FUNCTION_SANDBOX_SAFE("symlink", newpath) {
 		check_dlsym(symlink);
 		result = true_symlink(oldpath, newpath);
 	}
@@ -711,11 +670,8 @@ int symlink(const char *oldpath, const char *newpath)
 int truncate(const char *path, TRUNCATE_T length)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(path, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("truncate", canonic) {
+	if FUNCTION_SANDBOX_SAFE("truncate", path) {
 		check_dlsym(truncate);
 		result = true_truncate(path, length);
 	}
@@ -738,7 +694,7 @@ int unlink(const char *pathname)
 		return result;
 	}
 
-	if FUNCTION_SANDBOX_SAFE("unlink", canonic) {
+	if FUNCTION_SANDBOX_SAFE("unlink", pathname) {
 		check_dlsym(unlink);
 		result = true_unlink(pathname);
 	}
@@ -752,11 +708,8 @@ int creat64(const char *pathname, __mode_t mode)
 {
 /* Is it a system call? */
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("creat64", canonic) {
+	if FUNCTION_SANDBOX_SAFE("creat64", pathname) {
 		check_dlsym(open64);
 		result = true_open64(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
 	}
@@ -767,11 +720,8 @@ int creat64(const char *pathname, __mode_t mode)
 FILE *fopen64(const char *pathname, const char *mode)
 {
 	FILE *result = NULL;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_ptr(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", canonic, mode) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", pathname, mode) {
 		check_dlsym(fopen64);
 		result = true_fopen64(pathname, mode);
 	}
@@ -785,7 +735,6 @@ int open64(const char *pathname, int flags, ...)
 	va_list ap;
 	mode_t mode = 0;
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
 	if (flags & O_CREAT) {
 		va_start(ap, flags);
@@ -793,9 +742,7 @@ int open64(const char *pathname, int flags, ...)
 		va_end(ap);
 	}
 
-	canonicalize_int(pathname, canonic);
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", canonic, flags) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) {
 		check_dlsym(open64);
 		result = true_open64(pathname, flags, mode);
 	}
@@ -806,11 +753,8 @@ int open64(const char *pathname, int flags, ...)
 int truncate64(const char *path, __off64_t length)
 {
 	int result = -1;
-	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(path, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("truncate64", canonic) {
+	if FUNCTION_SANDBOX_SAFE("truncate64", path) {
 		check_dlsym(truncate64);
 		result = true_truncate64(path, length);
 	}
@@ -830,15 +774,12 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 	int result = -1;
 	int count = 0;
 	int env_len = 0;
-	char canonic[SB_PATH_MAX];
 	char **my_env = NULL;
 	int kill_env = 1;
 	/* We limit the size LD_PRELOAD can be here, but it should be enough */
 	char tmp_str[SB_BUF_LEN];
 
-	canonicalize_int(filename, canonic);
-
-	if FUNCTION_SANDBOX_SAFE("execve", canonic) {
+	if FUNCTION_SANDBOX_SAFE("execve", filename) {
 		while (envp[count] != NULL) {
 			/* Check if we do not have to do anything */
 			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) {
@@ -1082,7 +1023,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 #endif
 
 			while ((NULL != token) && (strlen(token) > 0)) {
-				pfx_item = filter_path(token, 0);
+				pfx_item = filter_path(token, 0, 1);
 				if (NULL != pfx_item) {
 					pfx_num++;
 
@@ -1114,7 +1055,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			if (NULL == pfx_array)
 				return;
 
-			pfx_item = filter_path(prefixes_env, 0);
+			pfx_item = filter_path(prefixes_env, 0, 1);
 			if (NULL != pfx_item) {
 				pfx_num++;
 
@@ -1274,7 +1215,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 					
 					dname = dirname(tmp_buf);
 					/* Get symlink resolved path */
-					rpath = filter_path(dname, 1);
+					rpath = filter_path(dname, 1, 1);
 					if (NULL == rpath)
 						/* Don't really worry here about
 						 * memory issues */
@@ -1360,14 +1301,31 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	init_wrappers();
 
-	absolute_path = filter_path(file, 0);
-	resolved_path = filter_path(file, 1);
+	absolute_path = filter_path(file, 0, 0);
+	resolved_path = filter_path(file, 1, 0);
 	if ((NULL == absolute_path) || (NULL == resolved_path)) {
 		if (NULL != absolute_path)
 			free(absolute_path);
 		if (NULL != resolved_path)
 			free(resolved_path);
 		return 0;
+	}
+
+	/* The path is too long to be canonicalized, so just warn and let the
+	 * function handle it */
+	if ((0 == strlen(absolute_path)) || (0 == strlen(resolved_path))) {
+		if (NULL != absolute_path)
+			free(absolute_path);
+		if (NULL != resolved_path)
+			free(resolved_path);
+
+		if (0 == sb_path_size_warning) {
+			fprintf(stderr, "\e[31;01mPATH LENGTH\033[0m	%s:%*s%s\n",
+				func, (int)(10 - strlen(func)), "", file);
+			sb_path_size_warning = 1;
+		}
+			
+		return 1;
 	}
 
 	log_path = getenv("SANDBOX_LOG");
@@ -1396,7 +1354,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				if ((0 == lstat(log_path, &log_stat)) &&
 				    (0 == S_ISREG(log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n", dpath);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1, 1))) {
 					unsetenv("SANDBOX_LOG");
 					fprintf(stderr,	"\e[31;01mSECURITY BREACH\033[0m SANDBOX_LOG %s isn't allowed via SANDBOX_WRITE\n", dpath);
 				} else {
@@ -1422,7 +1380,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				    && (0 == S_ISREG(debug_log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n",
 						debug_log_path);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1, 1))) {
 					unsetenv("SANDBOX_DEBUG");
 					unsetenv("SANDBOX_DEBUG_LOG");
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
@@ -1490,13 +1448,8 @@ static int before_syscall(const char *func, const char *file)
 
 	if (NULL == file || 0 == strlen(file)) {
 		/* The file/directory does not exist */
-#if 0
 		errno = ENOENT;
 		return 0;
-#else
-		/* XXX: We do not care - let the function handle it */
-		return 1;
-#endif
 	}
 
 	if(sb_init == 0) {

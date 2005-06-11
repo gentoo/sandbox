@@ -3,6 +3,13 @@
 # $Header$
 
   11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Remove the unneeded canonicalize() calls in the wrappers - we do it anyhow
+  in check_syscall().  Should speed things up a bit (at least for the getcwd()
+  and long path name test it goes down to under a second, and not 10+ seconds
+  like before).  Also warn if we skip checking due to the canonicalized path
+  being too long.
+
+  11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   More comment/readability cleanups.
 
   10 June 2005; Martin Schlemmer <azarah@gentoo.org> canonicalize.c, getcwd.c,
