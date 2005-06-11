@@ -1085,11 +1085,6 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 	int result = -1;
 	int i = 0;
 
-	if ((0 == strncmp(fpath, "/etc/ld.so.preload", 18)) &&
-	    (is_sandbox_pid())) {
-		result = 1;
-	}
-
 	if ((-1 == result) && (NULL != sbcontext->deny_prefixes)) {
 		for (i = 0; i < sbcontext->num_deny_prefixes; i++) {
 			if (NULL != sbcontext->deny_prefixes[i]) {

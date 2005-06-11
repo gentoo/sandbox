@@ -3,6 +3,9 @@
 # $Header$
 
   11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Remove hopefully the last ld.so.preload bits we do not use anymore.
+
+  11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Remove the unneeded canonicalize() calls in the wrappers - we do it anyhow
   in check_syscall().  Should speed things up a bit (at least for the getcwd()
   and long path name test it goes down to under a second, and not 10+ seconds
