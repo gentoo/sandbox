@@ -1,5 +1,6 @@
 /* These functions find the absolute path to the current working directory.  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -61,7 +62,7 @@ SB_STATIC char *search_dir(dev_t this_dev, ino_t this_ino, char *path_buf, size_
 		if (slen + 2 > path_size) {
 			goto oops;
 		}
-		strcpy(++ptr, "/");
+		snprintf(++ptr, 2, "/");
 		slen++;
 	}
 	slen++;
@@ -83,7 +84,7 @@ SB_STATIC char *search_dir(dev_t this_dev, ino_t this_ino, char *path_buf, size_
 			if (slen + strlen(d->d_name) > path_size) {
 			    goto oops;
 			}
-			strcpy(ptr + 1, d->d_name);
+			snprintf(ptr + 1, sizeof(d->d_name) + 1, "%s", d->d_name);
 			if (lstat(path_buf, &st) < 0)
 				continue;
 			if (st.st_ino == this_ino && st.st_dev == this_dev) {
@@ -121,13 +122,13 @@ SB_STATIC char *recurser(char *path_buf, size_t path_size, dev_t root_dev, ino_t
 		if (path_size < 2) {
 		    goto oops;
 		}
-		strcpy(path_buf, "/");
+		snprintf(path_buf, 2, "/");
 		return path_buf;
 	}
 	if (strlen(path_buf) + 4 > path_size) {
 	    goto oops;
 	}
-	strcat(path_buf, "/..");
+	snprintf(path_buf, 4, "/..");
 	if (recurser(path_buf, path_size, root_dev, root_ino) == 0)
 		return 0;
 

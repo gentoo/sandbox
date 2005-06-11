@@ -387,8 +387,8 @@ static int canonicalize(const char *path, char *resolved_path, int fail_nametool
 				return -1;
 			}
 		}
-		strcat(resolved_path, "/");
-		strncat(resolved_path, path, SB_PATH_MAX - 1);
+		snprintf((char *)(resolved_path + strlen(resolved_path)),
+			SB_PATH_MAX - strlen(resolved_path), "/%s", path);
 
 		if (NULL == erealpath(resolved_path, resolved_path)) {
 			if (errno == ENAMETOOLONG) {
@@ -415,7 +415,7 @@ static char *filter_path(const char *path, int follow_link)
 {
 	struct stat st;
 	int old_errno = errno;
-	char *tmp_str1, *tmp_str2;
+	char tmp_str1[SB_PATH_MAX], tmp_str2[SB_PATH_MAX];
 	char *dname, *bname;
 	char *filtered_path;
 
@@ -428,16 +428,14 @@ static char *filter_path(const char *path, int follow_link)
 
 	if (0 == follow_link) {
 		if (-1 == canonicalize(path, filtered_path, 1))
-			goto error;
+			return NULL;
 	} else {
 		/* Basically we get the realpath which should resolve symlinks,
 		 * etc.  If that fails (might not exist), we try to get the
 		 * realpath of the parent directory, as that should hopefully
 		 * exist.  If all else fails, just go with canonicalize */
 		if (NULL == realpath(path, filtered_path)) {
-			tmp_str1 = strndup(path, SB_PATH_MAX - 1);
-			if (NULL == tmp_str1)
-				goto error;
+			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
 			
 			dname = dirname(tmp_str1);
 			
@@ -445,40 +443,27 @@ static char *filter_path(const char *path, int follow_link)
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
 				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path, 1)) {
-					free(tmp_str1);
-					goto error;
-				}
+				if (-1 == canonicalize(path, filtered_path, 1))
+					return NULL;
 			} else {
 				/* OK, now add the basename to keep our access
 				 * checking happy (don't want '/usr/lib' if we
 				 * tried to do something with non-existing
 				 * file '/usr/lib/cf*' ...) */
-				tmp_str2 = strndup(path, SB_PATH_MAX - 1);
-				if (NULL == tmp_str2) {
-					free(tmp_str1);
-					goto error;
-				}
+				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
 
 				bname = basename(tmp_str2);
-				if (filtered_path[strlen(filtered_path) - 1] != '/')
-					strncat(filtered_path, "/",
-							SB_PATH_MAX - strlen(filtered_path));
-				strncat(filtered_path, bname,
-						SB_PATH_MAX - strlen(filtered_path));
-				free(tmp_str2);
+				snprintf((char *)(filtered_path + strlen(filtered_path)),
+					SB_PATH_MAX - strlen(filtered_path), "%s%s",
+					(filtered_path[strlen(filtered_path) - 1] != '/') ? "/" : "",
+					bname);
 			}
-						
-			free(tmp_str1);
 		}
 	}
 	
 	errno = old_errno;
 
 	return filtered_path;
-error:
-	free(filtered_path);
-	return NULL;
 }
 
 /*
@@ -1068,6 +1053,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 		pfx_num = 0;
 	} else {
 		char *buffer = NULL;
+		char *buffer_ptr = NULL;
 		int prefixes_env_length = strlen(prefixes_env);
 		int i = 0;
 		int num_delimiters = 0;
@@ -1084,14 +1070,15 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			pfx_array = malloc(((num_delimiters * 2) + 1) * sizeof(char *));
 			if (NULL == pfx_array)
 				return;
-			buffer = strndupa(prefixes_env, prefixes_env_length);
+			buffer = strndup(prefixes_env, prefixes_env_length);
 			if (NULL == buffer)
 				return;
+			buffer_ptr = buffer;
 
 #ifdef REENTRANT_STRTOK
-			token = strtok_r(buffer, ":", &buffer);
+			token = strtok_r(buffer_ptr, ":", &buffer_ptr);
 #else
-			token = strtok(buffer, ":");
+			token = strtok(buffer_ptr, ":");
 #endif
 
 			while ((NULL != token) && (strlen(token) > 0)) {
@@ -1115,11 +1102,13 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 				}
 
 #ifdef REENTRANT_STRTOK
-				token = strtok_r(NULL, ":", &buffer);
+				token = strtok_r(NULL, ":", &buffer_ptr);
 #else
 				token = strtok(NULL, ":");
 #endif
 			}
+
+			free(buffer);
 		} else if (prefixes_env_length > 0) {
 			pfx_array = malloc(2 * sizeof(char *));
 			if (NULL == pfx_array)
@@ -1281,8 +1270,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 					char tmp_buf[SB_PATH_MAX];
 					char *dname, *rpath;
 
-					strncpy(tmp_buf, path, SB_PATH_MAX - 1);
-					tmp_buf[SB_PATH_MAX - 1] = '\0';
+					snprintf(tmp_buf, SB_PATH_MAX, "%s", path);
 					
 					dname = dirname(tmp_buf);
 					/* Get symlink resolved path */

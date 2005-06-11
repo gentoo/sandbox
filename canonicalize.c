@@ -167,7 +167,7 @@ erealpath(const char *name, char *resolved)
 
 error:
 	if (resolved)
-		strncpy(resolved, rpath, path_max - 1);
+		snprintf(resolved, path_max, "%s", rpath);
 	else
 		free(rpath);
 	return NULL;

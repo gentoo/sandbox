@@ -44,7 +44,7 @@ SB_STATIC char *get_sandbox_path(char *argv0)
 	memset(path, 0, sizeof(path));
 	/* ARGV[0] specifies full path */
 	if (argv0[0] == '/') {
-		strncpy(path, argv0, sizeof(path) - 1);
+		snprintf(path, SB_PATH_MAX, "%s", argv0);
 
 		/* ARGV[0] specifies relative path */
 	} else {
