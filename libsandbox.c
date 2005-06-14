@@ -105,24 +105,6 @@
 	errno=old_errno; \
 }
 
-/* Macro to check if we could canonicalize a path.  It returns an integer on
- * failure. */
-#define canonicalize_int(path, resolved_path) \
-{ \
-	/* Do not fail if the canonicalized path is too long, bug #94630 */ \
-	if (0 != canonicalize(path, resolved_path, 0)) \
-		return -1; \
-}
-
-/* Macro to check if we could canonicalize a path.  It returns a NULL pointer on
- * failure. */
-#define canonicalize_ptr(path, resolved_path) \
-{ \
-	/* Do not fail if the canonicalized path is too long, bug #94630 */ \
-	if (0 != canonicalize(path, resolved_path, 0)) \
-		return NULL; \
-}
-
 static char sandbox_lib[SB_PATH_MAX];
 //static char sandbox_pids_file[255];
 static char *sandbox_pids_file;
@@ -156,8 +138,8 @@ static char *egetcwd(char *, size_t);
 
 static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
-static int canonicalize(const char *, char *, int);
-static char *filter_path(const char *, int, int);
+static int canonicalize(const char *, char *);
+static char *filter_path(const char *, int);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
 static int before_syscall(const char *, const char *);
@@ -336,13 +318,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 	errno = old_errno;
 }
 
-/* Be default we will fail if the path name we try to canonicalize is too long.
- * This however could cause issues with some things (bug #94630 and #21766), so
- * if fail_nametoolong == 0, return a null length string and do not fail.
- * FIXME:  This is really not *safe* if you belong to the 'sandbox should avoid
- *         any exploits that might want to touch the fs during compile' group ...
- */
-static int canonicalize(const char *path, char *resolved_path, int fail_nametoolong)
+static int canonicalize(const char *path, char *resolved_path)
 {
 	int old_errno = errno;
 	char *retval;
@@ -369,25 +345,11 @@ static int canonicalize(const char *path, char *resolved_path, int fail_nametool
 		 * an absolute path
 		 */
 		
-		if (ENAMETOOLONG == errno) {
-			if (0 == fail_nametoolong) {
-				errno = 0;
-				*resolved_path = '\0';
-				return 0;
-			} else {
-				return -1;
-			}
-		}
+		if (ENAMETOOLONG == errno)
+			return -1;
 
-		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2)) {
-			if (ENAMETOOLONG == errno && 0 == fail_nametoolong) {
-				errno = 0;
-				*resolved_path = '\0';
-				return 0;
-			} else {
-				return -1;
-			}
-		}
+		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
+			return -1;
 		snprintf((char *)(resolved_path + strlen(resolved_path)),
 			SB_PATH_MAX - strlen(resolved_path), "/%s", path);
 
@@ -412,7 +374,7 @@ static int canonicalize(const char *path, char *resolved_path, int fail_nametool
 	return 0;
 }
 
-static char *filter_path(const char *path, int follow_link, int fail_nametoolong)
+static char *filter_path(const char *path, int follow_link)
 {
 	struct stat st;
 	int old_errno = errno;
@@ -428,7 +390,7 @@ static char *filter_path(const char *path, int follow_link, int fail_nametoolong
 		return NULL;
 
 	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path, fail_nametoolong))
+		if (-1 == canonicalize(path, filtered_path))
 			return NULL;
 	} else {
 		/* Basically we get the realpath which should resolve symlinks,
@@ -444,7 +406,7 @@ static char *filter_path(const char *path, int follow_link, int fail_nametoolong
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
 				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path, fail_nametoolong))
+				if (-1 == canonicalize(path, filtered_path))
 					return NULL;
 			} else {
 				/* OK, now add the basename to keep our access
@@ -550,7 +512,11 @@ int mkdir(const char *pathname, mode_t mode)
 	int result = -1, my_errno = errno;
 	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
+	if (-1 == canonicalize(pathname, canonic))
+		/* Path is too long to canonicalize, do not fail, but just let
+		 * the real function handle it (see bug #94630 and #21766). */
+		if (ENAMETOOLONG != errno)
+			return -1;
 
 	/* XXX: Hack to prevent errors if the directory exist,
 	 * and are not writable - we rather return EEXIST rather
@@ -684,7 +650,11 @@ int unlink(const char *pathname)
 	int result = -1;
 	char canonic[SB_PATH_MAX];
 
-	canonicalize_int(pathname, canonic);
+	if (-1 == canonicalize(pathname, canonic))
+		/* Path is too long to canonicalize, do not fail, but just let
+		 * the real function handle it (see bug #94630 and #21766). */
+		if (ENAMETOOLONG != errno)
+			return -1;
 
 	/* XXX: Hack to make sure sandboxed process cannot remove
 	 * a device node, bug #79836. */
@@ -855,7 +825,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 			count++;
 		}
 
-		end_loop:
+end_loop:
 		errno = old_errno;
 		check_dlsym(execve);
 		result = true_execve(filename, argv, my_env);
@@ -1023,7 +993,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 #endif
 
 			while ((NULL != token) && (strlen(token) > 0)) {
-				pfx_item = filter_path(token, 0, 1);
+				pfx_item = filter_path(token, 0);
 				if (NULL != pfx_item) {
 					pfx_num++;
 
@@ -1055,7 +1025,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			if (NULL == pfx_array)
 				return;
 
-			pfx_item = filter_path(prefixes_env, 0, 1);
+			pfx_item = filter_path(prefixes_env, 0);
 			if (NULL != pfx_item) {
 				pfx_num++;
 
@@ -1210,7 +1180,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 					
 					dname = dirname(tmp_buf);
 					/* Get symlink resolved path */
-					rpath = filter_path(dname, 1, 1);
+					rpath = filter_path(dname, 1);
 					if (NULL == rpath)
 						/* Don't really worry here about
 						 * memory issues */
@@ -1296,32 +1266,12 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	init_wrappers();
 
-	absolute_path = filter_path(file, 0, 0);
-	resolved_path = filter_path(file, 1, 0);
-	if ((NULL == absolute_path) || (NULL == resolved_path)) {
-		if (NULL != absolute_path)
-			free(absolute_path);
-		if (NULL != resolved_path)
-			free(resolved_path);
-		return 0;
-	}
-
-	/* The path is too long to be canonicalized, so just warn and let the
-	 * function handle it */
-	if ((0 == strlen(absolute_path)) || (0 == strlen(resolved_path))) {
-		if (NULL != absolute_path)
-			free(absolute_path);
-		if (NULL != resolved_path)
-			free(resolved_path);
-
-		if (0 == sb_path_size_warning) {
-			fprintf(stderr, "\e[31;01mPATH LENGTH\033[0m	%s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", file);
-			sb_path_size_warning = 1;
-		}
-			
-		return 1;
-	}
+	absolute_path = filter_path(file, 0);
+	if (NULL == absolute_path)
+		goto error;
+	resolved_path = filter_path(file, 1);
+	if (NULL == resolved_path)
+		goto error;
 
 	log_path = getenv("SANDBOX_LOG");
 	debug_log_env = getenv("SANDBOX_DEBUG");
@@ -1349,7 +1299,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				if ((0 == lstat(log_path, &log_stat)) &&
 				    (0 == S_ISREG(log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n", dpath);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1, 1))) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
 					unsetenv("SANDBOX_LOG");
 					fprintf(stderr,	"\e[31;01mSECURITY BREACH\033[0m SANDBOX_LOG %s isn't allowed via SANDBOX_WRITE\n", dpath);
 				} else {
@@ -1375,7 +1325,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				    && (0 == S_ISREG(debug_log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n",
 						debug_log_path);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1, 1))) {
+				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
 					unsetenv("SANDBOX_DEBUG");
 					unsetenv("SANDBOX_DEBUG_LOG");
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
@@ -1405,6 +1355,26 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	errno = old_errno;
 
 	return result;
+
+error:
+	if (NULL != absolute_path)
+		free(absolute_path);
+	if (NULL != resolved_path)
+		free(resolved_path);
+	
+	/* The path is too long to be canonicalized, so just warn and let the
+	 * function handle it (see bug #94630 and #21766 for more info) */
+	if (ENAMETOOLONG == errno) {
+		if (0 == sb_path_size_warning) {
+			fprintf(stderr, "\e[31;01mPATH LENGTH\033[0m	%s:%*s%s\n",
+				func, (int)(10 - strlen(func)), "", file);
+			sb_path_size_warning = 1;
+		}
+			
+		return 1;
+	}
+
+	return 0;
 }
 
 static int is_sandbox_on()

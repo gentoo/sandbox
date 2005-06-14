@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  12 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Cleanup the fail_nametoolong stuff a bit more.
+
   11 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Remove hopefully the last ld.so.preload bits we do not use anymore.
 
