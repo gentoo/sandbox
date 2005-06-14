@@ -1268,10 +1268,10 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	absolute_path = filter_path(file, 0);
 	if (NULL == absolute_path)
-		goto error;
+		goto fp_error;
 	resolved_path = filter_path(file, 1);
 	if (NULL == resolved_path)
-		goto error;
+		goto fp_error;
 
 	log_path = getenv("SANDBOX_LOG");
 	debug_log_env = getenv("SANDBOX_DEBUG");
@@ -1356,7 +1356,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	return result;
 
-error:
+fp_error:
 	if (NULL != absolute_path)
 		free(absolute_path);
 	if (NULL != resolved_path)
