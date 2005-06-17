@@ -6,6 +6,8 @@
   General cleanups:
   - Remove fooling around with exit codes - we error out on presence of a log
     anyhow.
+  - Move get_sandbox_*_envvar() to sandbox_setup_environ(), as its more
+    appropriate there.
 
   12 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Cleanup the fail_nametoolong stuff a bit more.

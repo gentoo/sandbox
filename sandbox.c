@@ -390,7 +390,7 @@ void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 sandbox_info->home_dir);
 }
 
-int sandbox_setenv(char **env, char *name, char *val) {
+int sandbox_setenv(char **env, const char *name, const char *val) {
 	char **tmp_env = env;
 	char *tmp_string = NULL;
 
@@ -417,14 +417,15 @@ int sandbox_setenv(char **env, char *name, char *val) {
 
 /* We setup the environment child side only to prevent issues with
  * setting LD_PRELOAD parent side */
-char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info,
-		char *sandbox_write_envvar, char *sandbox_predict_envvar)
+char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 {
 	int env_size = 0;
 	int have_ld_preload = 0;
 	
 	char **new_environ;
 	char **env_ptr = environ;
+	char sandbox_write_envvar[SB_BUF_LEN];
+	char sandbox_predict_envvar[SB_BUF_LEN];
 	char *ld_preload_envvar = NULL;
 	char *orig_ld_preload_envvar = NULL;
 
@@ -490,9 +491,11 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info,
 	if (!getenv(ENV_SANDBOX_READ))
 		sandbox_setenv(new_environ, ENV_SANDBOX_READ, "/");
 
+	get_sandbox_write_envvar(sandbox_write_envvar, sandbox_info);
 	if (!getenv(ENV_SANDBOX_WRITE))
 		sandbox_setenv(new_environ, ENV_SANDBOX_WRITE, sandbox_write_envvar);
 
+	get_sandbox_predict_envvar(sandbox_predict_envvar, sandbox_info);
 	if (!getenv(ENV_SANDBOX_PREDICT))
 		sandbox_setenv(new_environ, ENV_SANDBOX_PREDICT, sandbox_predict_envvar);
 
@@ -559,8 +562,6 @@ int main(int argc, char **argv)
 	struct sandbox_info_t sandbox_info;
 
 	char **sandbox_environ;
-	char sandbox_write_envvar[SB_BUF_LEN];
-	char sandbox_predict_envvar[SB_BUF_LEN];
 	char **argv_bash = NULL;
 
 	char *run_str = "-c";
@@ -618,10 +619,7 @@ int main(int argc, char **argv)
 		setenv(ENV_SANDBOX_ON, "1", 0);
 
 		/* Setup the child environment stuff */
-		get_sandbox_write_envvar(sandbox_write_envvar, &sandbox_info);
-		get_sandbox_predict_envvar(sandbox_predict_envvar, &sandbox_info);
-		sandbox_environ = sandbox_setup_environ(&sandbox_info,
-				sandbox_write_envvar, sandbox_predict_envvar);
+		sandbox_environ = sandbox_setup_environ(&sandbox_info);
 		if (NULL == sandbox_environ) {
 			perror(">>> out of memory (environ)");
 			exit(1);
