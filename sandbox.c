@@ -713,9 +713,7 @@ int main(int argc, char **argv)
 
 		if (file_exist(sandbox_info.sandbox_log, 0)) {
 			sandbox_log_presence = 1;
-			success = 1;
-			if (!print_sandbox_log(sandbox_info.sandbox_log))
-				success = 0;
+			print_sandbox_log(sandbox_info.sandbox_log);
 		} else if (print_debug) {
 			printf("--------------------------------------------------------------------------------\n");
 		}

@@ -2,6 +2,11 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  17 June 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  General cleanups:
+  - Remove fooling around with exit codes - we error out on presence of a log
+    anyhow.
+
   12 June 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
   Cleanup the fail_nametoolong stuff a bit more.
 
