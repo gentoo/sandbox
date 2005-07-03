@@ -397,7 +397,7 @@ void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/var/db/networks.db:"
 		 "/var/db/hosts.db:"
 		 "/var/db/group.db:"
-		 "/var/db/passwd.db:",
+		 "/var/db/passwd.db",
 		 sandbox_info->home_dir);
 }
 
