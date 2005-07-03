@@ -386,7 +386,18 @@ void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/usr/lib/python2.3/:"
 		 "/usr/lib/python2.4/:"
 		 "/usr/lib/python2.5/:"
-		 "/usr/lib/python3.0/:",
+		 "/usr/lib/python3.0/:"
+		 "/var/db/aliases.db:"
+		 "/var/db/netgroup.db:"
+		 "/var/db/netmasks.db:"
+		 "/var/db/ethers.db:"
+		 "/var/db/rpc.db:"
+		 "/var/db/protocols.db:"
+		 "/var/db/services.db:"
+		 "/var/db/networks.db:"
+		 "/var/db/hosts.db:"
+		 "/var/db/group.db:"
+		 "/var/db/passwd.db:"
 		 sandbox_info->home_dir);
 }
 
