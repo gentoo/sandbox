@@ -6,6 +6,7 @@
   libsandbox.c:
   - Change log dir to /var/log/sandbox/.  Make sure the sandboxed process cannot
     write to it.
+  - Clean up logging in libsandbox.c, and hopefully make it more consistant.
 
   05 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
   sandbox_futils.c, libsandbox.c:

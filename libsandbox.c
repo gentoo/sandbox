@@ -1200,19 +1200,15 @@ unlink_hack_end:
 
 static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *file)
 {
-	int old_errno = errno;
-	int result = 1;
 	struct stat log_stat;
-	char *log_path = NULL;
+	char buffer[512];
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
+	char *log_path = NULL;
+	int old_errno = errno;
+	int result = 1;
 	int log_file = 0;
-	struct stat debug_log_stat;
-	char *debug_log_env = NULL;
-	char *debug_log_path = NULL;
-	int debug_log_file = 0;
-	char buffer[512];
-	char *dpath = NULL;
+	int debug = 0;
 
 	init_wrappers();
 
@@ -1223,69 +1219,52 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	if (NULL == resolved_path)
 		goto fp_error;
 
-	log_path = getenv("SANDBOX_LOG");
-	debug_log_env = getenv("SANDBOX_DEBUG");
-	debug_log_path = getenv("SANDBOX_DEBUG_LOG");
+	if (NULL == getenv("SANDBOX_DEBUG")) {
+		log_path = getenv("SANDBOX_LOG");
+	} else {
+		log_path = getenv("SANDBOX_DEBUG_LOG");
+		debug = 1;
+	}
 
-	if (((NULL == log_path) ||
-	     (0 != strncmp(absolute_path, log_path, strlen(log_path)))) &&
-	    ((NULL == debug_log_env) ||
-	     (NULL == debug_log_path) ||
-	     (0 != strncmp(absolute_path, debug_log_path, strlen(debug_log_path)))) &&
-	    (0 == check_access(sbcontext, func, absolute_path, resolved_path))) {
-		if (1 == sbcontext->show_access_violation) {
-			fprintf(stderr, "\e[31;01mACCESS DENIED\033[0m	%s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", absolute_path);
+	result = check_access(sbcontext, func, absolute_path, resolved_path);
 
-			if (NULL != log_path) {
-				if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
-					sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func, (int)(10-strlen(func)), "", 
-							absolute_path, resolved_path);
-				} else {
-					sprintf(buffer, "%s:%*s%s\n", func, (int)(10 - strlen(func)), "", absolute_path);
-				}
-				// log_path somehow gets corrupted.  figuring out why would be good.
-				dpath = strdup(log_path);
-				if ((0 == lstat(log_path, &log_stat)) &&
-				    (0 == S_ISREG(log_stat.st_mode))) {
-					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n", dpath);
-				} else {
-					check_dlsym(open);
-					log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-					if (log_file >= 0) {
-						write(log_file, buffer, strlen(buffer));
-						close(log_file);
-					}
-				}
-				free(dpath);
-			}
-		}
+	if ((0 == result) && (1 == sbcontext->show_access_violation)) {
+		fprintf(stderr, "\e[31;01mACCESS DENIED\033[0m	%s:%*s%s\n",
+			func, (int)(10 - strlen(func)), "", absolute_path);
+	} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
+		fprintf(stderr, "\e[32;01mACCESS ALLOWED\033[0m %s:%*s%s\n",
+			func, (int)(10 - strlen(func)), "", absolute_path);
+	} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
+		fprintf(stderr, "\e[33;01mACCESS PREDICTED\033[0m %s:%*s%s\n",
+			func, (int)(10 - strlen(func)), "", absolute_path);
+	}
 
-		result = 0;
-	} else if (NULL != debug_log_env) {
-		if (NULL != debug_log_path) {
-			if (0 != strncmp(absolute_path, debug_log_path, strlen(debug_log_path))) {
-				sprintf(buffer, "%s:%*s%s\n", func, (int)(10 - strlen(func)), "", absolute_path);
-				//debug_log_path somehow gets corupted, same thing as log_path above.
-				dpath = strdup(debug_log_path);
-				if ((0 == lstat(debug_log_path, &debug_log_stat))
-				    && (0 == S_ISREG(debug_log_stat.st_mode))) {
-					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n",
-						debug_log_path);
-				} else {
-					check_dlsym(open);
-					debug_log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT,
-					                           S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-					if (debug_log_file >= 0) {
-						write(debug_log_file, buffer, strlen(buffer));
-						close(debug_log_file);
-					}
-				}
-				free(dpath);
-			}
+	if ((NULL != log_path) &&
+	    (((0 == debug) && (0 == result) && (1 == sbcontext->show_access_violation)) ||
+	     (1 == debug))) {
+		if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
+			sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func,
+					(int)(10 - strlen(func)), "",
+					absolute_path, resolved_path);
 		} else {
-			fprintf(stderr, "\e[32;01mACCESS ALLOWED\033[0m %s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", absolute_path);
+			sprintf(buffer, "%s:%*s%s\n", func,
+					(int)(10 - strlen(func)), "",
+					absolute_path);
+		}
+		if ((0 == lstat(log_path, &log_stat)) &&
+		    (0 == S_ISREG(log_stat.st_mode))) {
+			fprintf(stderr, "%s  %s %s",
+				"\e[31;01mSECURITY BREACH\033[0m", log_path,
+				"already exists and is not a regular file.\n");
+		} else {
+			check_dlsym(open);
+			log_file = true_open(log_path, O_APPEND | O_WRONLY |
+					O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
+					S_IROTH);
+			if (log_file >= 0) {
+				write(log_file, buffer, strlen(buffer));
+				close(log_file);
+			}
 		}
 	}
 
@@ -1438,6 +1417,9 @@ static int before_syscall(const char *func, const char *file)
 		}
 
 	}
+
+	/* Might have been reset in check_access() */
+	sbcontext.show_access_violation = 1;
 
 	result = check_syscall(&sbcontext, func, file);
 
