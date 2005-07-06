@@ -140,6 +140,7 @@ static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static char *filter_path(const char *, int);
+static int check_prefixes(char **, int, const char *);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
 static int before_syscall(const char *, const char *);
@@ -995,204 +996,164 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	errno = old_errno;
 }
 
+static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
+{
+	int i = 0;
+
+	if (NULL != prefixes) {
+		for (i = 0; i < num_prefixes; i++) {
+			if (NULL != prefixes[i]) {
+				if (0 == strncmp(path, prefixes[i],
+						 strlen(prefixes[i])))
+					return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int check_access(sbcontext_t * sbcontext, const char *func, const char *path, const char *fpath)
 {
 	int old_errno = errno;
-	int result = -1;
-	int i = 0;
+	int result = 0;
+	int retval;
 
-	if ((-1 == result) && (NULL != sbcontext->deny_prefixes)) {
-		for (i = 0; i < sbcontext->num_deny_prefixes; i++) {
-			if (NULL != sbcontext->deny_prefixes[i]) {
-				if (0 == strncmp(fpath,
-						 sbcontext->deny_prefixes[i],
-						 strlen(sbcontext->deny_prefixes[i]))) {
-					result = 0;
-					break;
-				}
-			}
-		}
-	}
+	retval = check_prefixes(sbcontext->deny_prefixes,
+				sbcontext->num_deny_prefixes, fpath);
+	if (1 == retval)
+		/* Fall in a read/write denied path, Deny Access */
+		goto out;
 
 	/* Hardcode denying write to log dir */
-	if ((-1 == result) && (0 == strncmp(fpath, SANDBOX_LOG_LOCATION,
-					    strlen(SANDBOX_LOG_LOCATION))))
-		result = 0;
+	if (0 == strncmp(fpath, SANDBOX_LOG_LOCATION,
+			 strlen(SANDBOX_LOG_LOCATION)))
+		goto out;
 
-	if (-1 == result) {
-		if ((NULL != sbcontext->read_prefixes) &&
-		    ((0 == strncmp(func, "access_rd", 9)) ||
-		     (0 == strncmp(func, "open_rd", 7)) ||
-		     (0 == strncmp(func, "popen", 5)) ||
-		     (0 == strncmp(func, "opendir", 7)) ||
-		     (0 == strncmp(func, "system", 6)) ||
-		     (0 == strncmp(func, "execl", 5)) ||
-		     (0 == strncmp(func, "execlp", 6)) ||
-		     (0 == strncmp(func, "execle", 6)) ||
-		     (0 == strncmp(func, "execv", 5)) ||
-		     (0 == strncmp(func, "execvp", 6)) ||
-		     (0 == strncmp(func, "execve", 6)))) {
-			for (i = 0; i < sbcontext->num_read_prefixes; i++) {
-				if (NULL != sbcontext->read_prefixes[i]) {
-					if (0 == strncmp(fpath,
-							 sbcontext->read_prefixes[i],
-							 strlen(sbcontext->read_prefixes[i]))) {
-						result = 1;
-						break;
-					}
+	if ((NULL != sbcontext->read_prefixes) &&
+	    ((0 == strncmp(func, "access_rd", 9)) ||
+	     (0 == strncmp(func, "open_rd", 7)) ||
+	     (0 == strncmp(func, "popen", 5)) ||
+	     (0 == strncmp(func, "opendir", 7)) ||
+	     (0 == strncmp(func, "system", 6)) ||
+	     (0 == strncmp(func, "execl", 5)) ||
+	     (0 == strncmp(func, "execlp", 6)) ||
+	     (0 == strncmp(func, "execle", 6)) ||
+	     (0 == strncmp(func, "execv", 5)) ||
+	     (0 == strncmp(func, "execvp", 6)) ||
+	     (0 == strncmp(func, "execve", 6)))) {
+		retval = check_prefixes(sbcontext->read_prefixes,
+					sbcontext->num_read_prefixes, fpath);
+		if (1 == retval) {
+			/* Fall in a readable path, Grant Access */
+			result = 1;
+			goto out;
+		}
+	}
+		
+	if ((0 == strncmp(func, "access_wr", 7)) ||
+	    (0 == strncmp(func, "open_wr", 7)) ||
+	    (0 == strncmp(func, "creat", 5)) ||
+	    (0 == strncmp(func, "creat64", 7)) ||
+	    (0 == strncmp(func, "mkdir", 5)) ||
+	    (0 == strncmp(func, "mknod", 5)) ||
+	    (0 == strncmp(func, "mkfifo", 6)) ||
+	    (0 == strncmp(func, "link", 4)) ||
+	    (0 == strncmp(func, "symlink", 7)) ||
+	    (0 == strncmp(func, "rename", 6)) ||
+	    (0 == strncmp(func, "utime", 5)) ||
+	    (0 == strncmp(func, "utimes", 6)) ||
+	    (0 == strncmp(func, "unlink", 6)) ||
+	    (0 == strncmp(func, "rmdir", 5)) ||
+	    (0 == strncmp(func, "chown", 5)) ||
+	    (0 == strncmp(func, "lchown", 6)) ||
+	    (0 == strncmp(func, "chmod", 5)) ||
+	    (0 == strncmp(func, "truncate", 8)) ||
+	    (0 == strncmp(func, "ftruncate", 9)) ||
+	    (0 == strncmp(func, "truncate64", 10)) ||
+	    (0 == strncmp(func, "ftruncate64", 11))) {
+		struct stat st;
+		char proc_self_fd[SB_PATH_MAX];
+
+		retval = check_prefixes(sbcontext->write_denied_prefixes,
+					sbcontext->num_write_denied_prefixes,
+					fpath);
+		if (1 == retval)
+			/* Falls in a write denied path, Deny Access */
+			goto out;
+
+		retval = check_prefixes(sbcontext->write_prefixes,
+					sbcontext->num_write_prefixes, fpath);
+		if (1 == retval) {
+			/* Falls in a writable path, Grant Access */
+			result = 1;
+			goto out;
+		}
+
+		/* XXX: Hack to enable us to remove symlinks pointing
+		 * to protected stuff.  First we make sure that the
+		 * passed path is writable, and if so, check if its a
+		 * symlink, and give access only if the resolved path
+		 * of the symlink's parent also have write access. */
+		if (((0 == strncmp(func, "unlink", 6)) ||
+		     (0 == strncmp(func, "lchown", 6)) ||
+		     (0 == strncmp(func, "rename", 6))) &&
+		    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
+			/* Check if the symlink unresolved path have access */
+			retval = check_prefixes(sbcontext->write_prefixes,
+						sbcontext->num_write_prefixes, path);
+			if (1 == retval) { /* Does have write access on path */
+				char tmp_buf[SB_PATH_MAX];
+				char *dname, *rpath;
+
+				snprintf(tmp_buf, SB_PATH_MAX, "%s", path);
+				
+				dname = dirname(tmp_buf);
+				/* Get symlink resolved path */
+				rpath = filter_path(dname, 1);
+				if (NULL == rpath)
+					/* Don't really worry here about
+					 * memory issues */
+					goto unlink_hack_end;
+				
+				/* Now check if the symlink resolved path have access */
+				retval = check_prefixes(sbcontext->write_prefixes,
+							sbcontext->num_write_prefixes,
+							rpath);
+				free(rpath);
+				if (1 == retval) {
+					/* Does have write access on path, so
+					 * enable the hack as it is a symlink */
+					result = 1;
+					goto out;
 				}
 			}
 		}
-		if ((NULL != sbcontext->write_prefixes) &&
-		    ((0 == strncmp(func, "access_wr", 7)) ||
-		     (0 == strncmp(func, "open_wr", 7)) ||
-		     (0 == strncmp(func, "creat", 5)) ||
-		     (0 == strncmp(func, "creat64", 7)) ||
-		     (0 == strncmp(func, "mkdir", 5)) ||
-		     (0 == strncmp(func, "mknod", 5)) ||
-		     (0 == strncmp(func, "mkfifo", 6)) ||
-		     (0 == strncmp(func, "link", 4)) ||
-		     (0 == strncmp(func, "symlink", 7)) ||
-		     (0 == strncmp(func, "rename", 6)) ||
-		     (0 == strncmp(func, "utime", 5)) ||
-		     (0 == strncmp(func, "utimes", 6)) ||
-		     (0 == strncmp(func, "unlink", 6)) ||
-		     (0 == strncmp(func, "rmdir", 5)) ||
-		     (0 == strncmp(func, "chown", 5)) ||
-		     (0 == strncmp(func, "lchown", 6)) ||
-		     (0 == strncmp(func, "chmod", 5)) ||
-		     (0 == strncmp(func, "truncate", 8)) ||
-		     (0 == strncmp(func, "ftruncate", 9)) ||
-		     (0 == strncmp(func, "truncate64", 10)) ||
-		     (0 == strncmp(func, "ftruncate64", 11)))) {
-			struct stat st;
-
-			/* No need to check here, as we do it above
-			if (NULL != sbcontext->write_prefixes) { */
-			
-			if (NULL != sbcontext->write_denied_prefixes) {
-				for (i = 0; i < sbcontext->num_write_denied_prefixes; i++) {
-					if (NULL != sbcontext->write_denied_prefixes[i]) {
-						if (0 == strncmp(fpath,
-								 sbcontext->write_denied_prefixes[i],
-								 strlen(sbcontext->write_denied_prefixes[i]))) {
-							/* Special paths in writable context that should
-							 * be denied - not implemented yet */
-							result = 0;
-							break;
-						}
-					}
-				}
-			}
-
-			if ((-1 == result) && (NULL != sbcontext->write_prefixes)) {
-				for (i = 0; i < sbcontext->num_write_prefixes; i++) {
-					if (NULL != sbcontext->write_prefixes[i]) {
-						if (0 == strncmp(fpath,
-								 sbcontext->write_prefixes[i],
-								 strlen(sbcontext->write_prefixes[i]))) {
-							/* Falls in a writable path */
-							result = 1;
-							break;
-						}
-					}
-				}
-			}
-
-			/* XXX: Hack to enable us to remove symlinks pointing
-			 * to protected stuff.  First we make sure that the
-			 * passed path is writable, and if so, check if its a
-			 * symlink, and give access only if the resolved path
-			 * of the symlink's parent also have write access. */
-			if ((-1 == result) &&
-			    ((0 == strncmp(func, "unlink", 6)) ||
-			     (0 == strncmp(func, "lchown", 6)) ||
-			     (0 == strncmp(func, "rename", 6))) &&
-			    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
-				int hresult = -1;
-			
-				/* Check if the symlink unresolved path have access */
-				for (i = 0; i < sbcontext->num_write_prefixes; i++) {
-					if (NULL != sbcontext->write_prefixes[i]) {
-						if (0 == strncmp(path,
-								 sbcontext->write_prefixes[i],
-								 strlen(sbcontext->write_prefixes[i]))) {
-							/* Does have write access on path */
-							hresult = 1;
-							break;
-						}
-					}
-				}
-				if (1 == hresult) {
-					char tmp_buf[SB_PATH_MAX];
-					char *dname, *rpath;
-
-					snprintf(tmp_buf, SB_PATH_MAX, "%s", path);
-					
-					dname = dirname(tmp_buf);
-					/* Get symlink resolved path */
-					rpath = filter_path(dname, 1);
-					if (NULL == rpath)
-						/* Don't really worry here about
-						 * memory issues */
-						goto unlink_hack_end;
-					
-					/* Now check if the symlink resolved path have access */
-					for (i = 0; i < sbcontext->num_write_prefixes; i++) {
-						if (NULL != sbcontext->write_prefixes[i]) {
-							if (0 == strncmp(rpath,
-									 sbcontext->write_prefixes[i],
-									 strlen(sbcontext->write_prefixes[i]))) {
-								/* Does have write access on path */
-								hresult = 2;
-								break;
-							}
-						}
-					}
-					free(rpath);
-					
-					if (2 == hresult) {
-						/* Ok, enable the hack as it is a symlink */
-						result = 1;
-					}
-				}
-			}
 unlink_hack_end:
 
-			/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
-			 *      It needs to be here, as for each process '/proc/self'
-			 *      will differ ... */
-			if (-1 == result) {
-				char proc_self_fd[SB_PATH_MAX];
-
-				if (NULL != realpath("/proc/self/fd", proc_self_fd)) {
-					if (0 == strncmp(fpath, proc_self_fd, strlen(proc_self_fd)))
-						result = 1;
-				}
+		/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
+		 *      It needs to be here, as for each process '/proc/self'
+		 *      will differ ... */
+		if ((0 == strncmp(fpath, "/proc", strlen("/proc"))) &&
+		    (NULL != realpath("/proc/self/fd", proc_self_fd))) {
+			if (0 == strncmp(fpath, proc_self_fd,
+					 strlen(proc_self_fd))) {
+				result = 1;
+				goto out;
 			}
+		}
 
-			if ((-1 == result) && (NULL != sbcontext->predict_prefixes)) {
-				for (i = 0; i < sbcontext->num_predict_prefixes; i++) {
-					if (NULL != sbcontext->predict_prefixes[i]) {
-						if (0 == strncmp(fpath,
-								 sbcontext->predict_prefixes[i],
-								 strlen(sbcontext->predict_prefixes[i]))) {
-							/* Is a known access violation, so deny access,
-							 * and do not log it */
-							sbcontext->show_access_violation = 0;
-							result = 0;
-							break;
-						}
-					}
-				}
-			}
+		retval = check_prefixes(sbcontext->predict_prefixes,
+					sbcontext->num_predict_prefixes, fpath);
+		if (1 == retval) {
+			/* Is a known access violation, so deny access,
+			 * and do not log it */
+			sbcontext->show_access_violation = 0;
+			goto out;
 		}
 	}
 
-	if (-1 == result) {
-		result = 0;
-	}
-
+out:
 	errno = old_errno;
 
 	return result;
