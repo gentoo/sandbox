@@ -576,8 +576,6 @@ int main(int argc, char **argv)
 	char **argv_bash = NULL;
 
 	char *run_str = "-c";
-	char *home_dir = NULL;
-	char *tmp_string = NULL;
 
 	/* Only print info if called with no arguments .... */
 	if (argc < 2)

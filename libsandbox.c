@@ -376,7 +376,6 @@ static int canonicalize(const char *path, char *resolved_path)
 
 static char *filter_path(const char *path, int follow_link)
 {
-	struct stat st;
 	int old_errno = errno;
 	char tmp_str1[SB_PATH_MAX], tmp_str2[SB_PATH_MAX];
 	char *dname, *bname;
@@ -1255,7 +1254,6 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	char *log_path = NULL;
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
-	char *tmp_buffer = NULL;
 	int log_file = 0;
 	struct stat debug_log_stat;
 	char *debug_log_env = NULL;
