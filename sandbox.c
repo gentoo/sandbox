@@ -39,7 +39,6 @@ struct sandbox_info_t {
 	char sandbox_dir[SB_PATH_MAX];
 	char sandbox_lib[SB_PATH_MAX];
 	char sandbox_rc[SB_PATH_MAX];
-	char *sandbox_pids_file;
 	char portage_tmp_dir[SB_PATH_MAX];
 	char var_tmp_dir[SB_PATH_MAX];
 	char tmp_dir[SB_PATH_MAX];
@@ -48,117 +47,8 @@ struct sandbox_info_t {
 
 static char *tmp_dir;
 
-static int cleaned_up = 0;
 static int print_debug = 0;
 static int stop_called = 0;
-
-/* Read pids file, and load active pids into an array.	Return number of pids in array */
-int load_active_pids(int fd, int **pids)
-{
-	char *data = NULL;
-	char *ptr = NULL, *ptr2 = NULL;
-	int my_pid;
-	int num_pids = 0;
-	long len;
-
-	pids[0] = NULL;
-
-	len = file_length(fd);
-
-	/* Allocate and zero datablock to read pids file */
-	data = (char *)malloc((len + 1) * sizeof(char));
-	memset(data, 0, len + 1);
-
-	/* Start at beginning of file */
-	lseek(fd, 0L, SEEK_SET);
-
-	/* read entire file into a buffer */
-	read(fd, data, len);
-
-	ptr = data;
-
-	/* Loop and read all pids */
-	while (1) {
-		/* Find new line */
-		ptr2 = strchr(ptr, '\n');
-		if (ptr2 == NULL)
-			break;	/* No more PIDs */
-
-		/* Clear the \n. And  ptr  should have a null-terminated decimal string */
-		ptr2[0] = 0;
-
-		my_pid = atoi(ptr);
-
-		/* If the PID is still alive, add it to our array */
-		if ((0 != my_pid) && (0 == kill(my_pid, 0))) {
-			pids[0] = (int *)realloc(pids[0], (num_pids + 1) * sizeof(int));
-			pids[0][num_pids] = my_pid;
-			num_pids++;
-		}
-
-		/* Put ptr past the NULL we just wrote */
-		ptr = ptr2 + 1;
-	}
-
-	if (data)
-		free(data);
-	data = NULL;
-
-	return num_pids;
-}
-
-int write_pids_file(struct sandbox_info_t *sandbox_info)
-{
-	int pids_file = -1;
-	int *pids_array = NULL;
-	int num_of_pids = 0;
-	int i = 0, success = 1;
-	
-	char pid_string[SB_BUF_LEN];
-	
-	if (file_exist(sandbox_info->sandbox_pids_file, 1) < 0) {
-		fprintf(stderr, ">>> %s is not a regular file\n",
-				sandbox_info->sandbox_pids_file);
-		return -1;
-	} else {
-		pids_file = file_open(sandbox_info->sandbox_pids_file,
-				"r+", 1, 0664, "portage");
-		if (-1 == pids_file)
-			return -1;
-	}
-	
-	/* Grab still active pids */
-	num_of_pids = load_active_pids(pids_file, &pids_array);
-
-	/* Zero out file */
-	file_truncate(pids_file);
-
-	/* Output active pids, and append our pid */
-	for (i = 0; i < num_of_pids + 1; i++) {
-		/* Time for our entry */
-		if (i == num_of_pids)
-			sprintf(pid_string, "%d\n", getpid());
-		else
-			sprintf(pid_string, "%d\n", pids_array[i]);
-
-		if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
-			success = 0;
-			break;
-		}
-	}
-
-	/* Clean pids_array */
-	if (pids_array)
-		free(pids_array);
-
-	/* We're done with the pids file */
-	file_close(pids_file);
-
-	if (!success)
-		return -1;
-
-	return 0;
-}
 
 int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 {
@@ -196,9 +86,6 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 	snprintf(sandbox_info->sandbox_lib, SB_PATH_MAX, "%s",
 			get_sandbox_lib(sandbox_info->sandbox_dir));
 
-	/* Generate sandbox pids-file path */
-	sandbox_info->sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
-
 	/* Generate sandbox bashrc path */
 	snprintf(sandbox_info->sandbox_rc, SB_PATH_MAX, "%s",
 			get_sandbox_rc(sandbox_info->sandbox_dir));
@@ -212,83 +99,6 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 			get_sandbox_debug_log(tmp_dir));
 
 	return 0;
-}
-
-void sandbox_cleanup()
-{
-	int i = 0;
-	int success = 1;
-	int pids_file = -1, num_of_pids = 0;
-	int *pids_array = NULL;
-	char pid_string[SB_BUF_LEN];
-	char *sandbox_pids_file;
-
-	/* Generate sandbox pids-file path */
-	sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
-
-	/* Remove this sandbox's bash pid from the global pids
-	 * file if we have not already done so */
-	if (0 == cleaned_up) {
-		cleaned_up = 1;
-		success = 1;
-
-		if (print_debug)
-			printf("Cleaning up pids file.\n");
-
-		/* Stat the PIDs file, make sure it exists and is a regular file */
-		if (file_exist(sandbox_pids_file, 1) <= 0) {
-			fprintf(stderr, ">>> pids file is not a regular file\n");
-			success = 0;
-			/* We should really not fail if the pidsfile is missing here, but
-			 * rather just exit cleanly, as there is still some cleanup to do */
-			return;
-		}
-
-		pids_file = file_open(sandbox_pids_file, "r+", 1, 0664, "portage");
-		if (-1 == pids_file) {
-			success = 0;
-			/* Nothing more to do here */
-			return;
-		}
-
-		/* Load "still active" pids into an array */
-		num_of_pids = load_active_pids(pids_file, &pids_array);
-		//printf("pids: %d\r\n", num_of_pids);
-
-
-		file_truncate(pids_file);
-
-		/* if pids are still running, write only the running pids back to the file */
-		if (num_of_pids > 1) {
-			for (i = 0; i < num_of_pids; i++) {
-				if (pids_array[i] != getpid()) {
-					sprintf(pid_string, "%d\n", pids_array[i]);
-
-					if (write(pids_file, pid_string, strlen(pid_string)) != strlen(pid_string)) {
-						perror(">>> pids file write");
-						success = 0;
-						break;
-					}
-				}
-			}
-
-			file_close(pids_file);
-			pids_file = -1;
-		} else {
-
-			file_close(pids_file);
-			pids_file = -1;
-
-			/* remove the pidsfile, as this was the last sandbox */
-			unlink(sandbox_pids_file);
-		}
-
-		if (pids_array != NULL)
-			free(pids_array);
-		pids_array = NULL;
-	}
-
-	free(sandbox_pids_file);
 }
 
 int print_sandbox_log(char *sandbox_log)
@@ -347,7 +157,6 @@ void stop(int signum)
 	if (stop_called == 0) {
 		stop_called = 1;
 		printf("Caught signal %d in pid %d\r\n", signum, getpid());
-		sandbox_cleanup();
 	} else {
 		fprintf(stderr, "Pid %d alreadly caught signal and is still cleaning up\n", getpid());
 	}
@@ -676,12 +485,6 @@ int main(int argc, char **argv)
 		signal(SIGQUIT, &stop);
 		signal(SIGTERM, &stop);
 
-		/* Load our PID into PIDs file */
-		if (-1 == write_pids_file(&sandbox_info)) {
-			perror(">>> pids file write");
-			exit(1);
-		}
-
 		/* STARTING PROTECTED ENVIRONMENT */
 		if (print_debug) {
 			printf("The protected environment has been started.\n");
@@ -711,8 +514,6 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Cleaning up sandbox process\n");
 
-		sandbox_cleanup();
-
 		if (print_debug) {
 			printf("========================== Gentoo linux path sandbox ===========================\n");
 			printf("The protected environment has been shut down.\n");
@@ -724,8 +525,6 @@ int main(int argc, char **argv)
 		} else if (print_debug) {
 			printf("--------------------------------------------------------------------------------\n");
 		}
-
-		free(sandbox_info.sandbox_pids_file);
 
 		if ((sandbox_log_presence) || (!success))
 			return 1;

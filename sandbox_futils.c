@@ -73,18 +73,6 @@ SB_STATIC char *get_sandbox_lib(char *sb_path)
 	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_pids_file(const char *tmp_dir)
-{
-	char path[SB_PATH_MAX];
-	
-	if (0 < getenv("SANDBOX_PIDS_FILE")) {
-		return (strdup(getenv("SANDBOX_PIDS_FILE")));
-	}
-
-	snprintf(path, SB_PATH_MAX, "%s%s", tmp_dir, PIDS_FILE);
-	return (strdup(path));
-}
-
 SB_STATIC char *get_sandbox_rc(char *sb_path)
 {
 	char path[SB_PATH_MAX];

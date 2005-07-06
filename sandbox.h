@@ -23,7 +23,6 @@
 #define TMPDIR                 "/tmp"
 #define VAR_TMPDIR             "/var/tmp"
 #define PORTAGE_TMPDIR         "/var/tmp/portage"
-#define PIDS_FILE              "/sandboxpids.tmp"
 #define LOG_FILE_PREFIX        "/sandbox-"
 #define DEBUG_LOG_FILE_PREFIX  "/sandbox-debug-"
 #define LOG_FILE_EXT           ".log"
@@ -57,7 +56,6 @@
 
 SB_STATIC char *get_sandbox_path(char *argv0);
 SB_STATIC char *get_sandbox_lib(char *sb_path);
-SB_STATIC char *get_sandbox_pids_file(const char *tmp_dir);
 SB_STATIC char *get_sandbox_rc(char *sb_path);
 SB_STATIC char *get_sandbox_log(const char *tmp_dir);
 SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir);

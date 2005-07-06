@@ -150,7 +150,6 @@ static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 static int is_sandbox_on();
-static int is_sandbox_pid();
 
 /* Wrapped functions */
 
@@ -289,14 +288,11 @@ void __attribute__ ((destructor)) libsb_fini(void)
 			&(sbcontext.num_write_prefixes));
 	clean_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes));
-
-	free(sandbox_pids_file);
 }
 
 void __attribute__ ((constructor)) libsb_init(void)
 {
 	int old_errno = errno;
-	char tmp_dir[SB_PATH_MAX];
 
 #ifdef SB_MEM_DEBUG
 	mtrace();
@@ -306,12 +302,6 @@ void __attribute__ ((constructor)) libsb_init(void)
 
 	/* Get the path and name to this library */
 	snprintf(sandbox_lib, SB_PATH_MAX, "%s", get_sandbox_lib("/"));
-
-	if (-1 == get_tmp_dir(tmp_dir))
-		snprintf(tmp_dir, SB_PATH_MAX, "%s", TMPDIR);
-
-	/* Generate sandbox pids-file path */
-	sandbox_pids_file = get_sandbox_pids_file(tmp_dir);
 
 //	sb_init = 1;
 
@@ -874,49 +864,6 @@ static void init_context(sbcontext_t * context)
 	context->num_predict_prefixes = 0;
 	context->write_denied_prefixes = NULL;
 	context->num_write_denied_prefixes = 0;
-}
-
-static int is_sandbox_pid()
-{
-	int old_errno = errno;
-	int result = 0;
-	FILE *pids_stream = NULL;
-	int pids_file = -1;
-	int current_pid = 0;
-	int tmp_pid = 0;
-
-	init_wrappers();
-
-	check_dlsym(fopen);
-	pids_stream = true_fopen(sandbox_pids_file, "r");
-
-	if (NULL == pids_stream) {
-		perror(">>> pids file fopen");
-	} else {
-		pids_file = fileno(pids_stream);
-
-		if (pids_file < 0) {
-			perror(">>> pids file fileno");
-		} else {
-			current_pid = getpid();
-
-			while (EOF != fscanf(pids_stream, "%d\n", &tmp_pid)) {
-				if (tmp_pid == current_pid) {
-					result = 1;
-					break;
-				}
-			}
-		}
-		if (EOF == fclose(pids_stream)) {
-			perror(">>> pids file fclose");
-		}
-		pids_stream = NULL;
-		pids_file = -1;
-	}
-
-	errno = old_errno;
-
-	return result;
 }
 
 static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
