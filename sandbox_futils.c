@@ -99,7 +99,7 @@ SB_STATIC char *get_sandbox_log(const char *tmp_dir)
 	    sandbox_log_env = NULL;
 
 	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
-			tmp_dir, LOG_FILE_PREFIX,
+			SANDBOX_LOG_LOCATION, LOG_FILE_PREFIX,
 			(sandbox_log_env == NULL ? "" : sandbox_log_env),
 			(sandbox_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);
@@ -133,7 +133,7 @@ SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir)
 		sandbox_debug_log_env = NULL;
 
 	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
-			tmp_dir, DEBUG_LOG_FILE_PREFIX,
+			SANDBOX_LOG_LOCATION, DEBUG_LOG_FILE_PREFIX,
 			(sandbox_debug_log_env == NULL ? "" : sandbox_debug_log_env),
 			(sandbox_debug_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);

@@ -1014,6 +1014,11 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 		}
 	}
 
+	/* Hardcode denying write to log dir */
+	if ((-1 == result) && (0 == strncmp(fpath, SANDBOX_LOG_LOCATION,
+					    strlen(SANDBOX_LOG_LOCATION))))
+		result = 0;
+
 	if (-1 == result) {
 		if ((NULL != sbcontext->read_prefixes) &&
 		    ((0 == strncmp(func, "access_rd", 9)) ||
@@ -1244,9 +1249,6 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				if ((0 == lstat(log_path, &log_stat)) &&
 				    (0 == S_ISREG(log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n", dpath);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
-					unsetenv("SANDBOX_LOG");
-					fprintf(stderr,	"\e[31;01mSECURITY BREACH\033[0m SANDBOX_LOG %s isn't allowed via SANDBOX_WRITE\n", dpath);
 				} else {
 					check_dlsym(open);
 					log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -1270,11 +1272,6 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				    && (0 == S_ISREG(debug_log_stat.st_mode))) {
 					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  %s already exists and is not a regular file.\n",
 						debug_log_path);
-				} else if (0 == check_access(sbcontext, "open_wr", dpath, filter_path(dpath, 1))) {
-					unsetenv("SANDBOX_DEBUG");
-					unsetenv("SANDBOX_DEBUG_LOG");
-					fprintf(stderr, "\e[31;01mSECURITY BREACH\033[0m  SANDBOX_DEBUG_LOG %s isn't allowed by SANDBOX_WRITE.\n",
-						dpath);
 				} else {
 					check_dlsym(open);
 					debug_log_file = true_open(dpath, O_APPEND | O_WRONLY | O_CREAT,
