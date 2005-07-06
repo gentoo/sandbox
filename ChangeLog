@@ -8,6 +8,7 @@
     write to it.
   - Clean up logging in libsandbox.c, and hopefully make it more consistant.
   - Add check_prefixes() with major cleanup on check_access().
+  - Cleanup init_env_entries() and check_prefixes().
 
   05 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
   sandbox_futils.c, libsandbox.c:

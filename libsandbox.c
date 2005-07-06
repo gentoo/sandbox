@@ -894,8 +894,14 @@ static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 
 static void init_env_entries(char ***prefixes_array, int *prefixes_num, const char *env, const char *prefixes_env, int warn)
 {
+	char *token = NULL;
+	char *rpath = NULL;
+	char *buffer = NULL;
+	char *buffer_ptr = NULL;
+	int prefixes_env_length = strlen(prefixes_env);
+	int num_delimiters = 0;
+	int i = 0;
 	int old_errno = errno;
-//	char *prefixes_env = getenv(env);
 
 	if (NULL == prefixes_env) {
 		/* Do not warn if this is in init stage, as we might get
@@ -903,110 +909,85 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 		if (1 == sb_init)
 			fprintf(stderr, "Sandbox error : the %s environmental variable should be defined.\n", env);
 		if(pfx_array) {
-			int x;
-			for(x=0; x < pfx_num; x++) 
+			for(i = 0; i < pfx_num; i++) 
 				free(pfx_item);
 			free(pfx_array);
 		}
 		pfx_num = 0;
-	} else {
-		char *buffer = NULL;
-		char *buffer_ptr = NULL;
-		int prefixes_env_length = strlen(prefixes_env);
-		int i = 0;
-		int num_delimiters = 0;
-		char *token = NULL;
-		char *rpath = NULL;
 
-		for (i = 0; i < prefixes_env_length; i++) {
-			if (':' == prefixes_env[i]) {
-				num_delimiters++;
-			}
-		}
-
-		if (num_delimiters > 0) {
-			pfx_array = malloc(((num_delimiters * 2) + 1) * sizeof(char *));
-			if (NULL == pfx_array)
-				return;
-			buffer = strndup(prefixes_env, prefixes_env_length);
-			if (NULL == buffer)
-				return;
-			buffer_ptr = buffer;
-
-#ifdef REENTRANT_STRTOK
-			token = strtok_r(buffer_ptr, ":", &buffer_ptr);
-#else
-			token = strtok(buffer_ptr, ":");
-#endif
-
-			while ((NULL != token) && (strlen(token) > 0)) {
-				pfx_item = filter_path(token, 0);
-				if (NULL != pfx_item) {
-					pfx_num++;
-
-					/* Now add the realpath if it exists and
-					 * are not a duplicate */
-					rpath = malloc(SB_PATH_MAX * sizeof(char));
-					if (NULL != rpath) {
-						pfx_item = realpath(*(&(pfx_item) - 1), rpath);
-						if ((NULL != pfx_item) &&
-						    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
-							pfx_num++;
-						} else {
-							free(rpath);
-							pfx_item = NULL;
-						}
-					}
-				}
-
-#ifdef REENTRANT_STRTOK
-				token = strtok_r(NULL, ":", &buffer_ptr);
-#else
-				token = strtok(NULL, ":");
-#endif
-			}
-
-			free(buffer);
-		} else if (prefixes_env_length > 0) {
-			pfx_array = malloc(2 * sizeof(char *));
-			if (NULL == pfx_array)
-				return;
-
-			pfx_item = filter_path(prefixes_env, 0);
-			if (NULL != pfx_item) {
-				pfx_num++;
-
-				/* Now add the realpath if it exists and
-				 * are not a duplicate */
-				rpath = malloc(SB_PATH_MAX * sizeof(char));
-				if (NULL != rpath) {
-					pfx_item = realpath(*(&(pfx_item) - 1), rpath);
-					if ((NULL != pfx_item) &&
-					    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
-						pfx_num++;
-					} else {
-						free(rpath);
-						pfx_item = NULL;
-					}
-				}
-			}
-		}
+		goto done;
 	}
 
+	for (i = 0; i < prefixes_env_length; i++) {
+		if (':' == prefixes_env[i])
+			num_delimiters++;
+	}
+
+	pfx_array = malloc(((num_delimiters * 2) + 1) * sizeof(char *));
+	if (NULL == pfx_array)
+		goto error;
+	buffer = strndup(prefixes_env, prefixes_env_length);
+	if (NULL == buffer)
+		goto error;
+	buffer_ptr = buffer;
+
+#ifdef REENTRANT_STRTOK
+	token = strtok_r(buffer_ptr, ":", &buffer_ptr);
+#else
+	token = strtok(buffer_ptr, ":");
+#endif
+
+	while ((NULL != token) && (strlen(token) > 0)) {
+		pfx_item = filter_path(token, 0);
+		if (NULL != pfx_item) {
+			pfx_num++;
+
+			/* Now add the realpath if it exists and
+			 * are not a duplicate */
+			rpath = malloc(SB_PATH_MAX * sizeof(char));
+			if (NULL != rpath) {
+				pfx_item = realpath(*(&(pfx_item) - 1), rpath);
+				if ((NULL != pfx_item) &&
+				    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
+					pfx_num++;
+				} else {
+					free(rpath);
+					pfx_item = NULL;
+				}
+			} else {
+				goto error;
+			}
+		}
+
+#ifdef REENTRANT_STRTOK
+		token = strtok_r(NULL, ":", &buffer_ptr);
+#else
+		token = strtok(NULL, ":");
+#endif
+	}
+
+	free(buffer);
+
+done:
 	errno = old_errno;
+	return;
+
+error:
+	fprintf(stderr, "\e[31;01mERROR\033[0m  Could not initialize!\n");
+	exit(EXIT_FAILURE);
 }
 
 static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 {
 	int i = 0;
 
-	if (NULL != prefixes) {
-		for (i = 0; i < num_prefixes; i++) {
-			if (NULL != prefixes[i]) {
-				if (0 == strncmp(path, prefixes[i],
-						 strlen(prefixes[i])))
-					return 1;
-			}
+	if (NULL == prefixes)
+		return 0;
+	
+	for (i = 0; i < num_prefixes; i++) {
+		if (NULL != prefixes[i]) {
+			if (0 == strncmp(path, prefixes[i], strlen(prefixes[i])))
+				return 1;
 		}
 	}
 
