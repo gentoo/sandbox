@@ -79,24 +79,19 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 	}
 
 	/* Generate base sandbox path */
-	snprintf(sandbox_info->sandbox_dir, SB_PATH_MAX, "%s/",
-			get_sandbox_path(argv[0]));
+	get_sandbox_path(argv[0], sandbox_info->sandbox_dir);
 
 	/* Generate sandbox lib path */
-	snprintf(sandbox_info->sandbox_lib, SB_PATH_MAX, "%s",
-			get_sandbox_lib(sandbox_info->sandbox_dir));
+	get_sandbox_lib(sandbox_info->sandbox_lib);
 
 	/* Generate sandbox bashrc path */
-	snprintf(sandbox_info->sandbox_rc, SB_PATH_MAX, "%s",
-			get_sandbox_rc(sandbox_info->sandbox_dir));
+	get_sandbox_rc(sandbox_info->sandbox_rc);
 
 	/* Generate sandbox log full path */
-	snprintf(sandbox_info->sandbox_log, SB_PATH_MAX, "%s",
-			get_sandbox_log());
+	get_sandbox_log(sandbox_info->sandbox_log);
 
 	/* Generate sandbox debug log full path */
-	snprintf(sandbox_info->sandbox_debug_log, SB_PATH_MAX, "%s",
-			get_sandbox_debug_log());
+	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
 
 	return 0;
 }

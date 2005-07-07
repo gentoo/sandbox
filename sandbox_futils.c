@@ -34,56 +34,50 @@
 /* glibc modified getcwd() functions */
 SB_STATIC char *egetcwd(char *, size_t);
 
-SB_STATIC char *get_sandbox_path(char *argv0)
+SB_STATIC void get_sandbox_path(char *argv0, char *path)
 {
-	char path[SB_PATH_MAX];
-
 	memset(path, 0, sizeof(path));
 	/* ARGV[0] specifies full path */
-	if (argv0[0] == '/') {
+	if ((NULL != argv0) && (argv0[0] == '/')) {
 		snprintf(path, SB_PATH_MAX, "%s", argv0);
 
 		/* ARGV[0] specifies relative path */
 	} else {
-		if (-1 != readlink("/proc/self/exe", path, sizeof(path)))
-			path[sizeof(path) - 1] = '\0';
+		if (-1 != readlink("/proc/self/exe", path, SB_PATH_MAX))
+			path[SB_PATH_MAX - 1] = '\0';
 		else
 			path[0] = '\0';
 	}
 
 	/* Return just directory */
-	return (dirname(path));
+	dirname(path);
 }
 
-SB_STATIC char *get_sandbox_lib(char *sb_path)
+SB_STATIC void get_sandbox_lib(char *path)
 {
-	char path[SB_PATH_MAX];
-
 #ifdef SB_HAVE_64BIT_ARCH
-	snprintf(path, sizeof(path), "%s", LIB_NAME);
+	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 #else
-	snprintf(path, sizeof(path), "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
+	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
 	if (0 >= exists(path)) {
-		snprintf(path, sizeof(path), "%s%s", sb_path, LIB_NAME);
+		snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 	}
 #endif
-	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_rc(char *sb_path)
+SB_STATIC void get_sandbox_rc(char *path)
 {
-	char path[SB_PATH_MAX];
+	char sb_path[SB_PATH_MAX];
 
-	snprintf(path, sizeof(path), "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
+	snprintf(path, SB_PATH_MAX, "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
 	if (0 >= exists(path)) {
-		snprintf(path, sizeof(path), "%s%s", sb_path, BASHRC_NAME);
+		get_sandbox_path(NULL, sb_path);
+		snprintf(path, SB_PATH_MAX, "%s%s", sb_path, BASHRC_NAME);
 	}
-	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_log()
+SB_STATIC void get_sandbox_log(char *path)
 {
-	char path[SB_PATH_MAX];
 	char *sandbox_log_env = NULL;
 
 	sandbox_log_env = getenv(ENV_SANDBOX_LOG);
@@ -95,17 +89,15 @@ SB_STATIC char *get_sandbox_log()
 	    (NULL != strchr(sandbox_log_env, '/')))
 	    sandbox_log_env = NULL;
 
-	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
+	snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
 			SANDBOX_LOG_LOCATION, LOG_FILE_PREFIX,
 			(sandbox_log_env == NULL ? "" : sandbox_log_env),
 			(sandbox_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);
-	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_debug_log()
+SB_STATIC void get_sandbox_debug_log(char *path)
 {
-	char path[SB_PATH_MAX];
 	char *sandbox_debug_log_env = NULL;
 
 	sandbox_debug_log_env = getenv(ENV_SANDBOX_DEBUG_LOG);
@@ -117,20 +109,19 @@ SB_STATIC char *get_sandbox_debug_log()
 	    (NULL != strchr(sandbox_debug_log_env, '/')))
 		sandbox_debug_log_env = NULL;
 
-	snprintf(path, sizeof(path) - 1, "%s%s%s%s%d%s",
+	snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
 			SANDBOX_LOG_LOCATION, DEBUG_LOG_FILE_PREFIX,
 			(sandbox_debug_log_env == NULL ? "" : sandbox_debug_log_env),
 			(sandbox_debug_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);
-	return (strdup(path));
 }
 
-SB_STATIC int get_tmp_dir(char *tmp_dir)
+SB_STATIC int get_tmp_dir(char *path)
 {
 	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
 					      : TMPDIR,
-				tmp_dir)) {
-		if (NULL == realpath(TMPDIR, tmp_dir))
+				path)) {
+		if (NULL == realpath(TMPDIR, path))
 			return -1;
 	}
 

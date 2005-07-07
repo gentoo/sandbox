@@ -55,12 +55,12 @@
 # define dlvsym(lib, sym, ver) dlsym(lib, sym)
 #endif
 
-SB_STATIC char *get_sandbox_path(char *argv0);
-SB_STATIC char *get_sandbox_lib(char *sb_path);
-SB_STATIC char *get_sandbox_rc(char *sb_path);
-SB_STATIC char *get_sandbox_log();
-SB_STATIC char *get_sandbox_debug_log();
-SB_STATIC int get_tmp_dir(char *tmp_dir);
+SB_STATIC void get_sandbox_path(char *argv0, char *path);
+SB_STATIC void get_sandbox_lib(char *path);
+SB_STATIC void get_sandbox_rc(char *path);
+SB_STATIC void get_sandbox_log(char *path);
+SB_STATIC void get_sandbox_debug_log(char *path);
+SB_STATIC int get_tmp_dir(char *path);
 SB_STATIC int exists(const char *pathname);
 SB_STATIC int is_file(const char *pathname);
 SB_STATIC long file_length(int fd);

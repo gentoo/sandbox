@@ -302,7 +302,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 	init_wrappers();
 
 	/* Get the path and name to this library */
-	snprintf(sandbox_lib, SB_PATH_MAX, "%s", get_sandbox_lib("/"));
+	get_sandbox_lib(sandbox_lib);
 
 //	sb_init = 1;
 
