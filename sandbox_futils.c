@@ -35,6 +35,8 @@ SB_STATIC void get_sandbox_lib(char *path)
 #endif
 }
 
+#ifdef OUTSIDE_LIBSANDBOX
+
 SB_STATIC void get_sandbox_rc(char *path)
 {
 	snprintf(path, SB_PATH_MAX, "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
@@ -96,6 +98,8 @@ SB_STATIC int get_tmp_dir(char *path)
 	return 0;
 }
 
+#endif /* OUTSIDE_LIBSANDBOX */
+
 SB_STATIC int exists(const char *pathname)
 {
 	struct stat buf;
@@ -113,6 +117,8 @@ SB_STATIC int exists(const char *pathname)
 
 	return 0;
 }
+
+#ifdef OUTSIDE_LIBSANDBOX
 
 SB_STATIC int is_file(const char *pathname)
 {
@@ -142,6 +148,8 @@ SB_STATIC long file_length(int fd)
 
 	return (len);
 }
+
+#endif /* OUTSIDE_LIBSANDBOX */
 
 
 // vim:noexpandtab noai:cindent ai

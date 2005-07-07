@@ -55,13 +55,17 @@
 #endif
 
 SB_STATIC void get_sandbox_lib(char *path);
+#ifdef OUTSIDE_LIBSANDBOX
 SB_STATIC void get_sandbox_rc(char *path);
 SB_STATIC void get_sandbox_log(char *path);
 SB_STATIC void get_sandbox_debug_log(char *path);
 SB_STATIC int get_tmp_dir(char *path);
+#endif /* OUTSIDE_LIBSANDBOX */
 SB_STATIC int exists(const char *pathname);
+#ifdef OUTSIDE_LIBSANDBOX
 SB_STATIC int is_file(const char *pathname);
 SB_STATIC long file_length(int fd);
+#endif /* OUTSIDE_LIBSANDBOX */
 
 #endif
 

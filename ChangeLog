@@ -10,6 +10,8 @@
   - Redo the interface of the get_* functions so that we do not leak memory.
   - Remove sandbox_dir and co - we are not using it anymore.
   - Remove unused includes and variables.
+  - Only declare functions in sandbox_futils.c that are used in libsandbox.c when
+    OUTSIDE_LIBSANDBOX is not defined.
 
   06 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.h, sandbox_futils.c,
   libsandbox.c:
