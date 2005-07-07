@@ -64,7 +64,7 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 		perror(">>> get var_tmp_dir");
 		return -1;
 	}
-	
+
 	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
 		perror(">>> get tmp_dir");
 		return -1;
@@ -92,11 +92,11 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 
 	/* Generate sandbox log full path */
 	snprintf(sandbox_info->sandbox_log, SB_PATH_MAX, "%s",
-			get_sandbox_log(tmp_dir));
+			get_sandbox_log());
 
 	/* Generate sandbox debug log full path */
 	snprintf(sandbox_info->sandbox_debug_log, SB_PATH_MAX, "%s",
-			get_sandbox_debug_log(tmp_dir));
+			get_sandbox_debug_log());
 
 	return 0;
 }
@@ -109,15 +109,22 @@ int print_sandbox_log(char *sandbox_log)
 	long len = 0;
 	char *buffer = NULL;
 
-	sandbox_log_file = file_open(sandbox_log, "r", 1, 0664, "portage");
-	if (-1 == sandbox_log_file)
+	if (1 != is_file(sandbox_log)) {
+		perror(">>> log file not a regular file");
 		return 0;
+	}
+	
+	sandbox_log_file = open(sandbox_log, O_RDONLY);
+	if (-1 == sandbox_log_file) {
+		perror(">>> could not open log file");
+		return 0;
+	}
 
 	len = file_length(sandbox_log_file);
 	buffer = (char *)malloc((len + 1) * sizeof(char));
 	memset(buffer, 0, len + 1);
 	read(sandbox_log_file, buffer, len);
-	file_close(sandbox_log_file);
+	close(sandbox_log_file);
 
 	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
@@ -149,6 +156,7 @@ int print_sandbox_log(char *sandbox_log)
 		if (i < beep_count - 1)
 			sleep(1);
 	}
+	
 	return 1;
 }
 
@@ -414,13 +422,13 @@ int main(int argc, char **argv)
 			printf("Verification of the required files.\n");
 
 #ifndef SB_HAVE_64BIT_ARCH
-		if (file_exist(sandbox_info.sandbox_lib, 0) <= 0) {
+		if (0 >= exists(sandbox_info.sandbox_lib)) {
 			fprintf(stderr, "Could not open the sandbox library at '%s'.\n",
 					sandbox_info.sandbox_lib);
 			return -1;
 		}
 #endif
-		if (file_exist(sandbox_info.sandbox_rc, 0) <= 0) {
+		if (0 >= exists(sandbox_info.sandbox_rc)) {
 			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n",
 					sandbox_info.sandbox_rc);
 			return -1;
@@ -519,7 +527,7 @@ int main(int argc, char **argv)
 			printf("The protected environment has been shut down.\n");
 		}
 
-		if (file_exist(sandbox_info.sandbox_log, 0)) {
+		if (1 == exists(sandbox_info.sandbox_log)) {
 			sandbox_log_presence = 1;
 			print_sandbox_log(sandbox_info.sandbox_log);
 		} else if (print_debug) {

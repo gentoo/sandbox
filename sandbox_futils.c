@@ -23,16 +23,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include <grp.h>
 #include <pwd.h>
 
 #include "sandbox.h"
 #include "config.h"
-
-/* BEGIN Prototypes */
-SB_STATIC int file_security_check(char *filename);
-/* END   Prototypes */
 
 /* glibc modified getcwd() functions */
 SB_STATIC char *egetcwd(char *, size_t);
@@ -55,7 +52,7 @@ SB_STATIC char *get_sandbox_path(char *argv0)
 	}
 
 	/* Return just directory */
-	return (sb_dirname(path));
+	return (dirname(path));
 }
 
 SB_STATIC char *get_sandbox_lib(char *sb_path)
@@ -66,7 +63,7 @@ SB_STATIC char *get_sandbox_lib(char *sb_path)
 	snprintf(path, sizeof(path), "%s", LIB_NAME);
 #else
 	snprintf(path, sizeof(path), "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
-	if (file_exist(path, 0) <= 0) {
+	if (0 >= exists(path)) {
 		snprintf(path, sizeof(path), "%s%s", sb_path, LIB_NAME);
 	}
 #endif
@@ -78,13 +75,13 @@ SB_STATIC char *get_sandbox_rc(char *sb_path)
 	char path[SB_PATH_MAX];
 
 	snprintf(path, sizeof(path), "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
-	if (file_exist(path, 0) <= 0) {
+	if (0 >= exists(path)) {
 		snprintf(path, sizeof(path), "%s%s", sb_path, BASHRC_NAME);
 	}
 	return (strdup(path));
 }
 
-SB_STATIC char *get_sandbox_log(const char *tmp_dir)
+SB_STATIC char *get_sandbox_log()
 {
 	char path[SB_PATH_MAX];
 	char *sandbox_log_env = NULL;
@@ -106,19 +103,7 @@ SB_STATIC char *get_sandbox_log(const char *tmp_dir)
 	return (strdup(path));
 }
 
-SB_STATIC int get_tmp_dir(char *tmp_dir)
-{
-	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
-					      : TMPDIR,
-				tmp_dir)) {
-		if (NULL == realpath(TMPDIR, tmp_dir))
-			return -1;
-	}
-
-	return 0;
-}
-
-SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir)
+SB_STATIC char *get_sandbox_debug_log()
 {
 	char path[SB_PATH_MAX];
 	char *sandbox_debug_log_env = NULL;
@@ -140,367 +125,64 @@ SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir)
 	return (strdup(path));
 }
 
-/* Obtain base directory name. Do not allow trailing / */
-SB_STATIC char *sb_dirname(const char *path)
+SB_STATIC int get_tmp_dir(char *tmp_dir)
 {
-	char *ret = NULL;
-	char *ptr = NULL;
-	int loc = 0, i;
-	int cut_len = -1;
-
-	/* don't think NULL will ever be passed, but just in case */
-	if (NULL == path)
-		return (strdup("."));
-
-	/* Grab pointer to last slash */
-	ptr = strrchr(path, '/');
-	if (NULL == ptr) {
-		return (strdup("."));
-	}
-
-	/* decimal location of pointer */
-	loc = ptr - path;
-
-	/* Remove any trailing slash */
-	for (i = loc - 1; i >= 0; i--) {
-		if (path[i] != '/') {
-			cut_len = i + 1;	/* make cut_len the length of the string to keep */
-			break;
-		}
-	}
-
-	/* It could have been just a plain /, return a 1byte 0 filled string */
-	if (-1 == cut_len)
-		return (strdup(""));
-
-	/* Allocate memory, and return the directory */
-	ret = (char *)malloc((cut_len + 1) * sizeof(char));
-	memcpy(ret, path, cut_len);
-	ret[cut_len] = 0;
-
-	return (ret);
-}
-
-/*
-SB_STATIC char* dirname(const char* path)
-{
-  char* base = NULL;
-  unsigned int length = 0;
-
-  base = strrchr(path, '/');
-  if (NULL == base)
-  {
-    return strdup(".");
-  }
-  while (base > path && *base == '/')
-  {
-    base--;
-  }
-  length = (unsigned int) 1 + base - path;
-
-  base = malloc(sizeof(char)*(length+1));
-  memmove(base, path, length);
-  base[length] = 0;
-
-  return base;
-}*/
-
-/* Convert text (string) modes to integer values */
-SB_STATIC int file_getmode(char *mode)
-{
-	int mde = 0;
-	if (0 == strcasecmp(mode, "r+")) {
-		mde = O_RDWR | O_CREAT;
-	} else if (0 == strcasecmp(mode, "w+")) {
-		mde = O_RDWR | O_CREAT | O_TRUNC;
-	} else if (0 == strcasecmp(mode, "a+")) {
-		mde = O_RDWR | O_CREAT | O_APPEND;
-	} else if (0 == strcasecmp(mode, "r")) {
-		mde = O_RDONLY;
-	} else if (0 == strcasecmp(mode, "w")) {
-		mde = O_WRONLY | O_CREAT | O_TRUNC;
-	} else if (0 == strcasecmp(mode, "a")) {
-		mde = O_WRONLY | O_APPEND | O_CREAT;
-	} else {
-		mde = O_RDONLY;
-	}
-	return (mde);
-}
-
-/* Get current position in file */
-SB_STATIC long file_tell(int fp)
-{
-	return (lseek(fp, 0L, SEEK_CUR));
-}
-
-/* lock the file, preferrably the POSIX way */
-SB_STATIC int file_lock(int fd, int lock, char *filename)
-{
-	int err;
-#ifdef USE_FLOCK
-	if (flock(fd, lock) < 0) {
-		err = errno;
-		fprintf(stderr, ">>> %s flock file lock: %s\n", filename, strerror(err));
-		return 0;
-	}
-#else
-	struct flock fl;
-	fl.l_type = lock;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0L;
-	fl.l_len = 0L;
-	fl.l_pid = getpid();
-	if (fcntl(fd, F_SETLKW, &fl) < 0) {
-		err = errno;
-		fprintf(stderr, ">>> %s fcntl file lock: %s\n", filename, strerror(err));
-		return 0;
-	}
-#endif
-	return 1;
-}
-
-/* unlock the file, preferrably the POSIX way */
-SB_STATIC int file_unlock(int fd)
-{
-#ifdef USE_FLOCK
-	if (flock(fd, LOCK_UN) < 0) {
-		perror(">>> flock file unlock");
-		return 0;
-	}
-#else
-	struct flock fl;
-	fl.l_type = F_UNLCK;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0L;
-	fl.l_len = 0L;
-	fl.l_pid = getpid();
-	if (fcntl(fd, F_SETLKW, &fl) < 0) {
-		perror(">>> fcntl file unlock");
-		return 0;
-	}
-#endif
-	return 1;
-}
-
-/* Auto-determine from how the file was opened, what kind of lock to lock
- * the file with
- */
-SB_STATIC int file_locktype(char *mode)
-{
-#ifdef USE_FLOCK
-	if (NULL != (strchr(mode, 'w')) || (NULL != strchr(mode, '+'))
-	    || (NULL != strchr(mode, 'a')))
-		return (LOCK_EX);
-	return (LOCK_SH);
-#else
-	if (NULL != (strchr(mode, 'w')) || (NULL != strchr(mode, '+'))
-	    || (NULL != strchr(mode, 'a')))
-		return (F_WRLCK);
-	return (F_RDLCK);
-#endif
-}
-
-/* Use standard fopen style modes to open the specified file.  Also auto-determines and
- * locks the file either in shared or exclusive mode depending on opening mode
- */
-SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...)
-{
-	int fd;
-	char error[SB_BUF_LEN];
-	va_list ap;
-	int perm;
-	char *group = NULL;
-	struct group *group_struct;
-
-	file_security_check(filename);
-
-	if (perm_specified) {
-		va_start(ap, perm_specified);
-		perm = va_arg(ap, int);
-		group = va_arg(ap, char *);
-		va_end(ap);
-	}
-	fd = open(filename, file_getmode(mode));
-	file_security_check(filename);
-	if (-1 == fd) {
-		snprintf(error, sizeof(error), ">>> %s file mode: %s open", filename, mode);
-		perror(error);
-		return (fd);
-	}
-	if (perm_specified) {
-		if (fchmod(fd, 0664) && (0 == getuid())) {
-			snprintf(error, sizeof(error), ">>> Could not set mode: %s", filename);
-			perror(error);
-		}
-	}
-	if (NULL != group) {
-		group_struct = getgrnam(group);
-		if (NULL == group_struct) {
-			snprintf(error, sizeof(error), ">>> Could not get grp number: %s", group);
-			perror(error);
-		} else {
-			if (fchown(fd, -1, group_struct->gr_gid) && (0 == getuid())) {
-				snprintf(error, sizeof(error), ">>> Could not set group: %s", filename);
-				perror(error);
-			}
-		}
-	}
-	/* Only lock the file if opening succeeded */
-	if (-1 != fd) {
-		if (file_security_check(filename) != 0) {
-			/* Security violation occured between the last check and the     */
-			/* creation of the file. As SpanKY pointed out there is a race   */
-			/* condition here, so if there is a problem here we'll mesg and  */
-			/* bail out to avoid it until we can work and test a better fix. */
-			fprintf(stderr, "\n\nSECURITY RACE CONDITION: Problem recurred after creation!\nBAILING OUT\n\n");
-			exit(127);
-		}
-
-		if (0 == file_lock(fd, file_locktype(mode), filename)) {
-			close(fd);
+	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
+					      : TMPDIR,
+				tmp_dir)) {
+		if (NULL == realpath(TMPDIR, tmp_dir))
 			return -1;
-		}
-	} else {
-		snprintf(error, sizeof(error), ">>> %s file mode:%s open", filename, mode);
-		perror(error);
 	}
-	return (fd);
+
+	return 0;
 }
 
-/* Close and unlock file */
-SB_STATIC void file_close(int fd)
+SB_STATIC int exists(const char *pathname)
 {
-	if (-1 != fd) {
-		file_unlock(fd);
-		close(fd);
-	}
+	struct stat buf;
+	int retval;
+
+	if ((NULL == pathname) || (0 == strlen(pathname)))
+		return 0;
+
+	retval = lstat(pathname, &buf);
+	if (-1 != retval)
+		return 1;
+	/* Some or other error occurred */
+	if (ENOENT != errno)
+		return -1;
+
+	return 0;
 }
 
-/* Return length of file */
+SB_STATIC int is_file(const char *pathname)
+{
+	struct stat buf;
+	int retval;
+
+	if ((NULL == pathname) || (0 == strlen(pathname)))
+		return 0;
+
+	retval = lstat(pathname, &buf);
+	if ((-1 != retval) && (S_ISREG(buf.st_mode)))
+		return 1;
+	/* Some or other error occurred */
+	if ((-1 == retval) && (ENOENT != errno))
+		return -1;
+
+	return 0;
+}
+
 SB_STATIC long file_length(int fd)
 {
 	long pos, len;
-	pos = file_tell(fd);
+
+	pos = lseek(fd, 0L, SEEK_CUR);
 	len = lseek(fd, 0L, SEEK_END);
 	lseek(fd, pos, SEEK_SET);
+
 	return (len);
 }
 
-/* Zero out file */
-SB_STATIC int file_truncate(int fd)
-{
-	lseek(fd, 0L, SEEK_SET);
-	if (ftruncate(fd, 0) < 0) {
-		perror(">>> file truncate");
-		return 0;
-	}
-	return 1;
-}
-
-/* Check to see if a file exists Return: 1 success, 0 file not found, -1 error */
-SB_STATIC int file_exist(char *filename, int checkmode)
-{
-	struct stat mystat;
-
-	/* Verify file exists and is regular file (not sym link) */
-	if (checkmode) {
-		if (-1 == lstat(filename, &mystat)) {
-			/* file doesn't exist */
-			if (ENOENT == errno) {
-				return 0;
-			} else {	/* permission denied or other error */
-				perror(">>> stat file");
-				return -1;
-			}
-		}
-		if (!S_ISREG(mystat.st_mode))
-			return -1;
-
-		/* Just plain verify the file exists */
-	} else {
-		if (-1 == stat(filename, &mystat)) {
-			/* file does not exist */
-			if (ENOENT == errno) {
-				return 0;
-			} else {	/* permission denied or other error */
-				perror(">>> stat file");
-				return -1;
-			}
-		}
-	}
-
-	return 1;
-}
-
-SB_STATIC int file_security_check(char *filename)
-{				/* 0 == fine, >0 == problem */
-	struct stat stat_buf;
-	struct group *group_buf;
-	struct passwd *passwd_buf;
-
-	passwd_buf = getpwnam("portage");
-	group_buf = getgrnam("portage");
-
-	if ((lstat(filename, &stat_buf) == -1) && (errno == ENOENT)) {
-		/* Doesn't exist. */
-		return 0;
-	} else {
-		if ((stat_buf.st_nlink) > 1) {	/* Security: We are handlinked... */
-			if (unlink(filename)) {
-				fprintf(stderr, "Unable to delete file in security violation (hardlinked): %s\n", filename);
-				exit(127);
-			}
-			fprintf(stderr, "File in security violation (hardlinked): %s\n", filename);
-			return 1;
-		} else if (S_ISLNK(stat_buf.st_mode)) {	/* Security: We are a symlink? */
-			fprintf(stderr, "File in security violation (symlink): %s\n", filename);
-			exit(127);
-		} else if (0 == S_ISREG(stat_buf.st_mode)) {	/* Security: special file */
-			fprintf(stderr, "File in security violation (not regular): %s\n", filename);
-			exit(127);
-		} else if (stat_buf.st_mode & S_IWOTH) {	/* Security: We are o+w? */
-			if (unlink(filename)) {
-				fprintf(stderr, "Unable to delete file in security violation (world write): %s\n", filename);
-				exit(127);
-			}
-			fprintf(stderr, "File in security violation (world write): %s\n", filename);
-			return 1;
-		} else
-		    if (!((stat_buf.st_uid == 0) || (stat_buf.st_uid == getuid()) ||
-			 ((passwd_buf != NULL) && (stat_buf.st_uid == passwd_buf->pw_uid))) ||
-			 !((stat_buf.st_gid == 0) || (stat_buf.st_gid == getgid()) ||
-			  ((group_buf != NULL) && (stat_buf.st_gid == group_buf->gr_gid)))) {
-			  /* Security: Owner/Group isn't right. */
-
-			/* uid = 0 or myuid or portage */
-			/* gid = 0 or mygid or portage */
-
-			if (0) {
-				fprintf(stderr, "--1: %d,%d,%d,%d\n--2: %d,%d,%d,%d\n",
-					(stat_buf.st_uid == 0),
-					(stat_buf.st_uid == getuid()),
-					(passwd_buf != NULL),
-					(passwd_buf != NULL) ? (stat_buf.st_uid == passwd_buf->pw_uid) : -1,
-					(stat_buf.st_gid == 0),
-					(stat_buf.st_gid == getgid()),
-					(group_buf != NULL),
-					(group_buf != NULL) ? (stat_buf.st_gid == group_buf->gr_gid) : -1);
-			}
-
-			/* manpage: "The return value may point to static area" */
-			/* DO NOT ACTUALLY FREE THIS... It'll segfault.         */
-			/* if(passwd_buf != NULL) { free(passwd_buf); }         */
-			/* if(group_buf  != NULL) { free(group_buf); }          */
-
-			if (unlink(filename)) {
-				fprintf(stderr, "Unable to delete file in security violation (bad owner/group): %s\n", filename);
-				exit(127);
-			}
-			fprintf(stderr, "File in security violation (bad owner/group): %s\n", filename);
-			return 1;
-		}
-	}			/* Stat */
-	return 0;
-}
 
 // vim:noexpandtab noai:cindent ai

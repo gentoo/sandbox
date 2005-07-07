@@ -58,20 +58,12 @@
 SB_STATIC char *get_sandbox_path(char *argv0);
 SB_STATIC char *get_sandbox_lib(char *sb_path);
 SB_STATIC char *get_sandbox_rc(char *sb_path);
-SB_STATIC char *get_sandbox_log(const char *tmp_dir);
-SB_STATIC char *get_sandbox_debug_log(const char *tmp_dir);
+SB_STATIC char *get_sandbox_log();
+SB_STATIC char *get_sandbox_debug_log();
 SB_STATIC int get_tmp_dir(char *tmp_dir);
-SB_STATIC char *sb_dirname(const char *path);
-SB_STATIC int file_getmode(char *mode);
-SB_STATIC long file_tell(int fp);
-SB_STATIC int file_lock(int fd, int lock, char *filename);
-SB_STATIC int file_unlock(int fd);
-SB_STATIC int file_locktype(char *mode);
-SB_STATIC int file_open(char *filename, char *mode, int perm_specified, ...);
-SB_STATIC void file_close(int fd);
+SB_STATIC int exists(const char *pathname);
+SB_STATIC int is_file(const char *pathname);
 SB_STATIC long file_length(int fd);
-SB_STATIC int file_truncate(int fd);
-SB_STATIC int file_exist(char *filename, int checkmode);
 
 #endif
 
