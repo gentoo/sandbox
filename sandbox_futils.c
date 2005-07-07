@@ -34,25 +34,6 @@
 /* glibc modified getcwd() functions */
 SB_STATIC char *egetcwd(char *, size_t);
 
-SB_STATIC void get_sandbox_path(char *argv0, char *path)
-{
-	memset(path, 0, sizeof(path));
-	/* ARGV[0] specifies full path */
-	if ((NULL != argv0) && (argv0[0] == '/')) {
-		snprintf(path, SB_PATH_MAX, "%s", argv0);
-
-		/* ARGV[0] specifies relative path */
-	} else {
-		if (-1 != readlink("/proc/self/exe", path, SB_PATH_MAX))
-			path[SB_PATH_MAX - 1] = '\0';
-		else
-			path[0] = '\0';
-	}
-
-	/* Return just directory */
-	dirname(path);
-}
-
 SB_STATIC void get_sandbox_lib(char *path)
 {
 #ifdef SB_HAVE_64BIT_ARCH
@@ -67,12 +48,10 @@ SB_STATIC void get_sandbox_lib(char *path)
 
 SB_STATIC void get_sandbox_rc(char *path)
 {
-	char sb_path[SB_PATH_MAX];
-
 	snprintf(path, SB_PATH_MAX, "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
 	if (0 >= exists(path)) {
-		get_sandbox_path(NULL, sb_path);
-		snprintf(path, SB_PATH_MAX, "%s%s", sb_path, BASHRC_NAME);
+		perror(">>> cannot open bashrc");
+		exit(EXIT_FAILURE);
 	}
 }
 

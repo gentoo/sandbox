@@ -33,11 +33,10 @@
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 
-#define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
-#define ENV_SANDBOX_LOG        "SANDBOX_LOG"
-#define ENV_SANDBOX_DIR        "SANDBOX_DIR"
 #define ENV_SANDBOX_LIB        "SANDBOX_LIB"
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
+#define ENV_SANDBOX_LOG        "SANDBOX_LOG"
+#define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
 
 #define ENV_SANDBOX_DENY       "SANDBOX_DENY"
 #define ENV_SANDBOX_READ       "SANDBOX_READ"
@@ -55,7 +54,6 @@
 # define dlvsym(lib, sym, ver) dlsym(lib, sym)
 #endif
 
-SB_STATIC void get_sandbox_path(char *argv0, char *path);
 SB_STATIC void get_sandbox_lib(char *path);
 SB_STATIC void get_sandbox_rc(char *path);
 SB_STATIC void get_sandbox_log(char *path);

@@ -36,7 +36,6 @@
 struct sandbox_info_t {
 	char sandbox_log[SB_PATH_MAX];
 	char sandbox_debug_log[SB_PATH_MAX];
-	char sandbox_dir[SB_PATH_MAX];
 	char sandbox_lib[SB_PATH_MAX];
 	char sandbox_rc[SB_PATH_MAX];
 	char portage_tmp_dir[SB_PATH_MAX];
@@ -50,7 +49,7 @@ static char *tmp_dir;
 static int print_debug = 0;
 static int stop_called = 0;
 
-int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
+int sandbox_setup(struct sandbox_info_t *sandbox_info)
 {
 	if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
 						      : PORTAGE_TMPDIR,
@@ -77,9 +76,6 @@ int sandbox_setup(char *argv[], struct sandbox_info_t *sandbox_info)
 		sandbox_info->home_dir = tmp_dir;
 		setenv("HOME", sandbox_info->home_dir, 1);
 	}
-
-	/* Generate base sandbox path */
-	get_sandbox_path(argv[0], sandbox_info->sandbox_dir);
 
 	/* Generate sandbox lib path */
 	get_sandbox_lib(sandbox_info->sandbox_lib);
@@ -254,7 +250,6 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
-	unsetenv(ENV_SANDBOX_DIR);
 	unsetenv(ENV_SANDBOX_LIB);
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
@@ -298,7 +293,6 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
-	sandbox_setenv(new_environ, ENV_SANDBOX_DIR, sandbox_info->sandbox_dir);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
 	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
@@ -407,7 +401,7 @@ int main(int argc, char **argv)
 		if (print_debug)
 			printf("Detection of the support files.\n");
 
-		if (-1 == sandbox_setup(argv, &sandbox_info)) {
+		if (-1 == sandbox_setup(&sandbox_info)) {
 			perror(">>> setup");
 			exit(1);
 		}
