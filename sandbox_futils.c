@@ -8,25 +8,14 @@
  */
 
 #include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-#include <stdarg.h>
-#include <sys/file.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
-
-#include <grp.h>
-#include <pwd.h>
 
 #include "sandbox.h"
 #include "config.h"

@@ -9,6 +9,7 @@
     write to /var/log/sandbox/, so in theory do not need all that.
   - Redo the interface of the get_* functions so that we do not leak memory.
   - Remove sandbox_dir and co - we are not using it anymore.
+  - Remove unused includes and variables.
 
   06 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.h, sandbox_futils.c,
   libsandbox.c:

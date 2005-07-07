@@ -106,8 +106,6 @@
 }
 
 static char sandbox_lib[SB_PATH_MAX];
-//static char sandbox_pids_file[255];
-static char *sandbox_pids_file;
 
 typedef struct {
 	int show_access_violation;
