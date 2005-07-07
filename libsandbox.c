@@ -923,7 +923,8 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			num_delimiters++;
 	}
 
-	pfx_array = malloc(((num_delimiters * 2) + 1) * sizeof(char *));
+	/* num_delimiters might be 0, and we need 2 entries at least */
+	pfx_array = malloc(((num_delimiters * 2) + 2) * sizeof(char *));
 	if (NULL == pfx_array)
 		goto error;
 	buffer = strndup(prefixes_env, prefixes_env_length);

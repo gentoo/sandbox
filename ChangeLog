@@ -2,6 +2,9 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  07 July 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  Fix possible segfault in env init code.
+
   06 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.h, sandbox_futils.c,
   libsandbox.c:
   - Change log dir to /var/log/sandbox/.  Make sure the sandboxed process cannot
