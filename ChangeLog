@@ -12,6 +12,8 @@
   - Remove unused includes and variables.
   - Only declare functions in sandbox_futils.c that are used in libsandbox.c when
     OUTSIDE_LIBSANDBOX is not defined.
+  - Cleanup access/log printing.  Make access printing honour NOCOLOR.  Fix log
+    printing's last line not honouring NOCOLOR.
 
   06 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.h, sandbox_futils.c,
   libsandbox.c:

@@ -114,22 +114,16 @@ int print_sandbox_log(char *sandbox_log)
 
 	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
-	if (color)
-		printf("\e[31;01m");
-	printf("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------");
-	if (color)
-		printf("\033[0m");
-	if (color)
-		printf("\e[31;01m");
-	printf("\nLOG FILE = \"%s\"", sandbox_log);
-	if (color)
-		printf("\033[0m");
-	printf("\n\n");
-	printf("%s", buffer);
-	if (buffer)
+	EERROR(color,
+	       "--------------------------- ACCESS VIOLATION SUMMARY ---------------------------",
+	       "\n");
+	EERROR(color, "LOG FILE = \"%s\"", "\n\n", sandbox_log);
+	fprintf(stderr, "%s", buffer);
+	if (NULL != buffer)
 		free(buffer);
-	buffer = NULL;
-	printf("\e[31;01m--------------------------------------------------------------------------------\033[0m\n");
+	EERROR(color,
+	       "--------------------------------------------------------------------------------",
+	       "\n");
 
 	beep_count_env = getenv(ENV_SANDBOX_BEEP);
 	if (beep_count_env)

@@ -1150,6 +1150,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int result = 1;
 	int log_file = 0;
 	int debug = 0;
+	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
 	init_wrappers();
 
@@ -1170,13 +1171,13 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	result = check_access(sbcontext, func, absolute_path, resolved_path);
 
 	if ((0 == result) && (1 == sbcontext->show_access_violation)) {
-		fprintf(stderr, "\e[31;01mACCESS DENIED\033[0m	%s:%*s%s\n",
+		EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
 			func, (int)(10 - strlen(func)), "", absolute_path);
 	} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
-		fprintf(stderr, "\e[32;01mACCESS ALLOWED\033[0m %s:%*s%s\n",
+		EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
 			func, (int)(10 - strlen(func)), "", absolute_path);
 	} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
-		fprintf(stderr, "\e[33;01mACCESS PREDICTED\033[0m %s:%*s%s\n",
+		EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
 			func, (int)(10 - strlen(func)), "", absolute_path);
 	}
 
@@ -1194,9 +1195,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 		}
 		if ((0 == lstat(log_path, &log_stat)) &&
 		    (0 == S_ISREG(log_stat.st_mode))) {
-			fprintf(stderr, "%s  %s %s",
-				"\e[31;01mSECURITY BREACH\033[0m", log_path,
-				"already exists and is not a regular file.\n");
+			EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
+				"already exists and is not a regular file!");
 		} else {
 			check_dlsym(open);
 			log_file = true_open(log_path, O_APPEND | O_WRONLY |

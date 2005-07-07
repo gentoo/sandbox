@@ -54,6 +54,37 @@
 # define dlvsym(lib, sym, ver) dlsym(lib, sym)
 #endif
 
+/* Gentoo style e* printing macro's */
+#define EINFO(_color, _hilight, _args...) \
+	do { \
+		int old_errno = errno; \
+		if (_color) \
+			printf("\033[32;01m" _hilight "\033[0m" _args); \
+		else \
+			printf(_hilight _args); \
+		errno = old_errno; \
+	} while (0)
+
+#define EWARN(_color, _hilight, _args...) \
+	do { \
+		int old_errno = errno; \
+		if (_color) \
+			printf("\033[33;01m" _hilight "\033[0m" _args); \
+		else \
+			printf(_hilight _args); \
+		errno = old_errno; \
+	} while (0)
+
+#define EERROR(_color, _hilight, _args...) \
+	do { \
+		int old_errno = errno; \
+		if (_color) \
+			fprintf(stderr, "\033[31;01m" _hilight "\033[0m" _args); \
+		else \
+			fprintf(stderr, _hilight _args); \
+		errno = old_errno; \
+	} while (0)
+
 SB_STATIC void get_sandbox_lib(char *path);
 #ifdef OUTSIDE_LIBSANDBOX
 SB_STATIC void get_sandbox_rc(char *path);
