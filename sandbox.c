@@ -80,9 +80,21 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 
 	/* Generate sandbox log full path */
 	get_sandbox_log(sandbox_info->sandbox_log);
+	if (1 == exists(sandbox_info->sandbox_log)) {
+		if (-1 == unlink(sandbox_info->sandbox_log)) {
+			perror("sandbox:  Could not unlink old log file");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	/* Generate sandbox debug log full path */
 	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
+	if (1 == exists(sandbox_info->sandbox_debug_log))
+		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
+			perror("sandbox:  Could not unlink old debug log file");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	return 0;
 }
