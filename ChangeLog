@@ -6,6 +6,7 @@
   libsandbox.c:
   - Try to cleanup and make error handling/printing consistent.
   - Remove old logs if present and conflicting with current.
+  - Fix compile error with previous change, and return rather then exit().
 
   07 July 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
   sandbox.h, sandbox_futils.c:

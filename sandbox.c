@@ -83,16 +83,16 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 	if (1 == exists(sandbox_info->sandbox_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_log)) {
 			perror("sandbox:  Could not unlink old log file");
-			exit(EXIT_FAILURE);
+			return -1;
 		}
 	}
 
 	/* Generate sandbox debug log full path */
 	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
-	if (1 == exists(sandbox_info->sandbox_debug_log))
+	if (1 == exists(sandbox_info->sandbox_debug_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
 			perror("sandbox:  Could not unlink old debug log file");
-			exit(EXIT_FAILURE);
+			return -1;
 		}
 	}
 
@@ -410,7 +410,7 @@ int main(int argc, char **argv)
 		printf("Detection of the support files.\n");
 
 	if (-1 == sandbox_setup(&sandbox_info)) {
-		perror("sandbox:  Failed to setup sandbox");
+		fprintf(stderr, "sandbox:  Failed to setup sandbox.");
 		exit(EXIT_FAILURE);
 	}
 	
