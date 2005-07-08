@@ -248,8 +248,9 @@ static void *get_dlsym(const char *symname, const char *symver)
 #ifdef BROKEN_RTLD_NEXT
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
 		if (!libc_handle) {
-			printf("libsandbox.so: Can't dlopen libc: %s\n", dlerror());
-			abort();
+			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
+				dlerror());
+			exit(EXIT_FAILURE);
 		}
 #else
 		libc_handle = RTLD_NEXT;
@@ -261,8 +262,9 @@ static void *get_dlsym(const char *symname, const char *symver)
 	else
 		symaddr = dlvsym(libc_handle, symname, symver);
 	if (!symaddr) {
-		printf("libsandbox.so: Can't resolve %s: %s\n", symname, dlerror());
-		abort();
+		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
+			symname, dlerror());
+		exit(EXIT_FAILURE);
 	}
 
 	return symaddr;
@@ -760,7 +762,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 
 				/* Fail safe ... */
 				if (max_envp_len > SB_BUF_LEN) {
-					fprintf(stderr, "sandbox:  max_envp_len too big!\n");
+					fprintf(stderr, "libsandbox:  max_envp_len too big!\n");
 					errno = ENOMEM;
 					return result;
 				}
@@ -905,7 +907,9 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 		/* Do not warn if this is in init stage, as we might get
 		 * issues due to LD_PRELOAD already set (bug #91431). */
 		if (1 == sb_init)
-			fprintf(stderr, "Sandbox error : the %s environmental variable should be defined.\n", env);
+			fprintf(stderr,
+				"libsandbox:  The '%s' env variable is not defined!\n",
+				env);
 		if(pfx_array) {
 			for(i = 0; i < pfx_num; i++) 
 				free(pfx_item);
@@ -972,7 +976,7 @@ done:
 	return;
 
 error:
-	fprintf(stderr, "\e[31;01mERROR\033[0m  Could not initialize!\n");
+	perror("libsandbox:  Could not initialize environ\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -1228,8 +1232,8 @@ fp_error:
 	 * function handle it (see bug #94630 and #21766 for more info) */
 	if (ENAMETOOLONG == errno) {
 		if (0 == sb_path_size_warning) {
-			fprintf(stderr, "\e[31;01mPATH LENGTH\033[0m	%s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", file);
+			EWARN(color, "PATH LENGTH", "  %s:%*s%s\n",
+			      func, (int)(10 - strlen(func)), "", file);
 			sb_path_size_warning = 1;
 		}
 			

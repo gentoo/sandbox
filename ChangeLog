@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  08 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox_futils.c,
+  libsandbox.c:
+  Try to cleanup and make error handling/printing consistent.
+
   07 July 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
   sandbox.h, sandbox_futils.c:
   - Fix possible segfault in env init code.

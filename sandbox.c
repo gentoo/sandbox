@@ -49,18 +49,18 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 	if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
 						      : PORTAGE_TMPDIR,
 				sandbox_info->portage_tmp_dir)) {
-		perror(">>> get portage_tmp_dir");
+		perror("sandbox:  Failed to get portage_tmp_dir");
 		return -1;
 	}
 	setenv(ENV_PORTAGE_TMPDIR, sandbox_info->portage_tmp_dir, 1);
 	
 	if (NULL == realpath(VAR_TMPDIR, sandbox_info->var_tmp_dir)) {
-		perror(">>> get var_tmp_dir");
+		perror("sandbox:  Failed to get var_tmp_dir");
 		return -1;
 	}
 
 	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
-		perror(">>> get tmp_dir");
+		perror("sandbox:  Failed to get tmp_dir");
 		return -1;
 	}
 	tmp_dir = sandbox_info->tmp_dir;
@@ -96,13 +96,13 @@ int print_sandbox_log(char *sandbox_log)
 	char *buffer = NULL;
 
 	if (1 != is_file(sandbox_log)) {
-		perror(">>> log file not a regular file");
+		perror("sandbox:  Log file is not a regular file");
 		return 0;
 	}
 	
 	sandbox_log_file = open(sandbox_log, O_RDONLY);
 	if (-1 == sandbox_log_file) {
-		perror(">>> could not open log file");
+		perror("sandbox:  Could not open Log file");
 		return 0;
 	}
 
@@ -144,9 +144,11 @@ void stop(int signum)
 {
 	if (stop_called == 0) {
 		stop_called = 1;
-		printf("Caught signal %d in pid %d\r\n", signum, getpid());
+		printf("sandbox:  Caught signal %d in pid %d\n",
+		       signum, getpid());
 	} else {
-		fprintf(stderr, "Pid %d alreadly caught signal and is still cleaning up\n", getpid());
+		fprintf(stderr,
+			"sandbox:  Signal already caught and busy still cleaning up!\n");
 	}
 }
 
@@ -212,8 +214,8 @@ int sandbox_setenv(char **env, const char *name, const char *val) {
 	 *        a real leak that will cause issues. */
 	tmp_string = calloc(strlen(name) + strlen(val) + 2, sizeof(char *));
 	if (NULL == tmp_string) {
-		perror(">>> out of memory (sandbox_setenv)");
-		exit(1);
+		perror("sandbox:  Out of memory (sandbox_setenv)");
+		exit(EXIT_FAILURE);
 	}
 
 	snprintf(tmp_string, strlen(name) + strlen(val) + 2, "%s=%s",
@@ -337,7 +339,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	return new_environ;
 }
 
-int spawn_shell(char *argv_bash[], char *env[])
+int spawn_shell(char *argv_bash[], char *env[], int debug)
 {
 	int pid;
 	int status = 0;
@@ -350,11 +352,16 @@ int spawn_shell(char *argv_bash[], char *env[])
 		execve(argv_bash[0], argv_bash, env);
 		return 0;
 	} else if (pid < 0) {
+		if (debug)
+			fprintf(stderr, "Process failed to spawn!\n");
 		return 0;
 	}
 	ret = waitpid(pid, &status, 0);
-	if ((-1 == ret) || (status > 0))
+	if ((-1 == ret) || (status > 0)) {
+		if (debug)
+			fprintf(stderr, "Process returned with failed exit status!\n");
 		return 0;
+	}
 
 	return 1;
 }
@@ -383,140 +390,134 @@ int main(int argc, char **argv)
 	if (NULL != getenv(ENV_SANDBOX_ON)) {
 		fprintf(stderr, "Not launching a new sandbox instance\n");
 		fprintf(stderr, "Another one is already running in this process hierarchy.\n");
-		exit(1);
-	} else {
+		exit(EXIT_FAILURE);
+	}
 
-		/* determine the location of all the sandbox support files */
-		if (print_debug)
-			printf("Detection of the support files.\n");
+	/* determine the location of all the sandbox support files */
+	if (print_debug)
+		printf("Detection of the support files.\n");
 
-		if (-1 == sandbox_setup(&sandbox_info)) {
-			perror(">>> setup");
-			exit(1);
-		}
-		
-		/* verify the existance of required files */
-		if (print_debug)
-			printf("Verification of the required files.\n");
+	if (-1 == sandbox_setup(&sandbox_info)) {
+		perror("sandbox:  Failed to setup sandbox");
+		exit(EXIT_FAILURE);
+	}
+	
+	/* verify the existance of required files */
+	if (print_debug)
+		printf("Verification of the required files.\n");
 
 #ifndef SB_HAVE_64BIT_ARCH
-		if (0 >= exists(sandbox_info.sandbox_lib)) {
-			fprintf(stderr, "Could not open the sandbox library at '%s'.\n",
-					sandbox_info.sandbox_lib);
-			return -1;
-		}
-#endif
-		if (0 >= exists(sandbox_info.sandbox_rc)) {
-			fprintf(stderr, "Could not open the sandbox rc file at '%s'.\n",
-					sandbox_info.sandbox_rc);
-			return -1;
-		}
-
-		/* set up the required environment variables */
-		if (print_debug)
-			printf("Setting up the required environment variables.\n");
-
-		/* This one should not be child only, as we check above to see
-		 * if we are already running (check sandbox_setup_environ).
-		 * This needs to be set before calling sandbox_setup_environ(),
-		 * else its not set for the child */
-		setenv(ENV_SANDBOX_ON, "1", 0);
-
-		/* Setup the child environment stuff */
-		sandbox_environ = sandbox_setup_environ(&sandbox_info);
-		if (NULL == sandbox_environ) {
-			perror(">>> out of memory (environ)");
-			exit(1);
-		}
-
-		/* if the portage temp dir was present, cd into it */
-		if (NULL != sandbox_info.portage_tmp_dir)
-			chdir(sandbox_info.portage_tmp_dir);
-
-		argv_bash = (char **)malloc(6 * sizeof(char *));
-		argv_bash[0] = strdup("/bin/bash");
-		argv_bash[1] = strdup("-rcfile");
-		argv_bash[2] = strdup(sandbox_info.sandbox_rc);
-
-		if (argc < 2)
-			argv_bash[3] = NULL;
-		else
-			argv_bash[3] = strdup(run_str);	/* "-c" */
-
-		argv_bash[4] = NULL;	/* strdup(run_arg); */
-		argv_bash[5] = NULL;
-
-		if (argc >= 2) {
-			for (i = 1; i < argc; i++) {
-				if (NULL == argv_bash[4])
-					len = 0;
-				else
-					len = strlen(argv_bash[4]);
-
-				argv_bash[4] = (char *)realloc(argv_bash[4],
-						(len + strlen(argv[i]) + 2) * sizeof(char));
-
-				if (0 == len)
-					argv_bash[4][0] = 0;
-				if (1 != i)
-					strcat(argv_bash[4], " ");
-
-				strcat(argv_bash[4], argv[i]);
-			}
-		}
-
-		/* set up the required signal handlers */
-		signal(SIGHUP, &stop);
-		signal(SIGINT, &stop);
-		signal(SIGQUIT, &stop);
-		signal(SIGTERM, &stop);
-
-		/* STARTING PROTECTED ENVIRONMENT */
-		if (print_debug) {
-			printf("The protected environment has been started.\n");
-			printf("--------------------------------------------------------------------------------\n");
-		}
-
-		if (print_debug)
-			printf("Shell being started in forked process.\n");
-
-		/* Start Bash */
-		if (!spawn_shell(argv_bash, sandbox_environ)) {
-			if (print_debug)
-				fprintf(stderr, ">>> shell process failed to spawn\n");
-			success = 0;
-		}
-
-		/* Free bash stuff */
-		for (i = 0; i < 6; i++) {
-			if (argv_bash[i])
-				free(argv_bash[i]);
-			argv_bash[i] = NULL;
-		}
-		if (argv_bash)
-			free(argv_bash);
-		argv_bash = NULL;
-
-		if (print_debug)
-			printf("Cleaning up sandbox process\n");
-
-		if (print_debug) {
-			printf("========================== Gentoo linux path sandbox ===========================\n");
-			printf("The protected environment has been shut down.\n");
-		}
-
-		if (1 == exists(sandbox_info.sandbox_log)) {
-			sandbox_log_presence = 1;
-			print_sandbox_log(sandbox_info.sandbox_log);
-		} else if (print_debug) {
-			printf("--------------------------------------------------------------------------------\n");
-		}
-
-		if ((sandbox_log_presence) || (!success))
-			return 1;
-		else
-			return 0;
+	if (0 >= exists(sandbox_info.sandbox_lib)) {
+		perror("sandbox:  Could not open the sandbox library");
+		exit(EXIT_FAILURE);
 	}
+#endif
+	if (0 >= exists(sandbox_info.sandbox_rc)) {
+		perror("sandbox:  Could not open the sandbox rc file");
+		exit(EXIT_FAILURE);
+	}
+
+	/* set up the required environment variables */
+	if (print_debug)
+		printf("Setting up the required environment variables.\n");
+
+	/* This one should not be child only, as we check above to see
+	 * if we are already running (check sandbox_setup_environ).
+	 * This needs to be set before calling sandbox_setup_environ(),
+	 * else its not set for the child */
+	setenv(ENV_SANDBOX_ON, "1", 0);
+
+	/* Setup the child environment stuff */
+	sandbox_environ = sandbox_setup_environ(&sandbox_info);
+	if (NULL == sandbox_environ) {
+		perror("sandbox:  Out of memory (environ)");
+		exit(EXIT_FAILURE);
+	}
+
+	/* if the portage temp dir was present, cd into it */
+	if (NULL != sandbox_info.portage_tmp_dir)
+		chdir(sandbox_info.portage_tmp_dir);
+
+	argv_bash = (char **)malloc(6 * sizeof(char *));
+	argv_bash[0] = strdup("/bin/bash");
+	argv_bash[1] = strdup("-rcfile");
+	argv_bash[2] = strdup(sandbox_info.sandbox_rc);
+
+	if (argc < 2)
+		argv_bash[3] = NULL;
+	else
+		argv_bash[3] = strdup(run_str);	/* "-c" */
+
+	argv_bash[4] = NULL;	/* strdup(run_arg); */
+	argv_bash[5] = NULL;
+
+	if (argc >= 2) {
+		for (i = 1; i < argc; i++) {
+			if (NULL == argv_bash[4])
+				len = 0;
+			else
+				len = strlen(argv_bash[4]);
+
+			argv_bash[4] = (char *)realloc(argv_bash[4],
+					(len + strlen(argv[i]) + 2) * sizeof(char));
+
+			if (0 == len)
+				argv_bash[4][0] = 0;
+			if (1 != i)
+				strcat(argv_bash[4], " ");
+
+			strcat(argv_bash[4], argv[i]);
+		}
+	}
+
+	/* set up the required signal handlers */
+	signal(SIGHUP, &stop);
+	signal(SIGINT, &stop);
+	signal(SIGQUIT, &stop);
+	signal(SIGTERM, &stop);
+
+	/* STARTING PROTECTED ENVIRONMENT */
+	if (print_debug) {
+		printf("The protected environment has been started.\n");
+		printf("--------------------------------------------------------------------------------\n");
+	}
+
+	if (print_debug)
+		printf("Process being started in forked instance.\n");
+
+	/* Start Bash */
+	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
+		success = 0;
+
+	/* Free bash stuff */
+	for (i = 0; i < 6; i++) {
+		if (argv_bash[i])
+			free(argv_bash[i]);
+		argv_bash[i] = NULL;
+	}
+	if (argv_bash)
+		free(argv_bash);
+	argv_bash = NULL;
+
+	if (print_debug)
+		printf("Cleaning up sandbox process\n");
+
+	if (print_debug) {
+		printf("========================== Gentoo linux path sandbox ===========================\n");
+		printf("The protected environment has been shut down.\n");
+	}
+
+	if (1 == exists(sandbox_info.sandbox_log)) {
+		sandbox_log_presence = 1;
+		print_sandbox_log(sandbox_info.sandbox_log);
+	} else if (print_debug) {
+		printf("--------------------------------------------------------------------------------\n");
+	}
+
+	if ((sandbox_log_presence) || (!success))
+		return 1;
+	else
+		return 0;
 }
 
 // vim:noexpandtab noai:cindent ai

@@ -40,10 +40,6 @@ SB_STATIC void get_sandbox_lib(char *path)
 SB_STATIC void get_sandbox_rc(char *path)
 {
 	snprintf(path, SB_PATH_MAX, "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
-	if (0 >= exists(path)) {
-		perror(">>> cannot open bashrc");
-		exit(EXIT_FAILURE);
-	}
 }
 
 SB_STATIC void get_sandbox_log(char *path)
