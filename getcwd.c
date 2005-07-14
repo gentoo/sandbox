@@ -128,7 +128,7 @@ SB_STATIC char *recurser(char *path_buf, size_t path_size, dev_t root_dev, ino_t
 	if (strlen(path_buf) + 4 > path_size) {
 	    goto oops;
 	}
-	snprintf(path_buf, 4, "/..");
+	snprintf(path_buf + strlen(path_buf), 4, "/..");
 	if (recurser(path_buf, path_size, root_dev, root_ino) == 0)
 		return 0;
 
@@ -146,6 +146,8 @@ size_t __syscall_egetcwd(char * buf, unsigned long size)
     struct stat st;
     size_t olderrno;
 
+    if (lstat("/", &st) < 0)
+	return -1;
     olderrno = errno;
     len = -1;
     cwd = recurser(buf, size, st.st_dev, st.st_ino);
@@ -175,6 +177,7 @@ SB_STATIC char *__egetcwd(char *buf, size_t size)
 	if (path == NULL)
 	    return NULL;
     }
+    snprintf(buf, 2, ".");
     ret = __syscall_egetcwd(path, alloc_size);
     if (ret >= 0)
     {
@@ -197,11 +200,10 @@ SB_STATIC char *egetcwd(char *buf, size_t size)
 	__set_errno(0);
 	tmpbuf = getcwd(buf, size);
 
-	if (tmpbuf) {
+	if (tmpbuf)
 		lstat(buf, &st);
-	} else {
+	else
 		return tmpbuf;
-	}
 
 	if (errno) {
 		/* If lstat() failed with eerror = ENOENT, then its
