@@ -59,9 +59,9 @@
 	do { \
 		int old_errno = errno; \
 		if (_color) \
-			printf("\033[32;01m" _hilight "\033[0m" _args); \
+			fprintf(stderr, "\033[32;01m" _hilight "\033[0m" _args); \
 		else \
-			printf(_hilight _args); \
+			fprintf(stderr, _hilight _args); \
 		errno = old_errno; \
 	} while (0)
 
@@ -69,9 +69,9 @@
 	do { \
 		int old_errno = errno; \
 		if (_color) \
-			printf("\033[33;01m" _hilight "\033[0m" _args); \
+			fprintf(stderr, "\033[33;01m" _hilight "\033[0m" _args); \
 		else \
-			printf(_hilight _args); \
+			fprintf(stderr, _hilight _args); \
 		errno = old_errno; \
 	} while (0)
 

@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  22 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.h:
+
+  Print all logging to stderr, bug #90343, comment #15, by Zac Medico.
+
 * sandbox-1.2.11 (2005/07/14)
 
   14 July 2005; Martin Schlemmer <azarah@gentoo.org> getcwd.c:
