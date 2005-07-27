@@ -134,6 +134,24 @@ SB_STATIC int is_file(const char *pathname)
 	return 0;
 }
 
+SB_STATIC int is_dir(const char *pathname, int follow_link)
+{
+	struct stat buf;
+	int retval;
+
+	if ((NULL == pathname) || (0 == strlen(pathname)))
+		return 0;
+
+	retval = follow_link ? stat(pathname, &buf) : lstat(pathname, &buf);
+	if ((-1 != retval) && (S_ISDIR(buf.st_mode)))
+		return 1;
+	/* Some or other error occurred */
+	if ((-1 == retval) && (ENOENT != errno))
+		return -1;
+
+	return 0;
+}
+
 SB_STATIC long file_length(int fd)
 {
 	long pos, len;

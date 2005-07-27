@@ -46,18 +46,23 @@ static int stop_called = 0;
 
 int sandbox_setup(struct sandbox_info_t *sandbox_info)
 {
-	if (NULL == realpath(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
-						      : PORTAGE_TMPDIR,
-				sandbox_info->portage_tmp_dir)) {
+	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
+	if (1 != is_dir(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
+						   : PORTAGE_TMPDIR, 1)) {
 		perror("sandbox:  Failed to get portage_tmp_dir");
 		return -1;
 	}
+	snprintf(sandbox_info->portage_tmp_dir, SB_PATH_MAX, "%s",
+		 getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
+		 			    : PORTAGE_TMPDIR);
 	setenv(ENV_PORTAGE_TMPDIR, sandbox_info->portage_tmp_dir, 1);
 	
-	if (NULL == realpath(VAR_TMPDIR, sandbox_info->var_tmp_dir)) {
+	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
+	if (1 != is_dir(VAR_TMPDIR, 1)) {
 		perror("sandbox:  Failed to get var_tmp_dir");
 		return -1;
 	}
+	snprintf(sandbox_info->var_tmp_dir, SB_PATH_MAX, "%s", VAR_TMPDIR);
 
 	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
 		perror("sandbox:  Failed to get tmp_dir");

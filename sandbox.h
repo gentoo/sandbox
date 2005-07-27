@@ -95,6 +95,7 @@ SB_STATIC int get_tmp_dir(char *path);
 SB_STATIC int exists(const char *pathname);
 #ifdef OUTSIDE_LIBSANDBOX
 SB_STATIC int is_file(const char *pathname);
+SB_STATIC int is_dir(const char *pathname, int follow_link);
 SB_STATIC long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
 
