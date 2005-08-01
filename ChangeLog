@@ -6,6 +6,9 @@
 
   Still do normal log if debugging is requested.
 
+  Add support for SANDBOX_VERBOSE (enabled by default).  Adjust SANDBOX_DEBUG
+  to only enable if equal to "1" or "yes".
+
   27 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
   sandbox_futils.c:
 

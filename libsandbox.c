@@ -1153,7 +1153,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int old_errno = errno;
 	int result = 1;
 	int log_file = 0, debug_log_file = 0;
-	int access = 0, debug = 0;
+	int access = 0, debug = 0, verbose = 1;
 	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
 	init_wrappers();
@@ -1167,21 +1167,32 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	log_path = getenv("SANDBOX_LOG");
 	if (NULL != getenv("SANDBOX_DEBUG")) {
-		debug_log_path = getenv("SANDBOX_DEBUG_LOG");
-		debug = 1;
+		if ((0 == strncasecmp(getenv("SANDBOX_DEBUG"), "1", 1)) ||
+		    (0 == strncasecmp(getenv("SANDBOX_DEBUG"), "yes", 3))) {
+			debug_log_path = getenv("SANDBOX_DEBUG_LOG");
+			debug = 1;
+		}
+	}
+
+	if (NULL != getenv("SANDBOX_VERBOSE")) {
+		if ((0 == strncasecmp(getenv("SANDBOX_VERBOSE"), "0", 1)) ||
+		    (0 == strncasecmp(getenv("SANDBOX_VERBOSE"), "no", 2)))
+			verbose = 0;
 	}
 
 	result = check_access(sbcontext, func, absolute_path, resolved_path);
 
-	if ((0 == result) && (1 == sbcontext->show_access_violation)) {
-		EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
-			func, (int)(10 - strlen(func)), "", absolute_path);
-	} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
-		EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
-			func, (int)(10 - strlen(func)), "", absolute_path);
-	} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
-		EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
-			func, (int)(10 - strlen(func)), "", absolute_path);
+	if (1 == verbose) {
+		if ((0 == result) && (1 == sbcontext->show_access_violation)) {
+			EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
+				func, (int)(10 - strlen(func)), "", absolute_path);
+		} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
+			EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
+				func, (int)(10 - strlen(func)), "", absolute_path);
+		} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
+			EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
+				func, (int)(10 - strlen(func)), "", absolute_path);
+		}
 	}
 
 	if ((0 == result) && (1 == sbcontext->show_access_violation))
