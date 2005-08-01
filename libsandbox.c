@@ -1149,11 +1149,11 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	char buffer[512];
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
-	char *log_path = NULL;
+	char *log_path = NULL, *debug_log_path = NULL;
 	int old_errno = errno;
 	int result = 1;
-	int log_file = 0;
-	int debug = 0;
+	int log_file = 0, debug_log_file = 0;
+	int access = 0, debug = 0;
 	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
 	init_wrappers();
@@ -1165,10 +1165,9 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	if (NULL == resolved_path)
 		goto fp_error;
 
-	if (NULL == getenv("SANDBOX_DEBUG")) {
-		log_path = getenv("SANDBOX_LOG");
-	} else {
-		log_path = getenv("SANDBOX_DEBUG_LOG");
+	log_path = getenv("SANDBOX_LOG");
+	if (NULL != getenv("SANDBOX_DEBUG")) {
+		debug_log_path = getenv("SANDBOX_DEBUG_LOG");
 		debug = 1;
 	}
 
@@ -1185,9 +1184,11 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 			func, (int)(10 - strlen(func)), "", absolute_path);
 	}
 
-	if ((NULL != log_path) &&
-	    (((0 == debug) && (0 == result) && (1 == sbcontext->show_access_violation)) ||
-	     (1 == debug))) {
+	if ((0 == result) && (1 == sbcontext->show_access_violation))
+		access = 1;
+
+	if (((NULL != log_path) && (1 == access)) ||
+	    ((NULL != debug_log_path) && (1 == debug))) {
 		if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
 			sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func,
 					(int)(10 - strlen(func)), "",
@@ -1197,18 +1198,36 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 					(int)(10 - strlen(func)), "",
 					absolute_path);
 		}
-		if ((0 == lstat(log_path, &log_stat)) &&
-		    (0 == S_ISREG(log_stat.st_mode))) {
-			EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
-				"already exists and is not a regular file!");
-		} else {
-			check_dlsym(open);
-			log_file = true_open(log_path, O_APPEND | O_WRONLY |
-					O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
-					S_IROTH);
-			if (log_file >= 0) {
-				write(log_file, buffer, strlen(buffer));
-				close(log_file);
+		if (1 == access) {
+			if ((0 == lstat(log_path, &log_stat)) &&
+			    (0 == S_ISREG(log_stat.st_mode))) {
+				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
+					"already exists and is not a regular file!");
+			} else {
+				check_dlsym(open);
+				log_file = true_open(log_path, O_APPEND | O_WRONLY |
+						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
+						S_IROTH);
+				if (log_file >= 0) {
+					write(log_file, buffer, strlen(buffer));
+					close(log_file);
+				}
+			}
+		} 
+		if (1 == debug) {
+			if ((0 == lstat(debug_log_path, &log_stat)) &&
+			    (0 == S_ISREG(log_stat.st_mode))) {
+				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", debug_log_path,
+					"already exists and is not a regular file!");
+			} else {
+				check_dlsym(open);
+				debug_log_file = true_open(debug_log_path, O_APPEND | O_WRONLY |
+						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
+						S_IROTH);
+				if (debug_log_file >= 0) {
+					write(debug_log_file, buffer, strlen(buffer));
+					close(debug_log_file);
+				}
 			}
 		}
 	}
