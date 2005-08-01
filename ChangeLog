@@ -9,6 +9,8 @@
   Add support for SANDBOX_VERBOSE (enabled by default).  Adjust SANDBOX_DEBUG
   to only enable if equal to "1" or "yes".
 
+  Add /dev/tts to write permit, bug #42809.
+
   27 July 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, sandbox.h,
   sandbox_futils.c:
 
