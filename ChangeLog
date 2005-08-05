@@ -2,7 +2,8 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
-  05 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+  05 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
+  sandbox.h:
 
   Do not give an access violation if the access() system call do not have
   write/read access - it does not actually modify, so we only need to return
@@ -14,6 +15,8 @@
   portage_tmp_dir to work_dir.
 
   Remove the tmp_dir variable - we do not need it.
+
+  Improve error handling for get_sandbox_*_envvar() functions.
 
   01 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 

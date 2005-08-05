@@ -175,13 +175,15 @@ void stop(int signum)
 	}
 }
 
-void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
+int get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 {
+	int retval = 0;
+	
 	/* bzero out entire buffer then append trailing 0 */
 	memset(buf, 0, SB_BUF_LEN);
 
 	/* these could go into make.globals later on */
-	snprintf(buf, SB_BUF_LEN,
+	retval = snprintf(buf, SB_BUF_LEN,
 		 "%s:%s/.gconfd/lock:%s/.bash_history:%s:%s:%s:%s",
 		 "/dev/zero:/dev/null:/dev/fd:/proc/self/fd:/dev/pts/:"
 		 "/dev/vc/:/dev/pty:/dev/tty:/dev/tts:/dev/console:"
@@ -193,15 +195,23 @@ void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 sandbox_info->work_dir,
 		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
 		 "/tmp/:/var/tmp/");
+	if (SB_BUF_LEN <= retval) {
+		errno = EMSGSIZE;
+		perror("sandbox:  Failed to generate SANDBOX_WRITE");
+		return -1;
+	}
+
+	return 0;
 }
 
-void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
+int get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 {
+	int retval = 0;
 	/* bzero out entire buffer then append trailing 0 */
 	memset(buf, 0, SB_BUF_LEN);
 
 	/* these should go into make.globals later on */
-	snprintf(buf, SB_BUF_LEN, "%s/.:"
+	retval = snprintf(buf, SB_BUF_LEN, "%s/.:"
 		 "/usr/lib/python2.0/:"
 		 "/usr/lib/python2.1/:"
 		 "/usr/lib/python2.2/:"
@@ -221,11 +231,19 @@ void get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/var/db/group.db:"
 		 "/var/db/passwd.db",
 		 sandbox_info->home_dir);
+	if (SB_BUF_LEN <= retval) {
+		errno = EMSGSIZE;
+		perror("sandbox:  Failed to generate SANDBOX_PREDICT");
+		return -1;
+	}
+
+	return 0;
 }
 
 int sandbox_setenv(char **env, const char *name, const char *val) {
 	char **tmp_env = env;
 	char *tmp_string = NULL;
+	int retval = 0;
 
 	/* XXX: We add the new variable to the end (no replacing).  If this
 	 *      is changed, we need to fix sandbox_setup_environ() below */
@@ -241,8 +259,8 @@ int sandbox_setenv(char **env, const char *name, const char *val) {
 		exit(EXIT_FAILURE);
 	}
 
-	snprintf(tmp_string, strlen(name) + strlen(val) + 2, "%s=%s",
-			name, val);
+	retval = snprintf(tmp_string, strlen(name) + strlen(val) + 2, "%s=%s",
+			  name, val);
 	*tmp_env = tmp_string;
 
 	return 0;
@@ -322,11 +340,13 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	if (!getenv(ENV_SANDBOX_READ))
 		sandbox_setenv(new_environ, ENV_SANDBOX_READ, "/");
 
-	get_sandbox_write_envvar(sandbox_write_envvar, sandbox_info);
+	if (-1 == get_sandbox_write_envvar(sandbox_write_envvar, sandbox_info))
+		return NULL;
 	if (!getenv(ENV_SANDBOX_WRITE))
 		sandbox_setenv(new_environ, ENV_SANDBOX_WRITE, sandbox_write_envvar);
 
-	get_sandbox_predict_envvar(sandbox_predict_envvar, sandbox_info);
+	if (-1 == get_sandbox_predict_envvar(sandbox_predict_envvar, sandbox_info))
+		return NULL;
 	if (!getenv(ENV_SANDBOX_PREDICT))
 		sandbox_setenv(new_environ, ENV_SANDBOX_PREDICT, sandbox_predict_envvar);
 
