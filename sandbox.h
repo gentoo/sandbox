@@ -30,6 +30,7 @@
 
 #define ENV_LD_PRELOAD         "LD_PRELOAD"
 
+#define ENV_EBUILD             "EBUILD"
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 

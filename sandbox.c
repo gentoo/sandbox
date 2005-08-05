@@ -33,7 +33,7 @@ struct sandbox_info_t {
 	char sandbox_debug_log[SB_PATH_MAX];
 	char sandbox_lib[SB_PATH_MAX];
 	char sandbox_rc[SB_PATH_MAX];
-	char portage_tmp_dir[SB_PATH_MAX];
+	char work_dir[SB_PATH_MAX];
 	char var_tmp_dir[SB_PATH_MAX];
 	char tmp_dir[SB_PATH_MAX];
 	char *home_dir;
@@ -46,16 +46,25 @@ static int stop_called = 0;
 
 int sandbox_setup(struct sandbox_info_t *sandbox_info)
 {
-	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
-	if (1 != is_dir(getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
-						   : PORTAGE_TMPDIR, 1)) {
-		perror("sandbox:  Failed to get portage_tmp_dir");
-		return -1;
+	char *workdir;
+	
+	if (NULL != getenv(ENV_EBUILD)) {
+		workdir = getenv(ENV_PORTAGE_TMPDIR) ?
+				 getenv(ENV_PORTAGE_TMPDIR) :
+				 PORTAGE_TMPDIR;
+		/* Do not resolve symlinks, etc .. libsandbox will handle that. */
+		if (1 != is_dir(workdir, 1)) {
+			perror("sandbox:  Failed to get " ENV_PORTAGE_TMPDIR);
+			return -1;
+		}
+		snprintf(sandbox_info->work_dir, SB_PATH_MAX, "%s", workdir);
+		setenv(ENV_PORTAGE_TMPDIR, sandbox_info->work_dir, 1);
+	} else {
+		if (NULL == getcwd(sandbox_info->work_dir, SB_PATH_MAX)) {
+			perror("sandbox:  Failed to get current directory");
+			return -1;
+		}
 	}
-	snprintf(sandbox_info->portage_tmp_dir, SB_PATH_MAX, "%s",
-		 getenv(ENV_PORTAGE_TMPDIR) ? getenv(ENV_PORTAGE_TMPDIR)
-		 			    : PORTAGE_TMPDIR);
-	setenv(ENV_PORTAGE_TMPDIR, sandbox_info->portage_tmp_dir, 1);
 	
 	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
 	if (1 != is_dir(VAR_TMPDIR, 1)) {
@@ -184,7 +193,7 @@ void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/usr/lib32/conftest:/usr/lib64/conftest:"
 		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
 		 sandbox_info->home_dir, sandbox_info->home_dir,
-		 (NULL != sandbox_info->portage_tmp_dir) ? sandbox_info->portage_tmp_dir : tmp_dir,
+		 (NULL != sandbox_info->work_dir) ? sandbox_info->work_dir : tmp_dir,
 		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
 		 "/tmp/:/var/tmp/");
 }
@@ -452,8 +461,8 @@ int main(int argc, char **argv)
 	}
 
 	/* if the portage temp dir was present, cd into it */
-	if (NULL != sandbox_info.portage_tmp_dir)
-		chdir(sandbox_info.portage_tmp_dir);
+	if (NULL != sandbox_info.work_dir)
+		chdir(sandbox_info.work_dir);
 
 	argv_bash = (char **)malloc(6 * sizeof(char *));
 	argv_bash[0] = strdup("/bin/bash");

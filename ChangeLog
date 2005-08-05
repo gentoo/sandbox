@@ -9,6 +9,10 @@
   not being able to write/read.  Noted by Andres Loeh <kosmikus@gentoo.org>,
   bug #101433.
 
+  If we are called from the command line, do not care about PORTAGE_TMPDIR,
+  and make the current directory the work directory.  Also rename the variable
+  portage_tmp_dir to work_dir.
+
   01 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
   Still do normal log if debugging is requested.
