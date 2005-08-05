@@ -13,6 +13,8 @@
   and make the current directory the work directory.  Also rename the variable
   portage_tmp_dir to work_dir.
 
+  Remove the tmp_dir variable - we do not need it.
+
   01 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
   Still do normal log if debugging is requested.

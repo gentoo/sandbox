@@ -39,8 +39,6 @@ struct sandbox_info_t {
 	char *home_dir;
 } sandbox_info_t;
 
-static char *tmp_dir;
-
 static int print_debug = 0;
 static int stop_called = 0;
 
@@ -77,12 +75,11 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 		perror("sandbox:  Failed to get tmp_dir");
 		return -1;
 	}
-	tmp_dir = sandbox_info->tmp_dir;
-	setenv(ENV_TMPDIR, tmp_dir, 1);
+	setenv(ENV_TMPDIR, sandbox_info->tmp_dir, 1);
 
 	sandbox_info->home_dir = getenv("HOME");
 	if (!sandbox_info->home_dir) {
-		sandbox_info->home_dir = tmp_dir;
+		sandbox_info->home_dir = sandbox_info->tmp_dir;
 		setenv("HOME", sandbox_info->home_dir, 1);
 	}
 
@@ -193,7 +190,7 @@ void get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/usr/lib32/conftest:/usr/lib64/conftest:"
 		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
 		 sandbox_info->home_dir, sandbox_info->home_dir,
-		 (NULL != sandbox_info->work_dir) ? sandbox_info->work_dir : tmp_dir,
+		 sandbox_info->work_dir,
 		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
 		 "/tmp/:/var/tmp/");
 }
