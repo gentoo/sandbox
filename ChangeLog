@@ -2,6 +2,8 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+* sandbox-1.2.12 (2005/08/05)
+
   05 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c, sandbox.c,
   sandbox.h:
 
