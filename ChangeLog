@@ -2,6 +2,13 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  05 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+
+  Do not give an access violation if the access() system call do not have
+  write/read access - it does not actually modify, so we only need to return
+  not being able to write/read.  Noted by Andres Loeh <kosmikus@gentoo.org>,
+  bug #101433.
+
   01 Aug 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
   Still do normal log if debugging is requested.

@@ -1033,6 +1033,13 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 			result = 1;
 			goto out;
 		}
+
+		/* If we are here, and still no joy, and its the access() call,
+		 * do not log it, but just return -1 */
+		if (0 == strncmp(func, "access_rd", 7)) {
+			sbcontext->show_access_violation = 0;
+			goto out;
+		}
 	}
 		
 	if ((0 == strncmp(func, "access_wr", 7)) ||
@@ -1132,6 +1139,13 @@ unlink_hack_end:
 		if (1 == retval) {
 			/* Is a known access violation, so deny access,
 			 * and do not log it */
+			sbcontext->show_access_violation = 0;
+			goto out;
+		}
+
+		/* If we are here, and still no joy, and its the access() call,
+		 * do not log it, but just return -1 */
+		if (0 == strncmp(func, "access_wr", 7)) {
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
