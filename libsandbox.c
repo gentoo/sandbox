@@ -875,7 +875,6 @@ static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 	if (NULL != *prefixes_array) {
 		for (i = 0; i < *prefixes_num; i++) {
 			if (NULL != (*prefixes_array)[i]) {
-				printf("prefixes_array[i] = %p\n", (*prefixes_array)[i]);
 				free((*prefixes_array)[i]);
 				(*prefixes_array)[i] = NULL;
 			}
