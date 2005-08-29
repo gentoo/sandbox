@@ -875,6 +875,7 @@ static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 	if (NULL != *prefixes_array) {
 		for (i = 0; i < *prefixes_num; i++) {
 			if (NULL != (*prefixes_array)[i]) {
+				printf("prefixes_array[i] = %p\n", (*prefixes_array)[i]);
 				free((*prefixes_array)[i]);
 				(*prefixes_array)[i] = NULL;
 			}
@@ -1327,14 +1328,14 @@ static int before_syscall(const char *func, const char *file)
 		return 0;
 	}
 
-	if(sb_init == 0) {
+	if(0 == sb_init) {
 		init_context(&sbcontext);
-		cached_env_vars = malloc(sizeof(char *)*4);
+		cached_env_vars = malloc(sizeof(char *) * 4);
 		cached_env_vars[0] = cached_env_vars[1] = cached_env_vars[2] = cached_env_vars[3] = NULL;
-		sb_init=1;
+		sb_init = 1;
 	}
 
-	if((deny == NULL && cached_env_vars[0] != deny) || cached_env_vars[0] == NULL ||
+	if((NULL == deny && cached_env_vars[0] != deny) || NULL == cached_env_vars[0] ||
 		strcmp(cached_env_vars[0], deny) != 0) {
 
 		clean_env_entries(&(sbcontext.deny_prefixes),
@@ -1352,7 +1353,7 @@ static int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((read == NULL && cached_env_vars[1] != read) || cached_env_vars[1] == NULL || 
+	if((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] || 
 		strcmp(cached_env_vars[1], read) != 0) {
 
 		clean_env_entries(&(sbcontext.read_prefixes),
@@ -1370,7 +1371,7 @@ static int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((write == NULL && cached_env_vars[2] != write) || cached_env_vars[2] == NULL ||
+	if((NULL == write && cached_env_vars[2] != write) || NULL == cached_env_vars[2] ||
 		strcmp(cached_env_vars[2], write) != 0) {
 
 		clean_env_entries(&(sbcontext.write_prefixes),
@@ -1388,7 +1389,7 @@ static int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((predict == NULL && cached_env_vars[3] != predict) || cached_env_vars[3] == NULL ||
+	if((NULL == predict && cached_env_vars[3] != predict) || NULL == cached_env_vars[3] ||
 		strcmp(cached_env_vars[3], predict) != 0) {
 
 		clean_env_entries(&(sbcontext.predict_prefixes),
@@ -1441,7 +1442,7 @@ static int before_syscall_open_int(const char *func, const char *file, int flags
 
 static int before_syscall_open_char(const char *func, const char *file, const char *mode)
 {
-	if (*mode == 'r' && ((strcmp(mode, "r") == 0) ||
+	if (*mode == 'r' && (0 == (strcmp(mode, "r")) ||
 	    /* The strspn accept args are known non-writable modifiers */
 	    (strlen(++mode) == strspn(mode, "xbtmc")))) {
 		return before_syscall("open_rd", file);
