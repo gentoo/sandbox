@@ -1088,7 +1088,8 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 		 * of the symlink's parent also have write access. */
 		if (((0 == strncmp(func, "unlink", 6)) ||
 		     (0 == strncmp(func, "lchown", 6)) ||
-		     (0 == strncmp(func, "rename", 6))) &&
+		     (0 == strncmp(func, "rename", 6)) ||
+		     (0 == strncmp(func, "symlink", 7))) &&
 		    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
 			/* Check if the symlink unresolved path have access */
 			retval = check_prefixes(sbcontext->write_prefixes,
