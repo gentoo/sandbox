@@ -274,13 +274,20 @@ static void *get_dlsym(const char *symname, const char *symver)
 void __attribute__ ((destructor)) libsb_fini(void)
 {
 	int x;
+
+	sb_init = 0;
+	
 	if(NULL != cached_env_vars) {
 		for(x=0; x < 4; x++) {
-			if(NULL != cached_env_vars[x])
+			if(NULL != cached_env_vars[x]) {
 				free(cached_env_vars[x]);
+				cached_env_vars[x] = NULL;
+			}
 		}
 		free(cached_env_vars);
+		cached_env_vars = NULL;
 	}
+	
 	clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 	clean_env_entries(&(sbcontext.read_prefixes),

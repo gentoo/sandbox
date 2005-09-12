@@ -2,10 +2,14 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
-  12 Sep 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c:
+  12 Sep 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, libsandbox.c:
 
   Do not handle adding working directory to SANDBOX_WRITE, as portage does it
   itself.
+
+  Make libsb_fini() do cleanup a bit more complete just in case we get another
+  uClibc 'call preloaded library fini before that of app' issue ... probably
+  will not help much, but we try.
 
   04 Sep 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
