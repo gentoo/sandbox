@@ -2,6 +2,8 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+* sandbox-1.2.12 (2005/09/12)
+
   12 Sep 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, libsandbox.c:
 
   Do not handle adding working directory to SANDBOX_WRITE, as portage does it
