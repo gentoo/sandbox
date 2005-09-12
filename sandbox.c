@@ -44,19 +44,9 @@ static int stop_called = 0;
 
 int sandbox_setup(struct sandbox_info_t *sandbox_info)
 {
-	char *workdir;
-	
-	if (NULL != getenv(ENV_EBUILD)) {
-		workdir = getenv(ENV_PORTAGE_TMPDIR) ?
-				 getenv(ENV_PORTAGE_TMPDIR) :
-				 PORTAGE_TMPDIR;
-		/* Do not resolve symlinks, etc .. libsandbox will handle that. */
-		if (1 != is_dir(workdir, 1)) {
-			perror("sandbox:  Failed to get " ENV_PORTAGE_TMPDIR);
-			return -1;
-		}
-		snprintf(sandbox_info->work_dir, SB_PATH_MAX, "%s", workdir);
-		setenv(ENV_PORTAGE_TMPDIR, sandbox_info->work_dir, 1);
+	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
+		/* Portage handle setting SANDBOX_WRITE itself. */
+		sandbox_info->work_dir[0] = '\0';
 	} else {
 		if (NULL == getcwd(sandbox_info->work_dir, SB_PATH_MAX)) {
 			perror("sandbox:  Failed to get current directory");
@@ -192,7 +182,8 @@ int get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
 		 "/usr/lib32/conftest:/usr/lib64/conftest:"
 		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
 		 sandbox_info->home_dir, sandbox_info->home_dir,
-		 sandbox_info->work_dir,
+		 sandbox_info->work_dir[0] != '\0' ? sandbox_info->work_dir
+		                                   : "",
 		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
 		 "/tmp/:/var/tmp/");
 	if (SB_BUF_LEN <= retval) {
@@ -477,8 +468,8 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* if the portage temp dir was present, cd into it */
-	if (NULL != sandbox_info.work_dir)
+	/* If not in portage, cd into it work directory */
+	if ('\0' != sandbox_info.work_dir[0])
 		chdir(sandbox_info.work_dir);
 
 	argv_bash = (char **)malloc(6 * sizeof(char *));
