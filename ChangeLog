@@ -2,6 +2,11 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  01 Nov 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
+
+  Do not pass mode to true_open and true_open64 if not needed.  Should fix a
+  segfault in some cases.
+
 * sandbox-1.2.13 (2005/09/12)
 
   12 Sep 2005; Martin Schlemmer <azarah@gentoo.org> sandbox.c, libsandbox.c:

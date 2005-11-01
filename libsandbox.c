@@ -587,7 +587,10 @@ int open(const char *pathname, int flags, ...)
 
 	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) {
 		check_dlsym(open);
-		result = true_open(pathname, flags, mode);
+		if (flags & O_CREAT)
+			result = true_open(pathname, flags, mode);
+		else
+			result = true_open(pathname, flags);
 	}
 
 	return result;
@@ -711,7 +714,10 @@ int open64(const char *pathname, int flags, ...)
 
 	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) {
 		check_dlsym(open64);
-		result = true_open64(pathname, flags, mode);
+		if (flags & O_CREAT)
+			result = true_open64(pathname, flags, mode);
+		else
+			result = true_open64(pathname, flags);
 	}
 
 	return result;
