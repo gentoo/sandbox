@@ -421,7 +421,8 @@ int main(int argc, char **argv)
 		printf("========================== Gentoo linux path sandbox ===========================\n");
 
 	/* check if a sandbox is already running */
-	if (NULL != getenv(ENV_SANDBOX_ON)) {
+	if ((NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
+	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
 		fprintf(stderr, "Not launching a new sandbox instance\n");
 		fprintf(stderr, "Another one is already running in this process hierarchy.\n");
 		exit(EXIT_FAILURE);

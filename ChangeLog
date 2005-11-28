@@ -3,11 +3,14 @@
 # $Header$
 
   28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> getcwd.c, libsandbox.c,
-  sandbox.c, sandbox.h:
+  sandbox.c, sandbox.h, sandbox.bashrc:
 
   Check generic getcwd()'s return as well for validity, bug #101728.
 
   Cleanup environ variables.
+
+  Rather check SANDBOX_ACTIVE if we are already running. Set SANDBOX_ACTIVE
+  to readonly in sandbox.bashrc.
 
   01 Nov 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
