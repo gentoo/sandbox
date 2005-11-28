@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> getcwd.c:
+
+  Check generic getcwd()'s return as well for validity, bug #101728.
+
   01 Nov 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
   Do not pass mode to true_open and true_open64 if not needed.  Should fix a

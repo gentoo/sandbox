@@ -199,11 +199,10 @@ SB_STATIC char *egetcwd(char *buf, size_t size)
 
 	__set_errno(0);
 	tmpbuf = getcwd(buf, size);
-
 	if (tmpbuf)
 		lstat(buf, &st);
 	else
-		return tmpbuf;
+		return NULL;
 
 	if (errno) {
 		/* If lstat() failed with eerror = ENOENT, then its
@@ -211,7 +210,20 @@ SB_STATIC char *egetcwd(char *buf, size_t size)
 		 * so use our generic version which *should* not fail.
 		 */
 		if (errno == ENOENT) {
-			return __egetcwd(buf, size);
+			free(tmpbuf);
+			
+			tmpbuf = __egetcwd(buf, size);
+			if (tmpbuf)
+				lstat(buf, &st);
+			else
+				return NULL;
+
+			if (!errno)
+				return __egetcwd(buf, size);
+			else if (tmpbuf)
+				free(tmpbuf);
+
+			return NULL;
 		} else {
 			return tmpbuf;
 		}
