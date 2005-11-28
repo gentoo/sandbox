@@ -34,6 +34,8 @@
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 
+#define ENV_BASH_ENV           "BASH_ENV"
+
 #define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
 #define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"
 

@@ -341,6 +341,9 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	if (!getenv(ENV_SANDBOX_PREDICT))
 		sandbox_setenv(new_environ, ENV_SANDBOX_PREDICT, sandbox_predict_envvar);
 
+	/* Make sure our bashrc gets preference */
+	sandbox_setenv(new_environ, ENV_BASH_ENV, sandbox_info->sandbox_rc);
+
 	/* This one should NEVER be set in ebuilds, as it is the one
 	 * private thing libsandbox.so use to test if the sandbox
 	 * should be active for this pid, or not.

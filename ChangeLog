@@ -12,6 +12,8 @@
   Rather check SANDBOX_ACTIVE if we are already running. Set SANDBOX_ACTIVE
   to readonly in sandbox.bashrc.
 
+  Make sure we use our bashrc.
+
   01 Nov 2005; Martin Schlemmer <azarah@gentoo.org> libsandbox.c:
 
   Do not pass mode to true_open and true_open64 if not needed.  Should fix a
