@@ -2,11 +2,15 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
-  28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> configure.in:
+  28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
+  sandbox_fdutils.c:
 
   Detect if we on 64bit arch automatically.
 
   Update contact email.  Fix quoting.
+
+  Revert 64bit arch test, as we should build the 32bit version without full
+  path checking as well, and add --enable-multilib switch to configure.
 
 * sandbox-1.2.14 (2005/11/28)
 

@@ -444,7 +444,7 @@ int main(int argc, char **argv)
 	if (print_debug)
 		printf("Verification of the required files.\n");
 
-#ifndef SB_HAVE_64BIT_ARCH
+#ifndef SB_HAVE_MULTILIB
 	if (0 >= exists(sandbox_info.sandbox_lib)) {
 		perror("sandbox:  Could not open the sandbox library");
 		exit(EXIT_FAILURE);

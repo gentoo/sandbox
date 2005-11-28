@@ -98,19 +98,20 @@ LIBC_VERSION=`readelf -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' 
 if test "$LIBC_VERSION"x = x ; then
 	AC_MSG_ERROR([Unable to determine LIBC VERSION])
 fi
+rm -f libctest
 AC_MSG_RESULT([$LIBC_VERSION])
 AC_DEFINE_UNQUOTED([LIBC_VERSION], ["$LIBC_VERSION"], [name of libc to hook into])
 
 dnl check if we have 32bit or 64bit output
-AC_MSG_CHECKING([output abi])
-OUTPUT_ABI=`file libctest | grep 'ELF 64-bit LSB'`
-if test  "$OUTPUT_ABI"x = x ; then
-	OUTPUT_ABI="ELF 32-bit LSB"
-else
-	OUTPUT_ABI="ELF 64-bit LSB"
-	AC_DEFINE_UNQUOTED([SB_HAVE_64BIT_ARCH], ["1"], [have 64-bit abi])
+AC_ARG_ENABLE([multilib],
+	AS_HELP_STRING([--enable-multilib],
+		[enable building for multilib setups (default=disabled)]),
+	[enable_multilib="$enableval"],
+	[enable_multilib="no"]
+)
+
+if test "$enable_multilib"x != xno ; then
+	AC_DEFINE_UNQUOTED([SB_HAVE_MULTILIB], [1], [have multilib enabled system])
 fi
-AC_MSG_RESULT([$OUTPUT_ABI])
-rm -f libctest
 
 AC_OUTPUT([Makefile data/Makefile src/Makefile])
