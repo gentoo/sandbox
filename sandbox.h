@@ -34,6 +34,9 @@
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 
+#define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
+#define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"
+
 #define ENV_SANDBOX_LIB        "SANDBOX_LIB"
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
 #define ENV_SANDBOX_LOG        "SANDBOX_LOG"
@@ -46,6 +49,9 @@
 
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
 #define ENV_SANDBOX_BEEP       "SANDBOX_BEEP"
+
+#define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
+#define SANDBOX_ACTIVE         "armedandready"
 
 #define DEFAULT_BEEP_COUNT     3
 

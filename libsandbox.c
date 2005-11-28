@@ -1193,18 +1193,18 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	if (NULL == resolved_path)
 		goto fp_error;
 
-	log_path = getenv("SANDBOX_LOG");
-	if (NULL != getenv("SANDBOX_DEBUG")) {
-		if ((0 == strncasecmp(getenv("SANDBOX_DEBUG"), "1", 1)) ||
-		    (0 == strncasecmp(getenv("SANDBOX_DEBUG"), "yes", 3))) {
-			debug_log_path = getenv("SANDBOX_DEBUG_LOG");
+	log_path = getenv(ENV_SANDBOX_LOG);
+	if (NULL != getenv(ENV_SANDBOX_DEBUG)) {
+		if ((0 == strncasecmp(getenv(ENV_SANDBOX_DEBUG), "1", 1)) ||
+		    (0 == strncasecmp(getenv(ENV_SANDBOX_DEBUG), "yes", 3))) {
+			debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
 			debug = 1;
 		}
 	}
 
-	if (NULL != getenv("SANDBOX_VERBOSE")) {
-		if ((0 == strncasecmp(getenv("SANDBOX_VERBOSE"), "0", 1)) ||
-		    (0 == strncasecmp(getenv("SANDBOX_VERBOSE"), "no", 2)))
+	if (NULL != getenv(ENV_SANDBOX_VERBOSE)) {
+		if ((0 == strncasecmp(getenv(ENV_SANDBOX_VERBOSE), "0", 1)) ||
+		    (0 == strncasecmp(getenv(ENV_SANDBOX_VERBOSE), "no", 2)))
 			verbose = 0;
 	}
 
@@ -1313,10 +1313,11 @@ static int is_sandbox_on()
 	 *
 	 * Azarah (3 Aug 2002)
 	 */
-	if ((NULL != getenv("SANDBOX_ON")) &&
-	    (0 == strncmp(getenv("SANDBOX_ON"), "1", 1)) &&
-	    (NULL != getenv("SANDBOX_ACTIVE")) &&
-	    (0 == strncmp(getenv("SANDBOX_ACTIVE"), "armedandready", 13))) {
+	if ((NULL != getenv(ENV_SANDBOX_ON)) &&
+	    ((0 == strncmp(getenv(ENV_SANDBOX_ON), "1", 1)) ||
+	     (0 == strncmp(getenv(ENV_SANDBOX_ON), "yes", 3))) &&
+	    (NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
+	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
 		errno = old_errno;
 		return 1;
 	} else {
@@ -1330,10 +1331,10 @@ static int before_syscall(const char *func, const char *file)
 	int old_errno = errno;
 	int result = 1;
 //	static sbcontext_t sbcontext;
-	char *deny = getenv("SANDBOX_DENY");
-	char *read = getenv("SANDBOX_READ");
-	char *write = getenv("SANDBOX_WRITE");
-	char *predict = getenv("SANDBOX_PREDICT");
+	char *deny = getenv(ENV_SANDBOX_DENY);
+	char *read = getenv(ENV_SANDBOX_READ);
+	char *write = getenv(ENV_SANDBOX_WRITE);
+	char *predict = getenv(ENV_SANDBOX_PREDICT);
 
 	if (NULL == file || 0 == strlen(file)) {
 		/* The file/directory does not exist */
@@ -1359,7 +1360,7 @@ static int before_syscall(const char *func, const char *file)
 
 		if(NULL != deny) {
 			init_env_entries(&(sbcontext.deny_prefixes),
-				&(sbcontext.num_deny_prefixes), "SANDBOX_DENY", deny, 1);
+				&(sbcontext.num_deny_prefixes), ENV_SANDBOX_DENY, deny, 1);
 			cached_env_vars[0] = strdup(deny);
 		} else {
 			cached_env_vars[0] = NULL;
@@ -1377,7 +1378,7 @@ static int before_syscall(const char *func, const char *file)
 
 		if(NULL != read) {
 			init_env_entries(&(sbcontext.read_prefixes),
-				&(sbcontext.num_read_prefixes), "SANDBOX_READ", read, 1);
+				&(sbcontext.num_read_prefixes), ENV_SANDBOX_READ, read, 1);
 			cached_env_vars[1] = strdup(read);
 		} else {
 			cached_env_vars[1] = NULL;
@@ -1395,7 +1396,7 @@ static int before_syscall(const char *func, const char *file)
 
 		if(NULL != write) {
 			init_env_entries(&(sbcontext.write_prefixes),
-				&(sbcontext.num_write_prefixes), "SANDBOX_WRITE", write, 1);
+				&(sbcontext.num_write_prefixes), ENV_SANDBOX_WRITE, write, 1);
 			cached_env_vars[2] = strdup(write);
 		} else {
 			cached_env_vars[2] = NULL;
@@ -1413,7 +1414,7 @@ static int before_syscall(const char *func, const char *file)
 
 		if(NULL != predict) {
 			init_env_entries(&(sbcontext.predict_prefixes),
-				&(sbcontext.num_predict_prefixes), "SANDBOX_PREDICT", predict, 1);
+				&(sbcontext.num_predict_prefixes), ENV_SANDBOX_PREDICT, predict, 1);
 			cached_env_vars[3] = strdup(predict);
 		} else {
 			cached_env_vars[3] = NULL;

@@ -348,7 +348,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	 * azarah (3 Aug 2002)
 	 */
 
-	sandbox_setenv(new_environ, "SANDBOX_ACTIVE", "armedandready");
+	sandbox_setenv(new_environ, ENV_SANDBOX_ACTIVE, SANDBOX_ACTIVE);
 
 	env_size = 0;
 	while (NULL != new_environ[env_size])
