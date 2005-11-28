@@ -6,6 +6,8 @@
 
   Detect if we on 64bit arch automatically.
 
+  Update contact email.  Fix quoting.
+
 * sandbox-1.2.14 (2005/11/28)
 
   28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> getcwd.c, libsandbox.c,
