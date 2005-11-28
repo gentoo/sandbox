@@ -94,11 +94,22 @@ AC_MSG_CHECKING(libc version)
 dnl the sed script at the end here looks funny but it's ok ...
 dnl they're m4 escape sequences for left and right brackets
 LIBC_VERSION=`readelf -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
-rm -f libctest
 if test "$LIBC_VERSION"x = x ; then
 	AC_MSG_ERROR(Unable to determine LIBC VERSION)
 fi
 AC_MSG_RESULT($LIBC_VERSION)
 AC_DEFINE_UNQUOTED(LIBC_VERSION, "$LIBC_VERSION", [name of libc to hook into])
+
+dnl check if we have 32bit or 64bit output
+AC_MSG_CHECKING([output abi])
+OUTPUT_ABI=`file libctest | grep 'ELF 64-bit LSB'`
+if test  "$OUTPUT_ABI"x = x ; then
+	OUTPUT_ABI="ELF 32-bit LSB"
+else
+	OUTPUT_ABI="ELF 64-bit LSB"
+	AC_DEFINE_UNQUOTED([SB_HAVE_64BIT_ARCH], "1", [have 64-bit abi])
+fi
+AC_MSG_RESULT([$OUTPUT_ABI])
+rm -f libctest
 
 AC_OUTPUT([Makefile data/Makefile src/Makefile])

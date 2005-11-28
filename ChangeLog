@@ -2,6 +2,10 @@
 # Copyright 1999-2005 Gentoo Foundation; Distributed under the GPL v2
 # $Header$
 
+  28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> configure.in:
+
+  Detect if we on 64bit arch automatically.
+
 * sandbox-1.2.14 (2005/11/28)
 
   28 Nov 2005 Martin Schlemmer <azarah@gentoo.org> getcwd.c, libsandbox.c,
