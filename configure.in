@@ -101,4 +101,4 @@ fi
 AC_MSG_RESULT($LIBC_VERSION)
 AC_DEFINE_UNQUOTED(LIBC_VERSION, "$LIBC_VERSION", [name of libc to hook into])
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT([Makefile data/Makefile src/Makefile])
