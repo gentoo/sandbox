@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = dist-bzip2 no-dist-gzip
 
-SUBDIRS = data src
+SUBDIRS = scripts data src
 
 EXTRA_DIST = localdecls.h

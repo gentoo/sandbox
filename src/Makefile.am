@@ -1,48 +1,73 @@
-EXTRA_DIST         = canonicalize.c symbols.in
-CLEANFILES         = symbols.h
+AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS        = -D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT \
-                     -DLIBSANDBOX_PATH=\"$(libdir)\" \
-                     -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
-		     -I$(top_srcdir)
+lib_LTLIBRARIES = libsandbox.la
+bin_PROGRAMS = sandbox
 
-lib_LTLIBRARIES         = libsandbox.la
-libsandbox_la_SOURCES   = libsandbox.c $(top_srcdir)/localdecls.h
-# Do not add -nostdlib or -nostartfiles, as then our constructor
-# and destructor will not be executed ...
-libsandbox_la_LDFLAGS   = -nodefaultlibs -lc -ldl
+AM_CPPFLAGS = \
+	-D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT  \
+        -DLIBSANDBOX_PATH=\"$(libdir)\"         \
+        -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
+	-I$(top_srcdir)
+
+LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
+
 # We need -fexceptions here, else we do not catch exceptions
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
-libsandbox_la_CFLAGS    = -fexceptions
+libsandbox_la_CFLAGS = -fexceptions
+# Do not add -nostdlib or -nostartfiles, as then our constructor
+# and destructor will not be executed ...
+libsandbox_la_LIBADD = -lc -ldl
+libsandbox_la_LDFLAGS = \
+	-nodefaultlibs       \
+	-Wl,--version-script,libsandbox.map
+libsandbox_la_SOURCES = \
+	libsandbox.c \
+	$(LOCAL_INCLUDES)
 
-bin_PROGRAMS       = sandbox
-sandbox_SOURCES    = sandbox.c sandbox.h sandbox_futils.c getcwd.c $(top_srcdir)/localdecls.h
-sandbox_CFLAGS     = -DOUTSIDE_LIBSANDBOX
+sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
+sandbox_SOURCES = \
+	sandbox.c        \
+	sandbox.h        \
+	sandbox_futils.c \
+	getcwd.c         \
+	$(LOCAL_INCLUDES)
 
-libsandbox.c: symbols.h
+libsandbox.c: libsandbox.map symbols.h
 
-# Basically generates symbols.h from the function names in symbols.in.
-# Not sure if we can count on the latest version the only symbol
-# countaining '@@' ...
-symbols.h: symbols.in
+SYMBOLS_FILE = $(srcdir)/symbols.in
+SYMBOLS_LIST = $(shell $(EGREP) -v '^\#' $(SYMBOLS_FILE))
+GEN_VERSION_MAP_SCRIPT = $(top_srcdir)/scripts/gen_symbol_version_map.awk
+GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk
+
+libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 	@echo "Generating $@"; \
 	if [ ! -e "$(LIBC_PATH)" ]; then\
 		echo -e "\n*** Cannot find LIBC_PATH '$(LIBC_PATH)' !\n"; \
 		exit 1; \
 	fi; \
-	echo "#ifndef __symbol_h" > $@; \
-	echo -e "#define __symbol_h\n" >> $@; \
-	for x in `cat $^`; do \
-		sym=`readelf -s "$(LIBC_PATH)" 2>/dev/null | \
-			awk '{ print $$8 }' | \
-			grep "^$${x}@@" | \
-			sort -u | \
-			cut -d'@' -f3`; \
-		echo "#define symname_$${x} \"$${x}\"" >> $@; \
-		if [ -n "$${sym}" ]; then \
-			echo "#define symver_$${x} \"$${sym}\"" >> $@; \
-		else \
-			echo "#define symver_$${x} NULL" >> $@; \
-		fi; \
-	done; \
-	echo -e "\n#endif /* __symbol_h */" >> $@
+	export SYMBOLS="$(SYMBOLS_LIST)"; \
+	if ! $(READELF) -s $(LIBC_PATH) | \
+		$(AWK) -f $(GEN_VERSION_MAP_SCRIPT) > $@ ; \
+	then \
+		echo "\n*** Failed to generate '$@' !\n"; \
+		exit 1; \
+	fi
+
+symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
+	@echo "Generating $@"; \
+	if [ ! -e "$(LIBC_PATH)" ]; then\
+		echo -e "\n*** Cannot find LIBC_PATH '$(LIBC_PATH)' !\n"; \
+		exit 1; \
+	fi; \
+	export SYMBOLS="$(SYMBOLS_LIST)"; \
+	if ! $(READELF) -s $(LIBC_PATH) | \
+		$(AWK) -f $(GEN_HEADER_SCRIPT) > $@ ; \
+	then \
+		echo "\n*** Failed to generate '$@' !\n"; \
+		exit 1; \
+	fi
+
+EXTRA_DIST = canonicalize.c $(SYMBOLS_FILE)
+
+CLEANFILES = libsandbox.map symbols.h
+DISTCLEANFILES = $(CLEANFILES)

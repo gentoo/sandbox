@@ -9,6 +9,7 @@ AC_ISC_POSIX
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
+AC_CHECK_PROGS([READELF], [readelf], [false])
 
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
@@ -114,4 +115,9 @@ if test "$enable_multilib"x != xno ; then
 	AC_DEFINE_UNQUOTED([SB_HAVE_MULTILIB], [1], [have multilib enabled system])
 fi
 
-AC_OUTPUT([Makefile data/Makefile src/Makefile])
+AC_OUTPUT([
+	Makefile
+	scripts/Makefile
+	data/Makefile
+	src/Makefile
+])

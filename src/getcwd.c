@@ -70,8 +70,8 @@ SB_STATIC char *search_dir(dev_t this_dev, ino_t this_ino, char *path_buf, size_
 #ifdef OUTSIDE_LIBSANDBOX
 	dp = opendir(path_buf);
 #else
-	check_dlsym(opendir);
-	dp = true_opendir(path_buf);
+	check_dlsym(__opendir);
+	dp = true___opendir(path_buf);
 #endif
 	if (dp == 0) {
 	    goto oops;

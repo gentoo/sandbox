@@ -64,9 +64,9 @@
 #include <sys/param.h>
 #include <unistd.h>
 #include <utime.h>
+
 #include "config.h"
 #include "localdecls.h"
-#include "symbols.h"
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
@@ -83,26 +83,26 @@
 #include "sandbox.h"
 
 /* Macros to check if a function should be executed */
-#define FUNCTION_SANDBOX_SAFE(func, path) \
-	((0 == is_sandbox_on()) || (1 == before_syscall(func, path)))
+#define FUNCTION_SANDBOX_SAFE(_func, _path) \
+	((0 == is_sandbox_on()) || (1 == before_syscall(_func, _path)))
 
-#define FUNCTION_SANDBOX_SAFE_ACCESS(func, path, flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_access(func, path, flags)))
+#define FUNCTION_SANDBOX_SAFE_ACCESS(_func, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_access(_func, _path, _flags)))
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT(func, path, flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(func, path, flags)))
+#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_func, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(_func, _path, _flags)))
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(func, path, mode) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(func, path, mode)))
+#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_func, _path, _mode) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(_func, _path, _mode)))
 
 /* Macro to check if a wrapper is defined, if not
  * then try to resolve it again. */
-#define check_dlsym(name) \
+#define check_dlsym(_name) \
 { \
-	int old_errno=errno; \
-	if (!true_ ## name) \
-		true_ ## name = get_dlsym(symname_ ## name, symver_ ## name); \
-	errno=old_errno; \
+	int old_errno = errno; \
+	if (!true_ ## _name) \
+		true_ ## _name = get_dlsym(symname_ ## _name, symver_ ## _name); \
+	errno = old_errno; \
 }
 
 static char sandbox_lib[SB_PATH_MAX];
@@ -134,7 +134,6 @@ static char *erealpath(const char *, char *);
 /* glibc modified getcwd() functions */
 static char *egetcwd(char *, size_t);
 
-static void init_wrappers(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static char *filter_path(const char *, int);
@@ -150,126 +149,11 @@ static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 static int is_sandbox_on();
 
-/* Wrapped functions */
-
-extern int chmod(const char *, mode_t);
-static int (*true_chmod) (const char *, mode_t) = NULL;
-extern int chown(const char *, uid_t, gid_t);
-static int (*true_chown) (const char *, uid_t, gid_t) = NULL;
-extern int creat(const char *, mode_t);
-static int (*true_creat) (const char *, mode_t) = NULL;
-extern FILE *fopen(const char *, const char *);
-static FILE *(*true_fopen) (const char *, const char *) = NULL;
-extern int lchown(const char *, uid_t, gid_t);
-static int (*true_lchown) (const char *, uid_t, gid_t) = NULL;
-extern int link(const char *, const char *);
-static int (*true_link) (const char *, const char *) = NULL;
-extern int mkdir(const char *, mode_t);
-static int (*true_mkdir) (const char *, mode_t) = NULL;
-extern DIR *opendir(const char *);
-static DIR *(*true_opendir) (const char *) = NULL;
-#ifdef WRAP_MKNOD
-extern int __xmknod(const char *, mode_t, dev_t);
-static int (*true___xmknod) (const char *, mode_t, dev_t) = NULL;
-#endif
-extern int access(const char *, int);
-static int (*true_access) (const char *, int) = NULL;
-extern int open(const char *, int, ...);
-static int (*true_open) (const char *, int, ...) = NULL;
-extern int rename(const char *, const char *);
-static int (*true_rename) (const char *, const char *) = NULL;
-extern int rmdir(const char *);
-static int (*true_rmdir) (const char *) = NULL;
-extern int symlink(const char *, const char *);
-static int (*true_symlink) (const char *, const char *) = NULL;
-extern int truncate(const char *, TRUNCATE_T);
-static int (*true_truncate) (const char *, TRUNCATE_T) = NULL;
-extern int unlink(const char *);
-static int (*true_unlink) (const char *) = NULL;
-
-#if (GLIBC_MINOR >= 1)
-
-extern int creat64(const char *, __mode_t);
-static int (*true_creat64) (const char *, __mode_t) = NULL;
-extern FILE *fopen64(const char *, const char *);
-static FILE *(*true_fopen64) (const char *, const char *) = NULL;
-extern int open64(const char *, int, ...);
-static int (*true_open64) (const char *, int, ...) = NULL;
-extern int truncate64(const char *, __off64_t);
-static int (*true_truncate64) (const char *, __off64_t) = NULL;
-
-#endif
-
-extern int execve(const char *filename, char *const argv[], char *const envp[]);
-static int (*true_execve) (const char *, char *const[], char *const[]);
-
 /*
  * Initialize the shabang
  */
 
-static void init_wrappers(void)
-{
-	check_dlsym(chmod);
-	check_dlsym(chown);
-	check_dlsym(creat);
-	check_dlsym(fopen);
-	check_dlsym(lchown);
-	check_dlsym(link);
-	check_dlsym(mkdir);
-	check_dlsym(opendir);
-#ifdef WRAP_MKNOD
-	check_dlsym(__xmknod);
-#endif
-	check_dlsym(access);
-	check_dlsym(open);
-	check_dlsym(rename);
-	check_dlsym(rmdir);
-	check_dlsym(symlink);
-	check_dlsym(truncate);
-	check_dlsym(unlink);
-
-#if (GLIBC_MINOR >= 1)
-	check_dlsym(creat64);
-	check_dlsym(fopen64);
-	check_dlsym(open64);
-	check_dlsym(truncate64);
-#endif
-
-	check_dlsym(execve);
-}
-
 static void *libc_handle = NULL;
-
-static void *get_dlsym(const char *symname, const char *symver)
-{
-	void *symaddr = NULL;
-
-	if (NULL == libc_handle) {
-#ifdef BROKEN_RTLD_NEXT
-		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-		if (!libc_handle) {
-			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
-				dlerror());
-			exit(EXIT_FAILURE);
-		}
-#else
-		libc_handle = RTLD_NEXT;
-#endif
-	}
-
-	if (NULL == symver)
-		symaddr = dlsym(libc_handle, symname);
-	else
-		symaddr = dlvsym(libc_handle, symname, symver);
-	if (!symaddr) {
-		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
-			symname, dlerror());
-		exit(EXIT_FAILURE);
-	}
-
-	return symaddr;
-}
-
 
 void __attribute__ ((destructor)) libsb_fini(void)
 {
@@ -306,14 +190,42 @@ void __attribute__ ((constructor)) libsb_init(void)
 	mtrace();
 #endif
 
-	init_wrappers();
-
 	/* Get the path and name to this library */
 	get_sandbox_lib(sandbox_lib);
 
 //	sb_init = 1;
 
 	errno = old_errno;
+}
+
+static void *get_dlsym(const char *symname, const char *symver)
+{
+	void *symaddr = NULL;
+
+	if (NULL == libc_handle) {
+#ifdef BROKEN_RTLD_NEXT
+		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
+		if (!libc_handle) {
+			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
+				dlerror());
+			exit(EXIT_FAILURE);
+		}
+#else
+		libc_handle = RTLD_NEXT;
+#endif
+	}
+
+	if (NULL == symver)
+		symaddr = dlsym(libc_handle, symname);
+	else
+		symaddr = dlvsym(libc_handle, symname, symver);
+	if (!symaddr) {
+		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
+			symname, dlerror());
+		exit(EXIT_FAILURE);
+	}
+
+	return symaddr;
 }
 
 static int canonicalize(const char *path, char *resolved_path)
@@ -430,440 +342,523 @@ static char *filter_path(const char *path, int follow_link)
  * Wrapper Functions
  */
 
-int chmod(const char *path, mode_t mode)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("chmod", path) {
-		check_dlsym(chmod);
-		result = true_chmod(path, mode);
-	}
-
-	return result;
+#define chmod_decl(_name) \
+\
+extern int _name(const char *, mode_t); \
+static int (*true_ ## _name) (const char *, mode_t) = NULL; \
+\
+int _name(const char *path, mode_t mode) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("chmod", path) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(path, mode); \
+	} \
+\
+	return result; \
 }
 
-int chown(const char *path, uid_t owner, gid_t group)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("chown", path) {
-		check_dlsym(chown);
-		result = true_chown(path, owner, group);
-	}
-
-	return result;
+#define chown_decl(_name) \
+\
+extern int _name(const char *, uid_t, gid_t); \
+static int (*true_ ## _name) (const char *, uid_t, gid_t) = NULL; \
+\
+int _name(const char *path, uid_t owner, gid_t group) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("chown", path) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(path, owner, group); \
+	} \
+\
+	return result; \
 }
 
-int creat(const char *pathname, mode_t mode)
-{
-/* Is it a system call? */
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("creat", pathname) {
-		check_dlsym(open);
-		result = true_open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
-	}
-
-	return result;
+#define creat_decl(_name) \
+\
+extern int _name(const char *, mode_t); \
+static int (*true_ ## _name) (const char *, mode_t) = NULL; \
+\
+int _name(const char *pathname, mode_t mode) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("creat", pathname) { \
+		check_dlsym(__open); \
+		result = true___open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
+	} \
+\
+	return result; \
 }
 
-FILE *fopen(const char *pathname, const char *mode)
-{
-	FILE *result = NULL;
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", pathname, mode) {
-		check_dlsym(fopen);
-		result = true_fopen(pathname, mode);
-	}
-
-	return result;
+#define fopen_decl(_name) \
+\
+extern FILE *_name(const char *, const char *); \
+static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
+\
+FILE *_name(const char *pathname, const char *mode) \
+{ \
+	FILE *result = NULL; \
+\
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", pathname, mode) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode); \
+	} \
+\
+	return result; \
 }
 
-int lchown(const char *path, uid_t owner, gid_t group)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("lchown", path) {
-		check_dlsym(lchown);
-		result = true_lchown(path, owner, group);
-	}
-
-	return result;
+#define lchown_decl(_name) \
+\
+extern int _name(const char *, uid_t, gid_t); \
+static int (*true_ ## _name) (const char *, uid_t, gid_t) = NULL; \
+\
+int _name(const char *path, uid_t owner, gid_t group) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("lchown", path) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(path, owner, group); \
+	} \
+\
+	return result; \
 }
 
-int link(const char *oldpath, const char *newpath)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("link", newpath) {
-		check_dlsym(link);
-		result = true_link(oldpath, newpath);
-	}
-
-	return result;
+#define link_decl(_name) \
+\
+extern int _name(const char *, const char *); \
+static int (*true_ ## _name) (const char *, const char *) = NULL; \
+\
+int _name(const char *oldpath, const char *newpath) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("link", newpath) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(oldpath, newpath); \
+	} \
+\
+	return result; \
 }
 
-int mkdir(const char *pathname, mode_t mode)
-{
-	struct stat st;
-	int result = -1, my_errno = errno;
-	char canonic[SB_PATH_MAX];
-
-	if (-1 == canonicalize(pathname, canonic))
-		/* Path is too long to canonicalize, do not fail, but just let
-		 * the real function handle it (see bug #94630 and #21766). */
-		if (ENAMETOOLONG != errno)
-			return -1;
-
+#define mkdir_decl(_name) \
+\
+extern int _name(const char *, mode_t); \
+static int (*true_ ## _name) (const char *, mode_t) = NULL; \
+\
+int _name(const char *pathname, mode_t mode) \
+{ \
+	struct stat st; \
+	int result = -1, my_errno = errno; \
+	char canonic[SB_PATH_MAX]; \
+\
+	if (-1 == canonicalize(pathname, canonic)) \
+		/* Path is too long to canonicalize, do not fail, but just let 
+		 * the real function handle it (see bug #94630 and #21766). */ \
+		if (ENAMETOOLONG != errno) \
+			return -1; \
+\
 	/* XXX: Hack to prevent errors if the directory exist,
 	 * and are not writable - we rather return EEXIST rather
-	 * than failing */
-	if (0 == lstat(canonic, &st)) {
-		errno = EEXIST;
-		return -1;
-	}
-	errno = my_errno;
-
-	if FUNCTION_SANDBOX_SAFE("mkdir", pathname) {
-		check_dlsym(mkdir);
-		result = true_mkdir(pathname, mode);
-	}
-
-	return result;
+	 * than failing */ \
+	if (0 == lstat(canonic, &st)) { \
+		errno = EEXIST; \
+		return -1; \
+	} \
+	errno = my_errno; \
+\
+	if FUNCTION_SANDBOX_SAFE("mkdir", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode); \
+	} \
+\
+	return result; \
 }
 
-DIR *opendir(const char *name)
-{
-	DIR *result = NULL;
-
-	if FUNCTION_SANDBOX_SAFE("opendir", name) {
-		check_dlsym(opendir);
-		result = true_opendir(name);
-	}
-
-	return result;
+#define opendir_decl(_name) \
+\
+extern DIR *_name(const char *); \
+static DIR * (*true_ ## _name) (const char *) = NULL; \
+\
+DIR *_name(const char *name) \
+{ \
+	DIR *result = NULL; \
+\
+	if FUNCTION_SANDBOX_SAFE("opendir", name) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(name); \
+	} \
+\
+	return result; \
 }
 
 #ifdef WRAP_MKNOD
-
-int __xmknod(const char *pathname, mode_t mode, dev_t dev)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("__xmknod", pathname) {
-		check_dlsym(__xmknod);
-		result = true___xmknod(pathname, mode, dev);
-	}
-
-	return result;
+# define __xmknod(_name) \
+\
+extern int _name(const char *, mode_t, dev_t); \
+static int (*true_ ## _name) (const char *, mode_t, dev_t) = NULL; \
+\
+int _name(const char *pathname, mode_t mode, dev_t dev) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("__xmknod", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode, dev); \
+	} \
+\
+	return result; \
 }
-
+#else
+# define __xmknod(_name)
 #endif
 
-int access(const char *pathname, int mode)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE_ACCESS("access", pathname, mode) {
-		check_dlsym(access);
-		result = true_access(pathname, mode);
-	}
-
-	return result;
+#define access_decl(_name) \
+\
+extern int _name(const char *, int); \
+static int (*true_ ## _name) (const char *, int) = NULL; \
+\
+int _name(const char *pathname, int mode) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE_ACCESS("access", pathname, mode) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode); \
+	} \
+\
+	return result; \
 }
 
-/* Eventually, there is a third parameter: it's mode_t mode */
-int open(const char *pathname, int flags, ...)
-{
-	va_list ap;
-	mode_t mode = 0;
-	int result = -1;
-
-	if (flags & O_CREAT) {
-		va_start(ap, flags);
-		mode = va_arg(ap, mode_t);
-		va_end(ap);
-	}
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) {
-		check_dlsym(open);
-		if (flags & O_CREAT)
-			result = true_open(pathname, flags, mode);
-		else
-			result = true_open(pathname, flags);
-	}
-
-	return result;
+#define open_decl(_name) \
+\
+extern int _name(const char *, int, ...); \
+static int (*true_ ## _name) (const char *, int, ...) = NULL; \
+\
+/* Eventually, there is a third parameter: it's mode_t mode */ \
+int _name(const char *pathname, int flags, ...) \
+{ \
+	va_list ap; \
+	mode_t mode = 0; \
+	int result = -1; \
+\
+	if (flags & O_CREAT) { \
+		va_start(ap, flags); \
+		mode = va_arg(ap, mode_t); \
+		va_end(ap); \
+	} \
+\
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) { \
+		check_dlsym(_name); \
+		if (flags & O_CREAT) \
+			result = true_ ## _name(pathname, flags, mode); \
+		else \
+			result = true_ ## _name(pathname, flags); \
+	} \
+\
+	return result; \
 }
 
-int rename(const char *oldpath, const char *newpath)
-{
-	int result = -1;
-
-	if (FUNCTION_SANDBOX_SAFE("rename", oldpath) &&
-	    FUNCTION_SANDBOX_SAFE("rename", newpath)) {
-		check_dlsym(rename);
-		result = true_rename(oldpath, newpath);
-	}
-
-	return result;
+#define rename_decl(_name) \
+\
+extern int _name(const char *, const char *); \
+static int (*true_ ## _name) (const char *, const char *) = NULL; \
+\
+int _name(const char *oldpath, const char *newpath) \
+{ \
+	int result = -1; \
+\
+	if (FUNCTION_SANDBOX_SAFE("rename", oldpath) && \
+	    FUNCTION_SANDBOX_SAFE("rename", newpath)) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(oldpath, newpath); \
+	} \
+\
+	return result; \
 }
 
-int rmdir(const char *pathname)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("rmdir", pathname) {
-		check_dlsym(rmdir);
-		result = true_rmdir(pathname);
-	}
-
-	return result;
+#define rmdir_decl(_name) \
+\
+extern int _name(const char *); \
+static int (*true_ ## _name) (const char *) = NULL; \
+\
+int _name(const char *pathname) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("rmdir", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname); \
+	} \
+\
+	return result; \
 }
 
-int symlink(const char *oldpath, const char *newpath)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("symlink", newpath) {
-		check_dlsym(symlink);
-		result = true_symlink(oldpath, newpath);
-	}
-
-	return result;
+#define symlink_decl(_name) \
+\
+extern int _name(const char *, const char *); \
+static int (*true_ ## _name) (const char *, const char *) = NULL; \
+\
+int _name(const char *oldpath, const char *newpath) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("symlink", newpath) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(oldpath, newpath); \
+	} \
+\
+	return result; \
 }
 
-int truncate(const char *path, TRUNCATE_T length)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("truncate", path) {
-		check_dlsym(truncate);
-		result = true_truncate(path, length);
-	}
-
-	return result;
+#define truncate_decl(_name) \
+\
+extern int _name(const char *, TRUNCATE_T); \
+static int (*true_ ## _name) (const char *, TRUNCATE_T) = NULL; \
+\
+int _name(const char *path, TRUNCATE_T length) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("truncate", path) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(path, length); \
+	} \
+\
+	return result; \
 }
 
-int unlink(const char *pathname)
-{
-	int result = -1;
-	char canonic[SB_PATH_MAX];
-
-	if (-1 == canonicalize(pathname, canonic))
+#define unlink_decl(_name) \
+\
+extern int _name(const char *); \
+static int (*true_ ## _name) (const char *) = NULL; \
+\
+int _name(const char *pathname) \
+{ \
+	int result = -1; \
+	char canonic[SB_PATH_MAX]; \
+\
+	if (-1 == canonicalize(pathname, canonic)) \
 		/* Path is too long to canonicalize, do not fail, but just let
-		 * the real function handle it (see bug #94630 and #21766). */
-		if (ENAMETOOLONG != errno)
-			return -1;
-
+		 * the real function handle it (see bug #94630 and #21766). */ \
+		if (ENAMETOOLONG != errno) \
+			return -1; \
+\
 	/* XXX: Hack to make sure sandboxed process cannot remove
-	 * a device node, bug #79836. */
-	if ((0 == strncmp(canonic, "/dev/null", 9)) ||
-	    (0 == strncmp(canonic, "/dev/zero", 9))) {
-		errno = EACCES;
-		return result;
-	}
-
-	if FUNCTION_SANDBOX_SAFE("unlink", pathname) {
-		check_dlsym(unlink);
-		result = true_unlink(pathname);
-	}
-
-	return result;
+	 * a device node, bug #79836. */ \
+	if ((0 == strncmp(canonic, "/dev/null", 9)) || \
+	    (0 == strncmp(canonic, "/dev/zero", 9))) { \
+		errno = EACCES; \
+		return result; \
+	} \
+\
+	if FUNCTION_SANDBOX_SAFE("unlink", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname); \
+	} \
+\
+	return result; \
 }
 
-#if (GLIBC_MINOR >= 1)
-
-int creat64(const char *pathname, __mode_t mode)
-{
-/* Is it a system call? */
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("creat64", pathname) {
-		check_dlsym(open64);
-		result = true_open64(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
-	}
-
-	return result;
+#define creat64_decl(_name) \
+\
+extern int _name(const char *, __mode_t); \
+static int (*true_ ## _name) (const char *, __mode_t) = NULL; \
+\
+int _name(const char *pathname, __mode_t mode) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("creat64", pathname) { \
+		check_dlsym(__open64); \
+		result = true___open64(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
+	} \
+\
+	return result; \
 }
 
-FILE *fopen64(const char *pathname, const char *mode)
-{
-	FILE *result = NULL;
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", pathname, mode) {
-		check_dlsym(fopen64);
-		result = true_fopen64(pathname, mode);
-	}
-
-	return result;
+#define fopen64_decl(_name) \
+\
+extern FILE *_name(const char *, const char *); \
+static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
+\
+FILE *_name(const char *pathname, const char *mode) \
+{ \
+	FILE *result = NULL; \
+\
+	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", pathname, mode) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode); \
+	} \
+\
+	return result; \
 }
 
-/* Eventually, there is a third parameter: it's mode_t mode */
-int open64(const char *pathname, int flags, ...)
-{
-	va_list ap;
-	mode_t mode = 0;
-	int result = -1;
-
-	if (flags & O_CREAT) {
-		va_start(ap, flags);
-		mode = va_arg(ap, mode_t);
-		va_end(ap);
-	}
-
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) {
-		check_dlsym(open64);
-		if (flags & O_CREAT)
-			result = true_open64(pathname, flags, mode);
-		else
-			result = true_open64(pathname, flags);
-	}
-
-	return result;
+#define open64_decl(_name) \
+\
+extern int _name(const char *, int, ...); \
+static int (*true_ ## _name) (const char *, int, ...) = NULL; \
+\
+/* Eventually, there is a third parameter: it's mode_t mode */ \
+int _name(const char *pathname, int flags, ...) \
+{ \
+	va_list ap; \
+	mode_t mode = 0; \
+	int result = -1; \
+\
+	if (flags & O_CREAT) { \
+		va_start(ap, flags); \
+		mode = va_arg(ap, mode_t); \
+		va_end(ap); \
+	} \
+\
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) { \
+		check_dlsym(_name); \
+		if (flags & O_CREAT) \
+			result = true_ ## _name(pathname, flags, mode); \
+		else \
+			result = true_ ## _name(pathname, flags); \
+	} \
+\
+	return result; \
 }
 
-int truncate64(const char *path, __off64_t length)
-{
-	int result = -1;
-
-	if FUNCTION_SANDBOX_SAFE("truncate64", path) {
-		check_dlsym(truncate64);
-		result = true_truncate64(path, length);
-	}
-
-	return result;
+#define truncate64_decl(_name) \
+\
+extern int _name(const char *, __off64_t); \
+static int (*true_ ## _name) (const char *, __off64_t) = NULL; \
+\
+int _name(const char *path, __off64_t length) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("truncate64", path) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(path, length); \
+	} \
+\
+	return result; \
 }
-
-#endif				/* GLIBC_MINOR >= 1 */
 
 /*
  * Exec Wrappers
  */
 
-int execve(const char *filename, char *const argv[], char *const envp[])
-{
-	int old_errno = errno;
-	int result = -1;
-	int count = 0;
-	int env_len = 0;
-	char **my_env = NULL;
-	int kill_env = 1;
-	/* We limit the size LD_PRELOAD can be here, but it should be enough */
-	char tmp_str[SB_BUF_LEN];
-
-	if FUNCTION_SANDBOX_SAFE("execve", filename) {
-		while (envp[count] != NULL) {
-			/* Check if we do not have to do anything */
-			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) {
-				if (NULL != strstr(envp[count], sandbox_lib)) {
-					my_env = (char **)envp;
-					kill_env = 0;
-					goto end_loop;
-				}
-			}
-
-			/* If LD_PRELOAD is set and sandbox_lib not in it */
-			if (((strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) &&
-			     (NULL == strstr(envp[count], sandbox_lib))) ||
-			    /* Or  LD_PRELOAD is not set, and this is the last loop */
-			    ((strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) &&
-			     (NULL == envp[count + 1]))) {
-				int i = 0;
-				int add_ldpreload = 0;
-				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1;
-
-				/* Fail safe ... */
-				if (max_envp_len > SB_BUF_LEN) {
-					fprintf(stderr, "libsandbox:  max_envp_len too big!\n");
-					errno = ENOMEM;
-					return result;
-				}
-
-				/* Calculate envp size */
-				my_env = (char **)envp;
-				do
-					env_len++;
-				while (NULL != *my_env++);
-
-				/* Should we add LD_PRELOAD ? */
-				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count])
-					add_ldpreload = 1;
-
-				my_env = (char **)calloc(env_len + add_ldpreload, sizeof(char *));
-				if (NULL == my_env) {
-					errno = ENOMEM;
-					return result;
-				}
-				/* Copy envp to my_env */
-				do
-					/* Leave a space for LD_PRELOAD if needed */
-					my_env[i + add_ldpreload] = envp[i];
-				while (NULL != envp[i++]);
-
-				/* Add 'LD_PRELOAD=' to the beginning of our new string */
-				snprintf(tmp_str, max_envp_len, "%s%s", LD_PRELOAD_EQ, sandbox_lib);
-
+#define execve_decl(_name) \
+\
+extern int _name(const char *, char *const[], char *const[]); \
+static int (*true_ ## _name) (const char *, char *const[], char *const[]) = NULL; \
+\
+int _name(const char *filename, char *const argv[], char *const envp[]) \
+{ \
+	int old_errno = errno; \
+	int result = -1; \
+	int count = 0; \
+	int env_len = 0; \
+	char **my_env = NULL; \
+	int kill_env = 1; \
+	/* We limit the size LD_PRELOAD can be here, but it should be enough */ \
+	char tmp_str[SB_BUF_LEN]; \
+\
+	if FUNCTION_SANDBOX_SAFE("execve", filename) { \
+		while (envp[count] != NULL) { \
+			/* Check if we do not have to do anything */ \
+			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) { \
+				if (NULL != strstr(envp[count], sandbox_lib)) { \
+					my_env = (char **)envp; \
+					kill_env = 0; \
+					goto end_loop; \
+				} \
+			} \
+\
+			/* If LD_PRELOAD is set and sandbox_lib not in it */ \
+			if (((strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) && \
+			     (NULL == strstr(envp[count], sandbox_lib))) || \
+			    /* Or  LD_PRELOAD is not set, and this is the last loop */ \
+			    ((strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) && \
+			     (NULL == envp[count + 1]))) { \
+				int i = 0; \
+				int add_ldpreload = 0; \
+				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1; \
+\
+				/* Fail safe ... */ \
+				if (max_envp_len > SB_BUF_LEN) { \
+					fprintf(stderr, "libsandbox:  max_envp_len too big!\n"); \
+					errno = ENOMEM; \
+					return result; \
+				} \
+\
+				/* Calculate envp size */ \
+				my_env = (char **)envp; \
+				do \
+					env_len++; \
+				while (NULL != *my_env++); \
+\
+				/* Should we add LD_PRELOAD ? */ \
+				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) \
+					add_ldpreload = 1; \
+\
+				my_env = (char **)calloc(env_len + add_ldpreload, sizeof(char *)); \
+				if (NULL == my_env) { \
+					errno = ENOMEM; \
+					return result; \
+				} \
+				/* Copy envp to my_env */ \
+				do \
+					/* Leave a space for LD_PRELOAD if needed */ \
+					my_env[i + add_ldpreload] = envp[i]; \
+				while (NULL != envp[i++]); \
+\
+				/* Add 'LD_PRELOAD=' to the beginning of our new string */ \
+				snprintf(tmp_str, max_envp_len, "%s%s", LD_PRELOAD_EQ, sandbox_lib); \
+\
 				/* LD_PRELOAD already have variables other than sandbox_lib,
-				 * thus we have to add sandbox_lib seperated via a whitespace. */
-				if (0 == add_ldpreload) {
-					snprintf((char *)(tmp_str + strlen(tmp_str)),
-						 max_envp_len - strlen(tmp_str) + 1, " %s",
-						 (char *)(envp[count] + strlen(LD_PRELOAD_EQ)));
-				}
-
-				/* Valid string? */
-				tmp_str[max_envp_len] = '\0';
-
+				 * thus we have to add sandbox_lib seperated via a whitespace. */ \
+				if (0 == add_ldpreload) { \
+					snprintf((char *)(tmp_str + strlen(tmp_str)), \
+						 max_envp_len - strlen(tmp_str) + 1, " %s", \
+						 (char *)(envp[count] + strlen(LD_PRELOAD_EQ))); \
+				} \
+\
+				/* Valid string? */ \
+				tmp_str[max_envp_len] = '\0'; \
+\
 				/* Ok, replace my_env[count] with our version that contains
-				 * sandbox_lib ... */
-				if (1 == add_ldpreload)
-					/* We reserved a space for LD_PRELOAD above */
-					my_env[0] = tmp_str;
-				else
-					my_env[count] = tmp_str;
-
-				goto end_loop;
-			}
-			count++;
-		}
-
-end_loop:
-		errno = old_errno;
-		check_dlsym(execve);
-		result = true_execve(filename, argv, my_env);
-		old_errno = errno;
-
-		if (my_env && kill_env)
-			free(my_env);
-	}
-
-	errno = old_errno;
-
-	return result;
+				 * sandbox_lib ... */ \
+				if (1 == add_ldpreload) \
+					/* We reserved a space for LD_PRELOAD above */ \
+					my_env[0] = tmp_str; \
+				else \
+					my_env[count] = tmp_str; \
+\
+				goto end_loop; \
+			} \
+			count++; \
+		} \
+\
+end_loop: \
+		errno = old_errno; \
+		check_dlsym(_name); \
+		result = true_ ## _name(filename, argv, my_env); \
+		old_errno = errno; \
+\
+		if (my_env && kill_env) \
+			free(my_env); \
+	} \
+\
+	errno = old_errno; \
+\
+	return result; \
 }
+
+#include "symbols.h"
 
 /*
  * Internal Functions
  */
-
-#if (GLIBC_MINOR == 1)
-
-/* This hack is needed for glibc 2.1.1 (and others?)
- * (not really needed, but good example) */
-extern int fclose(FILE *);
-static int (*true_fclose) (FILE *) = NULL;
-int fclose(FILE * file)
-{
-	int result = -1;
-
-	check_dlsym(fclose);
-	result = true_fclose(file);
-
-	return result;
-}
-
-#endif				/* GLIBC_MINOR == 1 */
 
 static void init_context(sbcontext_t * context)
 {
@@ -923,8 +918,8 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			fprintf(stderr,
 				"libsandbox:  The '%s' env variable is not defined!\n",
 				env);
-		if(pfx_array) {
-			for(i = 0; i < pfx_num; i++) 
+		if (pfx_array) {
+			for (i = 0; i < pfx_num; i++) 
 				free(pfx_item);
 			free(pfx_array);
 		}
@@ -1184,8 +1179,6 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int access = 0, debug = 0, verbose = 1;
 	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
-	init_wrappers();
-
 	absolute_path = filter_path(file, 0);
 	if (NULL == absolute_path)
 		goto fp_error;
@@ -1243,8 +1236,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
 					"already exists and is not a regular file!");
 			} else {
-				check_dlsym(open);
-				log_file = true_open(log_path, O_APPEND | O_WRONLY |
+				check_dlsym(__open);
+				log_file = true___open(log_path, O_APPEND | O_WRONLY |
 						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 						S_IROTH);
 				if (log_file >= 0) {
@@ -1259,8 +1252,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", debug_log_path,
 					"already exists and is not a regular file!");
 			} else {
-				check_dlsym(open);
-				debug_log_file = true_open(debug_log_path, O_APPEND | O_WRONLY |
+				check_dlsym(__open);
+				debug_log_file = true___open(debug_log_path, O_APPEND | O_WRONLY |
 						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 						S_IROTH);
 				if (debug_log_file >= 0) {

@@ -1,21 +1,25 @@
+# List of functions we wrap.
+# Order is very important!  For example, 'open' should be
+# before 'creat' as 'creat' uses 'open' ...
+
 chmod
 chown
+open
 creat
 fopen
 lchown
 link
 mkdir
 opendir
-__xmknod
+#__xmknod
 access
-open
 rename
 rmdir
 symlink
 truncate
 unlink
+open64
 creat64
 fopen64
-open64
 truncate64
 execve

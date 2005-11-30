@@ -51,9 +51,11 @@
 #endif
 
 /* from glibc */
-#   define symbol_version(real, name, version) \
-     __asm__ (".symver " #real "," #name "@" #version)
-#   define default_symbol_version(real, name, version) \
-     __asm__ (".symver " #real "," #name "@@" #version)
+#if HAVE_DLVSYM
+# define symbol_version(real, name, version) \
+	__asm__ (".symver " #real "," #name "@" #version)
+# define default_symbol_version(real, name, version) \
+	__asm__ (".symver " #real "," #name "@@" #version)
+#endif
 
 #endif
