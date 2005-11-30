@@ -59,10 +59,6 @@
 
 #define SB_BUF_LEN             2048
 
-#if !HAVE_DLVSYM
-# define dlvsym(lib, sym, ver) dlsym(lib, sym)
-#endif
-
 /* Gentoo style e* printing macro's */
 #define EINFO(_color, _hilight, _args...) \
 	do { \

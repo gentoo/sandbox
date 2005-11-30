@@ -46,4 +46,14 @@
 # define SB_STATIC
 #endif
 
+#if !HAVE_DLVSYM
+# define dlvsym(lib, sym, ver) dlsym(lib, sym)
+#endif
+
+/* from glibc */
+#   define symbol_version(real, name, version) \
+     __asm__ (".symver " #real "," #name "@" #version)
+#   define default_symbol_version(real, name, version) \
+     __asm__ (".symver " #real "," #name "@@" #version)
+
 #endif
