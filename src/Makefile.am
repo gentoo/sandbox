@@ -18,7 +18,7 @@ libsandbox_la_CFLAGS = -fexceptions
 # and destructor will not be executed ...
 libsandbox_la_LIBADD = -lc -ldl
 libsandbox_la_LDFLAGS = \
-	-nodefaultlibs       \
+	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
 	libsandbox.c \
