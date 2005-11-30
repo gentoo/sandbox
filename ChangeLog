@@ -12,6 +12,8 @@
 
   Only check SANDBOX_ACTIVE, and not its value.  More BASH_ENV fixes.
 
+  Rename configure.in to configure.ac.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
