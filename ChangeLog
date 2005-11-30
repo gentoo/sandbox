@@ -5,10 +5,12 @@
   01 Dec 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, Makefile.am,
   localdecls.h, scripts/Makefile.am, scripts/gen_symbol_version_map.awk,
   scripts/gen_symbol_header.awk, src/Makefile.am, src/symbols.in,
-  src/libsandbox.c, src/getcwd.c:
+  src/libsandbox.c, src/getcwd.c, src/sandbox.c, data/sandbox.bashrc:
 
   Use versioned symbols on supported libc's for functions we wrap, as well as
   provide all versions of specific functions.  Some syntax cleanups.
+
+  Only check SANDBOX_ACTIVE, and not its value.  More BASH_ENV fixes.
 
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:

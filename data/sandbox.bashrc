@@ -10,6 +10,8 @@ elif [[ -z ${LD_PRELOAD} ]] ; then
 	export LD_PRELOAD="${SANDBOX_LIB}"
 fi
 
+export BASH_ENV="${SANDBOX_BASHRC}"
+
 alias make="make LD_PRELOAD=${LD_PRELOAD}"
 alias su="su -c '/bin/bash -rcfile ${SANDBOX_BASHRC}'"
 
