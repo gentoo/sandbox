@@ -153,13 +153,14 @@ int is_dir(const char *pathname, int follow_link)
 
 long file_length(int fd)
 {
-	long pos, len;
+	struct stat st;
+	int retval;
 
-	pos = lseek(fd, 0L, SEEK_CUR);
-	len = lseek(fd, 0L, SEEK_END);
-	lseek(fd, pos, SEEK_SET);
+	retval = fstat(fd, &st);
+	if (retval < 0)
+		return 0;
 
-	return (len);
+	return (st.st_size);
 }
 
 #endif /* OUTSIDE_LIBSANDBOX */

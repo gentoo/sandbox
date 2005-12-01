@@ -32,6 +32,8 @@
 
   Use egetcwd() in sandbox.c.
 
+  Rather use fstat() to get file size in file_length() than lseek().
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
