@@ -28,6 +28,8 @@
 
   Rename filter_path() to resolve_path() and other renames for clarity.
 
+  Fixup SANDBOX_ON handling after already running changes.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 

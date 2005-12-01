@@ -273,6 +273,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
+	unsetenv(ENV_SANDBOX_ON);
 	unsetenv(ENV_SANDBOX_LIB);
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
@@ -316,6 +317,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
+	sandbox_setenv(new_environ, ENV_SANDBOX_ON, "1");
 	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
 	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
@@ -457,12 +459,6 @@ int main(int argc, char **argv)
 	/* set up the required environment variables */
 	if (print_debug)
 		printf("Setting up the required environment variables.\n");
-
-	/* This one should not be child only, as we check above to see
-	 * if we are already running (check sandbox_setup_environ).
-	 * This needs to be set before calling sandbox_setup_environ(),
-	 * else its not set for the child */
-	setenv(ENV_SANDBOX_ON, "1", 0);
 
 	/* Setup the child environment stuff */
 	sandbox_environ = sandbox_setup_environ(&sandbox_info);
