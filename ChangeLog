@@ -30,6 +30,8 @@
 
   Fixup SANDBOX_ON handling after already running changes.
 
+  Use egetcwd() in sandbox.c.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
