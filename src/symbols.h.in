@@ -1,6 +1,10 @@
 # List of functions we wrap.
-# Order is very important!  For example, 'open' should be
-# before 'creat' as 'creat' uses 'open' ...
+#
+# Note that if the specific libc do not support some function, it
+# will not make it into symbols.h or libsandbox.map, so a non-issue.
+#
+# NB: Order is very important!  For example, 'open()' should be
+#     before 'creat()' as 'creat()' uses 'open()' ...
 
 chmod
 chown
