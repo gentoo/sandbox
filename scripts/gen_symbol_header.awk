@@ -47,8 +47,8 @@ END {
 			
 			printf("%s_decl(%s);\n", sym_index, sym_real_name);
 		
-			# Only add symbol versions for versioned libc's
 			if (symbol_array[2]) {
+				# Only add symbol versions for versioned libc's
 				if (sym_full_names[x] ~ /@@/)
 					printf("default_symbol_version(%s, %s, %s);\n",
 					       sym_real_name, sym_index, symbol_array[2]);
@@ -56,6 +56,7 @@ END {
 					printf("symbol_version(%s, %s, %s);\n",
 					       sym_real_name, sym_index, symbol_array[2]);
 			} else {
+				# For non-versioned libc's we use strong aliases
 				printf("strong_alias(%s, %s);\n", sym_real_name,
 				       sym_index);
 			}
