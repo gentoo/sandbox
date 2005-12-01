@@ -130,7 +130,7 @@ void __attribute__ ((destructor)) libsb_fini(void);
 
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
-static char *filter_path(const char *, int);
+static char *resolve_path(const char *, int);
 static int check_prefixes(char **, int, const char *);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
@@ -278,7 +278,7 @@ static int canonicalize(const char *path, char *resolved_path)
 	return 0;
 }
 
-static char *filter_path(const char *path, int follow_link)
+static char *resolve_path(const char *path, int follow_link)
 {
 	int old_errno = errno;
 	char tmp_str1[SB_PATH_MAX], tmp_str2[SB_PATH_MAX];
@@ -943,7 +943,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 #endif
 
 	while ((NULL != token) && (strlen(token) > 0)) {
-		pfx_item = filter_path(token, 0);
+		pfx_item = resolve_path(token, 0);
 		if (NULL != pfx_item) {
 			pfx_num++;
 
@@ -999,20 +999,20 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 	return 0;
 }
 
-static int check_access(sbcontext_t * sbcontext, const char *func, const char *path, const char *fpath)
+static int check_access(sbcontext_t * sbcontext, const char *func, const char *abs_path, const char *resolv_path)
 {
 	int old_errno = errno;
 	int result = 0;
 	int retval;
 
 	retval = check_prefixes(sbcontext->deny_prefixes,
-				sbcontext->num_deny_prefixes, fpath);
+				sbcontext->num_deny_prefixes, resolv_path);
 	if (1 == retval)
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
 	/* Hardcode denying write to log dir */
-	if (0 == strncmp(fpath, SANDBOX_LOG_LOCATION,
+	if (0 == strncmp(resolv_path, SANDBOX_LOG_LOCATION,
 			 strlen(SANDBOX_LOG_LOCATION)))
 		goto out;
 
@@ -1029,7 +1029,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 	     (0 == strncmp(func, "execvp", 6)) ||
 	     (0 == strncmp(func, "execve", 6)))) {
 		retval = check_prefixes(sbcontext->read_prefixes,
-					sbcontext->num_read_prefixes, fpath);
+					sbcontext->num_read_prefixes, resolv_path);
 		if (1 == retval) {
 			/* Fall in a readable path, Grant Access */
 			result = 1;
@@ -1070,13 +1070,13 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 
 		retval = check_prefixes(sbcontext->write_denied_prefixes,
 					sbcontext->num_write_denied_prefixes,
-					fpath);
+					resolv_path);
 		if (1 == retval)
 			/* Falls in a write denied path, Deny Access */
 			goto out;
 
 		retval = check_prefixes(sbcontext->write_prefixes,
-					sbcontext->num_write_prefixes, fpath);
+					sbcontext->num_write_prefixes, resolv_path);
 		if (1 == retval) {
 			/* Falls in a writable path, Grant Access */
 			result = 1;
@@ -1092,19 +1092,19 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *p
 		     (0 == strncmp(func, "lchown", 6)) ||
 		     (0 == strncmp(func, "rename", 6)) ||
 		     (0 == strncmp(func, "symlink", 7))) &&
-		    ((-1 != lstat(path, &st)) && (S_ISLNK(st.st_mode)))) {
+		    ((-1 != lstat(abs_path, &st)) && (S_ISLNK(st.st_mode)))) {
 			/* Check if the symlink unresolved path have access */
 			retval = check_prefixes(sbcontext->write_prefixes,
-						sbcontext->num_write_prefixes, path);
+						sbcontext->num_write_prefixes, abs_path);
 			if (1 == retval) { /* Does have write access on path */
 				char tmp_buf[SB_PATH_MAX];
 				char *dname, *rpath;
 
-				snprintf(tmp_buf, SB_PATH_MAX, "%s", path);
+				snprintf(tmp_buf, SB_PATH_MAX, "%s", abs_path);
 				
 				dname = dirname(tmp_buf);
 				/* Get symlink resolved path */
-				rpath = filter_path(dname, 1);
+				rpath = resolve_path(dname, 1);
 				if (NULL == rpath)
 					/* Don't really worry here about
 					 * memory issues */
@@ -1128,9 +1128,9 @@ unlink_hack_end:
 		/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
 		 *      It needs to be here, as for each process '/proc/self'
 		 *      will differ ... */
-		if ((0 == strncmp(fpath, "/proc", strlen("/proc"))) &&
+		if ((0 == strncmp(resolv_path, "/proc", strlen("/proc"))) &&
 		    (NULL != realpath("/proc/self/fd", proc_self_fd))) {
-			if (0 == strncmp(fpath, proc_self_fd,
+			if (0 == strncmp(resolv_path, proc_self_fd,
 					 strlen(proc_self_fd))) {
 				result = 1;
 				goto out;
@@ -1138,7 +1138,7 @@ unlink_hack_end:
 		}
 
 		retval = check_prefixes(sbcontext->predict_prefixes,
-					sbcontext->num_predict_prefixes, fpath);
+					sbcontext->num_predict_prefixes, resolv_path);
 		if (1 == retval) {
 			/* Is a known access violation, so deny access,
 			 * and do not log it */
@@ -1173,10 +1173,10 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int access = 0, debug = 0, verbose = 1;
 	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
-	absolute_path = filter_path(file, 0);
+	absolute_path = resolve_path(file, 0);
 	if (NULL == absolute_path)
 		goto fp_error;
-	resolved_path = filter_path(file, 1);
+	resolved_path = resolve_path(file, 1);
 	if (NULL == resolved_path)
 		goto fp_error;
 

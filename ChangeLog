@@ -26,6 +26,8 @@
 
   Cleanup local defines for egetcwd() and erealpath().
 
+  Rename filter_path() to resolve_path() and other renames for clarity.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
