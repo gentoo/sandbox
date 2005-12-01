@@ -36,6 +36,8 @@
 
   Wrap mknod() as well.  Misc cleanups.
 
+  Wrap mkfifo() as it seems it was missing.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 

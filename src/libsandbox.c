@@ -508,6 +508,23 @@ int _name(int ver, const char *pathname, __mode_t mode, __dev_t *dev) \
 	return result; \
 }
 
+#define mkfifo_decl(_name) \
+\
+extern int _name(const char *, mode_t); \
+static int (*true_ ## _name) (const char *, mode_t) = NULL; \
+\
+int _name(const char *pathname, mode_t mode) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("mkfifo", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(pathname, mode); \
+	} \
+\
+	return result; \
+}
+
 #define access_decl(_name) \
 \
 extern int _name(const char *, int); \
