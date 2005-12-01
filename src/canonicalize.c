@@ -21,6 +21,7 @@
  * $Header$
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -36,6 +37,8 @@
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
 #endif
+
+extern char *egetcwd(char *, size_t);
 
 /* Return the canonical absolute name of file NAME.  A canonical name
    does not contain any `.', `..' components nor any repeated path
@@ -56,7 +59,7 @@
  *  
  */
 
-SB_STATIC char *
+char *
 erealpath(const char *name, char *resolved)
 {
 	char *rpath, *dest;

@@ -7,7 +7,7 @@ AM_CPPFLAGS = \
 	-D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT  \
         -DLIBSANDBOX_PATH=\"$(libdir)\"         \
         -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
-	-I$(top_srcdir)
+	-I$(top_srcdir) -Wall
 
 LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
@@ -21,7 +21,10 @@ libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
-	libsandbox.c \
+	libsandbox.c     \
+	getcwd.c         \
+	canonicalize.c   \
+	sandbox_futils.c \
 	$(LOCAL_INCLUDES)
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
@@ -67,7 +70,7 @@ symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
 		exit 1; \
 	fi
 
-EXTRA_DIST = canonicalize.c $(SYMBOLS_FILE)
+EXTRA_DIST = $(SYMBOLS_FILE)
 
 CLEANFILES = libsandbox.map symbols.h
 DISTCLEANFILES = $(CLEANFILES)

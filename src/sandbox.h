@@ -90,20 +90,20 @@
 		errno = old_errno; \
 	} while (0)
 
-SB_STATIC void get_sandbox_lib(char *path);
+void get_sandbox_lib(char *path);
 #ifdef OUTSIDE_LIBSANDBOX
-SB_STATIC void get_sandbox_rc(char *path);
-SB_STATIC void get_sandbox_log(char *path);
-SB_STATIC void get_sandbox_debug_log(char *path);
-SB_STATIC int get_tmp_dir(char *path);
+void get_sandbox_rc(char *path);
+void get_sandbox_log(char *path);
+void get_sandbox_debug_log(char *path);
+int get_tmp_dir(char *path);
 #endif /* OUTSIDE_LIBSANDBOX */
-SB_STATIC int exists(const char *pathname);
+int exists(const char *pathname);
 #ifdef OUTSIDE_LIBSANDBOX
-SB_STATIC int is_file(const char *pathname);
-SB_STATIC int is_dir(const char *pathname, int follow_link);
-SB_STATIC long file_length(int fd);
+int is_file(const char *pathname);
+int is_dir(const char *pathname, int follow_link);
+long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
 
-#endif
+#endif /* __SANDBOX_H__ */
 
 // vim:noexpandtab noai:cindent ai

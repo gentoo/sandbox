@@ -21,9 +21,9 @@
 #include "config.h"
 
 /* glibc modified getcwd() functions */
-SB_STATIC char *egetcwd(char *, size_t);
+char *egetcwd(char *, size_t);
 
-SB_STATIC void get_sandbox_lib(char *path)
+void get_sandbox_lib(char *path)
 {
 #ifdef SB_HAVE_MULTILIB
 	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
@@ -37,12 +37,12 @@ SB_STATIC void get_sandbox_lib(char *path)
 
 #ifdef OUTSIDE_LIBSANDBOX
 
-SB_STATIC void get_sandbox_rc(char *path)
+void get_sandbox_rc(char *path)
 {
 	snprintf(path, SB_PATH_MAX, "%s/%s", SANDBOX_BASHRC_PATH, BASHRC_NAME);
 }
 
-SB_STATIC void get_sandbox_log(char *path)
+void get_sandbox_log(char *path)
 {
 	char *sandbox_log_env = NULL;
 
@@ -62,7 +62,7 @@ SB_STATIC void get_sandbox_log(char *path)
 			getpid(), LOG_FILE_EXT);
 }
 
-SB_STATIC void get_sandbox_debug_log(char *path)
+void get_sandbox_debug_log(char *path)
 {
 	char *sandbox_debug_log_env = NULL;
 
@@ -82,7 +82,7 @@ SB_STATIC void get_sandbox_debug_log(char *path)
 			getpid(), LOG_FILE_EXT);
 }
 
-SB_STATIC int get_tmp_dir(char *path)
+int get_tmp_dir(char *path)
 {
 	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
 					      : TMPDIR,
@@ -96,7 +96,7 @@ SB_STATIC int get_tmp_dir(char *path)
 
 #endif /* OUTSIDE_LIBSANDBOX */
 
-SB_STATIC int exists(const char *pathname)
+int exists(const char *pathname)
 {
 	struct stat buf;
 	int retval;
@@ -116,7 +116,7 @@ SB_STATIC int exists(const char *pathname)
 
 #ifdef OUTSIDE_LIBSANDBOX
 
-SB_STATIC int is_file(const char *pathname)
+int is_file(const char *pathname)
 {
 	struct stat buf;
 	int retval;
@@ -134,7 +134,7 @@ SB_STATIC int is_file(const char *pathname)
 	return 0;
 }
 
-SB_STATIC int is_dir(const char *pathname, int follow_link)
+int is_dir(const char *pathname, int follow_link)
 {
 	struct stat buf;
 	int retval;
@@ -152,7 +152,7 @@ SB_STATIC int is_dir(const char *pathname, int follow_link)
 	return 0;
 }
 
-SB_STATIC long file_length(int fd)
+long file_length(int fd)
 {
 	long pos, len;
 

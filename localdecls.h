@@ -40,12 +40,6 @@
 # error PATH_MAX not defined!
 #endif
 
-#ifndef OUTSIDE_LIBSANDBOX
-# define SB_STATIC static
-#else
-# define SB_STATIC
-#endif
-
 #if !HAVE_DLVSYM
 # define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif

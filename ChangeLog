@@ -17,6 +17,11 @@
   Fix non-versioned libc's to also prepend '__' to internal symbols by using
   strong aliases.
 
+  Remove the SB_STATIC and including of getcwd.c, etc voodoo, as we new use a
+  symbol map, and all non-exported symbols are local.  Cleanup getcwd.c, as
+  the generic getcwd for older 2.4 kernels do not work properly anyhow, and
+  just makes things slower.  Some other warning fixes.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 

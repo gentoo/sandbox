@@ -79,7 +79,6 @@
 #undef open
 #undef open64
 
-//#include "localdecls.h"
 #include "sandbox.h"
 
 /* Macros to check if a function should be executed */
@@ -129,10 +128,9 @@ static int sb_path_size_warning = 0;
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
-/* glibc modified realpath() functions */
-static char *erealpath(const char *, char *);
-/* glibc modified getcwd() functions */
-static char *egetcwd(char *, size_t);
+/* glibc modified realpath() function */
+extern char *erealpath(const char *, char *);
+extern char *egetcwd(char *, size_t);
 
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
@@ -379,7 +377,7 @@ int _name(const char *path, uid_t owner, gid_t group) \
 #define creat_decl(_name) \
 \
 extern int _name(const char *, mode_t); \
-static int (*true_ ## _name) (const char *, mode_t) = NULL; \
+/* static int (*true_ ## _name) (const char *, mode_t) = NULL; */ \
 \
 int _name(const char *pathname, mode_t mode) \
 { \
@@ -666,7 +664,7 @@ int _name(const char *pathname) \
 #define creat64_decl(_name) \
 \
 extern int _name(const char *, __mode_t); \
-static int (*true_ ## _name) (const char *, __mode_t) = NULL; \
+/* static int (*true_ ## _name) (const char *, __mode_t) = NULL; */ \
 \
 int _name(const char *pathname, __mode_t mode) \
 { \
@@ -1458,8 +1456,5 @@ static int before_syscall_open_char(const char *func, const char *file, const ch
 	}
 }
 
-#include "getcwd.c"
-#include "canonicalize.c"
-#include "sandbox_futils.c"
 
 // vim:noexpandtab noai:cindent ai
