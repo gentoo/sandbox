@@ -17,11 +17,10 @@
 #include <fcntl.h>
 #include <libgen.h>
 
-#include "sandbox.h"
 #include "config.h"
+#include "localdecls.h"
 
-/* glibc modified getcwd() functions */
-char *egetcwd(char *, size_t);
+#include "sandbox.h"
 
 void get_sandbox_lib(char *path)
 {

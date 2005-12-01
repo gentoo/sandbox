@@ -128,10 +128,6 @@ static int sb_path_size_warning = 0;
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
-/* glibc modified realpath() function */
-extern char *erealpath(const char *, char *);
-extern char *egetcwd(char *, size_t);
-
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static char *filter_path(const char *, int);

@@ -34,11 +34,11 @@
 #include "config.h"
 #include "localdecls.h"
 
+#include "sandbox.h"
+
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
 #endif
-
-extern char *egetcwd(char *, size_t);
 
 /* Return the canonical absolute name of file NAME.  A canonical name
    does not contain any `.', `..' components nor any repeated path

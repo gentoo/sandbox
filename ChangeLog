@@ -24,6 +24,8 @@
 
   Rename src/symbols.in to src/symbols.h.in.
 
+  Cleanup local defines for egetcwd() and erealpath().
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 

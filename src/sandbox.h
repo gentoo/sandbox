@@ -104,6 +104,10 @@ int is_dir(const char *pathname, int follow_link);
 long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
 
+/* glibc modified realpath() function */
+char *erealpath(const char *, char *);
+char *egetcwd(char *, size_t);
+
 #endif /* __SANDBOX_H__ */
 
 // vim:noexpandtab noai:cindent ai
