@@ -37,7 +37,7 @@ sandbox_SOURCES = \
 
 libsandbox.c: libsandbox.map symbols.h
 
-SYMBOLS_FILE = $(srcdir)/symbols.in
+SYMBOLS_FILE = $(srcdir)/symbols.h.in
 SYMBOLS_LIST = $(shell $(EGREP) -v '^\#' $(SYMBOLS_FILE))
 GEN_VERSION_MAP_SCRIPT = $(top_srcdir)/scripts/gen_symbol_version_map.awk
 GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk

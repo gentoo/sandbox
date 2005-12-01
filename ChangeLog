@@ -22,6 +22,8 @@
   the generic getcwd for older 2.4 kernels do not work properly anyhow, and
   just makes things slower.  Some other warning fixes.
 
+  Rename src/symbols.in to src/symbols.h.in.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
