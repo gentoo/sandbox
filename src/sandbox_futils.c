@@ -157,7 +157,7 @@ long file_length(int fd)
 	int retval;
 
 	retval = fstat(fd, &st);
-	if (retval < 0)
+	if (-1 == retval)
 		return 0;
 
 	return (st.st_size);

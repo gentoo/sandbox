@@ -29,10 +29,6 @@
  *
  */
 
-/* Uncomment below to enable wrapping of mknod().
- * This is broken currently. */
-/* #define WRAP_MKNOD 1 */
-
 /* Uncomment below to enable the use of strtok_r(). */
 #define REENTRANT_STRTOK 1
 
@@ -41,13 +37,6 @@
 
 #define open   xxx_open
 #define open64 xxx_open64
-
-/* Wrapping mknod, do not have any effect, and
- * wrapping __xmknod causes calls to it to segfault
- */
-#ifdef WRAP_MKNOD
-# define __xmknod xxx___xmknod
-#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -70,10 +59,6 @@
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
-#endif
-
-#ifdef WRAP_MKNOD
-# undef __xmknod
 #endif
 
 #undef open
@@ -489,8 +474,7 @@ DIR *_name(const char *name) \
 	return result; \
 }
 
-#ifdef WRAP_MKNOD
-# define __xmknod(_name) \
+#define mknod_decl(_name) \
 \
 extern int _name(const char *, mode_t, dev_t); \
 static int (*true_ ## _name) (const char *, mode_t, dev_t) = NULL; \
@@ -499,16 +483,30 @@ int _name(const char *pathname, mode_t mode, dev_t dev) \
 { \
 	int result = -1; \
 \
-	if FUNCTION_SANDBOX_SAFE("__xmknod", pathname) { \
+	if FUNCTION_SANDBOX_SAFE("mknod", pathname) { \
 		check_dlsym(_name); \
 		result = true_ ## _name(pathname, mode, dev); \
 	} \
 \
 	return result; \
 }
-#else
-# define __xmknod(_name)
-#endif
+
+#define __xmknod_decl(_name) \
+\
+extern int _name(int, const char *, __mode_t, __dev_t *); \
+static int (*true_ ## _name) (int, const char *, __mode_t, __dev_t *) = NULL; \
+\
+int _name(int ver, const char *pathname, __mode_t mode, __dev_t *dev) \
+{ \
+	int result = -1; \
+\
+	if FUNCTION_SANDBOX_SAFE("mknod", pathname) { \
+		check_dlsym(_name); \
+		result = true_ ## _name(ver, pathname, mode, dev); \
+	} \
+\
+	return result; \
+}
 
 #define access_decl(_name) \
 \

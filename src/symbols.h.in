@@ -11,7 +11,8 @@ lchown
 link
 mkdir
 opendir
-#__xmknod
+mknod
+__xmknod
 access
 rename
 rmdir

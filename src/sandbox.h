@@ -13,9 +13,6 @@
 #include "localdecls.h"
 #include "config.h"
 
-/* Uncomment below to use flock instead of fcntl (POSIX way) to lock/unlock files */
-/* #define USE_FLOCK */
-
 #define LD_PRELOAD_EQ          "LD_PRELOAD="
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"

@@ -34,6 +34,8 @@
 
   Rather use fstat() to get file size in file_length() than lseek().
 
+  Wrap mknod() as well.  Misc cleanups.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 
