@@ -14,6 +14,9 @@
 
   Rename configure.in to configure.ac.
 
+  Fix non-versioned libc's to also prepend '__' to internal symbols by using
+  strong aliases.
+
   28 Nov 2005; Martin Schlemmer <azarah@gentoo.org> configure.in, sandbox.c,
   sandbox_fdutils.c:
 

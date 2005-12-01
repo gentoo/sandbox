@@ -27,7 +27,8 @@ END {
 			# Defualt symbol have '@@' and not '@', so name it by
 			# prepending '__' rather than the symbol version so
 			# that we know what the name is in libsandbox.c ...
-			if (sym_full_names[x] ~ /@@/) {
+			# Also do this for non-versioned libc's ...
+			if (sym_full_names[x] ~ /@@/ || !symbol_array[2]) {
 				sym_real_name = "__" sym_index;
 			} else {
 				sym_real_name = sym_full_names[x];
@@ -54,6 +55,9 @@ END {
 				else
 					printf("symbol_version(%s, %s, %s);\n",
 					       sym_real_name, sym_index, symbol_array[2]);
+			} else {
+				printf("strong_alias(%s, %s);\n", sym_real_name,
+				       sym_index);
 			}
 			
 			printf("\n");

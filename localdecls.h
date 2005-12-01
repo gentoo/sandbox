@@ -47,15 +47,20 @@
 #endif
 
 #if !HAVE_DLVSYM
-# define dlvsym(lib, sym, ver) dlsym(lib, sym)
+# define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif
 
-/* from glibc */
 #if HAVE_DLVSYM
-# define symbol_version(real, name, version) \
-	__asm__ (".symver " #real "," #name "@" #version)
-# define default_symbol_version(real, name, version) \
-	__asm__ (".symver " #real "," #name "@@" #version)
+/* Taken from glibc */
+# define symbol_version(_real, _name, _version) \
+	__asm__ (".symver " #_real "," #_name "@" #_version)
+# define default_symbol_version(_real, _name, _version) \
+	__asm__ (".symver " #_real "," #_name "@@" #_version)
 #endif
+
+/* Taken from glibc */
+# define strong_alias(_name, _aliasname) \
+	extern __typeof (_name) _aliasname __attribute__ ((alias (#_name)));
+
 
 #endif
