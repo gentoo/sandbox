@@ -8,7 +8,27 @@ BEGIN {
 		if ($8 ~ sym_regex) {
 			split($8, symbol_array, /@|@@/);
 
-			SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $8;
+			# Don't add local symbols of versioned libc's
+			if (VERSIONED_LIBC && !symbol_array[2])
+				continue;
+
+			# We have a versioned libc
+			if (symbol_array[2])
+			    	VERSIONED_LIBC = 1;
+
+			ADD = 1;
+			# Check that we do not add duplicates
+			for (x in PROCESSED_SYMBOLS) {
+				if (x == $8) {
+					ADD = 0;
+					break;
+				}
+			}
+			
+			if (ADD) {
+				SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $8;
+				PROCESSED_SYMBOLS[$8] = $8;
+			}
 		}
 	}
 }
