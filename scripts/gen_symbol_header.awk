@@ -13,7 +13,7 @@ BEGIN {
 				continue;
 
 			# We have a versioned libc
-			if (symbol_array[2])
+			if (symbol_array[2] && !VERSIONED_LIBC)
 			    	VERSIONED_LIBC = 1;
 
 			ADD = 1;

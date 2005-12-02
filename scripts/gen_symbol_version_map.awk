@@ -15,8 +15,9 @@ BEGIN {
 			# Handle non-versioned libc's like uClibc ...
 			if (!symbol_array[2])
 				symbol_array[2] = "";
-			else
-				# We have a versioned libc
+			
+			# We have a versioned libc
+			if (symbol_array[2] && !VERSIONED_LIBC)
 				VERSIONED_LIBC = 1;
 
 			ADD = 1;
