@@ -50,7 +50,7 @@ END {
 			# that we know what the name is in libsandbox.c ...
 			# Also do this for non-versioned libc's ...
 			if (sym_full_names[x] ~ /@@/ || !symbol_array[2]) {
-				sym_real_name = "__" sym_index;
+				sym_real_name = sym_index "_DEFAULT";
 			} else {
 				sym_real_name = sym_full_names[x];
 				gsub(/@|\./, "_", sym_real_name);

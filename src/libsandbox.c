@@ -365,8 +365,8 @@ int _name(const char *pathname, mode_t mode) \
 	int result = -1; \
 \
 	if FUNCTION_SANDBOX_SAFE("creat", pathname) { \
-		check_dlsym(__open); \
-		result = true___open(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
+		check_dlsym(open_DEFAULT); \
+		result = true_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
 	} \
 \
 	return result; \
@@ -682,8 +682,8 @@ int _name(const char *pathname, __mode_t mode) \
 	int result = -1; \
 \
 	if FUNCTION_SANDBOX_SAFE("creat64", pathname) { \
-		check_dlsym(__open64); \
-		result = true___open64(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
+		check_dlsym(open64_DEFAULT); \
+		result = true_open64_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
 	} \
 \
 	return result; \
@@ -1245,8 +1245,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
 					"already exists and is not a regular file!");
 			} else {
-				check_dlsym(__open);
-				log_file = true___open(log_path, O_APPEND | O_WRONLY |
+				check_dlsym(open_DEFAULT);
+				log_file = true_open_DEFAULT(log_path, O_APPEND | O_WRONLY |
 						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 						S_IROTH);
 				if (log_file >= 0) {
@@ -1261,8 +1261,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", debug_log_path,
 					"already exists and is not a regular file!");
 			} else {
-				check_dlsym(__open);
-				debug_log_file = true___open(debug_log_path, O_APPEND | O_WRONLY |
+				check_dlsym(open_DEFAULT);
+				debug_log_file = true_open_DEFAULT(debug_log_path, O_APPEND | O_WRONLY |
 						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 						S_IROTH);
 				if (debug_log_file >= 0) {
