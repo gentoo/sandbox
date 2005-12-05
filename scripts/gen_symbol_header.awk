@@ -36,9 +36,9 @@ BEGIN {
 			}
 		}
 
-		sym_regex = "^__" SYMBOLS[x] "(@|$)";
+		sym_regex = "^__" SYMBOLS[x] "(@@|$)";
 		if (($5 == "WEAK") && ($8 ~ sym_regex)) {
-			split($8, symbol_array, /@|@@/);
+			split($8, symbol_array, /@@/);
 			
 			# Don't add local symbols of versioned libc's
 			if (VERSIONED_LIBC && !symbol_array[2])
@@ -118,23 +118,14 @@ END {
 				split(WEAK_SYMBOLS[sym_index], sym_weak_full);
 				
 				for (y in sym_weak_full) {
-					split(sym_weak_full[y], sym_weak_array, /@|@@/);
+					split(sym_weak_full[y], sym_weak_array, /@@/);
 
-					# Make sure for unversioned libc's that the
-					# variable is valid ...
-					if (!symbol_array[2])
-						symbol_array[2] = "";
-					if (!sym_weak_array[2])
-						sym_weak_array[2] = "";
-		
 					# Add weak symbols for libc's like glibc that
 					# have them
-					if ((sym_weak_array[1] == "__" sym_index) &&
-					    (sym_weak_array[2] == symbol_array[2])) {
+					if (sym_weak_array[1] == "__" sym_index)
 						    printf("weak_alias(%s, %s);\n",
 							   sym_real_name,
 							   "__" sym_index);
-					}
 				}
 			}
 			
