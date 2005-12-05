@@ -3,6 +3,11 @@ BEGIN {
 }
 
 {
+	# Unstripped libc's have '.symtab' section as well, and
+	# we should stop processing when we hit that
+	if ($0 ~ "Symbol table '.symtab'")
+		nextfile;
+
 	for (x in SYMBOLS) {
 		sym_regex = "^" SYMBOLS[x] "(@|$)"
 		if ($8 ~ sym_regex) {
