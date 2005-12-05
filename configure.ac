@@ -119,7 +119,7 @@ AC_MSG_CHECKING([libc path])
 echo "int main(void) { return 0; }" > libctest.c
 $CC -Wall -o libctest libctest.c
 LIBC_PATH=`$CC $CFLAGS -Wl,-verbose -o libctest libctest.c 2>&1 | \
-	$AWK '/attempt to open/ { if (($4 ~ /libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}'`
+	$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}'`
 rm -f libctest.c
 if test "$LIBC_PATH"x = x || ! test -r "$LIBC_PATH"; then
 	AC_MSG_ERROR([Unable to determine LIBC PATH])
