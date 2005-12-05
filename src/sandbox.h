@@ -108,7 +108,9 @@ char *gbasename (const char *path);
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
+#ifndef OUTSIDE_LIBSANDBOX
 char *egetcwd(char *, size_t);
+#endif
 
 #endif /* __SANDBOX_H__ */
 

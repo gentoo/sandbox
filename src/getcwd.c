@@ -10,7 +10,6 @@
 
 #include "config.h"
 #include "localdecls.h"
-#include "libsandbox.h"
 
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
@@ -22,9 +21,7 @@ char *egetcwd(char *buf, size_t size)
 	char *tmpbuf;
 
 	__set_errno(0);
-	set_sandbox_off;
 	tmpbuf = getcwd(buf, size);
-	set_sandbox_on;
 	if (tmpbuf)
 		lstat(buf, &st);
 

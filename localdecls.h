@@ -23,6 +23,14 @@
 #  endif
 # endif
 
+#else
+
+#if 0
+# if defined(__FreeBSD__)
+#  define BROKEN_RTLD_NEXT
+# endif
+#endif
+
 #endif
 
 #define GLIBC_MINOR __GLIBC_MINOR__

@@ -25,8 +25,6 @@ libsandbox_la_LDFLAGS = \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
 	libsandbox.c      \
-	libsandbox.h      \
-	getcwd.c          \
 	canonicalize.c    \
 	sandbox_utils.c   \
 	$(LOCAL_INCLUDES)
@@ -36,8 +34,6 @@ sandbox_SOURCES = \
 	sandbox.c         \
 	sandbox.h         \
 	sandbox_utils.c   \
-	libsandbox.h      \
-	getcwd.c          \
 	$(LOCAL_INCLUDES)
 
 libsandbox.c: libsandbox.map symbols.h

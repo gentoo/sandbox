@@ -24,6 +24,7 @@ rmdir
 symlink
 truncate
 unlink
+getcwd
 open64
 creat64
 fopen64

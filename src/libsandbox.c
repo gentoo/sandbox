@@ -676,6 +676,27 @@ int _name(const char *pathname) \
 	return result; \
 }
 
+#define getcwd_decl(_name) \
+\
+extern char *_name(char *, size_t); \
+static char * (*true_ ## _name) (char *, size_t) = NULL; \
+\
+char *_name(char *buf, size_t size) \
+{ \
+	char *result = NULL; \
+\
+	/* Need to disable sandbox, as on non-linux libc's, opendir() is
+	 * used by some getcwd() implementations and resolves to the sandbox
+	 * opendir() wrapper, causing infinit recursion and finially crashes.
+	 */ \
+	sandbox_on = 0; \
+	check_dlsym(_name); \
+	result = true_ ## _name(buf, size); \
+	sandbox_on = 1; \
+\
+	return result; \
+}
+
 #define creat64_decl(_name) \
 \
 extern int _name(const char *, __mode_t); \
@@ -872,6 +893,37 @@ end_loop: \
 /*
  * Internal Functions
  */
+
+char *egetcwd(char *buf, size_t size)
+{
+	struct stat st;
+	char *tmpbuf;
+
+	errno = 0;
+	/* Need to disable sandbox, as on non-linux libc's, opendir() is
+	 * used by some getcwd() implementations and resolves to the sandbox
+	 * opendir() wrapper, causing infinit recursion and finially crashes.
+	 */
+	sandbox_on = 0;
+	check_dlsym(getcwd_DEFAULT);
+	tmpbuf = true_getcwd_DEFAULT(buf, size);
+	sandbox_on = 1;
+	if (tmpbuf)
+		lstat(buf, &st);
+
+	if ((tmpbuf) && (errno == ENOENT)) {
+		/* If lstat() failed with eerror = ENOENT, then its
+		 * possible that we are running on an older kernel
+		 * which had issues with returning invalid paths if
+		 * they got too long.
+		 */
+		free(tmpbuf);
+			
+		return NULL;
+	}
+
+	return tmpbuf;
+}
 
 static void init_context(sbcontext_t * context)
 {
