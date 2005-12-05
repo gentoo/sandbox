@@ -905,13 +905,13 @@ char *egetcwd(char *buf, size_t size)
 	struct stat st;
 	char *tmpbuf;
 
-	errno = 0;
 	/* Need to disable sandbox, as on non-linux libc's, opendir() is
 	 * used by some getcwd() implementations and resolves to the sandbox
 	 * opendir() wrapper, causing infinit recursion and finially crashes.
 	 */
 	sandbox_on = 0;
 	check_dlsym(getcwd_DEFAULT);
+	errno = 0;
 	tmpbuf = true_getcwd_DEFAULT(buf, size);
 	sandbox_on = 1;
 	if (tmpbuf)
