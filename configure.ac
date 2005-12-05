@@ -50,7 +50,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS([ \
 	bzero ftruncate getcwd lchown memmove \
-	mempcpy memset mkdir pathconf realpath \
+	memcpy memset mkdir pathconf realpath \
 	rmdir setenv strcasecmp strchr strdup \
 	strerror strndup strrchr strspn strstr \
 ])
