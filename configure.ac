@@ -57,7 +57,7 @@ AC_CHECK_FUNCS([ \
 
 dnl uClibc doesn't currently provide dlvsym() so lets
 dnl verify the toolchain supports it
-AC_CHECK_LIB(dl, dlvsym,
+AC_CHECK_LIB([dl], [dlvsym],
 	[AC_DEFINE([HAVE_DLVSYM], [1], [libdl supports dlvsym])],
 	[AC_DEFINE([HAVE_DLVSYM], [0], [libdl does not support dlvsym])]
 )
@@ -87,7 +87,10 @@ int main (void)
 {
   return 0;
 }
-], [have_glibc="yes"], [have_glibc="no"])
+],
+	[have_glibc="yes"],
+	[have_glibc="no"]
+)
 if test x"$have_glibc" = xyes ; then
 	AC_MSG_RESULT([yes])
 else
