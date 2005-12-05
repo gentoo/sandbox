@@ -110,6 +110,7 @@ typedef struct {
 
 static sbcontext_t sbcontext;
 static char **cached_env_vars;
+int sandbox_on = 1;
 static int sb_init = 0;
 static int sb_path_size_warning = 0;
 
@@ -1321,6 +1322,7 @@ static int is_sandbox_on()
 	if ((NULL != getenv(ENV_SANDBOX_ON)) &&
 	    ((0 == strncmp(getenv(ENV_SANDBOX_ON), "1", 1)) ||
 	     (0 == strncmp(getenv(ENV_SANDBOX_ON), "yes", 3))) &&
+	    (1 == sandbox_on) &&
 	    (NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
 	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
 		errno = old_errno;
