@@ -2,6 +2,7 @@
  * Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
  * Distributed under the terms of the GNU General Public License, v2 or later 
  * Author: Brad House <brad@mainstreetsoftworks.com>
+ * Author: Martin Schlemmer <azarah@gentoo.org>
  *
  * $Header$
  * 
@@ -164,6 +165,40 @@ long file_length(int fd)
 }
 
 #endif /* OUTSIDE_LIBSANDBOX */
+
+char * gstrndup (const char *str, size_t size)
+{
+	char *new_str = NULL;
+	size_t len;
+
+	if (NULL == str)
+		return NULL;
+
+	/* Check lenght of str without breaching the size limit */
+	for (len = 0; (len < size) && ('\0' != str[len]); len++);
+
+	new_str = malloc (len + 1);
+	if (NULL == new_str)
+		return NULL;
+
+	/* Make sure our string is NULL terminated */
+	new_str[len] = '\0';
+
+	return (char *) memcpy (new_str, str, len);
+}
+
+char *
+gbasename (const char *path)
+{
+	char *new_path = NULL;
+
+	if (NULL == path)
+		return NULL;
+
+	/* Copied from glibc */
+	new_path = strrchr (path, '/');
+	return new_path ? new_path + 1 : (char *) path;
+}
 
 
 // vim:noexpandtab noai:cindent ai

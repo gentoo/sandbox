@@ -4,10 +4,14 @@ lib_LTLIBRARIES = libsandbox.la
 bin_PROGRAMS = sandbox
 
 AM_CPPFLAGS = \
-	-D_GNU_SOURCE -DPIC -fPIC -D_REENTRANT  \
-        -DLIBSANDBOX_PATH=\"$(libdir)\"         \
-        -DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
+	-DPIC -fPIC -D_REENTRANT  \
+	-DLIBSANDBOX_PATH=\"$(libdir)\"         \
+	-DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
 	-I$(top_srcdir) -Wall
+
+if HAVE_GLIBC
+AM_CPPFLAGS += -DHAVE_GLIBC
+endif
 
 LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
@@ -24,14 +28,14 @@ libsandbox_la_SOURCES = \
 	libsandbox.c     \
 	getcwd.c         \
 	canonicalize.c   \
-	sandbox_futils.c \
+	sandbox_utils.c \
 	$(LOCAL_INCLUDES)
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
 sandbox_SOURCES = \
 	sandbox.c        \
 	sandbox.h        \
-	sandbox_futils.c \
+	sandbox_utils.c \
 	getcwd.c         \
 	$(LOCAL_INCLUDES)
 

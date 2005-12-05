@@ -156,7 +156,8 @@ erealpath(const char *name, char *resolved)
 				dest = rpath + dest_offset;
 			}
 
-			dest = mempcpy(dest, start, end - start);
+			memcpy(dest, start, end - start);
+			dest += end - start;
 			*dest = '\0';
 		}
 	}

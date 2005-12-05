@@ -74,6 +74,27 @@ else
 	AC_DEFINE([TRUNCATE_T], [off_t], [truncate arg type])
 fi
 
+dnl Check if we have glibc or clone
+AC_MSG_CHECKING([for glibc])
+AC_TRY_COMPILE([
+#include <features.h>
+], [
+#if !defined(__GLIBC__)
+# error no glibc
+#endif
+
+int main (void)
+{
+  return 0;
+}
+], [have_glibc="yes"], [have_glibc="no"])
+if test x"$have_glibc" = xyes ; then
+	AC_MSG_RESULT([yes])
+else
+	AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([HAVE_GLIBC], [test x"$have_glibc" = xyes])
+
 dnl we need to handle symbols differently based upon their version, 
 dnl but we have to know which symbols the libc supports first
 AC_MSG_CHECKING([libc path])
@@ -109,7 +130,7 @@ AC_ARG_ENABLE([multilib],
 	[enable_multilib="no"]
 )
 
-if test "$enable_multilib"x != xno ; then
+if test x"$enable_multilib" != xno ; then
 	AC_DEFINE_UNQUOTED([SB_HAVE_MULTILIB], [1], [have multilib enabled system])
 fi
 

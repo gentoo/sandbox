@@ -42,6 +42,8 @@ struct sandbox_info_t {
 static int print_debug = 0;
 static int stop_called = 0;
 
+extern char **environ;
+
 int sandbox_setup(struct sandbox_info_t *sandbox_info)
 {
 	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
@@ -296,7 +298,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	} else {
 		/* FIXME: Should probably free this at some stage - more neatness
 		 *        than a real leak that will cause issues. */
-		ld_preload_envvar = strndup(sandbox_info->sandbox_lib,
+		ld_preload_envvar = gstrndup(sandbox_info->sandbox_lib,
 				strlen(sandbox_info->sandbox_lib));
 		if (NULL == ld_preload_envvar)
 			return NULL;

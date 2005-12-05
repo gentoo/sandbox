@@ -38,6 +38,9 @@
 #define open   xxx_open
 #define open64 xxx_open64
 
+#if defined(HAVE_GLIBC)
+# define _GNU_SOURCE
+#endif
 #include <dirent.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -182,7 +185,7 @@ static void *get_dlsym(const char *symname, const char *symver)
 	void *symaddr = NULL;
 
 	if (NULL == libc_handle) {
-#ifdef BROKEN_RTLD_NEXT
+#if defined(BROKEN_RTLD_NEXT) || !defined(RTLD_NEXT)
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
 		if (!libc_handle) {
 			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
@@ -303,7 +306,7 @@ static char *resolve_path(const char *path, int follow_link)
 				 * file '/usr/lib/cf*' ...) */
 				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
 
-				bname = basename(tmp_str2);
+				bname = gbasename(tmp_str2);
 				snprintf((char *)(filtered_path + strlen(filtered_path)),
 					SB_PATH_MAX - strlen(filtered_path), "%s%s",
 					(filtered_path[strlen(filtered_path) - 1] != '/') ? "/" : "",
@@ -946,7 +949,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	pfx_array = malloc(((num_delimiters * 2) + 2) * sizeof(char *));
 	if (NULL == pfx_array)
 		goto error;
-	buffer = strndup(prefixes_env, prefixes_env_length);
+	buffer = gstrndup(prefixes_env, prefixes_env_length);
 	if (NULL == buffer)
 		goto error;
 	buffer_ptr = buffer;

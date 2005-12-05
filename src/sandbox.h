@@ -101,6 +101,11 @@ int is_dir(const char *pathname, int follow_link);
 long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
 
+/* Compat functions for GNU extensions */
+char *gstrndup (const char *str, size_t size);
+/* Same as basename(3), but do not modify path */
+char *gbasename (const char *path);
+
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);
