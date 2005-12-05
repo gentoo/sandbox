@@ -29,22 +29,17 @@
  *
  */
 
-/* Uncomment below to enable the use of strtok_r(). */
-#define REENTRANT_STRTOK 1
-
 /* Uncomment below to enable memory debugging. */
 /* #define SB_MEM_DEBUG 1 */
 
 #define open   xxx_open
 #define open64 xxx_open64
 
-#if !defined(BROKEN_RTLD_NEXT) && defined(HAVE_RTLD_NEXT)
-# define USE_RTLD_NEXT
-#endif
+#include "config.h"
 
 /* Better way would be to only define _GNU_SOURCE when __GLIBC__ is defined,
  * but including features.h and then defining _GNU_SOURCE do not work */
-#if defined(USE_RTLD_NEXT)
+#if defined(HAVE_RTLD_NEXT)
 # define _GNU_SOURCE
 #endif
 #include <dirent.h>
@@ -63,8 +58,11 @@
 #include <unistd.h>
 #include <utime.h>
 
-#include "config.h"
 #include "localdecls.h"
+
+#if !defined(BROKEN_RTLD_NEXT) && defined(HAVE_RTLD_NEXT)
+# define USE_RTLD_NEXT
+#endif
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
@@ -1013,7 +1011,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 		goto error;
 	buffer_ptr = buffer;
 
-#ifdef REENTRANT_STRTOK
+#ifdef HAVE_STRTOK_R
 	token = strtok_r(buffer_ptr, ":", &buffer_ptr);
 #else
 	token = strtok(buffer_ptr, ":");
@@ -1041,7 +1039,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			}
 		}
 
-#ifdef REENTRANT_STRTOK
+#ifdef HAVE_STRTOK_R
 		token = strtok_r(NULL, ":", &buffer_ptr);
 #else
 		token = strtok(NULL, ":");

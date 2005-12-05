@@ -14,9 +14,6 @@ LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 # We need -fexceptions here, else we do not catch exceptions
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
 libsandbox_la_CFLAGS = -fexceptions
-if HAVE_RTLD_NEXT
-libsandbox_la_CFLAGS += -DHAVE_RTLD_NEXT
-endif
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 libsandbox_la_LIBADD = -lc $(LIBDL)

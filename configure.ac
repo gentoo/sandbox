@@ -53,6 +53,7 @@ AC_CHECK_FUNCS([ \
   memcpy memset mkdir pathconf realpath \
   rmdir setenv strcasecmp strchr strdup \
   strerror strndup strrchr strspn strstr \
+  strtok_r \
 ])
 
 dnl Some libc's like those on bsd have dlopen() in libc, and not libdl
@@ -105,7 +106,9 @@ AC_TRY_COMPILE([
   [have_rtld_next="no"]
 )
 AC_MSG_RESULT([$have_rtld_next])
-AM_CONDITIONAL([HAVE_RTLD_NEXT], [test x"$have_rtld_next" = xyes])
+if test x"$have_rtld_next" = xyes ; then
+  AC_DEFINE([HAVE_RTLD_NEXT], [1], [Have RTLD_NEXT enabled libc])
+fi
 
 dnl we need to handle symbols differently based upon their version, 
 dnl but we have to know which symbols the libc supports first
