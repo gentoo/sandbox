@@ -91,29 +91,27 @@ else
 	AC_DEFINE([TRUNCATE_T], [off_t], [truncate arg type])
 fi
 
-dnl Check if we have glibc or clone
-AC_MSG_CHECKING([for glibc])
+dnl Check if libc provides RTLD_NEXT
+AC_MSG_CHECKING([for RTLD_NEXT])
 AC_TRY_COMPILE([
-#include <features.h>
+#define _GNU_SOURCE
+#include <dlfcn.h>
 ], [
-#if !defined(__GLIBC__)
-# error no glibc
+#if !defined(RTLD_NEXT)
+# error no RTLD_NEXT
 #endif
 
-int main (void)
+int
+main (void)
 {
   return 0;
 }
 ],
-	[have_glibc="yes"],
-	[have_glibc="no"]
+	[have_rtld_next="yes"],
+	[have_rtld_next="no"]
 )
-if test x"$have_glibc" = xyes ; then
-	AC_MSG_RESULT([yes])
-else
-	AC_MSG_RESULT([no])
-fi
-AM_CONDITIONAL([HAVE_GLIBC], [test x"$have_glibc" = xyes])
+AC_MSG_RESULT([$have_rtld_next])
+AM_CONDITIONAL([HAVE_RTLD_NEXT], [test x"$have_rtld_next" = xyes])
 
 dnl we need to handle symbols differently based upon their version, 
 dnl but we have to know which symbols the libc supports first

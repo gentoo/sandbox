@@ -38,7 +38,7 @@
 #define open   xxx_open
 #define open64 xxx_open64
 
-#if defined(HAVE_GLIBC)
+#if defined(HAVE_RTLD_NEXT)
 # define _GNU_SOURCE
 #endif
 #include <dirent.h>
