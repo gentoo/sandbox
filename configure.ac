@@ -138,7 +138,7 @@ if test "$LIBC_VERSION"x = x ; then
 fi
 rm -f libctest
 AC_MSG_RESULT([$LIBC_VERSION])
-AC_DEFINE_UNQUOTED([LIBC_VERSION], ["$LIBC_VERSION"], [name of libc to hook into])
+AC_DEFINE_UNQUOTED([LIBC_VERSION], ["$LIBC_VERSION"], [Name of libc to hook into])
 
 dnl check if we have 32bit or 64bit output
 AC_ARG_ENABLE([multilib],
@@ -149,7 +149,7 @@ AC_ARG_ENABLE([multilib],
 )
 
 if test x"$enable_multilib" != xno ; then
-	AC_DEFINE_UNQUOTED([SB_HAVE_MULTILIB], [1], [have multilib enabled system])
+	AC_DEFINE([SB_HAVE_MULTILIB], [1], [Have multilib enabled system])
 fi
 
 AC_OUTPUT([
