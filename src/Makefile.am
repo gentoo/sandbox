@@ -20,7 +20,7 @@ LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 libsandbox_la_CFLAGS = -fexceptions
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
-libsandbox_la_LIBADD = -lc -ldl
+libsandbox_la_LIBADD = -lc $(LIBDL)
 libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map

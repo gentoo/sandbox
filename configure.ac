@@ -55,9 +55,26 @@ AC_CHECK_FUNCS([ \
 	strerror strndup strrchr strspn strstr \
 ])
 
+dnl Some libc's like those on bsd have dlopen() in libc, and not libdl
+AC_CHECK_LIB([dl], [dlopen],
+	[have_libdl="yes"],
+	[have_libdl="no"]
+)
+if test x"$have_libdl" = xyes ; then
+	LIBDL="-ldl"
+	AC_SUBST([LIBDL])
+	DL_LIB="dl"
+else
+	DL_LIB="c"
+	AC_CHECK_LIB([c], [dlopen],
+		[],
+		[AC_MSG_ERROR([Unable to determine library providing dlopen])]
+	)
+fi
+
 dnl uClibc doesn't currently provide dlvsym() so lets
 dnl verify the toolchain supports it
-AC_CHECK_LIB([dl], [dlvsym],
+AC_CHECK_LIB([$DL_LIB], [dlvsym],
 	[AC_DEFINE([HAVE_DLVSYM], [1], [libdl supports dlvsym])],
 	[AC_DEFINE([HAVE_DLVSYM], [0], [libdl does not support dlvsym])]
 )
