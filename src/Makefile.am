@@ -24,18 +24,20 @@ libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
-	libsandbox.c     \
-	getcwd.c         \
-	canonicalize.c   \
-	sandbox_utils.c \
+	libsandbox.c      \
+	libsandbox.h      \
+	getcwd.c          \
+	canonicalize.c    \
+	sandbox_utils.c   \
 	$(LOCAL_INCLUDES)
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
 sandbox_SOURCES = \
-	sandbox.c        \
-	sandbox.h        \
-	sandbox_utils.c \
-	getcwd.c         \
+	sandbox.c         \
+	sandbox.h         \
+	sandbox_utils.c   \
+	libsandbox.h      \
+	getcwd.c          \
 	$(LOCAL_INCLUDES)
 
 libsandbox.c: libsandbox.map symbols.h

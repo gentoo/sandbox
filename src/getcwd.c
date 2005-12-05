@@ -10,20 +10,12 @@
 
 #include "config.h"
 #include "localdecls.h"
+#include "libsandbox.h"
 
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)
 #endif
 
-#if !defined(OUTSIDE_LIBSANDBOX)
-extern int sandbox_on;
-# define set_sandbox_on		sandbox_on = 1
-# define set_sandbox_off	sandbox_on = 0
-#else
-# define set_sandbox_on
-# define set_sandbox_off
-#endif /* OUTSIDE_LIBSANDBOX */
-	
 char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
