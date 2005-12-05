@@ -55,6 +55,8 @@
 /* Taken from glibc */
 # define strong_alias(_name, _aliasname) \
 	extern __typeof (_name) _aliasname __attribute__ ((alias (#_name)));
+# define weak_alias(_name, _aliasname) \
+	extern __typeof (_name) _aliasname __attribute__ ((weak, alias (#_name)));
 
 
 #endif

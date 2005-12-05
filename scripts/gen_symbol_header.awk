@@ -9,7 +9,7 @@ BEGIN {
 		nextfile;
 
 	for (x in SYMBOLS) {
-		sym_regex = "^" SYMBOLS[x] "(@|$)"
+		sym_regex = "^" SYMBOLS[x] "(@|$)";
 		if ($8 ~ sym_regex) {
 			split($8, symbol_array, /@|@@/);
 
@@ -23,8 +23,8 @@ BEGIN {
 
 			ADD = 1;
 			# Check that we do not add duplicates
-			for (x in PROCESSED_SYMBOLS) {
-				if (x == $8) {
+			for (y in PROCESSED_SYMBOLS) {
+				if (y == $8) {
 					ADD = 0;
 					break;
 				}
@@ -32,6 +32,33 @@ BEGIN {
 			
 			if (ADD) {
 				SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $8;
+				PROCESSED_SYMBOLS[$8] = $8;
+			}
+		}
+
+		sym_regex = "^__" SYMBOLS[x] "(@|$)";
+		if (($5 == "WEAK") && ($8 ~ sym_regex)) {
+			split($8, symbol_array, /@|@@/);
+			
+			# Don't add local symbols of versioned libc's
+			if (VERSIONED_LIBC && !symbol_array[2])
+				continue;
+
+			# We have a versioned libc
+			if (symbol_array[2] && !VERSIONED_LIBC)
+			    	VERSIONED_LIBC = 1;
+
+			ADD = 1;
+			# Check that we do not add duplicates
+			for (y in PROCESSED_SYMBOLS) {
+				if (y == $8) {
+					ADD = 0;
+					break;
+				}
+			}
+			
+			if (ADD) {
+				WEAK_SYMBOLS[SYMBOLS[x]] = WEAK_SYMBOLS[SYMBOLS[x]] " " $8;
 				PROCESSED_SYMBOLS[$8] = $8;
 			}
 		}
@@ -85,6 +112,30 @@ END {
 				# For non-versioned libc's we use strong aliases
 				printf("strong_alias(%s, %s);\n", sym_real_name,
 				       sym_index);
+			}
+
+			if (WEAK_SYMBOLS[sym_index]) {
+				split(WEAK_SYMBOLS[sym_index], sym_weak_full);
+				
+				for (y in sym_weak_full) {
+					split(sym_weak_full[y], sym_weak_array, /@|@@/);
+
+					# Make sure for unversioned libc's that the
+					# variable is valid ...
+					if (!symbol_array[2])
+						symbol_array[2] = "";
+					if (!sym_weak_array[2])
+						sym_weak_array[2] = "";
+		
+					# Add weak symbols for libc's like glibc that
+					# have them
+					if ((sym_weak_array[1] == "__" sym_index) &&
+					    (sym_weak_array[2] == symbol_array[2])) {
+						    printf("weak_alias(%s, %s);\n",
+							   sym_real_name,
+							   "__" sym_index);
+					}
+				}
 			}
 			
 			printf("\n");
