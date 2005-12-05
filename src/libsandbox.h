@@ -9,10 +9,11 @@
 #ifndef __LIBSANDBOX_H__
 #define __LIBSANDBOX_H__
 
-#if !defined(OUTSIDE_LIBSANDBOX) && !defined(HAVE_RTLD_NEXT)
-/* Need to disable sandbox, as on non-RTLD_NEXT libc's, opendir()
- * used by some getcwd() implementations resolves to the sandbox
- * opendir() wrapper ... */
+#if !defined(OUTSIDE_LIBSANDBOX)
+/* Need to disable sandbox, as on non-linux libc's, opendir() is
+ * used by some getcwd() implementations and resolves to the sandbox
+ * opendir() wrapper, causing infinit recursion and finially crashes.
+ */
 extern int sandbox_on;
 # define set_sandbox_on		sandbox_on = 1
 # define set_sandbox_off	sandbox_on = 0
