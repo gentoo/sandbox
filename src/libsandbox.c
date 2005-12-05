@@ -38,7 +38,13 @@
 #define open   xxx_open
 #define open64 xxx_open64
 
-#if defined(HAVE_RTLD_NEXT)
+#if !defined(BROKEN_RTLD_NEXT) && defined(HAVE_RTLD_NEXT)
+# define USE_RTLD_NEXT
+#endif
+
+/* Better way would be to only define _GNU_SOURCE when __GLIBC__ is defined,
+ * but including features.h and then defining _GNU_SOURCE do not work */
+#if defined(USE_RTLD_NEXT)
 # define _GNU_SOURCE
 #endif
 #include <dirent.h>
@@ -186,7 +192,7 @@ static void *get_dlsym(const char *symname, const char *symver)
 	void *symaddr = NULL;
 
 	if (NULL == libc_handle) {
-#if defined(BROKEN_RTLD_NEXT) || !defined(RTLD_NEXT)
+#if !defined(USE_RTLD_NEXT)
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
 		if (!libc_handle) {
 			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
