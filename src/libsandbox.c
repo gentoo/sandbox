@@ -554,12 +554,12 @@ static int (*true_ ## _name) (const char *, int, ...) = NULL; \
 int _name(const char *pathname, int flags, ...) \
 { \
 	va_list ap; \
-	mode_t mode = 0; \
+	int mode = 0; \
 	int result = -1; \
 \
 	if (flags & O_CREAT) { \
 		va_start(ap, flags); \
-		mode = va_arg(ap, mode_t); \
+		mode = va_arg(ap, int); \
 		va_end(ap); \
 	} \
 \
@@ -718,12 +718,12 @@ static int (*true_ ## _name) (const char *, int, ...) = NULL; \
 int _name(const char *pathname, int flags, ...) \
 { \
 	va_list ap; \
-	mode_t mode = 0; \
+	int mode = 0; \
 	int result = -1; \
 \
 	if (flags & O_CREAT) { \
 		va_start(ap, flags); \
-		mode = va_arg(ap, mode_t); \
+		mode = va_arg(ap, int); \
 		va_end(ap); \
 	} \
 \
