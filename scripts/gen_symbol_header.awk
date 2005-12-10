@@ -125,7 +125,7 @@ END {
 					if (sym_weak_array[1] == "__" sym_index)
 						    printf("weak_alias(%s, %s);\n",
 							   sym_real_name,
-							   "__" sym_index);
+							   sym_weak_array[1]);
 				}
 			}
 			
