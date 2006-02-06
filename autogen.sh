@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ -d .svn && $1 != -n ]] ; then
+if [[ -d .svn && $1 == -n ]] ; then
 	./scripts/svn2cl.sh
 fi
 
