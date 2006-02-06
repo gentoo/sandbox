@@ -1,6 +1,10 @@
 #!/bin/bash
 
-if [[ -d .svn && $1 == -n ]] ; then
+# Generate Changelog by default if we in svn repository
+if [[ -d .svn && $1 != -n ]] ; then
+	# For some reason svn do not give the full log if we do not
+	# update first ...
+	svn update
 	./scripts/svn2cl.sh
 fi
 
