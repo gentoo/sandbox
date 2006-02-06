@@ -118,7 +118,7 @@ $CC $CFLAGS -Wl,-verbose -o libctest libctest.c &> libctest.log
 cat libctest.log 1>&AS_MESSAGE_LOG_FD
 LIBC_PATH=`$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}' libctest.log`
 rm -f libctest*
-if test "$LIBC_PATH"x = x || ! test -r "$LIBC_PATH"; then
+if test x"$LIBC_PATH" = x || ! test -r "$LIBC_PATH" ; then
   AC_MSG_ERROR([Unable to determine LIBC PATH ($LIBC_PATH)])
 fi
 AC_MSG_RESULT([$LIBC_PATH])
@@ -157,4 +157,3 @@ AC_OUTPUT([
   data/Makefile
   src/Makefile
 ])
-
