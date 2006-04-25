@@ -10,8 +10,11 @@ BEGIN {
 
 	for (x in SYMBOLS) {
 		sym_regex = "^" SYMBOLS[x] "(@|$)";
-		if ($8 ~ sym_regex) {
-			split($8, symbol_array, /@|@@/);
+		# On x86, x86_64 and others, $8 is the symbol name, but on
+		# alpha, its $10, so rather use $NF, as it should be the
+		# last field
+		if ($NF ~ sym_regex) {
+			split($NF, symbol_array, /@|@@/);
 
 			# Don't add local symbols of versioned libc's
 			if (VERSIONED_LIBC && !symbol_array[2])
@@ -24,21 +27,21 @@ BEGIN {
 			ADD = 1;
 			# Check that we do not add duplicates
 			for (y in PROCESSED_SYMBOLS) {
-				if (y == $8) {
+				if (y == $NF) {
 					ADD = 0;
 					break;
 				}
 			}
 			
 			if (ADD) {
-				SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $8;
-				PROCESSED_SYMBOLS[$8] = $8;
+				SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $NF;
+				PROCESSED_SYMBOLS[$NF] = $NF;
 			}
 		}
 
 		sym_regex = "^__" SYMBOLS[x] "(@@|$)";
-		if (($5 == "WEAK") && ($8 ~ sym_regex)) {
-			split($8, symbol_array, /@@/);
+		if (($5 == "WEAK") && ($NF ~ sym_regex)) {
+			split($NF, symbol_array, /@@/);
 			
 			# Don't add local symbols of versioned libc's
 			if (VERSIONED_LIBC && !symbol_array[2])
@@ -51,15 +54,15 @@ BEGIN {
 			ADD = 1;
 			# Check that we do not add duplicates
 			for (y in PROCESSED_SYMBOLS) {
-				if (y == $8) {
+				if (y == $NF) {
 					ADD = 0;
 					break;
 				}
 			}
 			
 			if (ADD) {
-				WEAK_SYMBOLS[SYMBOLS[x]] = WEAK_SYMBOLS[SYMBOLS[x]] " " $8;
-				PROCESSED_SYMBOLS[$8] = $8;
+				WEAK_SYMBOLS[SYMBOLS[x]] = WEAK_SYMBOLS[SYMBOLS[x]] " " $NF;
+				PROCESSED_SYMBOLS[$NF] = $NF;
 			}
 		}
 	}
