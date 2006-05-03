@@ -923,6 +923,7 @@ char *egetcwd(char *buf, size_t size)
 			 * which had issues with returning invalid paths if
 			 * they got too long.
 			 */
+		  	errno = ENAMETOOLONG;
 			free(tmpbuf);
 			return NULL;
 		} else if (errno != 0) {
