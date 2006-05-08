@@ -913,7 +913,15 @@ char *egetcwd(char *buf, size_t size)
 	errno = 0;
 	tmpbuf = true_getcwd_DEFAULT(buf, size);
 	sandbox_on = 1;
-	if (tmpbuf) {
+
+	/* We basically try to figure out if we can trust what getcwd()
+	 * returned.  If one of the following happens kernel/libc side,
+	 * bad things will happen, but not much we can do about it:
+	 *  - Invalid pointer with errno = 0
+	 *  - Truncated path with errno = 0
+	 *  - Whatever I forgot about
+	 */
+	if ((tmpbuf) && (errno == 0)) {
 		old_errno = errno;
 		lstat(buf, &st);
 
@@ -921,29 +929,29 @@ char *egetcwd(char *buf, size_t size)
 			/* If lstat() failed with eerror = ENOENT, then its
 			 * possible that we are running on an older kernel
 			 * which had issues with returning invalid paths if
-			 * they got too long.
+			 * they got too long.  Return with errno = ENAMETOOLONG,
+			 * so that canonicalize() and check_syscall() know
+			 * what the issue is.
 			 */
 		  	errno = ENAMETOOLONG;
 			free(tmpbuf);
 			return NULL;
 		} else if (errno != 0) {
 			/* Not sure if we should quit here, but I guess if
-			 * lstat() fails, getcwd could have messed up.
+			 * lstat() fails, getcwd could have messed up. Not
+			 * sure what to do about errno - use lstat()'s for
+			 * now.
 			 */
 			free(tmpbuf);
 			return NULL;
 		}
 
 		errno = old_errno;
-	}
+	} else if (errno != 0) {
 
-	/* Make sure we do not return garbage if the current libc or kernel's
-	 * getcwd() is buggy.
-	 */
-	if (errno != 0) {
-	  	if (tmpbuf)
-			free(tmpbuf);
-
+		/* Make sure we do not return garbage if the current libc or
+		 * kernel's getcwd() is buggy.
+		 */
 		return NULL;
 	}
 
