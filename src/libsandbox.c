@@ -901,7 +901,7 @@ end_loop: \
 char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
-	char *tmpbuf;
+	char *tmpbuf, *oldbuf = buf;
 	int old_errno;
 
 	/* Need to disable sandbox, as on non-linux libc's, opendir() is
@@ -926,6 +926,10 @@ char *egetcwd(char *buf, size_t size)
 		lstat(buf, &st);
 
 		if (errno == ENOENT) {
+		  	/* If getcwd() allocated the buffer, free it. */
+			if (NULL == oldbuf)
+				free(tmpbuf);
+
 			/* If lstat() failed with eerror = ENOENT, then its
 			 * possible that we are running on an older kernel
 			 * which had issues with returning invalid paths if
@@ -934,15 +938,17 @@ char *egetcwd(char *buf, size_t size)
 			 * what the issue is.
 			 */
 		  	errno = ENAMETOOLONG;
-			free(tmpbuf);
 			return NULL;
 		} else if (errno != 0) {
+		  	/* If getcwd() allocated the buffer, free it. */
+			if (NULL == oldbuf)
+				free(tmpbuf);
+
 			/* Not sure if we should quit here, but I guess if
 			 * lstat() fails, getcwd could have messed up. Not
 			 * sure what to do about errno - use lstat()'s for
 			 * now.
 			 */
-			free(tmpbuf);
 			return NULL;
 		}
 
