@@ -145,7 +145,7 @@ dnl the sed script at the end here looks funny but it's ok ...
 dnl they're m4 escape sequences for left and right brackets
 echo "int main(void) { return 0; }" > libctest.c
 $CC -Wall -o libctest libctest.c
-LIBC_VERSION=`readelf -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
+LIBC_VERSION=`$READELF -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
 rm -f libctest*
 if test "$LIBC_VERSION"x = x ; then
   AC_MSG_ERROR([Unable to determine LIBC VERSION])
