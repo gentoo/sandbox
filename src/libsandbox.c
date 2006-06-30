@@ -1273,7 +1273,7 @@ out:
 static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *file)
 {
 	struct stat log_stat;
-	char buffer[512];
+	char *buffer;
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
 	char *log_path = NULL, *debug_log_path = NULL;
@@ -1325,13 +1325,25 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if (((NULL != log_path) && (1 == access)) ||
 	    ((NULL != debug_log_path) && (1 == debug))) {
+		int bufsize = 0;
+		
 		if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
-			sprintf(buffer, "%s:%*s%s (symlink to %s)\n", func,
-					(int)(10 - strlen(func)), "",
+			bufsize = 32 + strlen(absolute_path) + strlen(resolved_path);
+			buffer = calloc(bufsize, sizeof(char));
+			if (NULL == buffer)
+				goto mem_error;
+			
+			snprintf(buffer, bufsize, "%s:%*s%s (symlink to %s)\n",
+					func, (int)(10 - strlen(func)), "",
 					absolute_path, resolved_path);
 		} else {
-			sprintf(buffer, "%s:%*s%s\n", func,
-					(int)(10 - strlen(func)), "",
+			bufsize = 32 + strlen(absolute_path);
+			buffer = calloc(bufsize, sizeof(char));
+			if (NULL == buffer)
+				goto mem_error;
+			
+			snprintf(buffer, bufsize, "%s:%*s%s\n",
+					func, (int)(10 - strlen(func)), "",
 					absolute_path);
 		}
 		if (1 == access) {
@@ -1366,6 +1378,9 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 				}
 			}
 		}
+	
+		if (NULL != buffer)
+			free (buffer);
 	}
 
 	if (NULL != absolute_path)
@@ -1376,6 +1391,18 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	errno = old_errno;
 
 	return result;
+
+mem_error:
+	EWARN(color, "OUT OF MEMORY", "%s\n", __FUNCTION__);
+	
+	if (NULL != absolute_path)
+		free(absolute_path);
+	if (NULL != resolved_path)
+		free(resolved_path);
+	
+	errno = ENOMEM;
+	
+	return 0;
 
 fp_error:
 	if (NULL != absolute_path)
