@@ -1393,7 +1393,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	return result;
 
 mem_error:
-	EWARN(color, "OUT OF MEMORY", "%s\n", __FUNCTION__);
+	EERROR(color, "OUT OF MEMORY", "%s\n", __FUNCTION__);
 	
 	if (NULL != absolute_path)
 		free(absolute_path);
