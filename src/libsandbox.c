@@ -76,12 +76,12 @@
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
-#define LOG_FMT_FUNC		"FORMAT F: Function called\n"
-#define LOG_FMT_ACCESS		"FORMAT S: Access Status\n"
-#define LOG_FMT_PATH		"FORMAT P: Path as passed to function\n"
-#define LOG_FMT_APATH		"FORMAT A: Absolute Path (not canonical)\n"
-#define LOG_FMT_RPATH		"FORMAT R: Canonical Path\n"
-#define LOG_FMT_CMDLINE		"FORMAT C: Command Line\n"
+#define LOG_FMT_FUNC		"FORMAT: F - Function called\n"
+#define LOG_FMT_ACCESS		"FORMAT: S - Access Status\n"
+#define LOG_FMT_PATH		"FORMAT: P - Path as passed to function\n"
+#define LOG_FMT_APATH		"FORMAT: A - Absolute Path (not canonical)\n"
+#define LOG_FMT_RPATH		"FORMAT: R - Canonical Path\n"
+#define LOG_FMT_CMDLINE		"FORMAT: C - Command Line\n"
 
 /* Macros to check if a function should be executed */
 #define FUNCTION_SANDBOX_SAFE(_func, _path) \
