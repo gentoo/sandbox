@@ -49,6 +49,10 @@
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
 #define ENV_SANDBOX_BEEP       "SANDBOX_BEEP"
 
+#define ENV_SANDBOX_PID        "SANDBOX_PID"
+#define ENV_SANDBOX_ABORT      "SANDBOX_ABORT"
+#define ENV_SANDBOX_INTRACTV   "SANDBOX_INTRACTV"
+
 #define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
 #define SANDBOX_ACTIVE         "armedandready"
 
@@ -105,6 +109,7 @@ int is_file(const char *pathname);
 int is_dir(const char *pathname, int follow_link);
 long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
+bool is_env_on (const char *);
 
 /* Compat functions for GNU extensions */
 char *gstrndup (const char *str, size_t size);

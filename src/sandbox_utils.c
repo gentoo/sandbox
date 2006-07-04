@@ -166,6 +166,16 @@ long file_length(int fd)
 
 #endif /* OUTSIDE_LIBSANDBOX */
 
+bool is_env_on (const char *env)
+{
+	if ((NULL != env) && (NULL != getenv(env)) &&
+	    ((0 == strncasecmp(getenv(env), "1", 1)) ||
+	     (0 == strncasecmp(getenv(env), "yes", 3))))
+		return true;
+		
+	return false;
+}
+
 char * gstrndup (const char *str, size_t size)
 {
 	char *new_str = NULL;
