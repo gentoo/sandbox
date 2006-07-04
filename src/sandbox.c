@@ -267,7 +267,7 @@ int sandbox_setenv(char **env, const char *name, const char *val) {
 
 /* We setup the environment child side only to prevent issues with
  * setting LD_PRELOAD parent side */
-char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
+char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 {
 	int env_size = 0;
 	int have_ld_preload = 0;
@@ -337,6 +337,9 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
 	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG,
 			sandbox_info->sandbox_debug_log);
+	/* Is this an interactive session? */
+	if (interactive)
+		sandbox_setenv(new_environ, ENV_SANDBOX_INTRACTV, "1");
 	/* Just set the these if not already set so that is_env_on() work */
 	if (!getenv(ENV_SANDBOX_VERBOSE))
 		sandbox_setenv(new_environ, ENV_SANDBOX_VERBOSE, "1");
@@ -481,7 +484,7 @@ int main(int argc, char **argv)
 		printf("Setting up the required environment variables.\n");
 
 	/* Setup the child environment stuff */
-	sandbox_environ = sandbox_setup_environ(&sandbox_info);
+	sandbox_environ = sandbox_setup_environ(&sandbox_info, print_debug);
 	if (NULL == sandbox_environ) {
 		perror("sandbox:  Out of memory (environ)");
 		exit(EXIT_FAILURE);
