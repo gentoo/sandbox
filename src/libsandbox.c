@@ -73,6 +73,15 @@
 
 #include "sandbox.h"
 
+#define LOG_VERSION			"1.0"
+#define LOG_STRING			"VERSION " LOG_VERSION "\n"
+#define LOG_FMT_FUNC		"FORMAT F: Function called\n"
+#define LOG_FMT_ACCESS		"FORMAT S: Access Status\n"
+#define LOG_FMT_PATH		"FORMAT P: Path as passed to function\n"
+#define LOG_FMT_APATH		"FORMAT A: Absolute Path (not canonical)\n"
+#define LOG_FMT_RPATH		"FORMAT R: Canonical Path\n"
+#define LOG_FMT_CMDLINE		"FORMAT C: Command Line\n"
+
 /* Macros to check if a function should be executed */
 #define FUNCTION_SANDBOX_SAFE(_func, _path) \
 	((0 == is_sandbox_on()) || (1 == before_syscall(_func, _path)))
@@ -124,6 +133,10 @@ void __attribute__ ((destructor)) libsb_fini(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static char *resolve_path(const char *, int);
+/* From procps */
+static char** file2strvec(const char *, const char *);
+static int write_logfile(const char *, const char *, const char *,
+						 const char *, const char *, bool, bool);
 static int check_prefixes(char **, int, const char *);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
@@ -964,6 +977,159 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
+/* From procps */
+static char** file2strvec(const char *directory, const char *what)
+{
+	char buf[2048];					/* read buf bytes at a time */
+	char *p, *rbuf = 0, *endbuf, **q, **ret;
+	int fd, tot = 0, n, c, end_of_file = 0;
+	int align;
+
+	sprintf(buf, "%s/%s", directory, what);
+	check_dlsym(open_DEFAULT);
+	fd = true_open_DEFAULT(buf, O_RDONLY, 0);
+	if (fd==-1)
+		return NULL;
+
+	/* read whole file into a memory buffer, allocating as we go */
+	while ((n = read(fd, buf, sizeof(buf - 1))) > 0) {
+		if (n < (int)(sizeof(buf - 1)))
+			    end_of_file = 1;
+		if (n == 0 && rbuf == 0)
+			return NULL;				/* process died between our open and read */
+		if (n < 0) {
+			if (rbuf)
+				free(rbuf);
+			return NULL;				/* read error */
+		}
+		if (end_of_file && buf[n - 1])		/* last read char not null */
+			buf[n++] = '\0';			/* so append null-terminator */
+		rbuf = realloc(rbuf, tot + n);		/* allocate more memory */
+		if (NULL == rbuf) {
+			errno = ENOMEM;
+			return NULL;
+		}
+		memcpy(rbuf + tot, buf, n);		/* copy buffer into it */
+		tot += n;						/* increment total byte ctr */
+		if (end_of_file)
+			break;
+	}
+	close(fd);
+	if (n <= 0 && !end_of_file) {
+		if (rbuf)
+			free(rbuf);
+		return NULL;					/* read error */
+	}
+	endbuf = rbuf + tot;					/* count space for pointers */
+	align = (sizeof(char*) - 1) - ((tot + sizeof(char*) - 1) & (sizeof(char*) - 1));
+	for (c = 0, p = rbuf; p < endbuf; p++)
+    		if (!*p)
+			c += sizeof(char*);
+	c += sizeof(char*);					/* one extra for NULL term */
+
+	rbuf = realloc(rbuf, tot + c + align);	/* make room for ptrs AT END */
+	if (NULL == rbuf) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	endbuf = rbuf + tot;					/* addr just past data buf */
+	q = ret = (char**) (endbuf+align);		/* ==> free(*ret) to dealloc */
+	*q++ = p = rbuf;					/* point ptrs to the strings */
+	endbuf--;							/* do not traverse final NUL */
+	while (++p < endbuf) 
+		if (!*p)						/* NUL char implies that */
+			*q++ = p+1;				/* next string -> next char */
+
+	*q = 0;							/* null ptr list terminator */
+	return ret;
+}
+
+static int write_logfile(const char *logfile, const char *func, const char *path,
+						 const char *apath, const char *rpath, bool access,
+						 bool color)
+{
+	struct stat log_stat;
+	int stat_ret;
+	int logfd;
+	
+	stat_ret = lstat(logfile, &log_stat);
+	if ((0 == stat_ret) &&
+	    (0 == S_ISREG(log_stat.st_mode))) {
+		EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
+			"already exists and is not a regular file!");
+	} else {
+		check_dlsym(open_DEFAULT);
+		logfd = true_open_DEFAULT(logfile, O_APPEND | O_WRONLY |
+				O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
+				S_IROTH);
+		if (logfd >= 0) {
+			char **cmdline = NULL;
+			
+			if (0 != stat_ret) {
+				write(logfd, LOG_STRING, strlen(LOG_STRING));
+				write(logfd, LOG_FMT_FUNC, strlen(LOG_FMT_FUNC));
+				write(logfd, LOG_FMT_ACCESS, strlen(LOG_FMT_ACCESS));
+				write(logfd, LOG_FMT_PATH, strlen(LOG_FMT_PATH));
+				write(logfd, LOG_FMT_APATH, strlen(LOG_FMT_APATH));
+				write(logfd, LOG_FMT_RPATH, strlen(LOG_FMT_RPATH));
+				write(logfd, LOG_FMT_CMDLINE, strlen(LOG_FMT_CMDLINE));
+				write(logfd, "\n", 1);
+			} else {
+				/* Already have data in the log, so add a newline to space the
+				 * log entries.
+				 */
+				write(logfd, "\n", 1);
+			}
+			
+			write(logfd, "F: ", 3);
+			write(logfd, func, strlen(func));
+			write(logfd, "\n", 1);
+			write(logfd, "S: ", 3);
+			if (access)
+				write(logfd, "allow", 5);
+			else
+				write(logfd, "deny", 4);
+			write(logfd, "\n", 1);
+			write(logfd, "P: ", 3);
+			write(logfd, path, strlen(path));
+			write(logfd, "\n", 1);
+			write(logfd, "A: ", 3);
+			write(logfd, apath, strlen(apath));
+			write(logfd, "\n", 1);
+			write(logfd, "R: ", 3);
+			write(logfd, rpath, strlen(rpath));
+			write(logfd, "\n", 1);
+			
+			cmdline = file2strvec("/proc/self", "cmdline");
+			if (NULL != cmdline) {
+				int i = 0;
+				
+				write(logfd, "C: ", 3);
+				while (NULL != cmdline[i]) {
+					write(logfd, cmdline[i], strlen(cmdline[i]));
+					if (NULL != cmdline[i + 1])
+						write(logfd, " ", 1);
+					i++;
+				}
+				write(logfd, "\n", 1);
+				
+				free(*cmdline);
+			} else if (ENOMEM == errno) {
+				EERROR(color, "OUT OF MEMORY", " %s\n", __FUNCTION__);
+				return -1;
+			}
+				
+			
+			close(logfd);
+		} else {
+			EERROR(color, "OPEN LOG FILE", " %s\n", logfile);
+			return -1;
+		}
+	}
+	
+	return 0;
+}
+
 static void init_context(sbcontext_t * context)
 {
 	context->show_access_violation = 1;
@@ -1272,23 +1438,20 @@ out:
 
 static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *file)
 {
-	struct stat log_stat;
-	char *buffer;
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
 	char *log_path = NULL, *debug_log_path = NULL;
 	int old_errno = errno;
 	int result = 1;
-	int log_file = 0, debug_log_file = 0;
 	int access = 0, debug = 0, verbose = 1;
 	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
 
 	absolute_path = resolve_path(file, 0);
 	if (NULL == absolute_path)
-		goto fp_error;
+		goto error;
 	resolved_path = resolve_path(file, 1);
 	if (NULL == resolved_path)
-		goto fp_error;
+		goto error;
 
 	log_path = getenv(ENV_SANDBOX_LOG);
 	if (NULL != getenv(ENV_SANDBOX_DEBUG)) {
@@ -1325,62 +1488,23 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if (((NULL != log_path) && (1 == access)) ||
 	    ((NULL != debug_log_path) && (1 == debug))) {
-		int bufsize = 0;
-		
-		if (0 != strncmp(absolute_path, resolved_path, strlen(absolute_path))) {
-			bufsize = 32 + strlen(absolute_path) + strlen(resolved_path);
-			buffer = calloc(bufsize, sizeof(char));
-			if (NULL == buffer)
-				goto mem_error;
-			
-			snprintf(buffer, bufsize, "%s:%*s%s (symlink to %s)\n",
-					func, (int)(10 - strlen(func)), "",
-					absolute_path, resolved_path);
-		} else {
-			bufsize = 32 + strlen(absolute_path);
-			buffer = calloc(bufsize, sizeof(char));
-			if (NULL == buffer)
-				goto mem_error;
-			
-			snprintf(buffer, bufsize, "%s:%*s%s\n",
-					func, (int)(10 - strlen(func)), "",
-					absolute_path);
-		}
 		if (1 == access) {
-			if ((0 == lstat(log_path, &log_stat)) &&
-			    (0 == S_ISREG(log_stat.st_mode))) {
-				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", log_path,
-					"already exists and is not a regular file!");
-			} else {
-				check_dlsym(open_DEFAULT);
-				log_file = true_open_DEFAULT(log_path, O_APPEND | O_WRONLY |
-						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
-						S_IROTH);
-				if (log_file >= 0) {
-					write(log_file, buffer, strlen(buffer));
-					close(log_file);
-				}
+			if (-1 == write_logfile(log_path, func, file, absolute_path,
+									resolved_path, (access == 1) ? 0 : 1,
+									color)) {
+				if (ENOMEM == errno)
+					goto error;
 			}
 		} 
+	
 		if (1 == debug) {
-			if ((0 == lstat(debug_log_path, &log_stat)) &&
-			    (0 == S_ISREG(log_stat.st_mode))) {
-				EERROR(color, "SECURITY BREACH", "  '%s' %s\n", debug_log_path,
-					"already exists and is not a regular file!");
-			} else {
-				check_dlsym(open_DEFAULT);
-				debug_log_file = true_open_DEFAULT(debug_log_path, O_APPEND | O_WRONLY |
-						O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
-						S_IROTH);
-				if (debug_log_file >= 0) {
-					write(debug_log_file, buffer, strlen(buffer));
-					close(debug_log_file);
-				}
+			if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
+									resolved_path, (access == 1) ? 0 : 1,
+									color)) {
+				if (ENOMEM == errno)
+					goto error;
 			}
 		}
-	
-		if (NULL != buffer)
-			free (buffer);
 	}
 
 	if (NULL != absolute_path)
@@ -1392,19 +1516,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	return result;
 
-mem_error:
-	EERROR(color, "OUT OF MEMORY", "%s\n", __FUNCTION__);
-	
-	if (NULL != absolute_path)
-		free(absolute_path);
-	if (NULL != resolved_path)
-		free(resolved_path);
-	
-	errno = ENOMEM;
-	
-	return 0;
-
-fp_error:
+error:
 	if (NULL != absolute_path)
 		free(absolute_path);
 	if (NULL != resolved_path)

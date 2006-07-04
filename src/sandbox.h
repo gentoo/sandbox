@@ -87,6 +87,11 @@
 		errno = old_errno; \
 	} while (0)
 
+typedef enum {
+	false,
+	true
+} bool;
+
 void get_sandbox_lib(char *path);
 #ifdef OUTSIDE_LIBSANDBOX
 void get_sandbox_rc(char *path);
