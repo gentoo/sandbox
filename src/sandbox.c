@@ -130,7 +130,7 @@ int print_sandbox_log(char *sandbox_log)
 	read(sandbox_log_file, buffer, len);
 	close(sandbox_log_file);
 
-	color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
+	color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 
 	EERROR(color,
 	       "--------------------------- ACCESS VIOLATION SUMMARY ---------------------------",
@@ -337,6 +337,13 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
 	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG,
 			sandbox_info->sandbox_debug_log);
+	/* Just set the these if not already set so that is_env_on() work */
+	if (!getenv(ENV_SANDBOX_VERBOSE))
+		sandbox_setenv(new_environ, ENV_SANDBOX_VERBOSE, "1");
+	if (!getenv(ENV_SANDBOX_DEBUG))
+		sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG, "0");
+	if (!getenv(ENV_NOCOLOR))
+		sandbox_setenv(new_environ, ENV_NOCOLOR, "0");
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (1 != have_ld_preload)
 		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);

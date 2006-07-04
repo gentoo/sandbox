@@ -33,6 +33,8 @@
 
 #define ENV_BASH_ENV           "BASH_ENV"
 
+#define ENV_NOCOLOR            "NOCOLOR"
+
 #define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
 #define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"
 
@@ -110,6 +112,7 @@ int is_dir(const char *pathname, int follow_link);
 long file_length(int fd);
 #endif /* OUTSIDE_LIBSANDBOX */
 bool is_env_on (const char *);
+bool is_env_off (const char *);
 
 /* Compat functions for GNU extensions */
 char *gstrndup (const char *str, size_t size);

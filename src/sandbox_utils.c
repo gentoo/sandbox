@@ -170,7 +170,19 @@ bool is_env_on (const char *env)
 {
 	if ((NULL != env) && (NULL != getenv(env)) &&
 	    ((0 == strncasecmp(getenv(env), "1", 1)) ||
+	     (0 == strncasecmp(getenv(env), "true", 4)) ||
 	     (0 == strncasecmp(getenv(env), "yes", 3))))
+		return true;
+		
+	return false;
+}
+
+bool is_env_off (const char *env)
+{
+	if ((NULL != env) && (NULL != getenv(env)) &&
+	    ((0 == strncasecmp(getenv(env), "0", 1)) ||
+	     (0 == strncasecmp(getenv(env), "false", 5)) ||
+	     (0 == strncasecmp(getenv(env), "no", 2))))
 		return true;
 		
 	return false;

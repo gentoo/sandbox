@@ -1445,7 +1445,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int old_errno = errno;
 	int result = 1;
 	int access = 0, debug = 0, verbose = 1;
-	int color = ((getenv("NOCOLOR") != NULL) ? 0 : 1);
+	int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 
 	absolute_path = resolve_path(file, 0);
 	if (NULL == absolute_path)
@@ -1455,18 +1455,13 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 		goto error;
 
 	log_path = getenv(ENV_SANDBOX_LOG);
-	if (NULL != getenv(ENV_SANDBOX_DEBUG)) {
-		if ((0 == strncasecmp(getenv(ENV_SANDBOX_DEBUG), "1", 1)) ||
-		    (0 == strncasecmp(getenv(ENV_SANDBOX_DEBUG), "yes", 3))) {
-			debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
-			debug = 1;
-		}
+	if (is_env_on(ENV_SANDBOX_DEBUG)) {
+		debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
+		debug = 1;
 	}
 
-	if (NULL != getenv(ENV_SANDBOX_VERBOSE)) {
-		if ((0 == strncasecmp(getenv(ENV_SANDBOX_VERBOSE), "0", 1)) ||
-		    (0 == strncasecmp(getenv(ENV_SANDBOX_VERBOSE), "no", 2)))
-			verbose = 0;
+	if (is_env_off(ENV_SANDBOX_VERBOSE)) {
+		verbose = 0;
 	}
 
 	result = check_access(sbcontext, func, absolute_path, resolved_path);
