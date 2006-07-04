@@ -1482,24 +1482,21 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	if ((0 == result) && (1 == sbcontext->show_access_violation))
 		access = 1;
 
-	if (((NULL != log_path) && (1 == access)) ||
-	    ((NULL != debug_log_path) && (1 == debug))) {
-		if (1 == access) {
-			if (-1 == write_logfile(log_path, func, file, absolute_path,
-									resolved_path, (access == 1) ? 0 : 1,
-									color)) {
-				if (ENOMEM == errno)
-					goto error;
-			}
-		} 
+	if ((NULL != log_path) && (1 == access)) {
+		if (-1 == write_logfile(log_path, func, file, absolute_path,
+								resolved_path, (access == 1) ? 0 : 1,
+								color)) {
+			if (ENOMEM == errno)
+				goto error;
+		}
+	} 
 	
-		if (1 == debug) {
-			if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
-									resolved_path, (access == 1) ? 0 : 1,
-									color)) {
-				if (ENOMEM == errno)
-					goto error;
-			}
+	if ((NULL != debug_log_path) && (1 == debug)) {
+		if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
+								resolved_path, (access == 1) ? 0 : 1,
+								color)) {
+			if (ENOMEM == errno)
+				goto error;
 		}
 	}
 
