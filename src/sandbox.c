@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -41,6 +42,8 @@ struct sandbox_info_t {
 
 static int print_debug = 0;
 static int stop_called = 0;
+
+volatile static pid_t child_pid = 0;
 
 extern char **environ;
 
@@ -161,6 +164,9 @@ void stop(int signum)
 		stop_called = 1;
 		printf("sandbox:  Caught signal %d in pid %d\n",
 		       signum, getpid());
+		
+		if ((SIGUSR1 == signum) && (0 != child_pid))
+			kill(child_pid, SIGKILL);
 	} else {
 		fprintf(stderr,
 			"sandbox:  Signal already caught and busy still cleaning up!\n");
@@ -272,14 +278,17 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	char sandbox_predict_envvar[SB_BUF_LEN];
 	char *ld_preload_envvar = NULL;
 	char *orig_ld_preload_envvar = NULL;
+	char sb_pid[64];
 
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
 	unsetenv(ENV_SANDBOX_ON);
+	unsetenv(ENV_SANDBOX_PID);
 	unsetenv(ENV_SANDBOX_LIB);
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
+	unsetenv(ENV_SANDBOX_ACTIVE);
 	
 	if (NULL != getenv(ENV_LD_PRELOAD)) {
 		have_ld_preload = 1;
@@ -317,9 +326,12 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 	if (NULL == new_environ)
 		return NULL;
 
+	snprintf(sb_pid, sizeof(sb_pid), "%i", getpid());
+	
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
 	sandbox_setenv(new_environ, ENV_SANDBOX_ON, "1");
+	sandbox_setenv(new_environ, ENV_SANDBOX_PID, sb_pid);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
 	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
 	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
@@ -382,22 +394,21 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info)
 
 int spawn_shell(char *argv_bash[], char *env[], int debug)
 {
-	int pid;
 	int status = 0;
 	int ret = 0;
 
-	pid = fork();
+	child_pid = fork();
 
 	/* Child's process */
-	if (0 == pid) {
+	if (0 == child_pid) {
 		execve(argv_bash[0], argv_bash, env);
 		return 0;
-	} else if (pid < 0) {
+	} else if (child_pid < 0) {
 		if (debug)
 			fprintf(stderr, "Process failed to spawn!\n");
 		return 0;
 	}
-	ret = waitpid(pid, &status, 0);
+	ret = waitpid(child_pid, &status, 0);
 	if ((-1 == ret) || (status > 0)) {
 		if (debug)
 			fprintf(stderr, "Process returned with failed exit status!\n");
@@ -510,6 +521,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, &stop);
 	signal(SIGQUIT, &stop);
 	signal(SIGTERM, &stop);
+	signal(SIGUSR1, &stop);
 
 	/* STARTING PROTECTED ENVIRONMENT */
 	if (print_debug) {

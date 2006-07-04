@@ -55,6 +55,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <signal.h>
 #include <unistd.h>
 #include <utime.h>
 
@@ -1667,6 +1668,9 @@ static int before_syscall(const char *func, const char *file)
 	errno = old_errno;
 
 	if (0 == result) {
+		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))
+			kill(atoi(getenv(ENV_SANDBOX_PID)), SIGUSR1);
+
 		errno = EACCES;
 	}
 
