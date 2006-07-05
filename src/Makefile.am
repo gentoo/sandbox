@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 	-DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
 	-I$(top_srcdir) -Wall
 
+INCLUDES = -I$(top_srcdir)/librcutil/include
 LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
 # We need -fexceptions here, else we do not catch exceptions
@@ -27,6 +28,7 @@ libsandbox_la_SOURCES = \
 	$(LOCAL_INCLUDES)
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
+sandbox_LDADD = $(top_builddir)/librcutil/librcutil.la
 sandbox_SOURCES = \
 	sandbox.c         \
 	sandbox.h         \

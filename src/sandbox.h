@@ -12,6 +12,7 @@
 
 #include "localdecls.h"
 #include "config.h"
+#include "rcscripts/rctypes.h"
 
 #define LD_PRELOAD_EQ          "LD_PRELOAD="
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
@@ -93,37 +94,29 @@
 		errno = old_errno; \
 	} while (0)
 
-typedef enum {
-	false,
-	true
-} bool;
-
 void get_sandbox_lib(char *path);
 #ifdef OUTSIDE_LIBSANDBOX
 void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path);
 void get_sandbox_debug_log(char *path);
 int get_tmp_dir(char *path);
-#endif /* OUTSIDE_LIBSANDBOX */
-int exists(const char *pathname);
-#ifdef OUTSIDE_LIBSANDBOX
-int is_file(const char *pathname);
-int is_dir(const char *pathname, int follow_link);
-long file_length(int fd);
+long file_length(int);
 #endif /* OUTSIDE_LIBSANDBOX */
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 
+#ifndef OUTSIDE_LIBSANDBOX
 /* Compat functions for GNU extensions */
 char *gstrndup (const char *str, size_t size);
 /* Same as basename(3), but do not modify path */
 char *gbasename (const char *path);
+#endif /* !OUTSIDE_LIBSANDBOX */
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 #ifndef OUTSIDE_LIBSANDBOX
 char *egetcwd(char *, size_t);
-#endif
+#endif /* !OUTSIDE_LIBSANDBOX */
 
 #endif /* __SANDBOX_H__ */
 

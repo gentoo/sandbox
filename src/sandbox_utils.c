@@ -94,64 +94,6 @@ int get_tmp_dir(char *path)
 	return 0;
 }
 
-#endif /* OUTSIDE_LIBSANDBOX */
-
-int exists(const char *pathname)
-{
-	struct stat buf;
-	int retval;
-
-	if ((NULL == pathname) || (0 == strlen(pathname)))
-		return 0;
-
-	retval = lstat(pathname, &buf);
-	if (-1 != retval)
-		return 1;
-	/* Some or other error occurred */
-	if (ENOENT != errno)
-		return -1;
-
-	return 0;
-}
-
-#ifdef OUTSIDE_LIBSANDBOX
-
-int is_file(const char *pathname)
-{
-	struct stat buf;
-	int retval;
-
-	if ((NULL == pathname) || (0 == strlen(pathname)))
-		return 0;
-
-	retval = lstat(pathname, &buf);
-	if ((-1 != retval) && (S_ISREG(buf.st_mode)))
-		return 1;
-	/* Some or other error occurred */
-	if ((-1 == retval) && (ENOENT != errno))
-		return -1;
-
-	return 0;
-}
-
-int is_dir(const char *pathname, int follow_link)
-{
-	struct stat buf;
-	int retval;
-
-	if ((NULL == pathname) || (0 == strlen(pathname)))
-		return 0;
-
-	retval = follow_link ? stat(pathname, &buf) : lstat(pathname, &buf);
-	if ((-1 != retval) && (S_ISDIR(buf.st_mode)))
-		return 1;
-	/* Some or other error occurred */
-	if ((-1 == retval) && (ENOENT != errno))
-		return -1;
-
-	return 0;
-}
-
 long file_length(int fd)
 {
 	struct stat st;
@@ -172,9 +114,9 @@ bool is_env_on (const char *env)
 	    ((0 == strncasecmp(getenv(env), "1", 1)) ||
 	     (0 == strncasecmp(getenv(env), "true", 4)) ||
 	     (0 == strncasecmp(getenv(env), "yes", 3))))
-		return true;
+		return TRUE;
 		
-	return false;
+	return FALSE;
 }
 
 bool is_env_off (const char *env)
@@ -183,10 +125,12 @@ bool is_env_off (const char *env)
 	    ((0 == strncasecmp(getenv(env), "0", 1)) ||
 	     (0 == strncasecmp(getenv(env), "false", 5)) ||
 	     (0 == strncasecmp(getenv(env), "no", 2))))
-		return true;
+		return TRUE;
 		
-	return false;
+	return FALSE;
 }
+
+#ifndef OUTSIDE_LIBSANDBOX
 
 char * gstrndup (const char *str, size_t size)
 {
@@ -222,5 +166,6 @@ gbasename (const char *path)
 	return new_path ? new_path + 1 : (char *) path;
 }
 
+#endif /* !OUTSIDE_LIBSANDBOX */
 
 // vim:noexpandtab noai:cindent ai
