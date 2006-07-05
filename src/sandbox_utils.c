@@ -29,7 +29,11 @@ void get_sandbox_lib(char *path)
 	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 #else
 	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
+# ifdef OUTSIDE_LIBSANDBOX
+	if (0 >= rc_file_exists(path)) {
+# else
 	if (0 >= exists(path)) {
+# endif
 		snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 	}
 #endif
@@ -131,6 +135,24 @@ bool is_env_off (const char *env)
 }
 
 #ifndef OUTSIDE_LIBSANDBOX
+
+int exists(const char *pathname)
+{
+	struct stat buf;
+	int retval;
+
+	if ((NULL == pathname) || (0 == strlen(pathname)))
+		return 0;
+
+	retval = lstat(pathname, &buf);
+	if (-1 != retval)
+		return 1;
+	/* Some or other error occurred */
+	if (ENOENT != errno)
+		return -1;
+
+	return 0;
+}
 
 char * gstrndup (const char *str, size_t size)
 {

@@ -106,6 +106,7 @@ bool is_env_on (const char *);
 bool is_env_off (const char *);
 
 #ifndef OUTSIDE_LIBSANDBOX
+int exists(const char *pathname);
 /* Compat functions for GNU extensions */
 char *gstrndup (const char *str, size_t size);
 /* Same as basename(3), but do not modify path */
