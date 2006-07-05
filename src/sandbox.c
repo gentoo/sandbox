@@ -364,7 +364,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	if (!getenv(ENV_SANDBOX_DEBUG))
 		sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG, "0");
 	if (!getenv(ENV_NOCOLOR))
-		sandbox_setenv(new_environ, ENV_NOCOLOR, "0");
+		sandbox_setenv(new_environ, ENV_NOCOLOR, "no");
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (1 != have_ld_preload)
 		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
