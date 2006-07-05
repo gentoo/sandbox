@@ -164,9 +164,27 @@ void stop(int signum)
 		stop_called = 1;
 		printf("sandbox:  Caught signal %d in pid %d\n",
 		       signum, getpid());
-		
-		if ((SIGUSR1 == signum) && (0 != child_pid))
-			kill(child_pid, SIGKILL);
+	} else {
+		fprintf(stderr,
+			"sandbox:  Signal already caught and busy still cleaning up!\n");
+	}
+}
+
+void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
+{
+	if (0 == stop_called) {
+		stop_called = 1;
+		printf("sandbox:  Caught signal %d in pid %d\n",
+		       signum, getpid());
+
+		/* FIXME: This is really bad form, as we should kill the whole process
+		 *        tree, but currently that is too much work and not worth the
+		 *        effort.  Thus we only kill the calling process and our child
+		 *        for now.
+		 */		
+		if (siginfo->si_pid > 0)
+			kill(siginfo->si_pid, SIGKILL);
+		kill(child_pid, SIGKILL);
 	} else {
 		fprintf(stderr,
 			"sandbox:  Signal already caught and busy still cleaning up!\n");
@@ -430,6 +448,8 @@ int spawn_shell(char *argv_bash[], char *env[], int debug)
 
 int main(int argc, char **argv)
 {
+	struct sigaction act_new;
+    
 	int i = 0, success = 1;
 	int sandbox_log_presence = 0;
 	long len;
@@ -531,7 +551,10 @@ int main(int argc, char **argv)
 	signal(SIGINT, &stop);
 	signal(SIGQUIT, &stop);
 	signal(SIGTERM, &stop);
-	signal(SIGUSR1, &stop);
+	act_new.sa_sigaction = usr1_handler;
+	sigemptyset (&act_new.sa_mask);
+	act_new.sa_flags = SA_SIGINFO | SA_RESTART;
+	sigaction (SIGUSR1, &act_new, NULL);
 
 	/* STARTING PROTECTED ENVIRONMENT */
 	if (print_debug) {
