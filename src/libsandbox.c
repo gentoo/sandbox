@@ -1056,7 +1056,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	stat_ret = lstat(logfile, &log_stat);
 	if ((0 == stat_ret) &&
 	    (0 == S_ISREG(log_stat.st_mode))) {
-		EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
+		SB_EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
 		abort();
 	} else {
@@ -1117,14 +1117,14 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 				
 				free(*cmdline);
 			} else if (ENOMEM == errno) {
-				EERROR(color, "OUT OF MEMORY", " %s\n", __FUNCTION__);
+				SB_EERROR(color, "OUT OF MEMORY", " %s\n", __FUNCTION__);
 				return -1;
 			}
 				
 			
 			close(logfd);
 		} else {
-			EERROR(color, "OPEN LOG FILE", " %s\n", logfile);
+			SB_EERROR(color, "OPEN LOG FILE", " %s\n", logfile);
 			return -1;
 		}
 	}
@@ -1469,13 +1469,13 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if (1 == verbose) {
 		if ((0 == result) && (1 == sbcontext->show_access_violation)) {
-			EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
+			SB_EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
-			EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
+			SB_EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
-			EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
+			SB_EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		}
 	}
@@ -1520,7 +1520,7 @@ error:
 	 * function handle it (see bug #94630 and #21766 for more info) */
 	if (ENAMETOOLONG == errno) {
 		if (0 == sb_path_size_warning) {
-			EWARN(color, "PATH LENGTH", "  %s:%*s%s\n",
+			SB_EWARN(color, "PATH LENGTH", "  %s:%*s%s\n",
 			      func, (int)(10 - strlen(func)), "", file);
 			sb_path_size_warning = 1;
 		}

@@ -132,14 +132,14 @@ int print_sandbox_log(char *sandbox_log)
 
 	color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 
-	EERROR(color,
+	SB_EERROR(color,
 	       "--------------------------- ACCESS VIOLATION SUMMARY ---------------------------",
 	       "\n");
-	EERROR(color, "LOG FILE = \"%s\"", "\n\n", sandbox_log);
+	SB_EERROR(color, "LOG FILE = \"%s\"", "\n\n", sandbox_log);
 	fprintf(stderr, "%s", buffer);
 	if (NULL != buffer)
 		free(buffer);
-	EERROR(color,
+	SB_EERROR(color,
 	       "--------------------------------------------------------------------------------",
 	       "\n");
 

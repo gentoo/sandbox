@@ -63,7 +63,7 @@
 #define SB_BUF_LEN             2048
 
 /* Gentoo style e* printing macro's */
-#define EINFO(_color, _hilight, _args...) \
+#define SB_EINFO(_color, _hilight, _args...) \
 	do { \
 		int old_errno = errno; \
 		if (_color) \
@@ -73,7 +73,7 @@
 		errno = old_errno; \
 	} while (0)
 
-#define EWARN(_color, _hilight, _args...) \
+#define SB_EWARN(_color, _hilight, _args...) \
 	do { \
 		int old_errno = errno; \
 		if (_color) \
@@ -83,7 +83,7 @@
 		errno = old_errno; \
 	} while (0)
 
-#define EERROR(_color, _hilight, _args...) \
+#define SB_EERROR(_color, _hilight, _args...) \
 	do { \
 		int old_errno = errno; \
 		if (_color) \
