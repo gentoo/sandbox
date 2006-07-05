@@ -1543,9 +1543,7 @@ static int is_sandbox_on()
 	 *
 	 * Azarah (3 Aug 2002)
 	 */
-	if ((NULL != getenv(ENV_SANDBOX_ON)) &&
-	    ((0 == strncmp(getenv(ENV_SANDBOX_ON), "1", 1)) ||
-	     (0 == strncmp(getenv(ENV_SANDBOX_ON), "yes", 3))) &&
+	if ((is_env_on(ENV_SANDBOX_ON)) &&
 	    (1 == sandbox_on) &&
 	    (NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
 	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
