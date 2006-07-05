@@ -55,6 +55,34 @@ AC_CHECK_FUNCS([ \
   strerror strndup strrchr strspn strstr \
   strtok_r \
 ])
+dnl For librcutil
+AC_CHECK_FUNCS([remove])
+
+dnl Check if gcc provides va_copy or __va_copy (for librcutil)
+AC_MSG_CHECKING([for va_copy])
+AC_TRY_COMPILE([
+    #include <stdarg.h>
+  ], [
+    va_list ap, aq;
+    va_copy(ap, aq);
+  ],
+  [va_copy="va_copy"],
+  [AC_TRY_COMPILE([
+      #include <stdarg.h>
+    ], [
+      va_list ap, aq;
+      __va_copy(ap, aq);
+    ],
+    [va_copy="__va_copy"],
+    [AC_MSG_ERROR([Unable to determine name of va_copy macro])]
+  )]
+)
+AC_MSG_RESULT([$va_copy])
+if test x"$va_copy" != xva_copy ; then
+  AC_DEFINE_UNQUOTED([va_copy], [$va_copy],
+    [Define to name of va_copy macro proviced by gcc if its not `va_copy'.]
+  )
+fi
 
 dnl Verify people aren't doing stupid shit
 if test x"$enable_static" != xno ; then
@@ -169,5 +197,6 @@ AC_OUTPUT([
   Makefile
   scripts/Makefile
   data/Makefile
+  librcutil/Makefile
   src/Makefile
 ])
