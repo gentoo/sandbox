@@ -41,8 +41,8 @@ struct sandbox_info_t {
 } sandbox_info_t;
 
 static int print_debug = 0;
-static int stop_called = 0;
 
+volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;
 
 extern char **environ;
@@ -160,7 +160,7 @@ int print_sandbox_log(char *sandbox_log)
 
 void stop(int signum)
 {
-	if (stop_called == 0) {
+	if (0 == stop_called) {
 		stop_called = 1;
 		printf("sandbox:  Caught signal %d in pid %d\n",
 		       signum, getpid());
