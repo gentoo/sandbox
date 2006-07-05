@@ -1058,6 +1058,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	    (0 == S_ISREG(log_stat.st_mode))) {
 		EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
+		abort();
 	} else {
 		check_dlsym(open_DEFAULT);
 		logfd = true_open_DEFAULT(logfile, O_APPEND | O_WRONLY |
