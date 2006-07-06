@@ -271,12 +271,10 @@ void sandbox_set_env_var(const char *env_var)
 	/* We check if the variable is set in the environment, and if not, we
 	 * get it from sandbox.conf, and if they exist, we just add them to the
 	 * environment if not already present. */
-	if (NULL == getenv(env_var)) {
-		config = rc_get_cnf_entry(SANDBOX_CONF_FILE, env_var, NULL);
-		if (NULL != config) {
-			setenv(ENV_SANDBOX_VERBOSE, config, 0);
-			free(config);
-		}
+	config = rc_get_cnf_entry(SANDBOX_CONF_FILE, env_var, NULL);
+	if (NULL != config) {
+		setenv(ENV_SANDBOX_VERBOSE, config, 0);
+		free(config);
 	}
 }
 
