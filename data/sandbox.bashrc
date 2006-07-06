@@ -20,7 +20,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" ]] ; then
 
 	source /etc/profile
 
-	(
+	[[ -t 1 ]] && (
 		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
 			export RC_NOCOLOR="yes"
 		source /sbin/functions.sh
