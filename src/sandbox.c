@@ -449,8 +449,6 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 		have_ld_preload = 1;
 		orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
 
-		/* FIXME: Should probably free this at some stage - more neatness
-		 *        than a real leak that will cause issues. */
 		ld_preload_envvar = calloc(strlen(orig_ld_preload_envvar) +
 				strlen(sandbox_info->sandbox_lib) + 2,
 				sizeof(char *));
@@ -460,8 +458,6 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 				strlen(sandbox_info->sandbox_lib) + 2, "%s %s",
 				sandbox_info->sandbox_lib, orig_ld_preload_envvar);
 	} else {
-		/* FIXME: Should probably free this at some stage - more neatness
-		 *        than a real leak that will cause issues. */
 		ld_preload_envvar = rc_strndup(sandbox_info->sandbox_lib,
 				strlen(sandbox_info->sandbox_lib));
 		if (NULL == ld_preload_envvar)
@@ -479,7 +475,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	 *        a real leak that will cause issues. */
 	new_environ = calloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
 	if (NULL == new_environ)
-		return NULL;
+		goto error;
 
 	snprintf(sb_pid, sizeof(sb_pid), "%i", getpid());
 	
@@ -538,7 +534,16 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 		env_ptr++;
 	}
 
+	if (NULL != ld_preload_envvar)
+		free(ld_preload_envvar);
+
 	return new_environ;
+
+error:
+	if (NULL != ld_preload_envvar)
+		free(ld_preload_envvar);
+
+	return NULL;
 }
 
 int spawn_shell(char *argv_bash[], char *env[], int debug)
@@ -691,6 +696,9 @@ int main(int argc, char **argv)
 	/* Start Bash */
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
 		success = 0;
+
+	/* Free environ */
+	free(sandbox_environ);
 
 	/* Free bash stuff */
 	for (i = 0; i < 6; i++) {
