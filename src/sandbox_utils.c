@@ -30,7 +30,7 @@ void get_sandbox_lib(char *path)
 #else
 	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
 # ifdef OUTSIDE_LIBSANDBOX
-	if (0 >= rc_file_exists(path)) {
+	if (!rc_file_exists(path)) {
 # else
 	if (0 >= exists(path)) {
 # endif

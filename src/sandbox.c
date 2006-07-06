@@ -61,7 +61,7 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 	}
 	
 	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
-	if (1 != rc_is_dir(VAR_TMPDIR, 1)) {
+	if (!rc_is_dir(VAR_TMPDIR, TRUE)) {
 		perror("sandbox:  Failed to get var_tmp_dir");
 		return -1;
 	}
@@ -87,7 +87,7 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 
 	/* Generate sandbox log full path */
 	get_sandbox_log(sandbox_info->sandbox_log);
-	if (1 == rc_file_exists(sandbox_info->sandbox_log)) {
+	if (rc_file_exists(sandbox_info->sandbox_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_log)) {
 			perror("sandbox:  Could not unlink old log file");
 			return -1;
@@ -96,7 +96,7 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 
 	/* Generate sandbox debug log full path */
 	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
-	if (1 == rc_file_exists(sandbox_info->sandbox_debug_log)) {
+	if (rc_file_exists(sandbox_info->sandbox_debug_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
 			perror("sandbox:  Could not unlink old debug log file");
 			return -1;
@@ -114,7 +114,7 @@ int print_sandbox_log(char *sandbox_log)
 	long len = 0;
 	char *buffer = NULL;
 
-	if (1 != rc_is_file(sandbox_log, 0)) {
+	if (!rc_is_file(sandbox_log, FALSE)) {
 		perror("sandbox:  Log file is not a regular file");
 		return 0;
 	}
@@ -490,12 +490,12 @@ int main(int argc, char **argv)
 		printf("Verification of the required files.\n");
 
 #ifndef SB_HAVE_MULTILIB
-	if (0 >= rc_file_exists(sandbox_info.sandbox_lib)) {
+	if (!rc_file_exists(sandbox_info.sandbox_lib)) {
 		perror("sandbox:  Could not open the sandbox library");
 		exit(EXIT_FAILURE);
 	}
 #endif
-	if (0 >= rc_file_exists(sandbox_info.sandbox_rc)) {
+	if (!rc_file_exists(sandbox_info.sandbox_rc)) {
 		perror("sandbox:  Could not open the sandbox rc file");
 		exit(EXIT_FAILURE);
 	}
@@ -588,7 +588,7 @@ int main(int argc, char **argv)
 		printf("The protected environment has been shut down.\n");
 	}
 
-	if (1 == rc_file_exists(sandbox_info.sandbox_log)) {
+	if (rc_file_exists(sandbox_info.sandbox_log)) {
 		sandbox_log_presence = 1;
 		print_sandbox_log(sandbox_info.sandbox_log);
 	} else if (print_debug) {
