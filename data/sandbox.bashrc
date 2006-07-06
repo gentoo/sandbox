@@ -21,6 +21,8 @@ if [[ ${SANDBOX_INTRACTV} == "1" ]] ; then
 	source /etc/profile
 
 	(
+		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
+			export RC_NOCOLOR="yes"
 		source /sbin/functions.sh
 		echo
 		einfo "Loading sandboxed shell"
@@ -75,7 +77,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" ]] ; then
 	unset sbs_gpdir sbs_cpdir sbs_pdir sbs_bdir sbs_tmpenvfile sbs_PREPWD env
 
 	cd "${PWD}"
-	if [[ ${NOCOLOR} != "true" || ${NOCOLOR} != "yes" || ${NOCOLOR} != "1" ]] ; then
+	if [[ ${NOCOLOR} != "true" && ${NOCOLOR} != "yes" && ${NOCOLOR} != "1" ]] ; then
 		export PS1="\e[31;01m[s]\e[0m ${PS1}"
 	else
 		export PS1="[s] ${PS1}"
