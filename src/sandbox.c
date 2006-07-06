@@ -46,6 +46,8 @@ static int print_debug = 0;
 volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;
 
+static char log_domain[] = "sandbox";
+
 extern char **environ;
 
 int sandbox_setup(struct sandbox_info_t *sandbox_info)
@@ -461,6 +463,8 @@ int main(int argc, char **argv)
 	char **argv_bash = NULL;
 
 	char *run_str = "-c";
+
+	rc_log_domain(log_domain);
 
 	/* Only print info if called with no arguments .... */
 	if (argc < 2)

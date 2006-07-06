@@ -29,11 +29,7 @@ void get_sandbox_lib(char *path)
 	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 #else
 	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
-# ifdef OUTSIDE_LIBSANDBOX
 	if (!rc_file_exists(path)) {
-# else
-	if (0 >= exists(path)) {
-# endif
 		snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 	}
 #endif
@@ -134,60 +130,5 @@ bool is_env_off (const char *env)
 	return FALSE;
 }
 
-#ifndef OUTSIDE_LIBSANDBOX
-
-int exists(const char *pathname)
-{
-	struct stat buf;
-	int retval;
-
-	if ((NULL == pathname) || (0 == strlen(pathname)))
-		return 0;
-
-	retval = lstat(pathname, &buf);
-	if (-1 != retval)
-		return 1;
-	/* Some or other error occurred */
-	if (ENOENT != errno)
-		return -1;
-
-	return 0;
-}
-
-char * gstrndup (const char *str, size_t size)
-{
-	char *new_str = NULL;
-	size_t len;
-
-	if (NULL == str)
-		return NULL;
-
-	/* Check lenght of str without breaching the size limit */
-	for (len = 0; (len < size) && ('\0' != str[len]); len++);
-
-	new_str = malloc (len + 1);
-	if (NULL == new_str)
-		return NULL;
-
-	/* Make sure our string is NULL terminated */
-	new_str[len] = '\0';
-
-	return (char *) memcpy (new_str, str, len);
-}
-
-char *
-gbasename (const char *path)
-{
-	char *new_path = NULL;
-
-	if (NULL == path)
-		return NULL;
-
-	/* Copied from glibc */
-	new_path = strrchr (path, '/');
-	return new_path ? new_path + 1 : (char *) path;
-}
-
-#endif /* !OUTSIDE_LIBSANDBOX */
 
 // vim:noexpandtab noai:cindent ai

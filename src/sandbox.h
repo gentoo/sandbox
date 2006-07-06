@@ -105,14 +105,6 @@ long file_length(int);
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 
-#ifndef OUTSIDE_LIBSANDBOX
-int exists(const char *pathname);
-/* Compat functions for GNU extensions */
-char *gstrndup (const char *str, size_t size);
-/* Same as basename(3), but do not modify path */
-char *gbasename (const char *path);
-#endif /* !OUTSIDE_LIBSANDBOX */
-
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 #ifndef OUTSIDE_LIBSANDBOX

@@ -73,6 +73,7 @@
 #undef open64
 
 #include "sandbox.h"
+#include "rcscripts/rcutil.h"
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
@@ -155,6 +156,7 @@ static int is_sandbox_on();
  */
 
 static void *libc_handle = NULL;
+static char log_domain[] = "libsandbox";
 
 void __attribute__ ((destructor)) libsb_fini(void)
 {
@@ -190,6 +192,8 @@ void __attribute__ ((constructor)) libsb_init(void)
 #ifdef SB_MEM_DEBUG
 	mtrace();
 #endif
+
+	rc_log_domain(log_domain);
 
 	/* Get the path and name to this library */
 	get_sandbox_lib(sandbox_lib);
@@ -325,7 +329,7 @@ static char *resolve_path(const char *path, int follow_link)
 				 * file '/usr/lib/cf*' ...) */
 				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
 
-				bname = gbasename(tmp_str2);
+				bname = rc_basename(tmp_str2);
 				snprintf((char *)(filtered_path + strlen(filtered_path)),
 					SB_PATH_MAX - strlen(filtered_path), "%s%s",
 					(filtered_path[strlen(filtered_path) - 1] != '/') ? "/" : "",
@@ -1209,7 +1213,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	pfx_array = malloc(((num_delimiters * 2) + 2) * sizeof(char *));
 	if (NULL == pfx_array)
 		goto error;
-	buffer = gstrndup(prefixes_env, prefixes_env_length);
+	buffer = rc_strndup(prefixes_env, prefixes_env_length);
 	if (NULL == buffer)
 		goto error;
 	buffer_ptr = buffer;
