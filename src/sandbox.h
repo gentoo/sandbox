@@ -14,6 +14,9 @@
 #include "config.h"
 #include "rcscripts/rctypes.h"
 
+#define SANDBOX_CONF_FILE      ETCDIR "/sandbox.conf"
+#define SANDBOX_CONFD_DIR      ETCDIR "/sandbox.d"
+
 #define LD_PRELOAD_EQ          "LD_PRELOAD="
 #define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"
@@ -43,6 +46,7 @@
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
 #define ENV_SANDBOX_LOG        "SANDBOX_LOG"
 #define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
+#define ENV_SANDBOX_WORKDIR    "SANDBOX_WORKDIR"
 
 #define ENV_SANDBOX_DENY       "SANDBOX_DENY"
 #define ENV_SANDBOX_READ       "SANDBOX_READ"

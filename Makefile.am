@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = dist-bzip2 no-dist-gzip
 
-SUBDIRS = scripts data librcutil src
+SUBDIRS = scripts etc data librcutil src
 
 src: librcutil
 

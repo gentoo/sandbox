@@ -196,6 +196,7 @@ fi
 AC_OUTPUT([
   Makefile
   scripts/Makefile
+  etc/Makefile
   data/Makefile
   librcutil/Makefile
   src/Makefile

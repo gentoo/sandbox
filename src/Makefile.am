@@ -4,7 +4,8 @@ lib_LTLIBRARIES = libsandbox.la
 bin_PROGRAMS = sandbox
 
 AM_CPPFLAGS = \
-	-DPIC -fPIC -D_REENTRANT  \
+	-DPIC -fPIC -D_REENTRANT                \
+	-DETCDIR=\"$(sysconfdir)\"              \
 	-DLIBSANDBOX_PATH=\"$(libdir)\"         \
 	-DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
 	-I$(top_srcdir) -Wall

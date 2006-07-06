@@ -50,7 +50,7 @@ static char log_domain[] = "sandbox";
 
 extern char **environ;
 
-int sandbox_setup(struct sandbox_info_t *sandbox_info)
+int sandbox_setup(struct sandbox_info_t *sandbox_info, bool interactive)
 {
 	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
 		/* Portage handle setting SANDBOX_WRITE itself. */
@@ -60,6 +60,8 @@ int sandbox_setup(struct sandbox_info_t *sandbox_info)
 			perror("sandbox:  Failed to get current directory");
 			return -1;
 		}
+		if (interactive)
+			setenv(ENV_SANDBOX_WORKDIR, sandbox_info->work_dir, 1);
 	}
 	
 	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
@@ -194,68 +196,198 @@ void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 	}
 }
 
-int get_sandbox_write_envvar(char *buf, struct sandbox_info_t *sandbox_info)
+char *sandbox_subst_env_vars(dyn_buf_t *env_data)
 {
-	int retval = 0;
-	
-	/* bzero out entire buffer then append trailing 0 */
-	memset(buf, 0, SB_BUF_LEN);
+	dyn_buf_t *new_data = NULL;
+	char *tmp_ptr, *tmp_data = NULL;
+	char *var_start, *var_stop;
 
-	/* these could go into make.globals later on */
-	retval = snprintf(buf, SB_BUF_LEN,
-		 "%s:%s/.gconfd/lock:%s/.bash_history:%s:%s:%s:%s",
-		 "/dev/zero:/dev/null:/dev/full:/dev/fd:/proc/self/fd:/dev/pts/:"
-		 "/dev/vc/:/dev/pty:/dev/tty:/dev/tts:/dev/console:"
-		 "/dev/shm:/dev/shm/ngpt:/var/log/scrollkeeper.log:"
-		 "/usr/tmp/conftest:/usr/lib/conftest:"
-		 "/usr/lib32/conftest:/usr/lib64/conftest:"
-		 "/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf",
-		 sandbox_info->home_dir, sandbox_info->home_dir,
-		 sandbox_info->work_dir[0] != '\0' ? sandbox_info->work_dir
-		                                   : "",
-		 sandbox_info->tmp_dir, sandbox_info->var_tmp_dir,
-		 "/tmp/:/var/tmp/");
-	if (SB_BUF_LEN <= retval) {
-		errno = EMSGSIZE;
-		perror("sandbox:  Failed to generate SANDBOX_WRITE");
-		return -1;
+	new_data = new_dyn_buf();
+	if (NULL == new_data)
+		return NULL;
+
+	tmp_data = read_line_dyn_buf(env_data);
+	if (NULL == tmp_data)
+		goto error;
+	tmp_ptr = tmp_data;
+
+	while (NULL != (var_start = strchr(tmp_ptr, '$'))) {
+		char *env = NULL;
+
+		var_stop = strchr(var_start, '}');
+
+		/* We only support ${} style env var names, so just skip any
+		 * '$' that do not follow this syntax */
+		if (('{' != var_start[1]) || (NULL == var_stop)) {
+		  	tmp_ptr = var_start + 1;
+			continue;
+		}
+		
+		/* Terminate part before env string so that we can copy it */
+		var_start[0] = '\0';
+		/* Move var_start past '${' */
+		var_start += 2;
+		/* Terminate the name of the env var */
+		var_stop[0] = '\0';
+
+		if (strlen(var_start) > 0)
+			env = getenv(var_start);
+		if (-1 == sprintf_dyn_buf(new_data, "%s%s",
+					  tmp_ptr ? tmp_ptr : "",
+					  env ? env : ""))
+			goto error;
+
+		/* Move tmp_ptr past the '}' of the env var */
+		tmp_ptr = var_stop + 1;
 	}
 
-	return 0;
+	if (0 != strlen(tmp_ptr))
+		if (-1 == write_dyn_buf(new_data, tmp_ptr, strlen(tmp_ptr)))
+			goto error;
+
+	free(tmp_data);
+
+	tmp_data = read_line_dyn_buf(new_data);
+	if (NULL == tmp_data)
+		goto error;
+
+	free_dyn_buf(new_data);
+
+	return tmp_data;
+
+error:
+	if (NULL != new_data)
+		free_dyn_buf(new_data);
+	if (NULL != tmp_data)
+		free(tmp_data);
+
+	return NULL;
 }
 
-int get_sandbox_predict_envvar(char *buf, struct sandbox_info_t *sandbox_info)
+void sandbox_set_env_var(const char *env_var)
 {
-	int retval = 0;
-	/* bzero out entire buffer then append trailing 0 */
-	memset(buf, 0, SB_BUF_LEN);
+	char *config;
 
-	/* these should go into make.globals later on */
-	retval = snprintf(buf, SB_BUF_LEN, "%s/.:"
-		 "/usr/lib/python2.0/:"
-		 "/usr/lib/python2.1/:"
-		 "/usr/lib/python2.2/:"
-		 "/usr/lib/python2.3/:"
-		 "/usr/lib/python2.4/:"
-		 "/usr/lib/python2.5/:"
-		 "/usr/lib/python3.0/:"
-		 "/var/db/aliases.db:"
-		 "/var/db/netgroup.db:"
-		 "/var/db/netmasks.db:"
-		 "/var/db/ethers.db:"
-		 "/var/db/rpc.db:"
-		 "/var/db/protocols.db:"
-		 "/var/db/services.db:"
-		 "/var/db/networks.db:"
-		 "/var/db/hosts.db:"
-		 "/var/db/group.db:"
-		 "/var/db/passwd.db",
-		 sandbox_info->home_dir);
-	if (SB_BUF_LEN <= retval) {
-		errno = EMSGSIZE;
-		perror("sandbox:  Failed to generate SANDBOX_PREDICT");
-		return -1;
+	/* We check if the variable is set in the environment, and if not, we
+	 * get it from sandbox.conf, and if they exist, we just add them to the
+	 * environment if not already present. */
+	if (NULL == getenv(env_var)) {
+		config = rc_get_cnf_entry(SANDBOX_CONF_FILE, env_var, NULL);
+		if (NULL != config) {
+			setenv(ENV_SANDBOX_VERBOSE, config, 0);
+			free(config);
+		}
 	}
+}
+
+int sandbox_set_env_access_var(const char *access_var)
+{
+	dyn_buf_t *env_data = NULL;
+  	int count = 0;
+	char *config = NULL;
+	char **confd_files = NULL;
+	bool use_confd = TRUE;
+
+	env_data = new_dyn_buf();
+	if (NULL == env_data)
+		return -1;
+
+	/* Now get the defaults for the access variable from sandbox.conf.
+	 * These do not get overridden via the environment. */
+	config = rc_get_cnf_entry(SANDBOX_CONF_FILE, access_var, ":");
+	if (NULL != config) {
+		if (-1 == write_dyn_buf(env_data, config, strlen(config)))
+			goto error;
+		free(config);
+		config = NULL;
+	}
+	/* Append whatever might be already set.  If anything is set, we do
+	 * not process the sandbox.d/ files for this variable. */
+	if (NULL != getenv(access_var)) {
+		use_confd = FALSE;
+		if (-1 == sprintf_dyn_buf(env_data, env_data->wr_index ? ":%s" : "%s",
+					  getenv(access_var)))
+			goto error;
+	}
+
+	if (!use_confd)
+		goto done;
+
+	/* Now scan the files in sandbox.d/ if the access variable was not
+	 * alreay set. */
+	confd_files = rc_ls_dir(SANDBOX_CONFD_DIR, FALSE, TRUE);
+	if (NULL != confd_files) {
+		while (NULL != confd_files[count]) {
+			config = rc_get_cnf_entry(confd_files[count], access_var, ":");
+			if (NULL != config) {
+				if (-1 == sprintf_dyn_buf(env_data,
+							  env_data->wr_index ? ":%s" : "%s",
+							  config))
+					goto error;
+				free(config);
+				config = NULL;
+			}
+			count++;
+		}
+
+		str_list_free(confd_files);
+	}
+
+done:
+	if (env_data->wr_index > 0) {
+	  	char *subst;
+
+		subst = sandbox_subst_env_vars(env_data);
+		if (NULL == subst)
+			goto error;
+
+		setenv(access_var, subst, 1);
+		free(subst);
+	}
+
+	free_dyn_buf(env_data);
+
+	return 0;
+
+error:
+	if (NULL != env_data)
+		free_dyn_buf(env_data);
+	if (NULL != config)
+		free(config);
+	if (NULL != confd_files)
+		str_list_free(confd_files);
+
+	return -1;
+}
+
+int sandbox_setup_env_config(struct sandbox_info_t *sandbox_info)
+{
+	sandbox_set_env_var(ENV_SANDBOX_VERBOSE);
+	sandbox_set_env_var(ENV_SANDBOX_DEBUG);
+	sandbox_set_env_var(ENV_SANDBOX_BEEP);
+	sandbox_set_env_var(ENV_NOCOLOR);
+
+	if (-1 == sandbox_set_env_access_var(ENV_SANDBOX_DENY))
+		return -1;
+	if (NULL == getenv(ENV_SANDBOX_DENY))
+		setenv(ENV_SANDBOX_DENY, LD_PRELOAD_FILE, 1);
+
+	if (-1 == sandbox_set_env_access_var(ENV_SANDBOX_READ))
+		return -1;
+	if (NULL == getenv(ENV_SANDBOX_READ))
+		setenv(ENV_SANDBOX_READ, "/", 1);
+
+	if (-1 == sandbox_set_env_access_var(ENV_SANDBOX_WRITE))
+		return -1;
+	if ((NULL == getenv(ENV_SANDBOX_WRITE)) &&
+	    (NULL != sandbox_info->work_dir))
+		setenv(ENV_SANDBOX_WRITE, sandbox_info->work_dir, 1);
+
+	if (-1 == sandbox_set_env_access_var(ENV_SANDBOX_PREDICT))
+		return -1;
+	if ((NULL == getenv(ENV_SANDBOX_PREDICT)) &&
+	    (NULL != sandbox_info->home_dir))
+		setenv(ENV_SANDBOX_PREDICT, sandbox_info->home_dir, 1);
 
 	return 0;
 }
@@ -295,11 +427,12 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	
 	char **new_environ;
 	char **env_ptr = environ;
-	char sandbox_write_envvar[SB_BUF_LEN];
-	char sandbox_predict_envvar[SB_BUF_LEN];
 	char *ld_preload_envvar = NULL;
 	char *orig_ld_preload_envvar = NULL;
 	char sb_pid[64];
+
+	if (-1 == sandbox_setup_env_config(sandbox_info))
+		return NULL;
 
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
@@ -309,6 +442,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
+	unsetenv(ENV_SANDBOX_WORKDIR);
 	unsetenv(ENV_SANDBOX_ACTIVE);
 	
 	if (NULL != getenv(ENV_LD_PRELOAD)) {
@@ -371,22 +505,6 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (1 != have_ld_preload)
 		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
-
-	if (!getenv(ENV_SANDBOX_DENY))
-		sandbox_setenv(new_environ, ENV_SANDBOX_DENY, LD_PRELOAD_FILE);
-
-	if (!getenv(ENV_SANDBOX_READ))
-		sandbox_setenv(new_environ, ENV_SANDBOX_READ, "/");
-
-	if (-1 == get_sandbox_write_envvar(sandbox_write_envvar, sandbox_info))
-		return NULL;
-	if (!getenv(ENV_SANDBOX_WRITE))
-		sandbox_setenv(new_environ, ENV_SANDBOX_WRITE, sandbox_write_envvar);
-
-	if (-1 == get_sandbox_predict_envvar(sandbox_predict_envvar, sandbox_info))
-		return NULL;
-	if (!getenv(ENV_SANDBOX_PREDICT))
-		sandbox_setenv(new_environ, ENV_SANDBOX_PREDICT, sandbox_predict_envvar);
 
 	/* Make sure our bashrc gets preference */
 	sandbox_setenv(new_environ, ENV_BASH_ENV, sandbox_info->sandbox_rc);
@@ -484,7 +602,7 @@ int main(int argc, char **argv)
 	if (print_debug)
 		printf("Detection of the support files.\n");
 
-	if (-1 == sandbox_setup(&sandbox_info)) {
+	if (-1 == sandbox_setup(&sandbox_info, print_debug)) {
 		fprintf(stderr, "sandbox:  Failed to setup sandbox.");
 		exit(EXIT_FAILURE);
 	}
