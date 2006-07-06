@@ -299,7 +299,7 @@ static char *resolve_path(const char *path, int follow_link)
 	if (NULL == path)
 		return NULL;
 
-	filtered_path = malloc(SB_PATH_MAX * sizeof(char));
+	filtered_path = xmalloc(SB_PATH_MAX * sizeof(char));
 	if (NULL == filtered_path)
 		return NULL;
 
@@ -857,7 +857,7 @@ int _name(const char *filename, char *const argv[], char *const envp[]) \
 				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) \
 					add_ldpreload = 1; \
 \
-				my_env = (char **)calloc(env_len + add_ldpreload, sizeof(char *)); \
+				my_env = (char **)xcalloc(env_len + add_ldpreload, sizeof(char *)); \
 				if (NULL == my_env) { \
 					errno = ENOMEM; \
 					return result; \
@@ -1009,7 +1009,7 @@ static char** file2strvec(const char *directory, const char *what)
 		}
 		if (end_of_file && buf[n - 1])		/* last read char not null */
 			buf[n++] = '\0';			/* so append null-terminator */
-		rbuf = realloc(rbuf, tot + n);		/* allocate more memory */
+		rbuf = xrealloc(rbuf, tot + n);		/* allocate more memory */
 		if (NULL == rbuf) {
 			errno = ENOMEM;
 			return NULL;
@@ -1032,7 +1032,7 @@ static char** file2strvec(const char *directory, const char *what)
 			c += sizeof(char*);
 	c += sizeof(char*);					/* one extra for NULL term */
 
-	rbuf = realloc(rbuf, tot + c + align);	/* make room for ptrs AT END */
+	rbuf = xrealloc(rbuf, tot + c + align);	/* make room for ptrs AT END */
 	if (NULL == rbuf) {
 		errno = ENOMEM;
 		return NULL;
@@ -1210,7 +1210,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	}
 
 	/* num_delimiters might be 0, and we need 2 entries at least */
-	pfx_array = malloc(((num_delimiters * 2) + 2) * sizeof(char *));
+	pfx_array = xmalloc(((num_delimiters * 2) + 2) * sizeof(char *));
 	if (NULL == pfx_array)
 		goto error;
 	buffer = rc_strndup(prefixes_env, prefixes_env_length);
@@ -1231,7 +1231,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 
 			/* Now add the realpath if it exists and
 			 * are not a duplicate */
-			rpath = malloc(SB_PATH_MAX * sizeof(char));
+			rpath = xmalloc(SB_PATH_MAX * sizeof(char));
 			if (NULL != rpath) {
 				pfx_item = realpath(*(&(pfx_item) - 1), rpath);
 				if ((NULL != pfx_item) &&
@@ -1577,7 +1577,7 @@ static int before_syscall(const char *func, const char *file)
 
 	if(0 == sb_init) {
 		init_context(&sbcontext);
-		cached_env_vars = malloc(sizeof(char *) * 4);
+		cached_env_vars = xmalloc(sizeof(char *) * 4);
 		cached_env_vars[0] = cached_env_vars[1] = cached_env_vars[2] = cached_env_vars[3] = NULL;
 		sb_init = 1;
 	}

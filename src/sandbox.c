@@ -130,7 +130,7 @@ int print_sandbox_log(char *sandbox_log)
 	}
 
 	len = file_length(sandbox_log_file);
-	buffer = (char *)malloc((len + 1) * sizeof(char));
+	buffer = (char *)xmalloc((len + 1) * sizeof(char));
 	memset(buffer, 0, len + 1);
 	read(sandbox_log_file, buffer, len);
 	close(sandbox_log_file);
@@ -405,7 +405,7 @@ int sandbox_setenv(char **env, const char *name, const char *val) {
 	/* strlen(name) + strlen(val) + '=' + '\0' */
 	/* FIXME: Should probably free this at some stage - more neatness than
 	 *        a real leak that will cause issues. */
-	tmp_string = calloc(strlen(name) + strlen(val) + 2, sizeof(char *));
+	tmp_string = xcalloc(strlen(name) + strlen(val) + 2, sizeof(char *));
 	if (NULL == tmp_string) {
 		perror("sandbox:  Out of memory (sandbox_setenv)");
 		exit(EXIT_FAILURE);
@@ -449,7 +449,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 		have_ld_preload = 1;
 		orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
 
-		ld_preload_envvar = calloc(strlen(orig_ld_preload_envvar) +
+		ld_preload_envvar = xcalloc(strlen(orig_ld_preload_envvar) +
 				strlen(sandbox_info->sandbox_lib) + 2,
 				sizeof(char *));
 		if (NULL == ld_preload_envvar)
@@ -473,7 +473,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 
 	/* FIXME: Should probably free this at some stage - more neatness than
 	 *        a real leak that will cause issues. */
-	new_environ = calloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
+	new_environ = xcalloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
 	if (NULL == new_environ)
 		goto error;
 
@@ -642,7 +642,7 @@ int main(int argc, char **argv)
 	if ('\0' != sandbox_info.work_dir[0])
 		chdir(sandbox_info.work_dir);
 
-	argv_bash = (char **)malloc(6 * sizeof(char *));
+	argv_bash = (char **)xmalloc(6 * sizeof(char *));
 	argv_bash[0] = strdup("/bin/bash");
 	argv_bash[1] = strdup("-rcfile");
 	argv_bash[2] = strdup(sandbox_info.sandbox_rc);
@@ -662,7 +662,7 @@ int main(int argc, char **argv)
 			else
 				len = strlen(argv_bash[4]);
 
-			argv_bash[4] = (char *)realloc(argv_bash[4],
+			argv_bash[4] = (char *)xrealloc(argv_bash[4],
 					(len + strlen(argv[i]) + 2) * sizeof(char));
 
 			if (0 == len)
