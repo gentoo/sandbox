@@ -15,12 +15,17 @@ alias su="su -c '/bin/bash -rcfile ${SANDBOX_BASHRC}'"
 
 declare -r SANDBOX_ACTIVE
 
-if [[ ${SANDBOX_INTRACTV} == "1" ]] ; then
+# Only do Mike's sandboxshell mojo if we are interactive, and if
+# we are connected to a terminal (ie, not piped, etc)
+if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 	trap ":" INT QUIT TSTP
+
+	# Make sure this do not get recusively called
+	unset SANDBOX_INTRACTV
 
 	source /etc/profile
 
-	[[ -t 1 ]] && (
+	(
 		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
 			export RC_NOCOLOR="yes"
 		source /sbin/functions.sh
