@@ -401,9 +401,7 @@ int sandbox_setenv(char **env, const char *name, const char *val) {
 		tmp_env++;
 
 	/* strlen(name) + strlen(val) + '=' + '\0' */
-	/* FIXME: Should probably free this at some stage - more neatness than
-	 *        a real leak that will cause issues. */
-	tmp_string = xcalloc(strlen(name) + strlen(val) + 2, sizeof(char *));
+	tmp_string = xcalloc(strlen(name) + strlen(val) + 2, sizeof(char));
 	if (NULL == tmp_string) {
 		perror("sandbox:  Out of memory (sandbox_setenv)");
 		exit(EXIT_FAILURE);
@@ -423,8 +421,8 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	int env_size = 0;
 	int have_ld_preload = 0;
 	
-	char **new_environ;
-	char **env_ptr = environ;
+	char **new_environ = NULL;
+	char **env_ptr;
 	char *ld_preload_envvar = NULL;
 	char *orig_ld_preload_envvar = NULL;
 	char sb_pid[64];
@@ -442,6 +440,8 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
 	unsetenv(ENV_SANDBOX_WORKDIR);
 	unsetenv(ENV_SANDBOX_ACTIVE);
+	unsetenv(ENV_SANDBOX_INTRACTV);
+	unsetenv(ENV_BASH_ENV);
 	
 	if (NULL != getenv(ENV_LD_PRELOAD)) {
 		have_ld_preload = 1;
@@ -449,7 +449,7 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 
 		ld_preload_envvar = xcalloc(strlen(orig_ld_preload_envvar) +
 				strlen(sandbox_info->sandbox_lib) + 2,
-				sizeof(char *));
+				sizeof(char));
 		if (NULL == ld_preload_envvar)
 			return NULL;
 		snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
@@ -464,14 +464,14 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	/* Do not unset this, as strange things might happen */
 	/* unsetenv(ENV_LD_PRELOAD); */
 
+	env_ptr = environ;
 	while (NULL != *env_ptr) {
 		env_size++;
 		env_ptr++;
 	}
 
-	/* FIXME: Should probably free this at some stage - more neatness than
-	 *        a real leak that will cause issues. */
-	new_environ = xcalloc((env_size + 15 + 1) * sizeof(char *), sizeof(char *));
+	/* XXX: Freed by main() after spawn_shell() */
+	new_environ = xcalloc(env_size + 20, sizeof(char *));
 	if (NULL == new_environ)
 		goto error;
 
@@ -520,16 +520,25 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	env_ptr = environ;
 	while (NULL != *env_ptr) {
 		if ((1 == have_ld_preload) &&
-		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr))
+		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr)) {
 			/* If LD_PRELOAD was set, and this is it in the original
 			 * environment, replace it with our new copy */
 			/* XXX: The following works as it just add whatever as
 			 *      the last variable to nev_environ */
 			sandbox_setenv(new_environ, ENV_LD_PRELOAD,
 					ld_preload_envvar);
-		else
-			new_environ[env_size + (env_ptr - environ)] = *env_ptr;
+		} else {
+			char *new_var;
+
+			new_var = xstrndup(*env_ptr, strlen(*env_ptr));
+			if (NULL == new_var)
+				goto error;
+
+			new_environ[env_size] = new_var;
+		}
+
 		env_ptr++;
+		env_size++;
 	}
 
 	if (NULL != ld_preload_envvar)
@@ -538,6 +547,8 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	return new_environ;
 
 error:
+	if (NULL != new_environ)
+		str_list_free(new_environ);
 	if (NULL != ld_preload_envvar)
 		free(ld_preload_envvar);
 
@@ -554,7 +565,7 @@ int spawn_shell(char *argv_bash[], char *env[], int debug)
 	/* Child's process */
 	if (0 == child_pid) {
 		execve(argv_bash[0], argv_bash, env);
-		return 0;
+		_exit(EXIT_FAILURE);
 	} else if (child_pid < 0) {
 		if (debug)
 			fprintf(stderr, "Process failed to spawn!\n");
@@ -695,15 +706,9 @@ int main(int argc, char **argv)
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
 		success = 0;
 
-	/* Free bash stuff */
-	for (i = 0; i < 6; i++) {
-		if (argv_bash[i])
-			free(argv_bash[i]);
-		argv_bash[i] = NULL;
-	}
-	if (argv_bash)
-		free(argv_bash);
-	argv_bash = NULL;
+	/* Free bash and envp stuff */
+	str_list_free(argv_bash);
+	str_list_free(sandbox_environ);
 
 	if (print_debug)
 		printf("Cleaning up sandbox process\n");
