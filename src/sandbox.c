@@ -546,6 +546,7 @@ int spawn_shell(char *argv_bash[], char **env, int debug)
 
 	/* execve() creates a copy of this, so no need to use more memory than
 	 * absolutely needed. */
+	str_list_free(argv_bash);
 	str_list_free(env);
 
 	ret = waitpid(child_pid, &status, 0);
@@ -674,8 +675,11 @@ int main(int argc, char **argv)
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
 		success = 0;
 
-	/* Free bash argv stuff */
-	str_list_free(argv_bash);
+	/* As spawn_shell() free both argv_bash and sandbox_environ, make sure
+	 * we do not run into issues in future if we need a OOM error below
+	 * this ... */
+	argv_bash = NULL;
+	sandbox_environ = NULL;
 
 	if (print_debug)
 		printf("Cleaning up sandbox process\n");
