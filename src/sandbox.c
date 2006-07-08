@@ -638,7 +638,6 @@ int main(int argc, char **argv)
 				 strlen(argv[i]) + 2, " %s",
 				 argv[i]);
 		}
-		printf("bash_argv[4] = %s\n", argv_bash[4]);
 	}
 
 	/* Setup the child environment stuff */
