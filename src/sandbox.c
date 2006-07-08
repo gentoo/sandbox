@@ -695,9 +695,6 @@ int main(int argc, char **argv)
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
 		success = 0;
 
-	/* Free environ */
-	free(sandbox_environ);
-
 	/* Free bash stuff */
 	for (i = 0; i < 6; i++) {
 		if (argv_bash[i])
