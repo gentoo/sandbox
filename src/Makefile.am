@@ -16,13 +16,16 @@ LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 # We need -fexceptions here, else we do not catch exceptions
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
 libsandbox_la_CFLAGS = -fexceptions
+# Could use the following to libsandbox_la_LIBADD, but then libtool links it
+# with --whole-archive:
+#	$(top_builddir)/librcutil/librcutil.la
+libsandbox_la_LIBRCOBJS = $(wildcard  $(top_builddir)/librcutil/*.lo)
+libsandbox_la_LIBADD = \
+	-lc $(LIBDL)               \
+	$(libsandbox_la_LIBRCOBJS)
+#	$(top_builddir)/librcutil/.libs/librcutil.a
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
-libsandbox_la_LIBADD = \
-	-lc $(LIBDL) \
-	$(top_builddir)/librcutil/.libs/librcutil.a
-# Could use the following, but then libtool link it with --whole-archive
-#	$(top_builddir)/librcutil/librcutil.la
 libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
