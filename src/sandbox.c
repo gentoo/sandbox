@@ -390,35 +390,30 @@ int sandbox_setup_env_config(struct sandbox_info_t *sandbox_info)
 	return 0;
 }
 
-int sandbox_setenv(char **env, const char *name, const char *val) {
-	char **tmp_env = env;
+int sandbox_setenv(char ***envp, const char *name, const char *val) {
 	char *tmp_string = NULL;
-	int retval = 0;
-
-	/* XXX: We add the new variable to the end (no replacing).  If this
-	 *      is changed, we need to fix sandbox_setup_environ() below */
-	while (NULL != *tmp_env)
-		tmp_env++;
 
 	/* strlen(name) + strlen(val) + '=' + '\0' */
-	tmp_string = xcalloc(strlen(name) + strlen(val) + 2, sizeof(char));
-	if (NULL == tmp_string) {
-		perror("sandbox:  Out of memory (sandbox_setenv)");
-		exit(EXIT_FAILURE);
-	}
+	tmp_string = xmalloc((strlen(name) + strlen(val) + 2) * sizeof(char));
+	if (NULL == tmp_string)
+		goto error;
 
-	retval = snprintf(tmp_string, strlen(name) + strlen(val) + 2, "%s=%s",
-			  name, val);
-	*tmp_env = tmp_string;
+	snprintf(tmp_string, strlen(name) + strlen(val) + 2,
+		 "%s=%s", name, val);
+
+	str_list_add_item((*envp), tmp_string, error);
 
 	return 0;
+
+error:
+	perror("sandbox:  Out of memory (sandbox_setenv)");
+	exit(EXIT_FAILURE);
 }
 
 /* We setup the environment child side only to prevent issues with
  * setting LD_PRELOAD parent side */
 char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 {
-	int env_size = 0;
 	int have_ld_preload = 0;
 	
 	char **new_environ = NULL;
@@ -464,44 +459,33 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	/* Do not unset this, as strange things might happen */
 	/* unsetenv(ENV_LD_PRELOAD); */
 
-	env_ptr = environ;
-	while (NULL != *env_ptr) {
-		env_size++;
-		env_ptr++;
-	}
-
-	/* XXX: Freed by main() after spawn_shell() */
-	new_environ = xcalloc(env_size + 20, sizeof(char *));
-	if (NULL == new_environ)
-		goto error;
-
 	snprintf(sb_pid, sizeof(sb_pid), "%i", getpid());
 	
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
-	sandbox_setenv(new_environ, ENV_SANDBOX_ON, "1");
-	sandbox_setenv(new_environ, ENV_SANDBOX_PID, sb_pid);
-	sandbox_setenv(new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
-	sandbox_setenv(new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
-	sandbox_setenv(new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
-	sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG_LOG,
+	sandbox_setenv(&new_environ, ENV_SANDBOX_ON, "1");
+	sandbox_setenv(&new_environ, ENV_SANDBOX_PID, sb_pid);
+	sandbox_setenv(&new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
+	sandbox_setenv(&new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
+	sandbox_setenv(&new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
+	sandbox_setenv(&new_environ, ENV_SANDBOX_DEBUG_LOG,
 			sandbox_info->sandbox_debug_log);
 	/* Is this an interactive session? */
 	if (interactive)
-		sandbox_setenv(new_environ, ENV_SANDBOX_INTRACTV, "1");
+		sandbox_setenv(&new_environ, ENV_SANDBOX_INTRACTV, "1");
 	/* Just set the these if not already set so that is_env_on() work */
 	if (!getenv(ENV_SANDBOX_VERBOSE))
-		sandbox_setenv(new_environ, ENV_SANDBOX_VERBOSE, "1");
+		sandbox_setenv(&new_environ, ENV_SANDBOX_VERBOSE, "1");
 	if (!getenv(ENV_SANDBOX_DEBUG))
-		sandbox_setenv(new_environ, ENV_SANDBOX_DEBUG, "0");
+		sandbox_setenv(&new_environ, ENV_SANDBOX_DEBUG, "0");
 	if (!getenv(ENV_NOCOLOR))
-		sandbox_setenv(new_environ, ENV_NOCOLOR, "no");
+		sandbox_setenv(&new_environ, ENV_NOCOLOR, "no");
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (1 != have_ld_preload)
-		sandbox_setenv(new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
+		sandbox_setenv(&new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
 
 	/* Make sure our bashrc gets preference */
-	sandbox_setenv(new_environ, ENV_BASH_ENV, sandbox_info->sandbox_rc);
+	sandbox_setenv(&new_environ, ENV_BASH_ENV, sandbox_info->sandbox_rc);
 
 	/* This one should NEVER be set in ebuilds, as it is the one
 	 * private thing libsandbox.so use to test if the sandbox
@@ -510,35 +494,23 @@ char **sandbox_setup_environ(struct sandbox_info_t *sandbox_info, bool interacti
 	 * azarah (3 Aug 2002)
 	 */
 
-	sandbox_setenv(new_environ, ENV_SANDBOX_ACTIVE, SANDBOX_ACTIVE);
-
-	env_size = 0;
-	while (NULL != new_environ[env_size])
-		env_size++;
+	sandbox_setenv(&new_environ, ENV_SANDBOX_ACTIVE, SANDBOX_ACTIVE);
 
 	/* Now add the rest */
 	env_ptr = environ;
 	while (NULL != *env_ptr) {
 		if ((1 == have_ld_preload) &&
-		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr)) {
+		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr))
 			/* If LD_PRELOAD was set, and this is it in the original
 			 * environment, replace it with our new copy */
 			/* XXX: The following works as it just add whatever as
 			 *      the last variable to nev_environ */
-			sandbox_setenv(new_environ, ENV_LD_PRELOAD,
+			sandbox_setenv(&new_environ, ENV_LD_PRELOAD,
 					ld_preload_envvar);
-		} else {
-			char *new_var;
-
-			new_var = xstrndup(*env_ptr, strlen(*env_ptr));
-			if (NULL == new_var)
-				goto error;
-
-			new_environ[env_size] = new_var;
-		}
+		else
+		  	str_list_add_item_copy(new_environ, (*env_ptr), error);
 
 		env_ptr++;
-		env_size++;
 	}
 
 	if (NULL != ld_preload_envvar)
@@ -585,9 +557,8 @@ int main(int argc, char **argv)
 {
 	struct sigaction act_new;
     
-	int i = 0, success = 1;
+	int success = 1;
 	int sandbox_log_presence = 0;
-	long len;
 
 	struct sandbox_info_t sandbox_info;
 
@@ -640,48 +611,40 @@ int main(int argc, char **argv)
 	if (print_debug)
 		printf("Setting up the required environment variables.\n");
 
-	/* Setup the child environment stuff */
-	sandbox_environ = sandbox_setup_environ(&sandbox_info, print_debug);
-	if (NULL == sandbox_environ) {
-		perror("sandbox:  Out of memory (environ)");
-		exit(EXIT_FAILURE);
-	}
-
 	/* If not in portage, cd into it work directory */
 	if ('\0' != sandbox_info.work_dir[0])
 		chdir(sandbox_info.work_dir);
 
-	argv_bash = (char **)xmalloc(6 * sizeof(char *));
-	argv_bash[0] = strdup("/bin/bash");
-	argv_bash[1] = strdup("-rcfile");
-	argv_bash[2] = strdup(sandbox_info.sandbox_rc);
-
-	if (argc < 2)
-		argv_bash[3] = NULL;
-	else
-		argv_bash[3] = strdup(run_str);	/* "-c" */
-
-	argv_bash[4] = NULL;	/* strdup(run_arg); */
-	argv_bash[5] = NULL;
-
+	/* Setup bash argv */
+	str_list_add_item_copy(argv_bash, "/bin/bash", oom_error);
+	str_list_add_item_copy(argv_bash, "-rcfile", oom_error);
+	str_list_add_item_copy(argv_bash, sandbox_info.sandbox_rc, oom_error);
 	if (argc >= 2) {
-		for (i = 1; i < argc; i++) {
-			if (NULL == argv_bash[4])
-				len = 0;
-			else
-				len = strlen(argv_bash[4]);
+		int i;
 
-			argv_bash[4] = (char *)xrealloc(argv_bash[4],
-					(len + strlen(argv[i]) + 2) * sizeof(char));
+		str_list_add_item_copy(argv_bash, run_str, oom_error);
+		str_list_add_item_copy(argv_bash, argv[1], oom_error);
+		for (i = 2; i < argc; i++) {
+			char *tmp_ptr;
 
-			if (0 == len)
-				argv_bash[4][0] = 0;
-			if (1 != i)
-				strcat(argv_bash[4], " ");
+			tmp_ptr = xrealloc(argv_bash[4],
+					   (strlen(argv_bash[4]) +
+					    strlen(argv[i]) + 2) *
+					   sizeof(char));
+			if (NULL == tmp_ptr)
+				goto oom_error;
 
-			strcat(argv_bash[4], argv[i]);
+			snprintf(argv_bash[4] + strlen(argv_bash[4]),
+				 strlen(argv[i]) + 2, " %s",
+				 argv[i]);
 		}
+		printf("bash_argv[4] = %s\n", argv_bash[4]);
 	}
+
+	/* Setup the child environment stuff */
+	sandbox_environ = sandbox_setup_environ(&sandbox_info, print_debug);
+	if (NULL == sandbox_environ)
+		goto oom_error;
 
 	/* set up the required signal handlers */
 	signal(SIGHUP, &stop);
@@ -729,6 +692,13 @@ int main(int argc, char **argv)
 		return 1;
 	else
 		return 0;
+
+oom_error:
+	if (NULL != argv_bash)
+		str_list_free(argv_bash);
+
+	perror("sandbox:  Out of memory (environ)");
+	exit(EXIT_FAILURE);
 }
 
 // vim:noexpandtab noai:cindent ai
