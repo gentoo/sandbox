@@ -527,7 +527,7 @@ error:
 	return NULL;
 }
 
-int spawn_shell(char *argv_bash[], char *env[], int debug)
+int spawn_shell(char *argv_bash[], char **env, int debug)
 {
 	int status = 0;
 	int ret = 0;
@@ -543,6 +543,11 @@ int spawn_shell(char *argv_bash[], char *env[], int debug)
 			fprintf(stderr, "Process failed to spawn!\n");
 		return 0;
 	}
+
+	/* execve() creates a copy of this, so no need to use more memory than
+	 * absolutely needed. */
+	str_list_free(env);
+
 	ret = waitpid(child_pid, &status, 0);
 	if ((-1 == ret) || (status > 0)) {
 		if (debug)
@@ -640,7 +645,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Setup the child environment stuff */
+	/* Setup the child environment stuff.
+	 * XXX:  We free this in spawn_shell(). */
 	sandbox_environ = sandbox_setup_environ(&sandbox_info, print_debug);
 	if (NULL == sandbox_environ)
 		goto oom_error;
@@ -668,9 +674,8 @@ int main(int argc, char **argv)
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
 		success = 0;
 
-	/* Free bash and envp stuff */
+	/* Free bash argv stuff */
 	str_list_free(argv_bash);
-	str_list_free(sandbox_environ);
 
 	if (print_debug)
 		printf("Cleaning up sandbox process\n");
