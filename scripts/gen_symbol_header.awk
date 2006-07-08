@@ -2,6 +2,10 @@ BEGIN {
 	COUNT = split(ENVIRON["SYMBOLS"], SYMBOLS);
 }
 
+/^  OS\/ABI:/ {
+	ABI = $NF
+}
+
 {
 	# Unstripped libc's have '.symtab' section as well, and
 	# we should stop processing when we hit that
@@ -45,6 +49,11 @@ BEGIN {
 			
 			# Don't add local symbols of versioned libc's
 			if (VERSIONED_LIBC && !symbol_array[2])
+				continue;
+
+			# Blacklist __getcwd on FreeBSD
+			# Unleashed - May 2006
+			if ((symbol_array[1] == "__getcwd") && (ABI == "FreeBSD"))
 				continue;
 
 			# We have a versioned libc

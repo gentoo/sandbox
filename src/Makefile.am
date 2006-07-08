@@ -54,7 +54,7 @@ libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 		exit 1; \
 	fi; \
 	export SYMBOLS="$(SYMBOLS_LIST)"; \
-	if ! $(READELF) -s $(LIBC_PATH) | \
+	if ! $(READELF) -h -s $(LIBC_PATH) | \
 		$(AWK) -f $(GEN_VERSION_MAP_SCRIPT) > $@ ; \
 	then \
 		echo "\n*** Failed to generate '$@' !\n"; \
@@ -68,7 +68,7 @@ symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
 		exit 1; \
 	fi; \
 	export SYMBOLS="$(SYMBOLS_LIST)"; \
-	if ! $(READELF) -s $(LIBC_PATH) | \
+	if ! $(READELF) -h -s $(LIBC_PATH) | \
 		$(AWK) -f $(GEN_HEADER_SCRIPT) > $@ ; \
 	then \
 		echo "\n*** Failed to generate '$@' !\n"; \
