@@ -1117,17 +1117,20 @@ static char *getcmdline(void)
 		return NULL;
 	}
 
-	/* Read 2K at a time -- whenever EOF or an error is found (don't care)
-	 * give up and return */
+	/* Read PAGE_SIZE at a time -- whenever EOF or an error is found
+	 * (don't care) give up and return.
+	 * XXX: Some linux kernels especially needed read() to read PAGE_SIZE
+	 *      at a time. */
 	do {
 		char *tmp_buf = NULL;
+		int page_size = getpagesize();
 
-		tmp_buf = xrealloc(buf, bufsize + 2048);
+		tmp_buf = xrealloc(buf, bufsize + page_size);
 		if (NULL == tmp_buf)
 			goto error;
 		buf = tmp_buf;
 
-		n = sb_read(fd, buf + bufsize, 2048);
+		n = sb_read(fd, buf + bufsize, page_size);
 		if (-1 == n) {
 			DBG_MSG("Failed to read from '/proc/self/cmdline'!\n");
 			goto error;
