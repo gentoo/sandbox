@@ -105,6 +105,9 @@ int get_tmp_dir(char *path)
 			return -1;
 	}
 
+	/* Reset errno in case realpath set it */
+	errno = 0;
+		
 	return 0;
 }
 
