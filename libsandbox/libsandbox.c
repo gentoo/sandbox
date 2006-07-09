@@ -76,12 +76,16 @@
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
-#define LOG_FMT_FUNC		"FORMAT: F - Function called\n"
-#define LOG_FMT_ACCESS		"FORMAT: S - Access Status\n"
-#define LOG_FMT_PATH		"FORMAT: P - Path as passed to function\n"
-#define LOG_FMT_APATH		"FORMAT: A - Absolute Path (not canonical)\n"
-#define LOG_FMT_RPATH		"FORMAT: R - Canonical Path\n"
-#define LOG_FMT_CMDLINE		"FORMAT: C - Command Line\n"
+#define LOG_FMT_FUNC			"FORMAT: F - Function called\n"
+#define LOG_FMT_ACCESS			"FORMAT: S - Access Status\n"
+#define LOG_FMT_PATH			"FORMAT: P - Path as passed to function\n"
+#define LOG_FMT_APATH			"FORMAT: A - Absolute Path (not canonical)\n"
+#define LOG_FMT_RPATH			"FORMAT: R - Canonical Path\n"
+#define LOG_FMT_CMDLINE			"FORMAT: C - Command Line\n"
+
+#define PROC_DIR			"/proc"
+#define PROC_SELF_FD			PROC_DIR "/self/fd"
+#define PROC_SELF_CMDLINE		PROC_DIR "/self/cmdline"
 
 /* Macros to check if a function should be executed */
 #define FUNCTION_SANDBOX_SAFE(_func, _path) \
@@ -1106,14 +1110,14 @@ static char *getcmdline(void)
 	int fd;
 
 	/* Don't care if it do not exist */
-	if (-1 == stat("/proc/self/cmdline", &st)) {
+	if (-1 == stat(PROC_SELF_CMDLINE, &st)) {
 		errno = 0;
 		return NULL;
 	}
 
-	fd = sb_open("/proc/self/cmdline", O_RDONLY, 0);
+	fd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
 	if (fd < 0) {
-		DBG_MSG("Failed to open /proc/self/cmdline!\n");
+		DBG_MSG("Failed to open '%s'!\n", PROC_SELF_CMDLINE);
 		return NULL;
 	}
 
@@ -1132,7 +1136,7 @@ static char *getcmdline(void)
 
 		n = sb_read(fd, buf + bufsize, page_size);
 		if (-1 == n) {
-			DBG_MSG("Failed to read from '/proc/self/cmdline'!\n");
+			DBG_MSG("Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
 			goto error;
 		}
 
@@ -1525,8 +1529,8 @@ unlink_hack_end:
 		/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
 		 *      It needs to be here, as for each process '/proc/self'
 		 *      will differ ... */
-		if ((0 == strncmp(resolv_path, "/proc", strlen("/proc"))) &&
-		    (NULL != realpath("/proc/self/fd", proc_self_fd))) {
+		if ((0 == strncmp(resolv_path, PROC_DIR, strlen(PROC_DIR))) &&
+		    (NULL != realpath(PROC_SELF_FD, proc_self_fd))) {
 			if (0 == strncmp(resolv_path, proc_self_fd,
 					 strlen(proc_self_fd))) {
 				result = 1;
