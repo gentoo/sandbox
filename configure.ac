@@ -202,5 +202,6 @@ AC_OUTPUT([
   etc/Makefile
   data/Makefile
   libsbutil/Makefile
+  libsandbox/Makefile
   src/Makefile
 ])
