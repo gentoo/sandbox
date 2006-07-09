@@ -135,8 +135,6 @@ void __attribute__ ((destructor)) libsb_fini(void);
 static void *get_dlsym(const char *, const char *);
 static int canonicalize(const char *, char *);
 static char *resolve_path(const char *, int);
-/* From procps */
-static char** file2strvec(const char *, const char *);
 static int write_logfile(const char *, const char *, const char *,
 						 const char *, const char *, bool, bool);
 static int check_prefixes(char **, int, const char *);
@@ -150,6 +148,14 @@ static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 static int is_sandbox_on();
+
+
+/* Convenience functions to reliably open, read and write to a file */
+static int sb_open(const char *path, int flags, mode_t mode);
+static ssize_t sb_read(int fd, void *buf, size_t count, bool *eof);
+static ssize_t sb_write(int fd, const void *buf, size_t count);
+static int sb_close(int fd);
+
 
 /*
  * Initialize the shabang
@@ -982,71 +988,142 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
-/* From procps */
-static char** file2strvec(const char *directory, const char *what)
+/* General purpose function to _reliably_ open a file
+ *
+ * Returns the file descriptor or negative number on error (and errno set)
+ */
+
+static int sb_open(const char *path, int flags, mode_t mode)
 {
-	char buf[2048];					/* read buf bytes at a time */
-	char *p, *rbuf = 0, *endbuf, **q, **ret;
-	int fd, tot = 0, n, c, end_of_file = 0;
-	int align;
+	int fd;
 
-	sprintf(buf, "%s/%s", directory, what);
 	check_dlsym(open_DEFAULT);
-	fd = true_open_DEFAULT(buf, O_RDONLY, 0);
-	if (fd==-1)
-		return NULL;
+	do {
+		fd = true_open_DEFAULT(path, flags, mode);
+	} while (fd < 0 && errno == EINTR);
 
-	/* read whole file into a memory buffer, allocating as we go */
-	while ((n = read(fd, buf, sizeof(buf - 1))) > 0) {
-		if (n < (int)(sizeof(buf - 1)))
-			    end_of_file = 1;
-		if (n == 0 && rbuf == 0)
-			return NULL;				/* process died between our open and read */
+	return fd;
+}
+
+/* General purpose function to _reliably_ read from a file
+ *
+ * Returns total read bytes and EOF flag if 3rd argument is non-NULL
+ * (always sets EOF flag)
+ *
+ * If total read bytes is less than count the only way to determine
+ * if it was because of an error or EOF is by checking the EOF flag
+ *
+ * Cannot work with counts higher than maximum ssize_t value
+ */
+
+static ssize_t sb_read(int fd, void *buf, size_t count, bool *eof)
+{
+	ssize_t n;
+	size_t accum = 0;
+
+	do {
+		n = read(fd, buf + accum, count - accum);
+
+		if (n > 0) {
+			accum += n;
+			continue;
+		}
+
 		if (n < 0) {
-			if (rbuf)
-				free(rbuf);
-			return NULL;				/* read error */
-		}
-		if (end_of_file && buf[n - 1])		/* last read char not null */
-			buf[n++] = '\0';			/* so append null-terminator */
-		rbuf = xrealloc(rbuf, tot + n);		/* allocate more memory */
-		if (NULL == rbuf) {
-			errno = ENOMEM;
-			return NULL;
-		}
-		memcpy(rbuf + tot, buf, n);		/* copy buffer into it */
-		tot += n;						/* increment total byte ctr */
-		if (end_of_file)
+			if (errno == EINTR)
+				continue;
+			if (eof)
+				*eof = FALSE;
 			break;
-	}
-	close(fd);
-	if (n <= 0 && !end_of_file) {
-		if (rbuf)
-			free(rbuf);
-		return NULL;					/* read error */
-	}
-	endbuf = rbuf + tot;					/* count space for pointers */
-	align = (sizeof(char*) - 1) - ((tot + sizeof(char*) - 1) & (sizeof(char*) - 1));
-	for (c = 0, p = rbuf; p < endbuf; p++)
-    		if (!*p)
-			c += sizeof(char*);
-	c += sizeof(char*);					/* one extra for NULL term */
+		}
 
-	rbuf = xrealloc(rbuf, tot + c + align);	/* make room for ptrs AT END */
-	if (NULL == rbuf) {
-		errno = ENOMEM;
+		/* Found EOF */
+		if (eof)
+			*eof = TRUE;
+		break;
+	} while (accum < count);
+
+	return (ssize_t) accum;
+}
+
+/* General purpose function to _reliably_ write to a file
+ *
+ * If returned value is less than count, there was a fatal
+ * error and value tells how many bytes were actually written
+ *
+ * Cannot work with counts higher than maximum ssize_t value
+ */
+
+static ssize_t sb_write(int fd, const void *buf, size_t count)
+{
+	ssize_t n;
+	size_t accum = 0;
+
+	do {
+		n = write(fd, buf + accum, count - accum);
+		if (n < 0) {
+			if (errno == EINTR)
+				continue;
+			break;
+		}
+		accum += n;
+	} while (accum < count);
+	
+	return (ssize_t) accum;
+}
+
+/* General purpose function to _reliably_ close a file
+ *
+ * Returns 0 if successful or negative number on error (and errno set)
+ */
+
+static int sb_close(int fd)
+{
+	int res;
+
+	do {
+		res = close(fd);
+	} while (res < 0 && errno == EINTR);
+
+	return res;
+}
+
+static char *getcmdline(void)
+{
+	char *buf = NULL, *zeros;
+	size_t bufsize = 0, datalen = 0;
+	ssize_t n;
+	int fd;
+
+	fd = sb_open("/proc/self/cmdline", O_RDONLY, 0);
+	if (fd < 0)
 		return NULL;
-	}
-	endbuf = rbuf + tot;					/* addr just past data buf */
-	q = ret = (char**) (endbuf+align);		/* ==> free(*ret) to dealloc */
-	*q++ = p = rbuf;					/* point ptrs to the strings */
-	endbuf--;							/* do not traverse final NUL */
-	while (++p < endbuf) 
-		if (!*p)						/* NUL char implies that */
-			*q++ = p+1;				/* next string -> next char */
 
-	*q = 0;							/* null ptr list terminator */
-	return ret;
+	/* Read 2K at a time -- whenever EOF or an error is found (don't care) give up and return */
+	do {
+		buf = xrealloc(buf, bufsize + 2048);
+		n = sb_read(fd, buf + bufsize, 2048, NULL);
+		bufsize += 2048;
+		datalen += n;
+	} while (n == 2048);
+
+	sb_close(fd);
+
+	buf[bufsize - 1] = '\0'; /* make sure we'll never overrun the buffer */
+
+	/* /proc/self/cmdline outputs ASCIIZASCIIZASCIIZ string including all arguments. replace zeroes with spaces */
+	zeros = buf;
+	while (zeros < buf + datalen) {
+		zeros = strchr(zeros, '\0');
+		if (zeros == NULL)
+			break;
+		*zeros = ' ';
+	}
+
+	/* convert to a proper ASCIIZ string */
+	buf[datalen] = '\0';
+	
+	return buf;
 }
 
 static int write_logfile(const char *logfile, const char *func, const char *path,
@@ -1069,7 +1146,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 				O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 				S_IROTH);
 		if (logfd >= 0) {
-			char **cmdline = NULL;
+			char *cmdline;
 			
 			if (0 != stat_ret) {
 				write(logfd, LOG_STRING, strlen(LOG_STRING));
@@ -1106,20 +1183,15 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 			write(logfd, rpath, strlen(rpath));
 			write(logfd, "\n", 1);
 			
-			cmdline = file2strvec("/proc/self", "cmdline");
+			cmdline = getcmdline();
 			if (NULL != cmdline) {
 				int i = 0;
 				
 				write(logfd, "C: ", 3);
-				while (NULL != cmdline[i]) {
-					write(logfd, cmdline[i], strlen(cmdline[i]));
-					if (NULL != cmdline[i + 1])
-						write(logfd, " ", 1);
-					i++;
-				}
+				sb_write(logfd, cmdline, strlen(cmdline));
 				write(logfd, "\n", 1);
 				
-				free(*cmdline);
+				free(cmdline);
 			} else if (ENOMEM == errno) {
 				SB_EERROR(color, "OUT OF MEMORY", " %s\n", __FUNCTION__);
 				return -1;
