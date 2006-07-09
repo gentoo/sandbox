@@ -34,7 +34,7 @@
 #include "config.h"
 #include "localdecls.h"
 
-#include "sandbox.h"
+#include "sbutil.h"
 
 #ifndef __set_errno
 # define __set_errno(val) errno = (val)

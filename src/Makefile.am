@@ -4,44 +4,36 @@ lib_LTLIBRARIES = libsandbox.la
 bin_PROGRAMS = sandbox
 
 AM_CPPFLAGS = \
-	-DPIC -fPIC -D_REENTRANT                \
-	-DETCDIR=\"$(sysconfdir)\"              \
-	-DLIBSANDBOX_PATH=\"$(libdir)\"         \
-	-DSANDBOX_BASHRC_PATH=\"$(pkgdatadir)\" \
+	$(SANDBOX_DEFINES)       \
+	-DPIC -fPIC -D_REENTRANT \
 	-I$(top_srcdir) -Wall
 
-INCLUDES = -I$(top_srcdir)/librcutil/include
-LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
+INCLUDES = \
+	-I$(top_srcdir)/libsbutil         \
+	-I$(top_srcdir)/libsbutil/include
 
 # We need -fexceptions here, else we do not catch exceptions
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
 libsandbox_la_CFLAGS = -fexceptions
 # Could use the following to libsandbox_la_LIBADD, but then libtool links it
 # with --whole-archive:
-#	$(top_builddir)/librcutil/librcutil.la
-libsandbox_la_LIBRCOBJS = $(wildcard  $(top_builddir)/librcutil/*.lo)
+#	$(top_builddir)/libsbutil/libsbutil.la
+libsandbox_la_LIBSBOBJS = $(wildcard  $(top_builddir)/libsbutil/*.lo)
 libsandbox_la_LIBADD = \
 	-lc $(LIBDL)               \
-	$(libsandbox_la_LIBRCOBJS)
-#	$(top_builddir)/librcutil/.libs/librcutil.a
+	$(libsandbox_la_LIBSBOBJS)
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
-	libsandbox.c      \
-	canonicalize.c    \
-	sandbox_utils.c   \
-	$(LOCAL_INCLUDES)
+	libsandbox.c \
+	canonicalize.c
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
-sandbox_LDADD = $(top_builddir)/librcutil/librcutil.la
-sandbox_SOURCES = \
-	sandbox.c         \
-	sandbox.h         \
-	sandbox_utils.c   \
-	$(LOCAL_INCLUDES)
+sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la
+sandbox_SOURCES = sandbox.c
 
 libsandbox.c: libsandbox.map symbols.h
 

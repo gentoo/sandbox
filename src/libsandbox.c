@@ -72,8 +72,7 @@
 #undef open
 #undef open64
 
-#include "sandbox.h"
-#include "rcscripts/rcutil.h"
+#include "sbutil.h"
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"

@@ -1,12 +1,31 @@
 /*
- * Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
- * Distributed under the terms of the GNU General Public License, v2 or later 
- * Author: Brad House <brad@mainstreetsoftworks.com>
- * Author: Martin Schlemmer <azarah@gentoo.org>
+ * sbutil.c
+ *
+ * Util functions.
+ *
+ * Copyright 1999-2006 Gentoo Foundation
+ *
+ *
+ *      This program is free software; you can redistribute it and/or modify it
+ *      under the terms of the GNU General Public License as published by the
+ *      Free Software Foundation version 2 of the License.
+ *
+ *      This program is distributed in the hope that it will be useful, but
+ *      WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along
+ *      with this program; if not, write to the Free Software Foundation, Inc.,
+ *      675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * Some parts might have Copyright:
+ *
+ *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
  *
  * $Header$
- * 
  */
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -18,10 +37,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 
-#include "config.h"
-#include "localdecls.h"
-
-#include "sandbox.h"
+#include "sbutil.h"
 
 void get_sandbox_lib(char *path)
 {
@@ -34,8 +50,6 @@ void get_sandbox_lib(char *path)
 	}
 #endif
 }
-
-#ifdef OUTSIDE_LIBSANDBOX
 
 void get_sandbox_rc(char *path)
 {
@@ -105,8 +119,6 @@ long file_length(int fd)
 
 	return (st.st_size);
 }
-
-#endif /* OUTSIDE_LIBSANDBOX */
 
 bool is_env_on (const char *env)
 {

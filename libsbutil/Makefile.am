@@ -1,10 +1,18 @@
 AUTOMAKE_OPTIONS = foreign
 
+AM_CPPFLAGS = \
+	$(SANDBOX_DEFINES)       \
+	-DPIC -fPIC -D_REENTRANT \
+	-I$(top_srcdir) -Wall
+
 INCLUDES = -I$(srcdir)/include
+LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
-noinst_LTLIBRARIES = librcutil.la
+noinst_LTLIBRARIES = libsbutil.la
 
-librcutil_la_SOURCES =                        \
+libsbutil_la_SOURCES =                        \
+	sbutil.h                              \
+	sbutil.c                              \
 	include/rcscripts/rctypes.h           \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/list.h         \
@@ -19,5 +27,6 @@ librcutil_la_SOURCES =                        \
 	include/rcscripts/util/config.h       \
 	src/config.c                          \
 	include/rcscripts/util/dynbuf.h       \
-	src/dynbuf.c
+	src/dynbuf.c                          \
+	$(LOCAL_INCLUDES)
 

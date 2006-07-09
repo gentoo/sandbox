@@ -1,18 +1,37 @@
-/* 
- * Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>,
- * Possibly based on code from Geert Bevin, Uwyn, http://www.uwyn.com
- * Distributed under the terms of the GNU General Public License, v2 or later 
- * Author: Brad House <brad@mainstreetsoftworks.com>
- *    
+/*
+ * sbutil.h
+ *
+ * Util defines.
+ *
+ * Copyright 1999-2006 Gentoo Foundation
+ *
+ *
+ *      This program is free software; you can redistribute it and/or modify it
+ *      under the terms of the GNU General Public License as published by the
+ *      Free Software Foundation version 2 of the License.
+ *
+ *      This program is distributed in the hope that it will be useful, but
+ *      WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along
+ *      with this program; if not, write to the Free Software Foundation, Inc.,
+ *      675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * Some parts might have Copyright:
+ *
+ *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
+ *
  * $Header$
  */
 
-#ifndef __SANDBOX_H__
-#define __SANDBOX_H__
+#ifndef __SBUTIL_H__
+#define __SBUTIL_H__
 
-#include "localdecls.h"
 #include "config.h"
-#include "rcscripts/rctypes.h"
+#include "localdecls.h"
+#include "include/rcscripts/rcutil.h"
 
 #define SANDBOX_CONF_FILE      ETCDIR "/sandbox.conf"
 #define SANDBOX_CONFD_DIR      ETCDIR "/sandbox.d"
@@ -99,22 +118,16 @@
 	} while (0)
 
 void get_sandbox_lib(char *path);
-#ifdef OUTSIDE_LIBSANDBOX
 void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path);
 void get_sandbox_debug_log(char *path);
 int get_tmp_dir(char *path);
 long file_length(int);
-#endif /* OUTSIDE_LIBSANDBOX */
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
-#ifndef OUTSIDE_LIBSANDBOX
 char *egetcwd(char *, size_t);
-#endif /* !OUTSIDE_LIBSANDBOX */
 
-#endif /* __SANDBOX_H__ */
-
-// vim:noexpandtab noai:cindent ai
+#endif /* __SBUTIL_H__ */

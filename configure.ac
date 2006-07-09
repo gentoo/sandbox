@@ -193,11 +193,14 @@ if test x"$enable_multilib" != xno ; then
   AC_DEFINE([SB_HAVE_MULTILIB], [1], [Have multilib enabled system])
 fi
 
+SANDBOX_DEFINES='-DETCDIR="\"$(sysconfdir)\"" -DLIBSANDBOX_PATH="\"$(libdir)\"" -DSANDBOX_BASHRC_PATH="\"$(pkgdatadir)\""'
+AC_SUBST([SANDBOX_DEFINES])
+
 AC_OUTPUT([
   Makefile
   scripts/Makefile
   etc/Makefile
   data/Makefile
-  librcutil/Makefile
+  libsbutil/Makefile
   src/Makefile
 ])

@@ -27,8 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "sandbox.h"
-#include "rcscripts/rcutil.h"
+#include "sbutil.h"
 
 struct sandbox_info_t {
 	char sandbox_log[SB_PATH_MAX];
