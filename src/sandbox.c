@@ -544,7 +544,7 @@ int spawn_shell(char *argv_bash[], char **env, int debug)
 		return 0;
 	}
 
-	/* execve() creates a copy of this, so no need to use more memory than
+	/* fork() creates a copy of this, so no need to use more memory than
 	 * absolutely needed. */
 	str_list_free(argv_bash);
 	str_list_free(env);
