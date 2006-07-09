@@ -122,7 +122,6 @@ void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path);
 void get_sandbox_debug_log(char *path);
 int get_tmp_dir(char *path);
-long file_length(int);
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 

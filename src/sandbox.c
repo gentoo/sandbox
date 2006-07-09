@@ -114,7 +114,7 @@ int print_sandbox_log(char *sandbox_log)
 	int sandbox_log_file = -1;
 	char *beep_count_env = NULL;
 	int i, color, beep_count = 0;
-	long len = 0;
+	off_t len = 0;
 	char *buffer = NULL;
 
 	if (!rc_is_file(sandbox_log, FALSE)) {
@@ -128,7 +128,7 @@ int print_sandbox_log(char *sandbox_log)
 		return 0;
 	}
 
-	len = file_length(sandbox_log_file);
+	len = rc_get_size(sandbox_log, TRUE);
 	buffer = (char *)xmalloc((len + 1) * sizeof(char));
 	memset(buffer, 0, len + 1);
 	read(sandbox_log_file, buffer, len);

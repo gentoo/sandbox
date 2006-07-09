@@ -111,18 +111,6 @@ int get_tmp_dir(char *path)
 	return 0;
 }
 
-long file_length(int fd)
-{
-	struct stat st;
-	int retval;
-
-	retval = fstat(fd, &st);
-	if (-1 == retval)
-		return 0;
-
-	return (st.st_size);
-}
-
 bool is_env_on (const char *env)
 {
 	if ((NULL != env) && (NULL != getenv(env)) &&
