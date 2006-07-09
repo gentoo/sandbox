@@ -152,9 +152,19 @@ static int is_sandbox_on();
 
 /* Convenience functions to reliably open, read and write to a file */
 static int sb_open(const char *path, int flags, mode_t mode);
-static ssize_t sb_read(int fd, void *buf, size_t count, bool *eof);
-static ssize_t sb_write(int fd, const void *buf, size_t count);
+static size_t sb_read(int fd, void *buf, size_t count);
+static size_t sb_write(int fd, const void *buf, size_t count);
 static int sb_close(int fd);
+
+/* Macro for sb_read() to goto an label on error */
+#define SB_WRITE(_fd, _buf, _count, _error) \
+	do { \
+		size_t _n; \
+		_n = sb_write(_fd, _buf, _count); \
+		if (-1 == _n) \
+			goto _error; \
+	} while (0)
+
 
 
 /*
@@ -864,10 +874,8 @@ int _name(const char *filename, char *const argv[], char *const envp[]) \
 					add_ldpreload = 1; \
 \
 				my_env = (char **)xcalloc(env_len + add_ldpreload, sizeof(char *)); \
-				if (NULL == my_env) { \
-					errno = ENOMEM; \
+				if (NULL == my_env) \
 					return result; \
-				} \
 				/* Copy envp to my_env */ \
 				do \
 					/* Leave a space for LD_PRELOAD if needed */ \
@@ -990,7 +998,7 @@ char *egetcwd(char *buf, size_t size)
 
 /* General purpose function to _reliably_ open a file
  *
- * Returns the file descriptor or negative number on error (and errno set)
+ * Returns the file descriptor or -1 on error (and errno set)
  */
 
 static int sb_open(const char *path, int flags, mode_t mode)
@@ -998,25 +1006,19 @@ static int sb_open(const char *path, int flags, mode_t mode)
 	int fd;
 
 	check_dlsym(open_DEFAULT);
-	do {
-		fd = true_open_DEFAULT(path, flags, mode);
-	} while (fd < 0 && errno == EINTR);
+	fd = true_open_DEFAULT(path, flags, mode);
+	if (-1 == fd)
+		DBG_MSG("Failed to open file '%s'!\n", path);
 
 	return fd;
 }
 
-/* General purpose function to _reliably_ read from a file
+/* General purpose function to _reliably_ read from a file.
  *
- * Returns total read bytes and EOF flag if 3rd argument is non-NULL
- * (always sets EOF flag)
- *
- * If total read bytes is less than count the only way to determine
- * if it was because of an error or EOF is by checking the EOF flag
- *
- * Cannot work with counts higher than maximum ssize_t value
+ * Returns total read bytes or -1 on error.
  */
 
-static ssize_t sb_read(int fd, void *buf, size_t count, bool *eof)
+static size_t sb_read(int fd, void *buf, size_t count)
 {
 	ssize_t n;
 	size_t accum = 0;
@@ -1030,31 +1032,30 @@ static ssize_t sb_read(int fd, void *buf, size_t count, bool *eof)
 		}
 
 		if (n < 0) {
-			if (errno == EINTR)
+			if (EINTR == errno) {
+				/* Reset errno to not trigger DBG_MSG */
+				errno = 0;
 				continue;
-			if (eof)
-				*eof = FALSE;
-			break;
+			}
+
+			DBG_MSG("Failed to read from fd=%i!\n", fd);
+			return -1;
 		}
 
 		/* Found EOF */
-		if (eof)
-			*eof = TRUE;
 		break;
 	} while (accum < count);
 
-	return (ssize_t) accum;
+	return accum;
 }
 
 /* General purpose function to _reliably_ write to a file
  *
  * If returned value is less than count, there was a fatal
  * error and value tells how many bytes were actually written
- *
- * Cannot work with counts higher than maximum ssize_t value
  */
 
-static ssize_t sb_write(int fd, const void *buf, size_t count)
+static size_t sb_write(int fd, const void *buf, size_t count)
 {
 	ssize_t n;
 	size_t accum = 0;
@@ -1062,14 +1063,20 @@ static ssize_t sb_write(int fd, const void *buf, size_t count)
 	do {
 		n = write(fd, buf + accum, count - accum);
 		if (n < 0) {
-			if (errno == EINTR)
+			if (EINTR == errno) {
+				/* Reset errno to not trigger DBG_MSG */
+				errno = 0;
 				continue;
+			}
+
+			DBG_MSG("Failed to write to fd=%i!\n", fd);
 			break;
 		}
+
 		accum += n;
 	} while (accum < count);
 	
-	return (ssize_t) accum;
+	return accum;
 }
 
 /* General purpose function to _reliably_ close a file
@@ -1083,26 +1090,50 @@ static int sb_close(int fd)
 
 	do {
 		res = close(fd);
-	} while (res < 0 && errno == EINTR);
+	} while ((res < 0) && (EINTR == errno));
+
+	/* Do not care about errors here */
+	errno = 0;
 
 	return res;
 }
 
 static char *getcmdline(void)
 {
+	struct stat st;
 	char *buf = NULL, *zeros;
 	size_t bufsize = 0, datalen = 0;
-	ssize_t n;
+	size_t n;
 	int fd;
 
-	fd = sb_open("/proc/self/cmdline", O_RDONLY, 0);
-	if (fd < 0)
+	/* Don't care if it do not exist */
+	if (-1 == stat("/proc/self/cmdline", &st)) {
+		errno = 0;
 		return NULL;
+	}
 
-	/* Read 2K at a time -- whenever EOF or an error is found (don't care) give up and return */
+	fd = sb_open("/proc/self/cmdline", O_RDONLY, 0);
+	if (fd < 0) {
+		DBG_MSG("Failed to open /proc/self/cmdline!\n");
+		return NULL;
+	}
+
+	/* Read 2K at a time -- whenever EOF or an error is found (don't care)
+	 * give up and return */
 	do {
-		buf = xrealloc(buf, bufsize + 2048);
-		n = sb_read(fd, buf + bufsize, 2048, NULL);
+		char *tmp_buf = NULL;
+
+		tmp_buf = xrealloc(buf, bufsize + 2048);
+		if (NULL == tmp_buf)
+			goto error;
+		buf = tmp_buf;
+
+		n = sb_read(fd, buf + bufsize, 2048);
+		if (-1 == n) {
+			DBG_MSG("Failed to read from '/proc/self/cmdline'!\n");
+			goto error;
+		}
+
 		bufsize += 2048;
 		datalen += n;
 	} while (n == 2048);
@@ -1111,7 +1142,8 @@ static char *getcmdline(void)
 
 	buf[bufsize - 1] = '\0'; /* make sure we'll never overrun the buffer */
 
-	/* /proc/self/cmdline outputs ASCIIZASCIIZASCIIZ string including all arguments. replace zeroes with spaces */
+	/* /proc/self/cmdline outputs ASCIIZASCIIZASCIIZ string including all
+	 * arguments. replace zeroes with spaces */
 	zeros = buf;
 	while (zeros < buf + datalen) {
 		zeros = strchr(zeros, '\0');
@@ -1124,6 +1156,12 @@ static char *getcmdline(void)
 	buf[datalen] = '\0';
 	
 	return buf;
+
+error:
+	if (NULL != buf)
+		free(buf);
+
+	return NULL;
 }
 
 static int write_logfile(const char *logfile, const char *func, const char *path,
@@ -1135,77 +1173,78 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	int logfd;
 	
 	stat_ret = lstat(logfile, &log_stat);
+	/* Do not care about failure */
+	errno = 0;
 	if ((0 == stat_ret) &&
 	    (0 == S_ISREG(log_stat.st_mode))) {
 		SB_EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
 		abort();
 	} else {
-		check_dlsym(open_DEFAULT);
-		logfd = true_open_DEFAULT(logfile, O_APPEND | O_WRONLY |
+		logfd = sb_open(logfile, O_APPEND | O_WRONLY |
 				O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
 				S_IROTH);
 		if (logfd >= 0) {
 			char *cmdline;
 			
 			if (0 != stat_ret) {
-				write(logfd, LOG_STRING, strlen(LOG_STRING));
-				write(logfd, LOG_FMT_FUNC, strlen(LOG_FMT_FUNC));
-				write(logfd, LOG_FMT_ACCESS, strlen(LOG_FMT_ACCESS));
-				write(logfd, LOG_FMT_PATH, strlen(LOG_FMT_PATH));
-				write(logfd, LOG_FMT_APATH, strlen(LOG_FMT_APATH));
-				write(logfd, LOG_FMT_RPATH, strlen(LOG_FMT_RPATH));
-				write(logfd, LOG_FMT_CMDLINE, strlen(LOG_FMT_CMDLINE));
-				write(logfd, "\n", 1);
+				SB_WRITE(logfd, LOG_STRING, strlen(LOG_STRING), error);
+				SB_WRITE(logfd, LOG_FMT_FUNC, strlen(LOG_FMT_FUNC), error);
+				SB_WRITE(logfd, LOG_FMT_ACCESS, strlen(LOG_FMT_ACCESS), error);
+				SB_WRITE(logfd, LOG_FMT_PATH, strlen(LOG_FMT_PATH), error);
+				SB_WRITE(logfd, LOG_FMT_APATH, strlen(LOG_FMT_APATH), error);
+				SB_WRITE(logfd, LOG_FMT_RPATH, strlen(LOG_FMT_RPATH), error);
+				SB_WRITE(logfd, LOG_FMT_CMDLINE, strlen(LOG_FMT_CMDLINE), error);
+				SB_WRITE(logfd, "\n", 1, error);
 			} else {
 				/* Already have data in the log, so add a newline to space the
 				 * log entries.
 				 */
-				write(logfd, "\n", 1);
+				SB_WRITE(logfd, "\n", 1, error);
 			}
 			
-			write(logfd, "F: ", 3);
-			write(logfd, func, strlen(func));
-			write(logfd, "\n", 1);
-			write(logfd, "S: ", 3);
+			SB_WRITE(logfd, "F: ", 3, error);
+			SB_WRITE(logfd, func, strlen(func), error);
+			SB_WRITE(logfd, "\n", 1, error);
+			SB_WRITE(logfd, "S: ", 3, error);
 			if (access)
-				write(logfd, "allow", 5);
+				SB_WRITE(logfd, "allow", 5, error);
 			else
-				write(logfd, "deny", 4);
-			write(logfd, "\n", 1);
-			write(logfd, "P: ", 3);
-			write(logfd, path, strlen(path));
-			write(logfd, "\n", 1);
-			write(logfd, "A: ", 3);
-			write(logfd, apath, strlen(apath));
-			write(logfd, "\n", 1);
-			write(logfd, "R: ", 3);
-			write(logfd, rpath, strlen(rpath));
-			write(logfd, "\n", 1);
+				SB_WRITE(logfd, "deny", 4, error);
+			SB_WRITE(logfd, "\n", 1, error);
+			SB_WRITE(logfd, "P: ", 3, error);
+			SB_WRITE(logfd, path, strlen(path), error);
+			SB_WRITE(logfd, "\n", 1, error);
+			SB_WRITE(logfd, "A: ", 3, error);
+			SB_WRITE(logfd, apath, strlen(apath), error);
+			SB_WRITE(logfd, "\n", 1, error);
+			SB_WRITE(logfd, "R: ", 3, error);
+			SB_WRITE(logfd, rpath, strlen(rpath), error);
+			SB_WRITE(logfd, "\n", 1, error);
 			
 			cmdline = getcmdline();
 			if (NULL != cmdline) {
-				int i = 0;
-				
-				write(logfd, "C: ", 3);
-				sb_write(logfd, cmdline, strlen(cmdline));
-				write(logfd, "\n", 1);
+				SB_WRITE(logfd, "C: ", 3, error);
+				SB_WRITE(logfd, cmdline, strlen(cmdline),
+					 error);
+				SB_WRITE(logfd, "\n", 1, error);
 				
 				free(cmdline);
-			} else if (ENOMEM == errno) {
-				SB_EERROR(color, "OUT OF MEMORY", " %s\n", __FUNCTION__);
-				return -1;
+			} else if (0 != errno) {
+				goto error;
 			}
 				
 			
-			close(logfd);
+			sb_close(logfd);
 		} else {
-			SB_EERROR(color, "OPEN LOG FILE", " %s\n", logfile);
-			return -1;
+			goto error;
 		}
 	}
 	
 	return 0;
+
+error:
+	return -1;
 }
 
 static void init_context(sbcontext_t * context)
@@ -1298,6 +1337,8 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 
 	while ((NULL != token) && (strlen(token) > 0)) {
 		pfx_item = resolve_path(token, 0);
+		/* We do not care about errno here */
+		errno = 0;
 		if (NULL != pfx_item) {
 			pfx_num++;
 
@@ -1332,8 +1373,8 @@ done:
 	return;
 
 error:
-	perror("libsandbox:  Could not initialize environ\n");
-	exit(EXIT_FAILURE);
+	DBG_MSG("Unrecoverable error!\n");
+	abort();
 }
 
 static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
@@ -1563,7 +1604,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 		if (-1 == write_logfile(log_path, func, file, absolute_path,
 								resolved_path, (access == 1) ? 0 : 1,
 								color)) {
-			if (ENOMEM == errno)
+			if (0 != errno)
 				goto error;
 		}
 	} 
@@ -1572,7 +1613,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 		if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
 								resolved_path, (access == 1) ? 0 : 1,
 								color)) {
-			if (ENOMEM == errno)
+			if (0 != errno)
 				goto error;
 		}
 	}
@@ -1604,7 +1645,9 @@ error:
 		return 1;
 	}
 
-	return 0;
+	/* If we get here, something bad happened */
+	DBG_MSG("Unrecoverable error!\n");
+	abort();
 }
 
 static int is_sandbox_on()
@@ -1650,6 +1693,11 @@ static int before_syscall(const char *func, const char *file)
 	if(0 == sb_init) {
 		init_context(&sbcontext);
 		cached_env_vars = xmalloc(sizeof(char *) * 4);
+		if (NULL == cached_env_vars) {
+			DBG_MSG("Unrecoverable error!\n");
+			abort();
+		}
+
 		cached_env_vars[0] = cached_env_vars[1] = cached_env_vars[2] = cached_env_vars[3] = NULL;
 		sb_init = 1;
 	}
