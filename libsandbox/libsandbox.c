@@ -73,6 +73,7 @@
 #undef open64
 
 #include "sbutil.h"
+#include "libsandbox.h"
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"

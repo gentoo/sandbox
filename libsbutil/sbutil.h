@@ -125,8 +125,4 @@ int get_tmp_dir(char *path);
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 
-/* glibc modified realpath() function */
-char *erealpath(const char *, char *);
-char *egetcwd(char *, size_t);
-
 #endif /* __SBUTIL_H__ */
