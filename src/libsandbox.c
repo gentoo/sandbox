@@ -1320,13 +1320,13 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
-		if (0 == strncmp(func, "access_rd", 7)) {
+		if (0 == strncmp(func, "access_rd", 9)) {
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
 	}
 		
-	if ((0 == strncmp(func, "access_wr", 7)) ||
+	if ((0 == strncmp(func, "access_wr", 9)) ||
 	    (0 == strncmp(func, "open_wr", 7)) ||
 	    (0 == strncmp(func, "creat", 5)) ||
 	    (0 == strncmp(func, "creat64", 7)) ||
@@ -1430,7 +1430,7 @@ unlink_hack_end:
 
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
-		if (0 == strncmp(func, "access_wr", 7)) {
+		if (0 == strncmp(func, "access_wr", 9)) {
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
