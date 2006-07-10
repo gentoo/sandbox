@@ -25,6 +25,19 @@
 #ifndef __LIBSANDBOX_H__
 #define __LIBSANDBOX_H__
 
+/* Macros to check if a function should be executed */
+#define FUNCTION_SANDBOX_SAFE(_func, _path) \
+	((0 == is_sandbox_on()) || (1 == before_syscall(_func, _path)))
+
+#define FUNCTION_SANDBOX_SAFE_ACCESS(_func, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_access(_func, _path, _flags)))
+
+#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_func, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(_func, _path, _flags)))
+
+#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_func, _path, _mode) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(_func, _path, _mode)))
+
 int canonicalize(const char *, char *);
 
 int is_sandbox_on();
