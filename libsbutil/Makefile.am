@@ -13,6 +13,7 @@ noinst_LTLIBRARIES = libsbutil.la
 libsbutil_la_SOURCES =                        \
 	sbutil.h                              \
 	sbutil.c                              \
+	sbio.c                                \
 	include/rcscripts/rctypes.h           \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/list.h         \

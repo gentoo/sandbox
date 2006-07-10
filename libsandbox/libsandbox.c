@@ -35,35 +35,17 @@
 #define open   xxx_open
 #define open64 xxx_open64
 
-#include "config.h"
-
-/* Better way would be to only define _GNU_SOURCE when __GLIBC__ is defined,
- * but including features.h and then defining _GNU_SOURCE do not work */
-#if defined(HAVE_RTLD_NEXT)
-# define _GNU_SOURCE
-#endif
-#include <dirent.h>
-#include <dlfcn.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <libgen.h>
-#include <stdarg.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/param.h>
 #include <signal.h>
 #include <unistd.h>
-#include <utime.h>
-
-#include "localdecls.h"
-
-#if !defined(BROKEN_RTLD_NEXT) && defined(HAVE_RTLD_NEXT)
-# define USE_RTLD_NEXT
-#endif
+#include <fcntl.h>
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
@@ -72,8 +54,12 @@
 #undef open
 #undef open64
 
+#include "config.h"
+#include "localdecls.h"
 #include "sbutil.h"
+
 #include "libsandbox.h"
+#include "wrappers.h"
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
@@ -88,30 +74,7 @@
 #define PROC_SELF_FD			PROC_DIR "/self/fd"
 #define PROC_SELF_CMDLINE		PROC_DIR "/self/cmdline"
 
-/* Macros to check if a function should be executed */
-#define FUNCTION_SANDBOX_SAFE(_func, _path) \
-	((0 == is_sandbox_on()) || (1 == before_syscall(_func, _path)))
-
-#define FUNCTION_SANDBOX_SAFE_ACCESS(_func, _path, _flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_access(_func, _path, _flags)))
-
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_func, _path, _flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(_func, _path, _flags)))
-
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_func, _path, _mode) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(_func, _path, _mode)))
-
-/* Macro to check if a wrapper is defined, if not
- * then try to resolve it again. */
-#define check_dlsym(_name) \
-{ \
-	int old_errno = errno; \
-	if (!true_ ## _name) \
-		true_ ## _name = get_dlsym(symname_ ## _name, symver_ ## _name); \
-	errno = old_errno; \
-}
-
-static char sandbox_lib[SB_PATH_MAX];
+char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
 	int show_access_violation;
@@ -129,53 +92,28 @@ typedef struct {
 
 static sbcontext_t sbcontext;
 static char **cached_env_vars;
-int sandbox_on = 1;
+volatile int sandbox_on = 1;
 static int sb_init = 0;
 static int sb_path_size_warning = 0;
 
 void __attribute__ ((constructor)) libsb_init(void);
 void __attribute__ ((destructor)) libsb_fini(void);
 
-static void *get_dlsym(const char *, const char *);
-static int canonicalize(const char *, char *);
 static char *resolve_path(const char *, int);
 static int write_logfile(const char *, const char *, const char *,
 						 const char *, const char *, bool, bool);
 static int check_prefixes(char **, int, const char *);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
-static int before_syscall(const char *, const char *);
-static int before_syscall_access(const char *, const char *, int);
-static int before_syscall_open_int(const char *, const char *, int);
-static int before_syscall_open_char(const char *, const char *, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
-static int is_sandbox_on();
-
-
-/* Convenience functions to reliably open, read and write to a file */
-static int sb_open(const char *path, int flags, mode_t mode);
-static size_t sb_read(int fd, void *buf, size_t count);
-static size_t sb_write(int fd, const void *buf, size_t count);
-static int sb_close(int fd);
-
-/* Macro for sb_read() to goto an label on error */
-#define SB_WRITE(_fd, _buf, _count, _error) \
-	do { \
-		size_t _n; \
-		_n = sb_write(_fd, _buf, _count); \
-		if (-1 == _n) \
-			goto _error; \
-	} while (0)
-
 
 
 /*
  * Initialize the shabang
  */
 
-static void *libc_handle = NULL;
 static char log_domain[] = "libsandbox";
 
 void __attribute__ ((destructor)) libsb_fini(void)
@@ -214,6 +152,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 #endif
 
 	rc_log_domain(log_domain);
+	sb_set_open(libsb_open);
 
 	/* Get the path and name to this library */
 	get_sandbox_lib(sandbox_lib);
@@ -223,37 +162,7 @@ void __attribute__ ((constructor)) libsb_init(void)
 	errno = old_errno;
 }
 
-static void *get_dlsym(const char *symname, const char *symver)
-{
-	void *symaddr = NULL;
-
-	if (NULL == libc_handle) {
-#if !defined(USE_RTLD_NEXT)
-		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-		if (!libc_handle) {
-			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
-				dlerror());
-			exit(EXIT_FAILURE);
-		}
-#else
-		libc_handle = RTLD_NEXT;
-#endif
-	}
-
-	if (NULL == symver)
-		symaddr = dlsym(libc_handle, symname);
-	else
-		symaddr = dlvsym(libc_handle, symname, symver);
-	if (!symaddr) {
-		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
-			symname, dlerror());
-		exit(EXIT_FAILURE);
-	}
-
-	return symaddr;
-}
-
-static int canonicalize(const char *path, char *resolved_path)
+int canonicalize(const char *path, char *resolved_path)
 {
 	int old_errno = errno;
 	char *retval;
@@ -364,573 +273,6 @@ static char *resolve_path(const char *path, int follow_link)
 }
 
 /*
- * Wrapper Functions
- */
-
-#define chmod_decl(_name) \
-\
-extern int _name(const char *, mode_t); \
-static int (*true_ ## _name) (const char *, mode_t) = NULL; \
-\
-int _name(const char *path, mode_t mode) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("chmod", path) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(path, mode); \
-	} \
-\
-	return result; \
-}
-
-#define chown_decl(_name) \
-\
-extern int _name(const char *, uid_t, gid_t); \
-static int (*true_ ## _name) (const char *, uid_t, gid_t) = NULL; \
-\
-int _name(const char *path, uid_t owner, gid_t group) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("chown", path) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(path, owner, group); \
-	} \
-\
-	return result; \
-}
-
-#define creat_decl(_name) \
-\
-extern int _name(const char *, mode_t); \
-/* static int (*true_ ## _name) (const char *, mode_t) = NULL; */ \
-\
-int _name(const char *pathname, mode_t mode) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("creat", pathname) { \
-		check_dlsym(open_DEFAULT); \
-		result = true_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
-	} \
-\
-	return result; \
-}
-
-#define fopen_decl(_name) \
-\
-extern FILE *_name(const char *, const char *); \
-static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
-\
-FILE *_name(const char *pathname, const char *mode) \
-{ \
-	FILE *result = NULL; \
-\
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", pathname, mode) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode); \
-	} \
-\
-	return result; \
-}
-
-#define lchown_decl(_name) \
-\
-extern int _name(const char *, uid_t, gid_t); \
-static int (*true_ ## _name) (const char *, uid_t, gid_t) = NULL; \
-\
-int _name(const char *path, uid_t owner, gid_t group) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("lchown", path) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(path, owner, group); \
-	} \
-\
-	return result; \
-}
-
-#define link_decl(_name) \
-\
-extern int _name(const char *, const char *); \
-static int (*true_ ## _name) (const char *, const char *) = NULL; \
-\
-int _name(const char *oldpath, const char *newpath) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("link", newpath) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(oldpath, newpath); \
-	} \
-\
-	return result; \
-}
-
-#define mkdir_decl(_name) \
-\
-extern int _name(const char *, mode_t); \
-static int (*true_ ## _name) (const char *, mode_t) = NULL; \
-\
-int _name(const char *pathname, mode_t mode) \
-{ \
-	struct stat st; \
-	int result = -1, my_errno = errno; \
-	char canonic[SB_PATH_MAX]; \
-\
-	if (-1 == canonicalize(pathname, canonic)) \
-		/* Path is too long to canonicalize, do not fail, but just let 
-		 * the real function handle it (see bug #94630 and #21766). */ \
-		if (ENAMETOOLONG != errno) \
-			return -1; \
-\
-	/* XXX: Hack to prevent errors if the directory exist,
-	 * and are not writable - we rather return EEXIST rather
-	 * than failing */ \
-	if (0 == lstat(canonic, &st)) { \
-		errno = EEXIST; \
-		return -1; \
-	} \
-	errno = my_errno; \
-\
-	if FUNCTION_SANDBOX_SAFE("mkdir", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode); \
-	} \
-\
-	return result; \
-}
-
-#define opendir_decl(_name) \
-\
-extern DIR *_name(const char *); \
-static DIR * (*true_ ## _name) (const char *) = NULL; \
-\
-DIR *_name(const char *name) \
-{ \
-	DIR *result = NULL; \
-\
-	if FUNCTION_SANDBOX_SAFE("opendir", name) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(name); \
-	} \
-\
-	return result; \
-}
-
-#define mknod_decl(_name) \
-\
-extern int _name(const char *, mode_t, dev_t); \
-static int (*true_ ## _name) (const char *, mode_t, dev_t) = NULL; \
-\
-int _name(const char *pathname, mode_t mode, dev_t dev) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("mknod", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode, dev); \
-	} \
-\
-	return result; \
-}
-
-#define __xmknod_decl(_name) \
-\
-extern int _name(int, const char *, __mode_t, __dev_t *); \
-static int (*true_ ## _name) (int, const char *, __mode_t, __dev_t *) = NULL; \
-\
-int _name(int ver, const char *pathname, __mode_t mode, __dev_t *dev) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("mknod", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(ver, pathname, mode, dev); \
-	} \
-\
-	return result; \
-}
-
-#define mkfifo_decl(_name) \
-\
-extern int _name(const char *, mode_t); \
-static int (*true_ ## _name) (const char *, mode_t) = NULL; \
-\
-int _name(const char *pathname, mode_t mode) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("mkfifo", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode); \
-	} \
-\
-	return result; \
-}
-
-#define access_decl(_name) \
-\
-extern int _name(const char *, int); \
-static int (*true_ ## _name) (const char *, int) = NULL; \
-\
-int _name(const char *pathname, int mode) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE_ACCESS("access", pathname, mode) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode); \
-	} \
-\
-	return result; \
-}
-
-#define open_decl(_name) \
-\
-extern int _name(const char *, int, ...); \
-static int (*true_ ## _name) (const char *, int, ...) = NULL; \
-\
-/* Eventually, there is a third parameter: it's mode_t mode */ \
-int _name(const char *pathname, int flags, ...) \
-{ \
-	va_list ap; \
-	int mode = 0; \
-	int result = -1; \
-\
-	if (flags & O_CREAT) { \
-		va_start(ap, flags); \
-		mode = va_arg(ap, int); \
-		va_end(ap); \
-	} \
-\
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) { \
-		check_dlsym(_name); \
-		if (flags & O_CREAT) \
-			result = true_ ## _name(pathname, flags, mode); \
-		else \
-			result = true_ ## _name(pathname, flags); \
-	} \
-\
-	return result; \
-}
-
-#define rename_decl(_name) \
-\
-extern int _name(const char *, const char *); \
-static int (*true_ ## _name) (const char *, const char *) = NULL; \
-\
-int _name(const char *oldpath, const char *newpath) \
-{ \
-	int result = -1; \
-\
-	if (FUNCTION_SANDBOX_SAFE("rename", oldpath) && \
-	    FUNCTION_SANDBOX_SAFE("rename", newpath)) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(oldpath, newpath); \
-	} \
-\
-	return result; \
-}
-
-#define rmdir_decl(_name) \
-\
-extern int _name(const char *); \
-static int (*true_ ## _name) (const char *) = NULL; \
-\
-int _name(const char *pathname) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("rmdir", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname); \
-	} \
-\
-	return result; \
-}
-
-#define symlink_decl(_name) \
-\
-extern int _name(const char *, const char *); \
-static int (*true_ ## _name) (const char *, const char *) = NULL; \
-\
-int _name(const char *oldpath, const char *newpath) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("symlink", newpath) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(oldpath, newpath); \
-	} \
-\
-	return result; \
-}
-
-#define truncate_decl(_name) \
-\
-extern int _name(const char *, TRUNCATE_T); \
-static int (*true_ ## _name) (const char *, TRUNCATE_T) = NULL; \
-\
-int _name(const char *path, TRUNCATE_T length) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("truncate", path) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(path, length); \
-	} \
-\
-	return result; \
-}
-
-#define unlink_decl(_name) \
-\
-extern int _name(const char *); \
-static int (*true_ ## _name) (const char *) = NULL; \
-\
-int _name(const char *pathname) \
-{ \
-	int result = -1; \
-	char canonic[SB_PATH_MAX]; \
-\
-	if (-1 == canonicalize(pathname, canonic)) \
-		/* Path is too long to canonicalize, do not fail, but just let
-		 * the real function handle it (see bug #94630 and #21766). */ \
-		if (ENAMETOOLONG != errno) \
-			return -1; \
-\
-	/* XXX: Hack to make sure sandboxed process cannot remove
-	 * a device node, bug #79836. */ \
-	if ((0 == strncmp(canonic, "/dev/null", 9)) || \
-	    (0 == strncmp(canonic, "/dev/zero", 9))) { \
-		errno = EACCES; \
-		return result; \
-	} \
-\
-	if FUNCTION_SANDBOX_SAFE("unlink", pathname) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname); \
-	} \
-\
-	return result; \
-}
-
-#define getcwd_decl(_name) \
-\
-extern char *_name(char *, size_t); \
-static char * (*true_ ## _name) (char *, size_t) = NULL; \
-\
-char *_name(char *buf, size_t size) \
-{ \
-	char *result = NULL; \
-\
-	/* Need to disable sandbox, as on non-linux libc's, opendir() is
-	 * used by some getcwd() implementations and resolves to the sandbox
-	 * opendir() wrapper, causing infinit recursion and finially crashes.
-	 */ \
-	sandbox_on = 0; \
-	check_dlsym(_name); \
-	result = true_ ## _name(buf, size); \
-	sandbox_on = 1; \
-\
-	return result; \
-}
-
-#define creat64_decl(_name) \
-\
-extern int _name(const char *, __mode_t); \
-/* static int (*true_ ## _name) (const char *, __mode_t) = NULL; */ \
-\
-int _name(const char *pathname, __mode_t mode) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("creat64", pathname) { \
-		check_dlsym(open64_DEFAULT); \
-		result = true_open64_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode); \
-	} \
-\
-	return result; \
-}
-
-#define fopen64_decl(_name) \
-\
-extern FILE *_name(const char *, const char *); \
-static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
-\
-FILE *_name(const char *pathname, const char *mode) \
-{ \
-	FILE *result = NULL; \
-\
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", pathname, mode) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(pathname, mode); \
-	} \
-\
-	return result; \
-}
-
-#define open64_decl(_name) \
-\
-extern int _name(const char *, int, ...); \
-static int (*true_ ## _name) (const char *, int, ...) = NULL; \
-\
-/* Eventually, there is a third parameter: it's mode_t mode */ \
-int _name(const char *pathname, int flags, ...) \
-{ \
-	va_list ap; \
-	int mode = 0; \
-	int result = -1; \
-\
-	if (flags & O_CREAT) { \
-		va_start(ap, flags); \
-		mode = va_arg(ap, int); \
-		va_end(ap); \
-	} \
-\
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) { \
-		check_dlsym(_name); \
-		if (flags & O_CREAT) \
-			result = true_ ## _name(pathname, flags, mode); \
-		else \
-			result = true_ ## _name(pathname, flags); \
-	} \
-\
-	return result; \
-}
-
-#define truncate64_decl(_name) \
-\
-extern int _name(const char *, __off64_t); \
-static int (*true_ ## _name) (const char *, __off64_t) = NULL; \
-\
-int _name(const char *path, __off64_t length) \
-{ \
-	int result = -1; \
-\
-	if FUNCTION_SANDBOX_SAFE("truncate64", path) { \
-		check_dlsym(_name); \
-		result = true_ ## _name(path, length); \
-	} \
-\
-	return result; \
-}
-
-/*
- * Exec Wrappers
- */
-
-#define execve_decl(_name) \
-\
-extern int _name(const char *, char *const[], char *const[]); \
-static int (*true_ ## _name) (const char *, char *const[], char *const[]) = NULL; \
-\
-int _name(const char *filename, char *const argv[], char *const envp[]) \
-{ \
-	int old_errno = errno; \
-	int result = -1; \
-	int count = 0; \
-	int env_len = 0; \
-	char **my_env = NULL; \
-	int kill_env = 1; \
-	/* We limit the size LD_PRELOAD can be here, but it should be enough */ \
-	char tmp_str[SB_BUF_LEN]; \
-\
-	if FUNCTION_SANDBOX_SAFE("execve", filename) { \
-		while (envp[count] != NULL) { \
-			/* Check if we do not have to do anything */ \
-			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) { \
-				if (NULL != strstr(envp[count], sandbox_lib)) { \
-					my_env = (char **)envp; \
-					kill_env = 0; \
-					goto end_loop; \
-				} \
-			} \
-\
-			/* If LD_PRELOAD is set and sandbox_lib not in it */ \
-			if (((strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) && \
-			     (NULL == strstr(envp[count], sandbox_lib))) || \
-			    /* Or  LD_PRELOAD is not set, and this is the last loop */ \
-			    ((strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) && \
-			     (NULL == envp[count + 1]))) { \
-				int i = 0; \
-				int add_ldpreload = 0; \
-				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1; \
-\
-				/* Fail safe ... */ \
-				if (max_envp_len > SB_BUF_LEN) { \
-					fprintf(stderr, "libsandbox:  max_envp_len too big!\n"); \
-					errno = ENOMEM; \
-					return result; \
-				} \
-\
-				/* Calculate envp size */ \
-				my_env = (char **)envp; \
-				do \
-					env_len++; \
-				while (NULL != *my_env++); \
-\
-				/* Should we add LD_PRELOAD ? */ \
-				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) \
-					add_ldpreload = 1; \
-\
-				my_env = (char **)xcalloc(env_len + add_ldpreload, sizeof(char *)); \
-				if (NULL == my_env) \
-					return result; \
-				/* Copy envp to my_env */ \
-				do \
-					/* Leave a space for LD_PRELOAD if needed */ \
-					my_env[i + add_ldpreload] = envp[i]; \
-				while (NULL != envp[i++]); \
-\
-				/* Add 'LD_PRELOAD=' to the beginning of our new string */ \
-				snprintf(tmp_str, max_envp_len, "%s%s", LD_PRELOAD_EQ, sandbox_lib); \
-\
-				/* LD_PRELOAD already have variables other than sandbox_lib,
-				 * thus we have to add sandbox_lib seperated via a whitespace. */ \
-				if (0 == add_ldpreload) { \
-					snprintf((char *)(tmp_str + strlen(tmp_str)), \
-						 max_envp_len - strlen(tmp_str) + 1, " %s", \
-						 (char *)(envp[count] + strlen(LD_PRELOAD_EQ))); \
-				} \
-\
-				/* Valid string? */ \
-				tmp_str[max_envp_len] = '\0'; \
-\
-				/* Ok, replace my_env[count] with our version that contains
-				 * sandbox_lib ... */ \
-				if (1 == add_ldpreload) \
-					/* We reserved a space for LD_PRELOAD above */ \
-					my_env[0] = tmp_str; \
-				else \
-					my_env[count] = tmp_str; \
-\
-				goto end_loop; \
-			} \
-			count++; \
-		} \
-\
-end_loop: \
-		errno = old_errno; \
-		check_dlsym(_name); \
-		result = true_ ## _name(filename, argv, my_env); \
-		old_errno = errno; \
-\
-		if (my_env && kill_env) \
-			free(my_env); \
-	} \
-\
-	errno = old_errno; \
-\
-	return result; \
-}
-
-#include "symbols.h"
-
-/*
  * Internal Functions
  */
 
@@ -998,108 +340,6 @@ char *egetcwd(char *buf, size_t size)
 	}
 
 	return tmpbuf;
-}
-
-/* General purpose function to _reliably_ open a file
- *
- * Returns the file descriptor or -1 on error (and errno set)
- */
-
-static int sb_open(const char *path, int flags, mode_t mode)
-{
-	int fd;
-
-	check_dlsym(open_DEFAULT);
-	fd = true_open_DEFAULT(path, flags, mode);
-	if (-1 == fd)
-		DBG_MSG("Failed to open file '%s'!\n", path);
-
-	return fd;
-}
-
-/* General purpose function to _reliably_ read from a file.
- *
- * Returns total read bytes or -1 on error.
- */
-
-static size_t sb_read(int fd, void *buf, size_t count)
-{
-	ssize_t n;
-	size_t accum = 0;
-
-	do {
-		n = read(fd, buf + accum, count - accum);
-
-		if (n > 0) {
-			accum += n;
-			continue;
-		}
-
-		if (n < 0) {
-			if (EINTR == errno) {
-				/* Reset errno to not trigger DBG_MSG */
-				errno = 0;
-				continue;
-			}
-
-			DBG_MSG("Failed to read from fd=%i!\n", fd);
-			return -1;
-		}
-
-		/* Found EOF */
-		break;
-	} while (accum < count);
-
-	return accum;
-}
-
-/* General purpose function to _reliably_ write to a file
- *
- * If returned value is less than count, there was a fatal
- * error and value tells how many bytes were actually written
- */
-
-static size_t sb_write(int fd, const void *buf, size_t count)
-{
-	ssize_t n;
-	size_t accum = 0;
-
-	do {
-		n = write(fd, buf + accum, count - accum);
-		if (n < 0) {
-			if (EINTR == errno) {
-				/* Reset errno to not trigger DBG_MSG */
-				errno = 0;
-				continue;
-			}
-
-			DBG_MSG("Failed to write to fd=%i!\n", fd);
-			break;
-		}
-
-		accum += n;
-	} while (accum < count);
-	
-	return accum;
-}
-
-/* General purpose function to _reliably_ close a file
- *
- * Returns 0 if successful or negative number on error (and errno set)
- */
-
-static int sb_close(int fd)
-{
-	int res;
-
-	do {
-		res = close(fd);
-	} while ((res < 0) && (EINTR == errno));
-
-	/* Do not care about errors here */
-	errno = 0;
-
-	return res;
 }
 
 static char *getcmdline(void)
@@ -1657,7 +897,7 @@ error:
 	abort();
 }
 
-static int is_sandbox_on()
+int is_sandbox_on()
 {
 	int old_errno = errno;
 
@@ -1681,7 +921,7 @@ static int is_sandbox_on()
 	}
 }
 
-static int before_syscall(const char *func, const char *file)
+int before_syscall(const char *func, const char *file)
 {
 	int old_errno = errno;
 	int result = 1;
@@ -1799,7 +1039,7 @@ static int before_syscall(const char *func, const char *file)
 	return result;
 }
 
-static int before_syscall_access(const char *func, const char *file, int flags)
+int before_syscall_access(const char *func, const char *file, int flags)
 {
 	if (flags & W_OK) {
 		return before_syscall("access_wr", file);
@@ -1808,7 +1048,7 @@ static int before_syscall_access(const char *func, const char *file, int flags)
 	}
 }
 
-static int before_syscall_open_int(const char *func, const char *file, int flags)
+int before_syscall_open_int(const char *func, const char *file, int flags)
 {
 	if ((flags & O_WRONLY) || (flags & O_RDWR)) {
 		return before_syscall("open_wr", file);
@@ -1817,7 +1057,7 @@ static int before_syscall_open_int(const char *func, const char *file, int flags
 	}
 }
 
-static int before_syscall_open_char(const char *func, const char *file, const char *mode)
+int before_syscall_open_char(const char *func, const char *file, const char *mode)
 {
 	if (*mode == 'r' && (0 == (strcmp(mode, "r")) ||
 	    /* The strspn accept args are known non-writable modifiers */

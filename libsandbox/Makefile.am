@@ -27,8 +27,10 @@ libsandbox_la_LDFLAGS = \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
-	libsandbox.c \
 	libsandbox.h \
+	libsandbox.c \
+	wrappers.h   \
+	wrappers.c   \
 	canonicalize.c
 
 libsandbox.c: libsandbox.map symbols.h

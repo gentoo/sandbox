@@ -29,6 +29,8 @@
 #ifndef __SBUTIL_H__
 #define __SBUTIL_H__
 
+#include <limits.h>
+
 #include "config.h"
 #include "localdecls.h"
 #include "include/rcscripts/rcutil.h"
@@ -124,5 +126,22 @@ void get_sandbox_debug_log(char *path);
 int get_tmp_dir(char *path);
 bool is_env_on (const char *);
 bool is_env_off (const char *);
+
+/* libsandbox need to use a wrapper for open */
+void sb_set_open(void *new_open);
+/* Convenience functions to reliably open, read and write to a file */
+int sb_open(const char *path, int flags, mode_t mode);
+size_t sb_read(int fd, void *buf, size_t count);
+size_t sb_write(int fd, const void *buf, size_t count);
+int sb_close(int fd);
+
+/* Macro for sb_read() to goto an label on error */
+#define SB_WRITE(_fd, _buf, _count, _error) \
+	do { \
+		size_t _n; \
+		_n = sb_write(_fd, _buf, _count); \
+		if (-1 == _n) \
+			goto _error; \
+	} while (0)
 
 #endif /* __SBUTIL_H__ */

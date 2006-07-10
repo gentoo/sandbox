@@ -25,6 +25,14 @@
 #ifndef __LIBSANDBOX_H__
 #define __LIBSANDBOX_H__
 
+int canonicalize(const char *, char *);
+
+int is_sandbox_on();
+int before_syscall(const char *, const char *);
+int before_syscall_access(const char *, const char *, int);
+int before_syscall_open_int(const char *, const char *, int);
+int before_syscall_open_char(const char *, const char *, const char *);
+
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);
