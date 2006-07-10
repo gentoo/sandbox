@@ -19,6 +19,9 @@
  *      with this program; if not, write to the Free Software Foundation, Inc.,
  *      675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
+ *  as some of the InstallWatch code was used.
+ *
  * $Header$
  */
 
