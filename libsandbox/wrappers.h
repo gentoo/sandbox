@@ -52,8 +52,9 @@
 
 void *get_dlsym(const char *, const char *);
 
-/* Wrapper for internal use of open() */
+/* Wrapper for internal use of functions in libsandbox */
 int libsb_open(const char *, int, ...);
+char *libsb_getcwd(char *, size_t);
 
 #endif /* __WRAPPERS_H__ */
 

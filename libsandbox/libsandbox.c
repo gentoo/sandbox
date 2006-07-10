@@ -287,9 +287,8 @@ char *egetcwd(char *buf, size_t size)
 	 * opendir() wrapper, causing infinit recursion and finially crashes.
 	 */
 	sandbox_on = 0;
-	check_dlsym(getcwd_DEFAULT);
 	errno = 0;
-	tmpbuf = true_getcwd_DEFAULT(buf, size);
+	tmpbuf = libsb_getcwd(buf, size);
 	sandbox_on = 1;
 
 	/* We basically try to figure out if we can trust what getcwd()

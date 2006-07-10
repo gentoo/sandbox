@@ -676,3 +676,10 @@ int libsb_open(const char *pathname, int flags, ...)
 	return result;
 }
 
+char *libsb_getcwd(char *buf, size_t size)
+{
+	check_dlsym(getcwd_DEFAULT);
+	
+	return true_getcwd_DEFAULT(buf, size);
+}
+
