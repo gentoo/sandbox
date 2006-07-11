@@ -122,15 +122,16 @@ int print_sandbox_log(char *sandbox_log)
 		return 0;
 	}
 	
+	len = rc_get_size(sandbox_log, TRUE);
+	if (0 == len)
+		return 0;
+
 	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
 		perror("sandbox:  Could not open Log file");
 		return 0;
 	}
 
-	len = rc_get_size(sandbox_log, TRUE);
-	if (0 == len)
-		return 0;
 	buffer = (char *)xmalloc((len + 1) * sizeof(char));
 	if (NULL == buffer) {
 		perror("sandbox:  Could not allocate buffer for Log file");
