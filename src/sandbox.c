@@ -122,17 +122,26 @@ int print_sandbox_log(char *sandbox_log)
 		return 0;
 	}
 	
-	sandbox_log_file = open(sandbox_log, O_RDONLY);
+	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
 		perror("sandbox:  Could not open Log file");
 		return 0;
 	}
 
 	len = rc_get_size(sandbox_log, TRUE);
+	if (0 == len)
+		return 0;
 	buffer = (char *)xmalloc((len + 1) * sizeof(char));
+	if (NULL == buffer) {
+		perror("sandbox:  Could not allocate buffer for Log file");
+		return 0;
+	}
 	memset(buffer, 0, len + 1);
-	read(sandbox_log_file, buffer, len);
-	close(sandbox_log_file);
+	if (-1 == sb_read(sandbox_log_file, buffer, len)) {
+		perror("sandbox:  Could read Log file");
+		return 0;
+	}
+	sb_close(sandbox_log_file);
 
 	color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 
@@ -141,8 +150,7 @@ int print_sandbox_log(char *sandbox_log)
 	       "\n");
 	SB_EERROR(color, "LOG FILE = \"%s\"", "\n\n", sandbox_log);
 	fprintf(stderr, "%s", buffer);
-	if (NULL != buffer)
-		free(buffer);
+	free(buffer);
 	SB_EERROR(color,
 	       "--------------------------------------------------------------------------------",
 	       "\n");
