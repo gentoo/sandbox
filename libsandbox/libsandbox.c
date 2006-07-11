@@ -343,15 +343,21 @@ char *egetcwd(char *buf, size_t size)
 
 static char *getcmdline(void)
 {
+	dyn_buf_t *proc_data;
 	struct stat st;
-	char *buf = NULL, *zeros;
-	size_t bufsize = 0, datalen = 0;
+	char *buf;
 	size_t n;
 	int fd;
 
-	/* Don't care if it do not exist */
 	if (-1 == stat(PROC_SELF_CMDLINE, &st)) {
+		/* Don't care if it do not exist */
 		errno = 0;
+		return NULL;
+	}
+
+	proc_data = new_dyn_buf();
+	if (NULL == proc_data) {
+		DBG_MSG("Could not allocate dynamic buffer!\n");
 		return NULL;
 	}
 
@@ -366,46 +372,28 @@ static char *getcmdline(void)
 	 * XXX: Some linux kernels especially needed read() to read PAGE_SIZE
 	 *      at a time. */
 	do {
-		char *tmp_buf = NULL;
-		int page_size = getpagesize();
-
-		tmp_buf = xrealloc(buf, bufsize + page_size);
-		if (NULL == tmp_buf)
-			goto error;
-		buf = tmp_buf;
-
-		n = sb_read(fd, buf + bufsize, page_size);
+		n = write_dyn_buf_from_fd(fd, proc_data, getpagesize());
 		if (-1 == n) {
 			DBG_MSG("Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
 			goto error;
 		}
-
-		bufsize += 2048;
-		datalen += n;
-	} while (n == 2048);
+	} while (0 < n);
 
 	sb_close(fd);
 
-	buf[bufsize - 1] = '\0'; /* make sure we'll never overrun the buffer */
+	dyn_buf_replace_char(proc_data, '\0', ' ');
 
-	/* /proc/self/cmdline outputs ASCIIZASCIIZASCIIZ string including all
-	 * arguments. replace zeroes with spaces */
-	zeros = buf;
-	while (zeros < buf + datalen) {
-		zeros = strchr(zeros, '\0');
-		if (zeros == NULL)
-			break;
-		*zeros = ' ';
-	}
+	buf = read_line_dyn_buf(proc_data);
+	if (NULL == buf)
+		goto error;
 
-	/* convert to a proper ASCIIZ string */
-	buf[datalen] = '\0';
-	
+	free_dyn_buf(proc_data);
+
 	return buf;
 
 error:
-	if (NULL != buf)
-		free(buf);
+	if (NULL != proc_data)
+		free_dyn_buf(proc_data);
 
 	return NULL;
 }
