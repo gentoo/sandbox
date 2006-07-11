@@ -23,7 +23,8 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 	# Make sure this do not get recusively called
 	unset SANDBOX_INTRACTV
 
-	source /etc/profile
+	# Do not set this, as user might want to override path, etc ...
+	#source /etc/profile
 
 	(
 		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
