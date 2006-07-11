@@ -54,7 +54,7 @@ int sb_open(const char *path, int flags, mode_t mode)
 
 	do {
 		fd = sbio_open(path, flags, mode);
-	while ((-1 == fd) && (EINTR == errno));
+	} while ((-1 == fd) && (EINTR == errno));
 	
 	if ((-1 != fd) && (0 != errno))
 		/* Do not trigger debugging */
