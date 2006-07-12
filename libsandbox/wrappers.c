@@ -153,6 +153,17 @@ static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
 FILE *_name(const char *pathname, const char *mode) \
 { \
 	FILE *result = NULL; \
+	int old_errno = errno; \
+	struct stat st; \
+\
+	if ((NULL != mode) && (mode[0] == 'r')) { \
+		/* XXX: If we're trying to read, fail normally if file does
+		 *      not stat */ \
+		if (-1 == stat(pathname, &st)) { \
+			return NULL; \
+		} \
+	} \
+	errno = old_errno; \
 \
 	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen", pathname, mode) { \
 		check_dlsym(_name); \
@@ -326,12 +337,21 @@ int _name(const char *pathname, int flags, ...) \
 	va_list ap; \
 	int mode = 0; \
 	int result = -1; \
+	int old_errno = errno; \
+	struct stat st; \
 \
 	if (flags & O_CREAT) { \
 		va_start(ap, flags); \
 		mode = va_arg(ap, int); \
 		va_end(ap); \
+	} else { \
+		/* XXX: If we're not trying to create, fail normally if
+		 *      file does not stat */ \
+		if (-1 == stat(pathname, &st)) { \
+			return -1; \
+		} \
 	} \
+	errno = old_errno; \
 \
 	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open", pathname, flags) { \
 		check_dlsym(_name); \
@@ -491,6 +511,17 @@ static FILE * (*true_ ## _name) (const char *, const char *) = NULL; \
 FILE *_name(const char *pathname, const char *mode) \
 { \
 	FILE *result = NULL; \
+	int old_errno = errno; \
+	struct stat64 st; \
+\
+	if ((NULL != mode) && (mode[0] == 'r')) { \
+		/* XXX: If we're trying to read, fail normally if file does
+		 *      not stat */ \
+		if (-1 == stat64(pathname, &st)) { \
+			return NULL; \
+		} \
+	} \
+	errno = old_errno; \
 \
 	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR("fopen64", pathname, mode) { \
 		check_dlsym(_name); \
@@ -511,12 +542,21 @@ int _name(const char *pathname, int flags, ...) \
 	va_list ap; \
 	int mode = 0; \
 	int result = -1; \
+	int old_errno = errno; \
+	struct stat64 st; \
 \
 	if (flags & O_CREAT) { \
 		va_start(ap, flags); \
 		mode = va_arg(ap, int); \
 		va_end(ap); \
+	} else { \
+		/* XXX: If we're not trying to create, fail normally if
+		 *      file does not stat */ \
+		if (-1 == stat64(pathname, &st)) { \
+			return -1; \
+		} \
 	} \
+	errno = old_errno; \
 \
 	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) { \
 		check_dlsym(_name); \
