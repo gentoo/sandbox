@@ -1020,6 +1020,9 @@ int before_syscall(const char *func, const char *file)
 		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))
 			kill(atoi(getenv(ENV_SANDBOX_PID)), SIGUSR1);
 
+		/* FIXME: Should probably audit errno, and enable some other
+		 *        error to be returned (EINVAL for invalid mode for
+		 *        fopen() and co, ETOOLONG, etc). */
 		errno = EACCES;
 	}
 
@@ -1046,9 +1049,12 @@ int before_syscall_open_int(const char *func, const char *file, int flags)
 
 int before_syscall_open_char(const char *func, const char *file, const char *mode)
 {
-	if (*mode == 'r' && (0 == (strcmp(mode, "r")) ||
-	    /* The strspn accept args are known non-writable modifiers */
-	    (strlen(++mode) == strspn(mode, "xbtmc")))) {
+	if (NULL == mode)
+		return 0;
+
+	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
+	     /* The strspn accept args are known non-writable modifiers */
+	     (strlen(++mode) == strspn(mode, "xbtmc")))) {
 		return before_syscall("open_rd", file);
 	} else {
 		return before_syscall("open_wr", file);
