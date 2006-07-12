@@ -343,7 +343,7 @@ char *egetcwd(char *buf, size_t size)
 
 static char *getcmdline(void)
 {
-	dyn_buf_t *proc_data;
+	rc_dynbuf_t *proc_data;
 	struct stat st;
 	char *buf;
 	size_t n;
@@ -355,7 +355,7 @@ static char *getcmdline(void)
 		return NULL;
 	}
 
-	proc_data = new_dyn_buf();
+	proc_data = rc_dynbuf_new();
 	if (NULL == proc_data) {
 		DBG_MSG("Could not allocate dynamic buffer!\n");
 		return NULL;
@@ -372,7 +372,7 @@ static char *getcmdline(void)
 	 * XXX: Some linux kernels especially needed read() to read PAGE_SIZE
 	 *      at a time. */
 	do {
-		n = write_dyn_buf_from_fd(fd, proc_data, getpagesize());
+		n = rc_dynbuf_write_fd(proc_data, fd, getpagesize());
 		if (-1 == n) {
 			DBG_MSG("Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
 			goto error;
@@ -381,19 +381,19 @@ static char *getcmdline(void)
 
 	sb_close(fd);
 
-	dyn_buf_replace_char(proc_data, '\0', ' ');
+	rc_dynbuf_replace_char(proc_data, '\0', ' ');
 
-	buf = read_line_dyn_buf(proc_data);
+	buf = rc_dynbuf_read_line(proc_data);
 	if (NULL == buf)
 		goto error;
 
-	free_dyn_buf(proc_data);
+	rc_dynbuf_free(proc_data);
 
 	return buf;
 
 error:
 	if (NULL != proc_data)
-		free_dyn_buf(proc_data);
+		rc_dynbuf_free(proc_data);
 
 	return NULL;
 }

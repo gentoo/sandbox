@@ -204,17 +204,17 @@ void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 	}
 }
 
-char *sandbox_subst_env_vars(dyn_buf_t *env_data)
+char *sandbox_subst_env_vars(rc_dynbuf_t *env_data)
 {
-	dyn_buf_t *new_data = NULL;
+	rc_dynbuf_t *new_data = NULL;
 	char *tmp_ptr, *tmp_data = NULL;
 	char *var_start, *var_stop;
 
-	new_data = new_dyn_buf();
+	new_data = rc_dynbuf_new();
 	if (NULL == new_data)
 		return NULL;
 
-	tmp_data = read_line_dyn_buf(env_data);
+	tmp_data = rc_dynbuf_read_line(env_data);
 	if (NULL == tmp_data)
 		goto error;
 	tmp_ptr = tmp_data;
@@ -240,7 +240,7 @@ char *sandbox_subst_env_vars(dyn_buf_t *env_data)
 
 		if (strlen(var_start) > 0)
 			env = getenv(var_start);
-		if (-1 == sprintf_dyn_buf(new_data, "%s%s",
+		if (-1 == rc_dynbuf_sprintf(new_data, "%s%s",
 					  tmp_ptr ? tmp_ptr : "",
 					  env ? env : ""))
 			goto error;
@@ -250,22 +250,22 @@ char *sandbox_subst_env_vars(dyn_buf_t *env_data)
 	}
 
 	if (0 != strlen(tmp_ptr))
-		if (-1 == write_dyn_buf(new_data, tmp_ptr, strlen(tmp_ptr)))
+		if (-1 == rc_dynbuf_write(new_data, tmp_ptr, strlen(tmp_ptr)))
 			goto error;
 
 	free(tmp_data);
 
-	tmp_data = read_line_dyn_buf(new_data);
+	tmp_data = rc_dynbuf_read_line(new_data);
 	if (NULL == tmp_data)
 		goto error;
 
-	free_dyn_buf(new_data);
+	rc_dynbuf_free(new_data);
 
 	return tmp_data;
 
 error:
 	if (NULL != new_data)
-		free_dyn_buf(new_data);
+		rc_dynbuf_free(new_data);
 	if (NULL != tmp_data)
 		free(tmp_data);
 
@@ -288,13 +288,13 @@ void sandbox_set_env_var(const char *env_var)
 
 int sandbox_set_env_access_var(const char *access_var)
 {
-	dyn_buf_t *env_data = NULL;
+	rc_dynbuf_t *env_data = NULL;
   	int count = 0;
 	char *config = NULL;
 	char **confd_files = NULL;
 	bool use_confd = TRUE;
 
-	env_data = new_dyn_buf();
+	env_data = rc_dynbuf_new();
 	if (NULL == env_data)
 		return -1;
 
@@ -302,7 +302,7 @@ int sandbox_set_env_access_var(const char *access_var)
 	 * These do not get overridden via the environment. */
 	config = rc_get_cnf_entry(SANDBOX_CONF_FILE, access_var, ":");
 	if (NULL != config) {
-		if (-1 == write_dyn_buf(env_data, config, strlen(config)))
+		if (-1 == rc_dynbuf_write(env_data, config, strlen(config)))
 			goto error;
 		free(config);
 		config = NULL;
@@ -311,7 +311,7 @@ int sandbox_set_env_access_var(const char *access_var)
 	 * not process the sandbox.d/ files for this variable. */
 	if (NULL != getenv(access_var)) {
 		use_confd = FALSE;
-		if (-1 == sprintf_dyn_buf(env_data, env_data->wr_index ? ":%s" : "%s",
+		if (-1 == rc_dynbuf_sprintf(env_data, env_data->wr_index ? ":%s" : "%s",
 					  getenv(access_var)))
 			goto error;
 	}
@@ -326,7 +326,7 @@ int sandbox_set_env_access_var(const char *access_var)
 		while (NULL != confd_files[count]) {
 			config = rc_get_cnf_entry(confd_files[count], access_var, ":");
 			if (NULL != config) {
-				if (-1 == sprintf_dyn_buf(env_data,
+				if (-1 == rc_dynbuf_sprintf(env_data,
 							  env_data->wr_index ? ":%s" : "%s",
 							  config))
 					goto error;
@@ -351,13 +351,13 @@ done:
 		free(subst);
 	}
 
-	free_dyn_buf(env_data);
+	rc_dynbuf_free(env_data);
 
 	return 0;
 
 error:
 	if (NULL != env_data)
-		free_dyn_buf(env_data);
+		rc_dynbuf_free(env_data);
 	if (NULL != config)
 		free(config);
 	if (NULL != confd_files)
