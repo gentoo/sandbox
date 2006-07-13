@@ -1059,5 +1059,3 @@ int before_syscall_open_char(const char *func, const char *file, const char *mod
 	}
 }
 
-
-// vim:noexpandtab noai:cindent ai
