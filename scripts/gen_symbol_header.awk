@@ -115,7 +115,7 @@ END {
 			printf("#define WRAPPER_TRUE_NAME true_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMNAME symname_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMVER symver_%s\n", sym_real_name);
-			printf("#include \"wrapper-decls/%s.c\"\n", sym_index);
+			printf("#include \"wrapper-funcs/%s.c\"\n", sym_index);
 			printf("#undef EXTERN_NAME\n");
 			printf("#undef WRAPPER_NAME\n");
 			printf("#undef WRAPPER_TRUE_NAME\n");
