@@ -1,25 +1,23 @@
 /*
- *  Path sandbox for the gentoo linux portage package system, initially
- *  based on the ROCK Linux Wrapper for getting a list of created files
+ * libsandbox.c
  *
- *  to integrate with bash, bash should have been built like this
+ * Main libsandbox related functions.
  *
- *  ./configure --prefix=<prefix> --host=<host> --without-gnu-malloc
+ * Copyright 1999-2006 Gentoo Foundation
  *
- *  it's very important that the --enable-static-link option is NOT specified
  *
- *  Copyright (C) 2001 Geert Bevin, Uwyn, http://www.uwyn.com
- *  Distributed under the terms of the GNU General Public License, v2 or later 
- *  Author : Geert Bevin <gbevin@uwyn.com>
+ *      This program is free software; you can redistribute it and/or modify it
+ *      under the terms of the GNU General Public License as published by the
+ *      Free Software Foundation version 2 of the License.
  *
- *  Post Bevin leaving Gentoo ranks:
- *  --------------------------------
- *    Ripped out all the wrappers, and implemented those of InstallWatch.
- *    Losts of cleanups and bugfixes.  Implement a execve that forces $LIBSANDBOX
- *    in $LD_PRELOAD.  Reformat the whole thing to look  somewhat like the reworked
- *    sandbox.c from Brad House <brad@mainstreetsoftworks.com>.
+ *      This program is distributed in the hope that it will be useful, but
+ *      WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      General Public License for more details.
  *
- *    Martin Schlemmer <azarah@gentoo.org> (18 Aug 2002)
+ *      You should have received a copy of the GNU General Public License along
+ *      with this program; if not, write to the Free Software Foundation, Inc.,
+ *      675 Mass Ave, Cambridge, MA 02139, USA.
  *
  *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
  *  as some of the InstallWatch code was used.
