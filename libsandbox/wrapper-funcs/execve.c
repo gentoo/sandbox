@@ -31,102 +31,77 @@ static int (*WRAPPER_TRUE_NAME) (const char *, char *const[], char *const[]) = N
 
 int WRAPPER_NAME(const char *filename, char *const argv[], char *const envp[])
 {
+	char **my_env = NULL;
+	char *entry;
+	char *ld_preload = NULL;
+	char *old_ld_preload = NULL;
 	int old_errno = errno;
 	int result = -1;
-	int count = 0;
-	int env_len = 0;
-	char **my_env = NULL;
-	int kill_env = 1;
-	/* We limit the size LD_PRELOAD can be here, but it should be enough */
-	char tmp_str[SB_BUF_LEN];
+	int count;
 
-	if FUNCTION_SANDBOX_SAFE("execve", filename) {
-		while (envp[count] != NULL) {
-			/* Check if we do not have to do anything */
-			if (strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) {
-				if (NULL != strstr(envp[count], sandbox_lib)) {
-					my_env = (char **)envp;
-					kill_env = 0;
-					goto end_loop;
-				}
-			}
+	if (!FUNCTION_SANDBOX_SAFE("execve", filename))
+		return result;
 
-			/* If LD_PRELOAD is set and sandbox_lib not in it */
-			if (((strstr(envp[count], LD_PRELOAD_EQ) == envp[count]) &&
-			     (NULL == strstr(envp[count], sandbox_lib))) ||
-			    /* Or  LD_PRELOAD is not set, and this is the last loop */
-			    ((strstr(envp[count], LD_PRELOAD_EQ) != envp[count]) &&
-			     (NULL == envp[count + 1]))) {
-				int i = 0;
-				int add_ldpreload = 0;
-				const int max_envp_len = strlen(envp[count]) + strlen(sandbox_lib) + 1;
+	str_list_for_each_item(envp, entry, count) {
+		if (strstr(entry, LD_PRELOAD_EQ) != entry)
+			continue;
 
-				/* Fail safe ... */
-				if (max_envp_len > SB_BUF_LEN) {
-					fprintf(stderr, "libsandbox:  max_envp_len too big!\n");
-					errno = ENOMEM;
-					return result;
-				}
-
-				/* Calculate envp size */
-				my_env = (char **)envp;
-				do
-					env_len++;
-				while (NULL != *my_env++);
-
-				/* Should we add LD_PRELOAD ? */
-				if (strstr(envp[count], LD_PRELOAD_EQ) != envp[count])
-					add_ldpreload = 1;
-
-				my_env = (char **)xcalloc(env_len + add_ldpreload, sizeof(char *));
-				if (NULL == my_env)
-					return result;
-				/* Copy envp to my_env */
-				do
-					/* Leave a space for LD_PRELOAD if needed */
-					my_env[i + add_ldpreload] = envp[i];
-				while (NULL != envp[i++]);
-
-				/* Add 'LD_PRELOAD=' to the beginning of our new string */
-				snprintf(tmp_str, max_envp_len, "%s%s", LD_PRELOAD_EQ, sandbox_lib);
-
-				/* LD_PRELOAD already have variables other than sandbox_lib,
-				 * thus we have to add sandbox_lib seperated via a whitespace. */
-				if (0 == add_ldpreload) {
-					snprintf((char *)(tmp_str + strlen(tmp_str)),
-						 max_envp_len - strlen(tmp_str) + 1, " %s",
-						 (char *)(envp[count] + strlen(LD_PRELOAD_EQ)));
-				}
-
-				/* Valid string? */
-				tmp_str[max_envp_len] = '\0';
-
-				/* Ok, replace my_env[count] with our version that contains
-				 * sandbox_lib ... */
-				if (1 == add_ldpreload)
-					/* We reserved a space for LD_PRELOAD above */
-					my_env[0] = tmp_str;
-				else
-					my_env[count] = tmp_str;
-
-				goto end_loop;
-			}
-			count++;
+		/* Check if we do not have to do anything */
+		if (NULL != strstr(entry, sandbox_lib)) {
+			/* Use the user's envp */
+			my_env = (char **)envp;
+			goto do_execve;
+		} else {
+			old_ld_preload = entry;
+			/* No need to continue, we have to modify LD_PRELOAD */
+			break;
 		}
-
-end_loop:
-		errno = old_errno;
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(filename, argv, my_env);
-		old_errno = errno;
-
-		if (my_env && kill_env)
-			free(my_env);
 	}
 
+	/* Ok, we need to create our own envp, as we need to add LD_PRELOAD,
+	 * and we should not touch the user's envp.  First we add LD_PRELOAD,
+	 * and just all the rest. */
+	count = strlen(LD_PRELOAD_EQ) + strlen(sandbox_lib) + 1;
+	if (NULL != old_ld_preload)
+		count += strlen(old_ld_preload) - strlen(LD_PRELOAD_EQ) + 1;
+	ld_preload = xmalloc(count * sizeof(char));
+	if (NULL == ld_preload)
+		goto error;
+	snprintf(ld_preload, count, "%s%s%s%s", LD_PRELOAD_EQ, sandbox_lib,
+		 (old_ld_preload) ? " " : "",
+		 (old_ld_preload) ? old_ld_preload + strlen(LD_PRELOAD_EQ) : "");
+	str_list_add_item(my_env, ld_preload, error);
+
+	str_list_for_each_item(envp, entry, count) {
+		if (strstr(entry, LD_PRELOAD_EQ) != entry) {
+			str_list_add_item(my_env, entry, error);
+			continue;
+		}
+	}
+
+do_execve:
 	errno = old_errno;
+	check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
+		    WRAPPER_SYMVER);
+	result = WRAPPER_TRUE_NAME(filename, argv, my_env);
+
+	if ((NULL != my_env) && (my_env != envp))
+		/* We do not use str_list_free(), as we did not allocate the
+		 * entries except for LD_PRELOAD. */
+		free(my_env);
+	if (NULL != ld_preload)
+		free(ld_preload);
 
 	return result;
+
+error:
+	if ((NULL != my_env) && (my_env != envp))
+		/* We do not use str_list_free(), as we did not allocate the
+		 * entries except for LD_PRELOAD. */
+		free(my_env);
+	if (NULL != ld_preload)
+		free(ld_preload);
+
+	return -1;
 }
 
