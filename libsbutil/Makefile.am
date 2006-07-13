@@ -12,8 +12,17 @@ noinst_LTLIBRARIES = libsbutil.la
 
 libsbutil_la_SOURCES =                        \
 	sbutil.h                              \
-	sbutil.c                              \
-	sbio.c                                \
+	get_sandbox_lib.c                     \
+	get_sandbox_rc.c                      \
+	get_sandbox_log.c                     \
+	get_sandbox_debug_log.c               \
+	get_tmp_dir.c                         \
+	is_env_on.c                           \
+	is_env_off.c                          \
+	sb_open.c                             \
+	sb_read.c                             \
+	sb_write.c                            \
+	sb_close.c                            \
 	include/rcscripts/rctypes.h           \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/list.h         \
