@@ -32,7 +32,7 @@ static int (*WRAPPER_TRUE_NAME) (const char *, mode_t) = NULL;
 int WRAPPER_NAME(const char *pathname, mode_t mode)
 {
 	struct stat st;
-	int result = -1, my_errno = errno;
+	int result = -1, old_errno = errno;
 	char canonic[SB_PATH_MAX];
 
 	if (-1 == canonicalize(pathname, canonic))
@@ -48,7 +48,7 @@ int WRAPPER_NAME(const char *pathname, mode_t mode)
 		errno = EEXIST;
 		return -1;
 	}
-	errno = my_errno;
+	errno = old_errno;
 
 	if FUNCTION_SANDBOX_SAFE("mkdir", pathname) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
