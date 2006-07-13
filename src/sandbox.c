@@ -385,4 +385,3 @@ oom_error:
 	exit(EXIT_FAILURE);
 }
 
-// vim:noexpandtab noai:cindent ai
