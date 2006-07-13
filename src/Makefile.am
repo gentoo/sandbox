@@ -13,5 +13,8 @@ INCLUDES = \
 
 sandbox_CFLAGS = -DOUTSIDE_LIBSANDBOX
 sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la
-sandbox_SOURCES = sandbox.c
+sandbox_SOURCES = \
+	environ.c \
+	sandbox.h \
+	sandbox.c
 
