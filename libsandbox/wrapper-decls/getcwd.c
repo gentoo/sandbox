@@ -1,7 +1,7 @@
 /*
- * wrappers.h
+ * getcwd.c
  *
- * Function wrapping functions.
+ * getcwd() wrapper.
  *
  * Copyright 1999-2006 Gentoo Foundation
  *
@@ -19,19 +19,30 @@
  *      with this program; if not, write to the Free Software Foundation, Inc.,
  *      675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
+ *  as some of the InstallWatch code was used.
+ *
  * $Header$
  */
 
-#ifndef __WRAPPERS_H__
-#define __WRAPPERS_H__
 
-#include <libsandbox.h>
+extern char *WRAPPER_NAME(char *, size_t);
+static char * (*WRAPPER_TRUE_NAME) (char *, size_t) = NULL;
 
-void *get_dlsym(const char *, const char *);
+char *WRAPPER_NAME(char *buf, size_t size)
+{
+	char *result = NULL;
 
-/* Wrapper for internal use of functions in libsandbox */
-int libsb_open(const char *, int, ...);
-char *libsb_getcwd(char *, size_t);
+	/* Need to disable sandbox, as on non-linux libc's, opendir() is
+	 * used by some getcwd() implementations and resolves to the sandbox
+	 * opendir() wrapper, causing infinit recursion and finially crashes.
+	 */
+	sandbox_on = 0;
+	check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
+			    WRAPPER_SYMVER);
+	result = WRAPPER_TRUE_NAME(buf, size);
+	sandbox_on = 1;
 
-#endif /* __WRAPPERS_H__ */
+	return result;
+}
 

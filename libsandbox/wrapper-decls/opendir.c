@@ -1,7 +1,7 @@
 /*
- * wrappers.h
+ * opendir.c
  *
- * Function wrapping functions.
+ * opendir() wrapper.
  *
  * Copyright 1999-2006 Gentoo Foundation
  *
@@ -19,19 +19,26 @@
  *      with this program; if not, write to the Free Software Foundation, Inc.,
  *      675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
+ *  as some of the InstallWatch code was used.
+ *
  * $Header$
  */
 
-#ifndef __WRAPPERS_H__
-#define __WRAPPERS_H__
 
-#include <libsandbox.h>
+extern DIR *WRAPPER_NAME(const char *);
+static DIR * (*WRAPPER_TRUE_NAME) (const char *) = NULL;
 
-void *get_dlsym(const char *, const char *);
+DIR *WRAPPER_NAME(const char *name)
+{
+	DIR *result = NULL;
 
-/* Wrapper for internal use of functions in libsandbox */
-int libsb_open(const char *, int, ...);
-char *libsb_getcwd(char *, size_t);
+	if FUNCTION_SANDBOX_SAFE("opendir", name) {
+		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
+			    WRAPPER_SYMVER);
+		result = WRAPPER_TRUE_NAME(name);
+	}
 
-#endif /* __WRAPPERS_H__ */
+	return result;
+}
 

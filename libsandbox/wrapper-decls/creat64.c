@@ -1,7 +1,7 @@
 /*
- * wrappers.h
+ * creat64.c
  *
- * Function wrapping functions.
+ * creat64() wrapper.
  *
  * Copyright 1999-2006 Gentoo Foundation
  *
@@ -19,19 +19,27 @@
  *      with this program; if not, write to the Free Software Foundation, Inc.,
  *      675 Mass Ave, Cambridge, MA 02139, USA.
  *
+ *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
+ *  as some of the InstallWatch code was used.
+ *
  * $Header$
  */
 
-#ifndef __WRAPPERS_H__
-#define __WRAPPERS_H__
 
-#include <libsandbox.h>
+extern int EXTERN_NAME(const char *, __mode_t);
+/* XXX: We use the open64() call to simulate create64() */
+/* static int (*WRAPPER_TRUE_NAME) (const char *, __mode_t) = NULL; */
 
-void *get_dlsym(const char *, const char *);
+int WRAPPER_NAME(const char *pathname, __mode_t mode)
+{
+	int result = -1;
 
-/* Wrapper for internal use of functions in libsandbox */
-int libsb_open(const char *, int, ...);
-char *libsb_getcwd(char *, size_t);
+	if FUNCTION_SANDBOX_SAFE("creat64", pathname) {
+		check_dlsym(true_open64_DEFAULT, symname_open64_DEFAULT,
+			    symver_open64_DEFAULT);
+		result = true_open64_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
+	}
 
-#endif /* __WRAPPERS_H__ */
+	return result;
+}
 

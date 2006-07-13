@@ -109,8 +109,18 @@ END {
 			else
 				printf("#define symver_%s \"%s\"\n", sym_real_name,
 				       symbol_array[2]);
-			
-			printf("%s_decl(%s);\n", sym_index, sym_real_name);
+	
+			printf("#define EXTERN_NAME %s\n", sym_index);
+			printf("#define WRAPPER_NAME %s\n", sym_real_name);
+			printf("#define WRAPPER_TRUE_NAME true_%s\n", sym_real_name);
+			printf("#define WRAPPER_SYMNAME symname_%s\n", sym_real_name);
+			printf("#define WRAPPER_SYMVER symver_%s\n", sym_real_name);
+			printf("#include \"wrapper-decls/%s.c\"\n", sym_index);
+			printf("#undef EXTERN_NAME\n");
+			printf("#undef WRAPPER_NAME\n");
+			printf("#undef WRAPPER_TRUE_NAME\n");
+			printf("#undef WRAPPER_SYMNAME\n");
+			printf("#undef WRAPPER_SYMVER\n");
 		
 			if (symbol_array[2]) {
 				# Only add symbol versions for versioned libc's
