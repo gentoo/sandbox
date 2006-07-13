@@ -15,12 +15,12 @@ INCLUDES = \
 # (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
 libsandbox_la_CFLAGS = -fexceptions
 # Could use the following to libsandbox_la_LIBADD, but then libtool links it
-# with --whole-archive:
+# with --whole-archive, and libsandbox.so increase with a few KB in size:
 #	$(top_builddir)/libsbutil/libsbutil.la
-libsandbox_la_LIBSBOBJS = $(wildcard  $(top_builddir)/libsbutil/*.lo)
+libsandbox_la_LIBSBLIB = $(top_builddir)/libsbutil/.libs/libsbutil.a
 libsandbox_la_LIBADD = \
 	-lc $(LIBDL) \
-	$(libsandbox_la_LIBSBOBJS)
+	$(libsandbox_la_LIBSBLIB)
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 libsandbox_la_LDFLAGS = \
