@@ -119,10 +119,10 @@ void __attribute__ ((destructor)) libsb_fini(void)
 	int x;
 
 	sb_init = 0;
-	
-	if(NULL != cached_env_vars) {
-		for(x=0; x < 4; x++) {
-			if(NULL != cached_env_vars[x]) {
+
+	if (NULL != cached_env_vars) {
+		for (x=0; x < 4; x++) {
+			if (NULL != cached_env_vars[x]) {
 				free(cached_env_vars[x]);
 				cached_env_vars[x] = NULL;
 			}
@@ -130,7 +130,7 @@ void __attribute__ ((destructor)) libsb_fini(void)
 		free(cached_env_vars);
 		cached_env_vars = NULL;
 	}
-	
+
 	clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 	clean_env_entries(&(sbcontext.read_prefixes),
@@ -186,7 +186,7 @@ int canonicalize(const char *path, char *resolved_path)
 		 * to the current working directory if it was not
 		 * an absolute path
 		 */
-		
+
 		if (ENAMETOOLONG == errno)
 			return -1;
 
@@ -240,9 +240,9 @@ static char *resolve_path(const char *path, int follow_link)
 		 * exist.  If all else fails, just go with canonicalize */
 		if (NULL == realpath(path, filtered_path)) {
 			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
-			
+
 			dname = dirname(tmp_str1);
-			
+
 			/* If not, then check if we can resolve the
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
@@ -264,7 +264,7 @@ static char *resolve_path(const char *path, int follow_link)
 			}
 		}
 	}
-	
+
 	errno = old_errno;
 
 	return filtered_path;
@@ -403,7 +403,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	struct stat log_stat;
 	int stat_ret;
 	int logfd;
-	
+
 	stat_ret = lstat(logfile, &log_stat);
 	/* Do not care about failure */
 	errno = 0;
@@ -418,7 +418,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 				S_IROTH);
 		if (logfd >= 0) {
 			char *cmdline;
-			
+
 			if (0 != stat_ret) {
 				SB_WRITE(logfd, LOG_STRING, strlen(LOG_STRING), error);
 				SB_WRITE(logfd, LOG_FMT_FUNC, strlen(LOG_FMT_FUNC), error);
@@ -434,7 +434,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 				 */
 				SB_WRITE(logfd, "\n", 1, error);
 			}
-			
+
 			SB_WRITE(logfd, "F: ", 3, error);
 			SB_WRITE(logfd, func, strlen(func), error);
 			SB_WRITE(logfd, "\n", 1, error);
@@ -453,26 +453,25 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 			SB_WRITE(logfd, "R: ", 3, error);
 			SB_WRITE(logfd, rpath, strlen(rpath), error);
 			SB_WRITE(logfd, "\n", 1, error);
-			
+
 			cmdline = getcmdline();
 			if (NULL != cmdline) {
 				SB_WRITE(logfd, "C: ", 3, error);
 				SB_WRITE(logfd, cmdline, strlen(cmdline),
 					 error);
 				SB_WRITE(logfd, "\n", 1, error);
-				
+
 				free(cmdline);
 			} else if (0 != errno) {
 				goto error;
 			}
-				
-			
+
 			sb_close(logfd);
 		} else {
 			goto error;
 		}
 	}
-	
+
 	return 0;
 
 error:
@@ -538,7 +537,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 				"libsandbox:  The '%s' env variable is not defined!\n",
 				env);
 		if (pfx_array) {
-			for (i = 0; i < pfx_num; i++) 
+			for (i = 0; i < pfx_num; i++)
 				free(pfx_item);
 			free(pfx_array);
 		}
@@ -615,7 +614,7 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 
 	if (NULL == prefixes)
 		return 0;
-	
+
 	for (i = 0; i < num_prefixes; i++) {
 		if (NULL != prefixes[i]) {
 			if (0 == strncmp(path, prefixes[i], strlen(prefixes[i])))
@@ -670,7 +669,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 			goto out;
 		}
 	}
-		
+
 	if ((0 == strncmp(func, "access_wr", 9)) ||
 	    (0 == strncmp(func, "open_wr", 7)) ||
 	    (0 == strncmp(func, "creat", 5)) ||
@@ -728,7 +727,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 				char *dname, *rpath;
 
 				snprintf(tmp_buf, SB_PATH_MAX, "%s", abs_path);
-				
+
 				dname = dirname(tmp_buf);
 				/* Get symlink resolved path */
 				rpath = resolve_path(dname, 1);
@@ -736,7 +735,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 					/* Don't really worry here about
 					 * memory issues */
 					goto unlink_hack_end;
-				
+
 				/* Now check if the symlink resolved path have access */
 				retval = check_prefixes(sbcontext->write_prefixes,
 							sbcontext->num_write_prefixes,
@@ -839,8 +838,8 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 			if (0 != errno)
 				goto error;
 		}
-	} 
-	
+	}
+
 	if ((NULL != debug_log_path) && (1 == debug)) {
 		if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
 								resolved_path, (access == 1) ? 0 : 1,
@@ -864,7 +863,7 @@ error:
 		free(absolute_path);
 	if (NULL != resolved_path)
 		free(resolved_path);
-	
+
 	/* The path is too long to be canonicalized, so just warn and let the
 	 * function handle it (see bug #94630 and #21766 for more info) */
 	if (ENAMETOOLONG == errno) {
@@ -873,7 +872,7 @@ error:
 			      func, (int)(10 - strlen(func)), "", file);
 			sb_path_size_warning = 1;
 		}
-			
+
 		return 1;
 	}
 
@@ -922,7 +921,7 @@ int before_syscall(const char *func, const char *file)
 		return 0;
 	}
 
-	if(0 == sb_init) {
+	if (0 == sb_init) {
 		init_context(&sbcontext);
 		cached_env_vars = xmalloc(sizeof(char *) * 4);
 		if (NULL == cached_env_vars) {
@@ -934,16 +933,16 @@ int before_syscall(const char *func, const char *file)
 		sb_init = 1;
 	}
 
-	if((NULL == deny && cached_env_vars[0] != deny) || NULL == cached_env_vars[0] ||
+	if ((NULL == deny && cached_env_vars[0] != deny) || NULL == cached_env_vars[0] ||
 		strcmp(cached_env_vars[0], deny) != 0) {
 
 		clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 
-		if(NULL != cached_env_vars[0])
+		if (NULL != cached_env_vars[0])
 			free(cached_env_vars[0]);
 
-		if(NULL != deny) {
+		if (NULL != deny) {
 			init_env_entries(&(sbcontext.deny_prefixes),
 				&(sbcontext.num_deny_prefixes), ENV_SANDBOX_DENY, deny, 1);
 			cached_env_vars[0] = strdup(deny);
@@ -952,16 +951,16 @@ int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] || 
+	if ((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] || 
 		strcmp(cached_env_vars[1], read) != 0) {
 
 		clean_env_entries(&(sbcontext.read_prefixes),
 			&(sbcontext.num_read_prefixes));
 
-		if(NULL != cached_env_vars[1])
+		if (NULL != cached_env_vars[1])
 			free(cached_env_vars[1]);
 
-		if(NULL != read) {
+		if (NULL != read) {
 			init_env_entries(&(sbcontext.read_prefixes),
 				&(sbcontext.num_read_prefixes), ENV_SANDBOX_READ, read, 1);
 			cached_env_vars[1] = strdup(read);
@@ -970,16 +969,16 @@ int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((NULL == write && cached_env_vars[2] != write) || NULL == cached_env_vars[2] ||
+	if ((NULL == write && cached_env_vars[2] != write) || NULL == cached_env_vars[2] ||
 		strcmp(cached_env_vars[2], write) != 0) {
 
 		clean_env_entries(&(sbcontext.write_prefixes),
 			&(sbcontext.num_write_prefixes));
 
-		if(NULL != cached_env_vars[2])
+		if (NULL != cached_env_vars[2])
 			free(cached_env_vars[2]);
 
-		if(NULL != write) {
+		if (NULL != write) {
 			init_env_entries(&(sbcontext.write_prefixes),
 				&(sbcontext.num_write_prefixes), ENV_SANDBOX_WRITE, write, 1);
 			cached_env_vars[2] = strdup(write);
@@ -988,16 +987,16 @@ int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if((NULL == predict && cached_env_vars[3] != predict) || NULL == cached_env_vars[3] ||
+	if ((NULL == predict && cached_env_vars[3] != predict) || NULL == cached_env_vars[3] ||
 		strcmp(cached_env_vars[3], predict) != 0) {
 
 		clean_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes));
 
-		if(NULL != cached_env_vars[3])
+		if (NULL != cached_env_vars[3])
 			free(cached_env_vars[3]);
 
-		if(NULL != predict) {
+		if (NULL != predict) {
 			init_env_entries(&(sbcontext.predict_prefixes),
 				&(sbcontext.num_predict_prefixes), ENV_SANDBOX_PREDICT, predict, 1);
 			cached_env_vars[3] = strdup(predict);
@@ -1058,4 +1057,3 @@ int before_syscall_open_char(const char *func, const char *file, const char *mod
 		return before_syscall("open_wr", file);
 	}
 }
-
