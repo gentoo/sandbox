@@ -29,9 +29,9 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([ \
-  fcntl.h limits.h memory.h stddef.h \
-  stdlib.h string.h strings.h sys/file.h \
-  sys/param.h sys/time.h unistd.h utime.h \
+	fcntl.h limits.h memory.h stddef.h \
+	stdlib.h string.h strings.h sys/file.h \
+	sys/param.h sys/time.h unistd.h utime.h \
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -49,11 +49,11 @@ AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS([ \
-  bzero ftruncate getcwd lchown memmove \
-  memcpy memset mkdir pathconf realpath \
-  rmdir setenv strcasecmp strchr strdup \
-  strerror strndup strrchr strspn strstr \
-  strtok_r \
+	bzero ftruncate getcwd lchown memmove \
+	memcpy memset mkdir pathconf realpath \
+	rmdir setenv strcasecmp strchr strdup \
+	strerror strndup strrchr strspn strstr \
+	strtok_r \
 ])
 dnl For librcutil
 AC_CHECK_FUNCS([remove])
@@ -156,9 +156,11 @@ dnl we need to handle symbols differently based upon their version,
 dnl but we have to know which symbols the libc supports first
 AC_MSG_CHECKING([libc path])
 echo "int main(void) { return 0; }" > libctest.c
-$CC $CFLAGS -Wl,-verbose -o libctest libctest.c &> libctest.log
+$CC $CFLAGS $CPPFLAGS $LDFLAGS -Wl,-verbose -o libctest libctest.c > libctest.log 2>&1
 cat libctest.log 1>&AS_MESSAGE_LOG_FD
-LIBC_PATH=`$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}' libctest.log`
+LIBC_PATH=$(
+	$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}' libctest.log
+)
 rm -f libctest*
 if test x"$LIBC_PATH" = x || ! test -r "$LIBC_PATH" ; then
   AC_MSG_ERROR([Unable to determine LIBC PATH ($LIBC_PATH)])
@@ -170,10 +172,13 @@ dnl when intercepting libc calls, we have to know the name of the
 dnl libc to load and search with dl*() calls
 AC_MSG_CHECKING([libc version])
 dnl the sed script at the end here looks funny but it's ok ...
-dnl they're m4 escape sequences for left and right brackets
 echo "int main(void) { return 0; }" > libctest.c
-$CC -Wall -o libctest libctest.c
-LIBC_VERSION=`$READELF -d libctest | grep NEEDED.*libc\\.so | $AWK '{print $NF}' | sed -e 's:\@<:@::' -e 's:\@:>@::'`
+$CC $CFLAGS $CPPFLAGS $LDFLAGS -Wall -o libctest libctest.c
+LIBC_VERSION=$(
+	$READELF -d libctest | \
+	grep NEEDED.*libc\\.so | \
+	$AWK '{print $NF}' | sed -e ['s:\[::' -e 's:\]::']
+)
 rm -f libctest*
 if test "$LIBC_VERSION"x = x ; then
   AC_MSG_ERROR([Unable to determine LIBC VERSION])
@@ -181,27 +186,18 @@ fi
 AC_MSG_RESULT([$LIBC_VERSION])
 AC_DEFINE_UNQUOTED([LIBC_VERSION], ["$LIBC_VERSION"], [Name of libc to hook into])
 
-dnl check if we have 32bit or 64bit output
-AC_ARG_ENABLE([multilib],
-  AS_HELP_STRING([--enable-multilib],
-    [enable building for multilib setups (default=disabled)]),
-  [enable_multilib="$enableval"],
-  [enable_multilib="no"]
-)
-
-if test x"$enable_multilib" != xno ; then
-  AC_DEFINE([SB_HAVE_MULTILIB], [1], [Have multilib enabled system])
-fi
-
+dnl We add to CPPFLAGS rather than doing AC_DEFINE_UNQUOTED
+dnl so we dont have to worry about fully expanding all of
+dnl the variables ($sysconfdir defaults to "$prefix/etc")
 SANDBOX_DEFINES='-DETCDIR="\"$(sysconfdir)\"" -DLIBSANDBOX_PATH="\"$(libdir)\"" -DSANDBOX_BASHRC_PATH="\"$(pkgdatadir)\""'
 AC_SUBST([SANDBOX_DEFINES])
 
 AC_OUTPUT([
-  Makefile
-  scripts/Makefile
-  etc/Makefile
-  data/Makefile
-  libsbutil/Makefile
-  libsandbox/Makefile
-  src/Makefile
+	Makefile
+	scripts/Makefile
+	etc/Makefile
+	data/Makefile
+	libsbutil/Makefile
+	libsandbox/Makefile
+	src/Makefile
 ])

@@ -35,14 +35,9 @@
 void get_sandbox_lib(char *path)
 {
 	save_errno();
-#ifdef SB_HAVE_MULTILIB
-	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
-#else
 	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
 	if (!rc_file_exists(path)) {
 		snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 	}
-#endif
 	restore_errno();
 }
-
