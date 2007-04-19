@@ -1,0 +1,37 @@
+/*
+ * rcdefines.h
+ *
+ * Core defines.
+ *
+ * Copyright 2004-2007 Martin Schlemmer <azarah@nosferatu.za.org>
+ *
+ *
+ *      This program is free software; you can redistribute it and/or modify it
+ *      under the terms of the GNU General Public License as published by the
+ *      Free Software Foundation version 2 of the License.
+ *
+ *      This program is distributed in the hope that it will be useful, but
+ *      WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along
+ *      with this program; if not, write to the Free Software Foundation, Inc.,
+ *      675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * $Header$
+ */
+
+#ifndef __RCDEFINES_H__
+#define __RCDEFINES_H__
+
+#define RCSCRIPTS_ETCDIR	"@ETCDIR@"
+#define RCSCRIPTS_CONFDDIR	RCSCRIPTS_ETCDIR "/conf.d"
+#define RCSCRIPTS_INITDDIR	RCSCRIPTS_ETCDIR "/init.d"
+#define RCSCRIPTS_LIBDIR	"@LIBDIR@/rcscripts"
+#define RCSCRIPTS_SBINDIR	"@SBINDIR@"
+#define RCSCRIPTS_VARDIR	"@VARDIR@"
+
+#define SHELL_PARSER		"@SHELL_PARSER@"
+
+#endif /* __RCDEFINES_H__ */
