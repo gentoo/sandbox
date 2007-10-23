@@ -1051,7 +1051,7 @@ int before_syscall_open_char(const char *func, const char *file, const char *mod
 
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
 	     /* The strspn accept args are known non-writable modifiers */
-	     (strlen(++mode) == strspn(mode, "xbtmc")))) {
+	     (strlen(++mode) == strspn(mode, "xbtmce")))) {
 		return before_syscall("open_rd", file);
 	} else {
 		return before_syscall("open_wr", file);
