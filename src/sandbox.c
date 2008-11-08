@@ -321,6 +321,7 @@ int main(int argc, char **argv)
 					   sizeof(char));
 			if (NULL == tmp_ptr)
 				goto oom_error;
+			argv_bash[4] = tmp_ptr;
 
 			snprintf(argv_bash[4] + strlen(argv_bash[4]),
 				 strlen(argv[i]) + 2, " %s",
