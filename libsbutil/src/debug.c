@@ -8,14 +8,7 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 volatile static bool debug_enabled = TRUE;

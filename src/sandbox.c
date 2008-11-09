@@ -11,17 +11,7 @@
  *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
  */
 
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
-
+#include "headers.h"
 #include "sbutil.h"
 #include "sandbox.h"
 

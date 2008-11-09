@@ -8,9 +8,7 @@
  * Licensed under the GPL-2
  */
 
-#include <string.h>
-#include <stdlib.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 char *

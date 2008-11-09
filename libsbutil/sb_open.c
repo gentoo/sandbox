@@ -7,14 +7,8 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-
+#include "headers.h"
 #include "sbutil.h"
-
 
 static int (*sbio_open)(const char *, int, mode_t) = (void *)open;
 

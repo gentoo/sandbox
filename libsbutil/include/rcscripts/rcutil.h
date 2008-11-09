@@ -10,13 +10,6 @@
 #ifndef __RCUTIL_H__
 #define __RCUTIL_H__
 
-#include <stddef.h>
-#include <sys/types.h>
-
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include "rcscripts/rctypes.h"
 #include "rcscripts/util/debug.h"
 #include "rcscripts/util/string.h"

@@ -7,10 +7,7 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "headers.h"
 #include "sbutil.h"
 
 bool is_env_on (const char *env)

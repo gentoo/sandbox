@@ -13,10 +13,7 @@
 #ifndef __SBUTIL_H__
 #define __SBUTIL_H__
 
-#include <limits.h>
-
-#include "config.h"
-#include "localdecls.h"
+#include "headers.h"
 #include "include/rcscripts/rcutil.h"
 
 #define SANDBOX_CONF_FILE      ETCDIR "/sandbox.conf"

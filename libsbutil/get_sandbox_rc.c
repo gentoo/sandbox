@@ -10,9 +10,7 @@
  *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
  */
 
-#include <errno.h>
-#include <stdio.h>
-
+#include "headers.h"
 #include "sbutil.h"
 
 void get_sandbox_rc(char *path)

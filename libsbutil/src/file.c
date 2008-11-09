@@ -8,16 +8,7 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <fcntl.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 bool

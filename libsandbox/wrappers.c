@@ -10,27 +10,7 @@
  *  as some of the InstallWatch code was used.
  */
 
-#include "config.h"
-
-/* Better way would be to only define _GNU_SOURCE when __GLIBC__ is defined,
- * but including features.h and then defining _GNU_SOURCE do not work */
-#if defined(HAVE_RTLD_NEXT)
-# define _GNU_SOURCE
-#endif
-#include <errno.h>
-#include <dlfcn.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-#include "localdecls.h"
+#include "headers.h"
 #include "sbutil.h"
 #include "libsandbox.h"
 #include "wrappers.h"

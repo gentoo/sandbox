@@ -28,10 +28,30 @@ AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([ \
-	fcntl.h limits.h memory.h stddef.h \
-	stdlib.h string.h strings.h sys/file.h \
-	sys/param.h sys/time.h unistd.h utime.h \
+AC_CHECK_HEADERS_ONCE([ \
+	dirent.h \
+	dlfcn.h \
+	errno.h \
+	fcntl.h \
+	libgen.h \
+	limits.h \
+	memory.h \
+	signal.h \
+	stdarg.h \
+	stddef.h \
+	stdio.h \
+	stdlib.h \
+	string.h \
+	strings.h \
+	unistd.h \
+	utime.h \
+	sys/file.h \
+	sys/mman.h \
+	sys/param.h \
+	sys/stat.h \
+	sys/time.h \
+	sys/types.h \
+	sys/wait.h \
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -149,6 +169,7 @@ AC_TRY_COMPILE([
 )
 AC_MSG_RESULT([$have_rtld_next])
 if test x"$have_rtld_next" = xyes ; then
+  CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
   AC_DEFINE([HAVE_RTLD_NEXT], [1], [Have RTLD_NEXT enabled libc])
 fi
 

@@ -17,19 +17,7 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <stddef.h>
-
-#include "config.h"
-#include "localdecls.h"
-
+#include "headers.h"
 #include "sbutil.h"
 #include "libsandbox.h"
 

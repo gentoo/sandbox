@@ -8,12 +8,7 @@
  * Licensed under the GPL-2
  */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 #define DYNAMIC_BUFFER_SIZE (sizeof (char) * 2 * 1024)

@@ -8,10 +8,7 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 /* This handles simple 'entry="bar"' type variables.  If it is more complex

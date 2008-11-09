@@ -7,13 +7,7 @@
  * Licensed under the GPL-2
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-
+#include "headers.h"
 #include "sbutil.h"
 #include "sandbox.h"
 

@@ -49,11 +49,7 @@
  *
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "headers.h"
 #include "rcscripts/rcutil.h"
 
 /* Macro to check if a regex_data_t pointer is valid */

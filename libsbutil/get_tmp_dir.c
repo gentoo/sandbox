@@ -10,10 +10,7 @@
  *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
  */
 
-#include <errno.h>
-#include <limits.h>
-#include <stdlib.h>
-
+#include "headers.h"
 #include "sbutil.h"
 
 int get_tmp_dir(char *path)

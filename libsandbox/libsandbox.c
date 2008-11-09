@@ -16,17 +16,7 @@
 #define open   xxx_open
 #define open64 xxx_open64
 
-#include <errno.h>
-#include <libgen.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include "headers.h"
 
 #ifdef SB_MEM_DEBUG
 # include <mcheck.h>
@@ -35,10 +25,7 @@
 #undef open
 #undef open64
 
-#include "config.h"
-#include "localdecls.h"
 #include "sbutil.h"
-
 #include "libsandbox.h"
 #include "wrappers.h"
 
