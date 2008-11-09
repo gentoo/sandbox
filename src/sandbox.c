@@ -21,6 +21,7 @@ volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;
 
 static char log_domain[] = "sandbox";
+static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 
 int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
@@ -230,7 +231,7 @@ int main(int argc, char **argv)
 		print_debug = 1;
 
 	if (print_debug)
-		printf("========================== Gentoo linux path sandbox ===========================\n");
+		puts(sandbox_banner);
 
 	/* check if a sandbox is already running */
 	if (NULL != getenv(ENV_SANDBOX_ACTIVE)) {
@@ -336,7 +337,7 @@ int main(int argc, char **argv)
 		printf("Cleaning up sandbox process\n");
 
 	if (print_debug) {
-		printf("========================== Gentoo linux path sandbox ===========================\n");
+		puts(sandbox_banner);
 		printf("The protected environment has been shut down.\n");
 	}
 
