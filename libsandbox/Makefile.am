@@ -34,7 +34,7 @@ libsandbox_la_SOURCES = \
 	canonicalize.c
 
 libsandbox.c: libsandbox.map
-wrapper.c: symbols.h
+wrappers.c: symbols.h
 
 SYMBOLS_FILE = $(srcdir)/symbols.h.in
 SYMBOLS_LIST = $(shell $(EGREP) -v '^\#' $(SYMBOLS_FILE))
