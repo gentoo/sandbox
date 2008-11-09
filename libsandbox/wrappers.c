@@ -42,18 +42,24 @@ void *get_dlsym(const char *symname, const char *symver)
 {
 	void *symaddr = NULL;
 
-	if (NULL == libc_handle) {
-#if !defined(USE_RTLD_NEXT)
+#if defined(USE_RTLD_NEXT)
+        libc_handle = RTLD_NEXT;
+#endif
+
+        /* Checking for -1UL is significent on hardened! 
+         * USE_RTLD_NEXT returns it as a sign of being unusable.
+         * However using !x or NULL checks does NOT pick it up!
+         */
+#define INVALID_LIBC_HANDLE(x) (!x || NULL == x || -1UL == x)
+	if (INVALID_LIBC_HANDLE(libc_handle)) {
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-		if (!libc_handle) {
+		if (INVALID_LIBC_HANDLE(libc_handle)) {
 			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
 				dlerror());
 			exit(EXIT_FAILURE);
 		}
-#else
-		libc_handle = RTLD_NEXT;
-#endif
 	}
+#undef INVALID_LIBC_HANDLE
 
 	if (NULL == symver)
 		symaddr = dlsym(libc_handle, symname);
