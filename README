@@ -1,0 +1,28 @@
+---------
+  about
+---------
+
+Sandbox is a library (and helper utility) to run programs in a "sandboxed"
+environment.  This is used as a QA measure to try and prevent applications from
+modifying files they should not.
+
+For example, in the Gentoo world we use it so we can build applications as root
+and make sure that the build system does not do crazy things outside of its
+build directory.  Such as install files to the live root file system or modify
+config files on the fly.
+
+For people who are familiar with the Debian "fakeroot" project, sandbox is very
+similar to that.
+
+----------
+  method
+----------
+
+The way sandbox works is that you prime a few environment variables (in order
+to control the sandbox's behavior) and then stick it into the LD_PRELOAD
+variable.  Then when the ELF loader runs, it will first load the sandbox
+library.  Whenever an applications makes a library call that we have wrapped,
+we'll check the arguments against the environment settings.  Based on that, any
+access that is not permitted is logged and we return an error to the
+application.  Any access that is permitted is of course forwarded along to the
+real C library.
