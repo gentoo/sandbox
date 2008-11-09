@@ -1,6 +1,5 @@
 # Copyright (C) 2001 Geert Bevin, Uwyn, http://www.uwyn.com
 # Distributed under the terms of the GNU General Public License, v2 or later 
-# $Header$
 
 if [[ -n ${LD_PRELOAD} && ${LD_PRELOAD} != *$SANDBOX_LIB* ]] ; then
 	export LD_PRELOAD="${SANDBOX_LIB} ${LD_PRELOAD}"
@@ -102,4 +101,3 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 	done
 	unset var
 fi
-

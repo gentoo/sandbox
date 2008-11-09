@@ -3,28 +3,11 @@
  *
  * Main libsandbox related functions.
  *
- * Copyright 1999-2006 Gentoo Foundation
- *
- *
- *      This program is free software; you can redistribute it and/or modify it
- *      under the terms of the GNU General Public License as published by the
- *      Free Software Foundation version 2 of the License.
- *
- *      This program is distributed in the hope that it will be useful, but
- *      WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along
- *      with this program; if not, write to the Free Software Foundation, Inc.,
- *      675 Mass Ave, Cambridge, MA 02139, USA.
+ * Copyright 1999-2008 Gentoo Foundation
+ * Licensed under the GPL-2
  *
  *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
  *  as some of the InstallWatch code was used.
- *
- *
- *  $Header$
- *
  */
 
 /* Uncomment below to enable memory debugging. */
@@ -951,7 +934,7 @@ int before_syscall(const char *func, const char *file)
 		}
 	}
 
-	if ((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] || 
+	if ((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] ||
 		strcmp(cached_env_vars[1], read) != 0) {
 
 		clean_env_entries(&(sbcontext.read_prefixes),

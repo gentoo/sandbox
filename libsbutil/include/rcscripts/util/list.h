@@ -1,11 +1,9 @@
-/* 
+/*
  * Copied from the Linux kernel source tree, version 2.6.0-test1.
  *
  * Licensed under the GPL v2 as per the whole kernel source tree.
  *
  * Ripped out the rcu stuff, as it's not needed.
- *
- * $Header$
  */
 
 #ifndef __LINUX_LIST_H__
@@ -61,7 +59,7 @@ struct list_head {
 } while (0)
 
 /*
- * Insert a new entry between two known consecutive entries. 
+ * Insert a new entry between two known consecutive entries.
  *
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
@@ -135,7 +133,7 @@ static inline void list_del(struct list_head *entry)
 static inline void list_del_init(struct list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
-	INIT_LIST_HEAD(entry); 
+	INIT_LIST_HEAD(entry);
 }
 
 /**
@@ -250,7 +248,7 @@ static inline void list_splice_init(struct list_head *list,
 #define list_for_each_prev(pos, head) \
 	for (pos = (head)->prev, prefetch(pos->prev); pos != (head); \
         	pos = pos->prev, prefetch(pos->prev))
-        	
+
 /**
  * list_for_each_safe	-	iterate over a list safe against removal of list entry
  * @pos:	the &struct list_head to use as a loop counter.
@@ -301,44 +299,44 @@ static inline void list_splice_init(struct list_head *list,
 	     &pos->member != (head); 					\
 	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
-/* 
- * Double linked lists with a single pointer list head. 
- * Mostly useful for hash tables where the two pointer list head is 
+/*
+ * Double linked lists with a single pointer list head.
+ * Mostly useful for hash tables where the two pointer list head is
  * too wasteful.
  * You lose the ability to access the tail in O(1).
- */ 
+ */
 
-struct hlist_head { 
-	struct hlist_node *first; 
-}; 
+struct hlist_head {
+	struct hlist_node *first;
+};
 
-struct hlist_node { 
-	struct hlist_node *next, **pprev; 
-}; 
+struct hlist_node {
+	struct hlist_node *next, **pprev;
+};
 
-#define HLIST_HEAD_INIT { .first = NULL } 
+#define HLIST_HEAD_INIT { .first = NULL }
 #define HLIST_HEAD(name) struct hlist_head name = {  .first = NULL }
-#define INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL) 
+#define INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL)
 #define INIT_HLIST_NODE(ptr) ((ptr)->next = NULL, (ptr)->pprev = NULL)
 
-static __inline__ int hlist_unhashed(struct hlist_node *h) 
-{ 
+static __inline__ int hlist_unhashed(struct hlist_node *h)
+{
 	return !h->pprev;
-} 
+}
 
-static __inline__ int hlist_empty(struct hlist_head *h) 
-{ 
+static __inline__ int hlist_empty(struct hlist_head *h)
+{
 	return !h->first;
-} 
+}
 
-static __inline__ void __hlist_del(struct hlist_node *n) 
+static __inline__ void __hlist_del(struct hlist_node *n)
 {
 	struct hlist_node *next = n->next;
 	struct hlist_node **pprev = n->pprev;
-	*pprev = next;  
-	if (next) 
+	*pprev = next;
+	if (next)
 		next->pprev = pprev;
-}  
+}
 
 static __inline__ void hlist_del(struct hlist_node *n)
 {
@@ -347,30 +345,30 @@ static __inline__ void hlist_del(struct hlist_node *n)
 	n->pprev = LIST_POISON2;
 }
 
-static __inline__ void hlist_del_init(struct hlist_node *n) 
+static __inline__ void hlist_del_init(struct hlist_node *n)
 {
 	if (n->pprev)  {
 		__hlist_del(n);
 		INIT_HLIST_NODE(n);
 	}
-}  
+}
 
-static __inline__ void hlist_add_head(struct hlist_node *n, struct hlist_head *h) 
-{ 
+static __inline__ void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
+{
 	struct hlist_node *first = h->first;
-	n->next = first; 
-	if (first) 
+	n->next = first;
+	if (first)
 		first->pprev = &n->next;
-	h->first = n; 
-	n->pprev = &h->first; 
-} 
+	h->first = n;
+	n->pprev = &h->first;
+}
 
 /* next must be != NULL */
 static __inline__ void hlist_add_before(struct hlist_node *n, struct hlist_node *next)
 {
 	n->pprev = next->pprev;
-	n->next = next; 
-	next->pprev = &n->next; 
+	n->next = next;
+	next->pprev = &n->next;
 	*(n->pprev) = n;
 }
 
@@ -387,7 +385,7 @@ static __inline__ void hlist_add_after(struct hlist_node *n,
 /* Cannot easily do prefetch unfortunately */
 #define hlist_for_each(pos, head) \
 	for (pos = (head)->first; pos && ({ prefetch(pos->next); 1; }); \
-	     pos = pos->next) 
+	     pos = pos->next)
 
 #define hlist_for_each_safe(pos, n, head) \
 	for (pos = (head)->first; n = pos ? pos->next : 0, pos; \

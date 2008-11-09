@@ -3,29 +3,13 @@
  *
  * Main sandbox related functions.
  *
- * Copyright 1999-2006 Gentoo Foundation
- *
- *
- *      This program is free software; you can redistribute it and/or modify it
- *      under the terms of the GNU General Public License as published by the
- *      Free Software Foundation version 2 of the License.
- *
- *      This program is distributed in the hope that it will be useful, but
- *      WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along
- *      with this program; if not, write to the Free Software Foundation, Inc.,
- *      675 Mass Ave, Cambridge, MA 02139, USA.
+ * Copyright 1999-2008 Gentoo Foundation
+ * Licensed under the GPL-2
  *
  * Some parts might have Copyright:
  *
  *   Copyright (C) 2002 Brad House <brad@mainstreetsoftworks.com>
- *
- * $Header$
  */
-
 
 #include <errno.h>
 #include <signal.h>
@@ -61,7 +45,7 @@ int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 		if (interactive)
 			setenv(ENV_SANDBOX_WORKDIR, sandbox_info->work_dir, 1);
 	}
-	
+
 	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
 	if (!rc_is_dir(VAR_TMPDIR, TRUE)) {
 		perror("sandbox:  Failed to get var_tmp_dir");
@@ -120,7 +104,7 @@ int print_sandbox_log(char *sandbox_log)
 		perror("sandbox:  Log file is not a regular file");
 		return 0;
 	}
-	
+
 	len = rc_get_size(sandbox_log, TRUE);
 	if (0 == len)
 		return 0;
@@ -166,7 +150,7 @@ int print_sandbox_log(char *sandbox_log)
 		if (i < beep_count - 1)
 			sleep(1);
 	}
-	
+
 	return 1;
 }
 
@@ -193,7 +177,7 @@ void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 		 *        tree, but currently that is too much work and not worth the
 		 *        effort.  Thus we only kill the calling process and our child
 		 *        for now.
-		 */		
+		 */
 		if (siginfo->si_pid > 0)
 			kill(siginfo->si_pid, SIGKILL);
 		kill(child_pid, SIGKILL);
@@ -238,7 +222,7 @@ int spawn_shell(char *argv_bash[], char **env, int debug)
 int main(int argc, char **argv)
 {
 	struct sigaction act_new;
-    
+
 	int success = 1;
 	int sandbox_log_presence = 0;
 
@@ -273,7 +257,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "sandbox:  Failed to setup sandbox.");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	/* verify the existance of required files */
 	if (print_debug)
 		printf("Verification of the required files.\n");
@@ -385,4 +369,3 @@ oom_error:
 	perror("sandbox:  Out of memory (environ)");
 	exit(EXIT_FAILURE);
 }
-

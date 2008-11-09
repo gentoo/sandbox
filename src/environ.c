@@ -3,25 +3,9 @@
  *
  * Environment setup and related functions.
  *
- * Copyright 1999-2006 Gentoo Foundation
- *
- *
- *      This program is free software; you can redistribute it and/or modify it
- *      under the terms of the GNU General Public License as published by the
- *      Free Software Foundation version 2 of the License.
- *
- *      This program is distributed in the hope that it will be useful, but
- *      WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along
- *      with this program; if not, write to the Free Software Foundation, Inc.,
- *      675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Header$
+ * Copyright 1999-2008 Gentoo Foundation
+ * Licensed under the GPL-2
  */
-
 
 #include <errno.h>
 #include <stdio.h>
@@ -69,7 +53,7 @@ static char *subst_env_vars(rc_dynbuf_t *env_data)
 		  	tmp_ptr = var_start + 1;
 			continue;
 		}
-		
+
 		/* Terminate part before env string so that we can copy it */
 		var_start[0] = '\0';
 		/* Move var_start past '${' */
@@ -268,7 +252,7 @@ error:
 char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 {
 	int have_ld_preload = 0;
-	
+
 	char **new_environ = NULL;
 	char **env_ptr;
 	char *ld_preload_envvar = NULL;
@@ -290,7 +274,7 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	unsetenv(ENV_SANDBOX_ACTIVE);
 	unsetenv(ENV_SANDBOX_INTRACTV);
 	unsetenv(ENV_BASH_ENV);
-	
+
 	if (NULL != getenv(ENV_LD_PRELOAD)) {
 		have_ld_preload = 1;
 		orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
@@ -313,7 +297,7 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	/* unsetenv(ENV_LD_PRELOAD); */
 
 	snprintf(sb_pid, sizeof(sb_pid), "%i", getpid());
-	
+
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
 	sb_setenv(&new_environ, ENV_SANDBOX_ON, "1");
@@ -379,4 +363,3 @@ error:
 
 	return NULL;
 }
-

@@ -3,23 +3,9 @@
  *
  * Simle regex library.
  *
+ * Copyright 1999-2008 Gentoo Foundation
  * Copyright 2004-2007 Martin Schlemmer <azarah@nosferatu.za.org>
- *
- *
- *      This program is free software; you can redistribute it and/or modify it
- *      under the terms of the GNU General Public License as published by the
- *      Free Software Foundation version 2 of the License.
- *
- *      This program is distributed in the hope that it will be useful, but
- *      WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *      General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along
- *      with this program; if not, write to the Free Software Foundation, Inc.,
- *      675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Header$
+ * Licensed under the GPL-2
  */
 
 /*
@@ -50,7 +36,7 @@
  *   not be consistant with other practices, but I personally do not feel it is
  *   a critical error for these types of functions, and there are debugging you
  *   can enable to verify that there are no such issues.
- *   
+ *
  * - __somefunction() is usually a helper function for somefunction().  I guess
  *   recursion might be an alternative, but I try to avoid it.
  *
@@ -867,4 +853,3 @@ error:
 
   return -1;
 }
-

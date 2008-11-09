@@ -17,10 +17,6 @@
    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307 USA.  */
 
-/*
- * $Header$
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,11 +49,11 @@
    holds the same value as the value returned.	*/
 
 /* Modified: 19 Aug 2002; Martin Schlemmer <azarah@gentoo.org>
- * 
+ *
  *  Cleaned up unneeded stuff, and change so that it will not
  *  resolve symlinks.  Also prepended a 'e' to functions that
  *  I did not rip out.
- *  
+ *
  */
 
 char *
