@@ -1,5 +1,5 @@
-AC_PREREQ([2.59])
-AC_INIT([sandbox], [1.2.20alpha2], [sandbox@gentoo.org])
+AC_PREREQ([2.61])
+AC_INIT([sandbox], [1.3.0], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
 
