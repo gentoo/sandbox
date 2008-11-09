@@ -29,6 +29,7 @@ libsandbox_la_LDFLAGS = \
 libsandbox_la_SOURCES = \
 	libsandbox.h \
 	libsandbox.c \
+	memory.c     \
 	wrappers.h   \
 	wrappers.c   \
 	canonicalize.c
