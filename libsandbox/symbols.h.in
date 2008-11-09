@@ -30,3 +30,5 @@ creat64
 fopen64
 truncate64
 execve
+utime
+utimes
