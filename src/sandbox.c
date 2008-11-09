@@ -253,12 +253,6 @@ int main(int argc, char **argv)
 	if (print_debug)
 		printf("Verification of the required files.\n");
 
-#ifndef SB_HAVE_MULTILIB
-	if (!rc_file_exists(sandbox_info.sandbox_lib)) {
-		perror("sandbox:  Could not open the sandbox library");
-		exit(EXIT_FAILURE);
-	}
-#endif
 	if (!rc_file_exists(sandbox_info.sandbox_rc)) {
 		perror("sandbox:  Could not open the sandbox rc file");
 		exit(EXIT_FAILURE);
