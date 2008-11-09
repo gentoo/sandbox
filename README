@@ -11,8 +11,8 @@ and make sure that the build system does not do crazy things outside of its
 build directory.  Such as install files to the live root file system or modify
 config files on the fly.
 
-For people who are familiar with the Debian "fakeroot" project, sandbox is very
-similar to that.
+For people who are familiar with the Debian "fakeroot" project or the RPM based
+"InstallWatch", sandbox is in the same vein of projects.
 
 ----------
   method
