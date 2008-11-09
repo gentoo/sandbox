@@ -36,7 +36,7 @@ volatile static bool debug_enabled = TRUE;
 volatile static int debug_errno = 0;
 
 static char log_domain_default[] = "rcscripts";
-volatile static char *log_domain = log_domain_default;
+static char *log_domain = log_domain_default;
 
 void
 rc_log_domain (const char *new_domain)
