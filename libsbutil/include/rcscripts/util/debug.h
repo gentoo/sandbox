@@ -64,14 +64,14 @@ debug_message (const char *file, const char *func, int line,
 
 #define DBG_MSG(_format, _arg...) \
  do { \
-   debug_message (__FILE__, __FUNCTION__, __LINE__, _format, ## _arg); \
+   debug_message (__FILE__, __func__, __LINE__, _format, ## _arg); \
  } while (0)
 
 #define FATAL_ERROR() \
  do { \
    save_errno (); \
    fprintf(stderr, "ERROR: file '%s', function '%s', line %i.\n", \
-	   __FILE__, __FUNCTION__, __LINE__); \
+	   __FILE__, __func__, __LINE__); \
    restore_errno (); \
    if (0 != errno) \
      { \
@@ -124,15 +124,15 @@ inline bool __check_arg_fp (FILE * fp, const char *file, const char *func,
 			    size_t line);
 
 #define check_arg_ptr(_ptr) \
- __check_arg_ptr (_ptr, __FILE__, __FUNCTION__, __LINE__)
+ __check_arg_ptr (_ptr, __FILE__, __func__, __LINE__)
 #define check_arg_str(_str) \
- __check_arg_str (_str, __FILE__, __FUNCTION__, __LINE__)
+ __check_arg_str (_str, __FILE__, __func__, __LINE__)
 #define check_arg_strv(_str) \
- __check_arg_strv (_str, __FILE__, __FUNCTION__, __LINE__)
+ __check_arg_strv (_str, __FILE__, __func__, __LINE__)
 #define check_arg_fd(_fd) \
- __check_arg_fd (_fd, __FILE__, __FUNCTION__, __LINE__)
+ __check_arg_fd (_fd, __FILE__, __func__, __LINE__)
 #define check_arg_fp(_fp) \
- __check_arg_fp (_fp, __FILE__, __FUNCTION__, __LINE__)
+ __check_arg_fp (_fp, __FILE__, __func__, __LINE__)
 
 /*
  * Various memory allocation functions and macro's.
@@ -147,16 +147,16 @@ inline void *__xrealloc (void *ptr, size_t size, const char *file,
 			 const char *func, size_t line);
 
 #define xcalloc(_nmemb, _size) \
- __xcalloc (_nmemb, _size, __FILE__, __FUNCTION__, __LINE__)
+ __xcalloc (_nmemb, _size, __FILE__, __func__, __LINE__)
 #define xmalloc(_size) \
- __xmalloc (_size, __FILE__, __FUNCTION__, __LINE__)
+ __xmalloc (_size, __FILE__, __func__, __LINE__)
 #define xrealloc(_ptr, _size) \
- __xrealloc (_ptr, _size, __FILE__, __FUNCTION__, __LINE__)
+ __xrealloc (_ptr, _size, __FILE__, __func__, __LINE__)
 
 inline char *__xstrndup (const char *str, size_t size, const char *file,
 			 const char *func, size_t line);
 
 #define xstrndup(_str, _size) \
- __xstrndup (_str, _size, __FILE__, __FUNCTION__, __LINE__)
+ __xstrndup (_str, _size, __FILE__, __func__, __LINE__)
 
 #endif /* __RC_DEBUG_H__ */

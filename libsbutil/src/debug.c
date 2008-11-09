@@ -95,7 +95,7 @@ debug_message (const char *file, const char *func, int line,
   if (NULL == format_str)
     {
       fprintf (stderr, "(%s) error: in %s, function %s(), line %i:\n",
-	       log_domain, __FILE__, __FUNCTION__, __LINE__);
+	       log_domain, __FILE__, __func__, __LINE__);
       fprintf (stderr, "(%s)        Failed to allocate buffer!\n",
 	       log_domain);
       abort ();

@@ -61,7 +61,7 @@ inline bool __rc_check_arg_dynbuf (rc_dynbuf_t *dynbuf, const char *file,
 				 const char *func, size_t line);
 
 #define rc_check_arg_dynbuf(_dynbuf) \
- __rc_check_arg_dynbuf (_dynbuf, __FILE__, __FUNCTION__, __LINE__)
+ __rc_check_arg_dynbuf (_dynbuf, __FILE__, __func__, __LINE__)
 
 #endif /* __RC_DYNBUF_H__ */
 
