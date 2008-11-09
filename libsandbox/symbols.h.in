@@ -32,3 +32,4 @@ truncate64
 execve
 utime
 utimes
+lutimes
