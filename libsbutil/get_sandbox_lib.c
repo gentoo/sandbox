@@ -13,12 +13,12 @@
 #include "headers.h"
 #include "sbutil.h"
 
+/* Always let the dynamic loader do the searching rather than hard coding the
+ * full path.  This way, things like multilib, testing, local runs work easier.
+ */
 void get_sandbox_lib(char *path)
 {
 	save_errno();
-	snprintf(path, SB_PATH_MAX, "%s/%s", LIBSANDBOX_PATH, LIB_NAME);
-	if (!rc_file_exists(path)) {
-		snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
-	}
+	snprintf(path, SB_PATH_MAX, "%s", LIB_NAME);
 	restore_errno();
 }
