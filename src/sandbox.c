@@ -131,7 +131,7 @@ int print_sandbox_log(char *sandbox_log)
 		return 0;
 	}
 
-	buffer = (char *)xmalloc((len + 1) * sizeof(char));
+	buffer = xmalloc((len + 1) * sizeof(char));
 	if (NULL == buffer) {
 		perror("sandbox:  Could not allocate buffer for Log file");
 		return 0;
