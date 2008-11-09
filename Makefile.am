@@ -11,7 +11,7 @@ SUBDIRS = \
 libsandbox: libsbutil
 src: libsbutil
 
-EXTRA_DIST = localdecls.h ChangeLog.0
+EXTRA_DIST = headers.h localdecls.h ChangeLog.0
 
 dist-hook:
 	PATH="$${PATH}:./scripts" svn2cl
