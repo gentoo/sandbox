@@ -43,14 +43,14 @@ void *get_dlsym(const char *symname, const char *symver)
 	void *symaddr = NULL;
 
 #if defined(USE_RTLD_NEXT)
-        libc_handle = RTLD_NEXT;
+	libc_handle = RTLD_NEXT;
 #endif
 
-        /* Checking for -1UL is significent on hardened! 
-         * USE_RTLD_NEXT returns it as a sign of being unusable.
-         * However using !x or NULL checks does NOT pick it up!
-         */
-#define INVALID_LIBC_HANDLE(x) (!x || NULL == x || -1UL == x)
+	/* Checking for -1UL is significant on hardened!
+	 * USE_RTLD_NEXT returns it as a sign of being unusable.
+	 * However using !x or NULL checks does NOT pick it up!
+	 */
+#define INVALID_LIBC_HANDLE(x) (!x || NULL == x || (void *)-1UL == x)
 	if (INVALID_LIBC_HANDLE(libc_handle)) {
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
 		if (INVALID_LIBC_HANDLE(libc_handle)) {
