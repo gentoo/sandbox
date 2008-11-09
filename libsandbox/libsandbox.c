@@ -853,7 +853,8 @@ error:
 
 int is_sandbox_on()
 {
-	int old_errno = errno;
+	int result;
+	save_errno();
 
 	/* $SANDBOX_ACTIVE is an env variable that should ONLY
 	 * be used internal by sandbox.c and libsanbox.c.  External
@@ -867,12 +868,11 @@ int is_sandbox_on()
 	    (1 == sandbox_on) &&
 	    (NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
 	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
-		errno = old_errno;
-		return 1;
-	} else {
-		errno = old_errno;
-		return 0;
-	}
+		result = 1;
+	} else
+		result = 0;
+	restore_errno();
+	return result;
 }
 
 int before_syscall(const char *func, const char *file)
