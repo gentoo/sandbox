@@ -1,6 +1,4 @@
 /*
- * getcwd.c
- *
  * getcwd() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,10 +8,11 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern char *WRAPPER_NAME(char *, size_t);
-static char * (*WRAPPER_TRUE_NAME) (char *, size_t) = NULL;
+#define WRAPPER_ARGS char *buf, size_t size
+extern char *WRAPPER_NAME(WRAPPER_ARGS);
+static char *(*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-char *WRAPPER_NAME(char *buf, size_t size)
+char *WRAPPER_NAME(WRAPPER_ARGS)
 {
 	char *result = NULL;
 

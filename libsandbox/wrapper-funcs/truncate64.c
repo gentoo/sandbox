@@ -1,6 +1,4 @@
 /*
- * truncate64.c
- *
  * truncate64() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,14 +8,15 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, __off64_t);
-static int (*WRAPPER_TRUE_NAME) (const char *, __off64_t) = NULL;
+#define WRAPPER_ARGS const char *path, __off64_t length
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *path, __off64_t length)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE("truncate64", path) {
+	if FUNCTION_SANDBOX_SAFE(STRING_NAME, path) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(path, length);

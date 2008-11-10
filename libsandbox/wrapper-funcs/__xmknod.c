@@ -1,6 +1,4 @@
 /*
- * __xmknod.c
- *
  * __xmknod() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,14 +8,15 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(int, const char *, __mode_t, __dev_t *);
-static int (*WRAPPER_TRUE_NAME) (int, const char *, __mode_t, __dev_t *) = NULL;
+#define WRAPPER_ARGS int ver, const char *pathname, __mode_t mode, __dev_t *dev
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(int ver, const char *pathname, __mode_t mode, __dev_t *dev)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE("mknod", pathname) {
+	if FUNCTION_SANDBOX_SAFE(STRING_NAME, pathname) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(ver, pathname, mode, dev);

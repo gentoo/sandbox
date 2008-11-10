@@ -1,6 +1,4 @@
 /*
- * creat.c
- *
  * creat() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,15 +8,16 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, mode_t);
+#define WRAPPER_ARGS const char *pathname, mode_t mode
+extern int EXTERN_NAME(WRAPPER_ARGS);
 /* XXX: We use the open() call to simulate create() */
-/* static int (*WRAPPER_TRUE_NAME) (const char *, mode_t) = NULL; */
+/* static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL; */
 
-int WRAPPER_NAME(const char *pathname, mode_t mode)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE("creat", pathname) {
+	if FUNCTION_SANDBOX_SAFE(STRING_NAME, pathname) {
 		check_dlsym(true_open_DEFAULT, symname_open_DEFAULT,
 			    symver_open_DEFAULT);
 		result = true_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);

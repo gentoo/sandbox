@@ -1,6 +1,4 @@
 /*
- * open64.c
- *
  * open64() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,11 +8,12 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, int, ...);
-static int (*WRAPPER_TRUE_NAME) (const char *, int, ...) = NULL;
+#define WRAPPER_ARGS const char *pathname, int flags, ...
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
 /* Eventually, there is a third parameter: it's mode_t mode */
-int WRAPPER_NAME(const char *pathname, int flags, ...)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	va_list ap;
 	int mode = 0;
@@ -35,7 +34,7 @@ int WRAPPER_NAME(const char *pathname, int flags, ...)
 	}
 	errno = old_errno;
 
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT("open64", pathname, flags) {
+	if FUNCTION_SANDBOX_SAFE_OPEN_INT(STRING_NAME, pathname, flags) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		if (flags & O_CREAT)

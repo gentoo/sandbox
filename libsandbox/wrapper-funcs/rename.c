@@ -1,6 +1,4 @@
 /*
- * rename.c
- *
  * rename() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,15 +8,16 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, const char *);
-static int (*WRAPPER_TRUE_NAME) (const char *, const char *) = NULL;
+#define WRAPPER_ARGS const char *oldpath, const char *newpath
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *oldpath, const char *newpath)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if (FUNCTION_SANDBOX_SAFE("rename", oldpath) &&
-	    FUNCTION_SANDBOX_SAFE("rename", newpath)) {
+	if (FUNCTION_SANDBOX_SAFE(STRING_NAME, oldpath) &&
+	    FUNCTION_SANDBOX_SAFE(STRING_NAME, newpath)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(oldpath, newpath);

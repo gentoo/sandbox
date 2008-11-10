@@ -1,16 +1,15 @@
 /*
- * unlink.c
- *
  * unlink() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
-extern int EXTERN_NAME(const char *);
-static int (*WRAPPER_TRUE_NAME) (const char *) = NULL;
+#define WRAPPER_ARGS const char *pathname
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *pathname)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1, old_errno = errno;
 	char canonic[SB_PATH_MAX];
@@ -30,7 +29,7 @@ int WRAPPER_NAME(const char *pathname)
 	}
 	errno = old_errno;
 
-	if FUNCTION_SANDBOX_SAFE("unlink", pathname) {
+	if FUNCTION_SANDBOX_SAFE(STRING_NAME, pathname) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(pathname);

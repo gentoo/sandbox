@@ -1,6 +1,4 @@
 /*
- * truncate.c
- *
  * truncate() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,14 +8,15 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, TRUNCATE_T);
-static int (*WRAPPER_TRUE_NAME) (const char *, TRUNCATE_T) = NULL;
+#define WRAPPER_ARGS const char *path, TRUNCATE_T length
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *path, TRUNCATE_T length)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE("truncate", path) {
+	if FUNCTION_SANDBOX_SAFE(STRING_NAME, path) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(path, length);

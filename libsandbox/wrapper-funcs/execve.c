@@ -1,6 +1,4 @@
 /*
- * execve.c
- *
  * execve() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,10 +8,11 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, char *const[], char *const[]);
-static int (*WRAPPER_TRUE_NAME) (const char *, char *const[], char *const[]) = NULL;
+#define WRAPPER_ARGS const char *filename, char *const argv[], char *const envp[]
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *filename, char *const argv[], char *const envp[])
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	char **my_env = NULL;
 	char *entry;
@@ -23,7 +22,7 @@ int WRAPPER_NAME(const char *filename, char *const argv[], char *const envp[])
 	int result = -1;
 	int count;
 
-	if (!FUNCTION_SANDBOX_SAFE("execve", filename))
+	if (!FUNCTION_SANDBOX_SAFE(STRING_NAME, filename))
 		return result;
 
 	str_list_for_each_item(envp, entry, count) {

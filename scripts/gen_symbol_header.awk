@@ -110,17 +110,20 @@ END {
 				printf("#define symver_%s \"%s\"\n", sym_real_name,
 				       symbol_array[2]);
 
+			printf("#define STRING_NAME \"%s\"\n", sym_index);
 			printf("#define EXTERN_NAME %s\n", sym_index);
 			printf("#define WRAPPER_NAME %s\n", sym_real_name);
 			printf("#define WRAPPER_TRUE_NAME true_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMNAME symname_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMVER symver_%s\n", sym_real_name);
 			printf("#include \"wrapper-funcs/%s.c\"\n", sym_index);
+			printf("#undef STRING_NAME\n");
 			printf("#undef EXTERN_NAME\n");
 			printf("#undef WRAPPER_NAME\n");
 			printf("#undef WRAPPER_TRUE_NAME\n");
 			printf("#undef WRAPPER_SYMNAME\n");
 			printf("#undef WRAPPER_SYMVER\n");
+			printf("#undef WRAPPER_ARGS\n");
 
 			if (symbol_array[2]) {
 				# Only add symbol versions for versioned libc's

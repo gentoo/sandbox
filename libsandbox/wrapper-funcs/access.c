@@ -1,6 +1,4 @@
 /*
- * access.c
- *
  * access() wrapper.
  *
  * Copyright 1999-2008 Gentoo Foundation
@@ -10,14 +8,15 @@
  *  as some of the InstallWatch code was used.
  */
 
-extern int EXTERN_NAME(const char *, int);
-static int (*WRAPPER_TRUE_NAME) (const char *, int) = NULL;
+#define WRAPPER_ARGS const char *pathname, int mode
+extern int EXTERN_NAME(WRAPPER_ARGS);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
-int WRAPPER_NAME(const char *pathname, int mode)
+int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE_ACCESS("access", pathname, mode) {
+	if FUNCTION_SANDBOX_SAFE_ACCESS(STRING_NAME, pathname, mode) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(pathname, mode);
