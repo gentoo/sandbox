@@ -652,6 +652,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 	    (0 == strncmp(func, "rename", 6)) ||
 	    (0 == strncmp(func, "utime", 5)) ||
 	    (0 == strncmp(func, "utimes", 6)) ||
+	    (0 == strncmp(func, "futimesat", 9)) ||
 	    (0 == strncmp(func, "unlink", 6)) ||
 	    (0 == strncmp(func, "rmdir", 5)) ||
 	    (0 == strncmp(func, "chown", 5)) ||
@@ -851,7 +852,7 @@ error:
 	abort();
 }
 
-int is_sandbox_on()
+int is_sandbox_on(void)
 {
 	int result;
 	save_errno();
@@ -875,7 +876,7 @@ int is_sandbox_on()
 	return result;
 }
 
-int before_syscall(const char *func, const char *file)
+int before_syscall(int dirfd, const char *func, const char *file)
 {
 	int old_errno = errno;
 	int result = 1;
@@ -889,6 +890,14 @@ int before_syscall(const char *func, const char *file)
 		/* The file/directory does not exist */
 		errno = ENOENT;
 		return 0;
+	}
+
+	/* While we certainly should implement this, it will probably be a
+	 * pita, so let's just wait until something actually uses this ...
+	 */
+	if (dirfd != AT_FDCWD) {
+		DBG_MSG("Unrecoverable error!  dirfd != AT_FDCWD\n");
+		abort();
 	}
 
 	if (0 == sb_init) {
@@ -996,34 +1005,37 @@ int before_syscall(const char *func, const char *file)
 	return result;
 }
 
-int before_syscall_access(const char *func, const char *file, int flags)
+int before_syscall_access(int dirfd, const char *func, const char *file, int flags)
 {
-	if (flags & W_OK) {
-		return before_syscall("access_wr", file);
-	} else {
-		return before_syscall("access_rd", file);
-	}
+	const char *ext_func;
+	if (flags & W_OK)
+		ext_func = "access_wr";
+	else
+		ext_func = "access_rd";
+	return before_syscall(dirfd, ext_func, file);
 }
 
-int before_syscall_open_int(const char *func, const char *file, int flags)
+int before_syscall_open_int(int dirfd, const char *func, const char *file, int flags)
 {
-	if ((flags & O_WRONLY) || (flags & O_RDWR)) {
-		return before_syscall("open_wr", file);
-	} else {
-		return before_syscall("open_rd", file);
-	}
+	const char *ext_func;
+	if ((flags & O_WRONLY) || (flags & O_RDWR))
+		ext_func = "open_wr";
+	else
+		ext_func = "open_rd";
+	return before_syscall(dirfd, ext_func, file);
 }
 
-int before_syscall_open_char(const char *func, const char *file, const char *mode)
+int before_syscall_open_char(int dirfd, const char *func, const char *file, const char *mode)
 {
 	if (NULL == mode)
 		return 0;
 
+	const char *ext_func;
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
 	     /* The strspn accept args are known non-writable modifiers */
-	     (strlen(++mode) == strspn(mode, "xbtmce")))) {
-		return before_syscall("open_rd", file);
-	} else {
-		return before_syscall("open_wr", file);
-	}
+	     (strlen(++mode) == strspn(mode, "xbtmce"))))
+		ext_func = "open_rd";
+	else
+		ext_func = "open_wr";
+	return before_syscall(dirfd, "open_rd", file);
 }
