@@ -36,7 +36,7 @@ BEGIN {
 					break;
 				}
 			}
-			
+
 			if (ADD) {
 				SYMBOL_LIST[symbol_array[1]] = SYMBOL_LIST[symbol_array[1]] " " $NF;
 				PROCESSED_SYMBOLS[$NF] = $NF;
@@ -46,7 +46,7 @@ BEGIN {
 		sym_regex = "^__" SYMBOLS[x] "(@@|$)";
 		if (($5 == "WEAK") && ($NF ~ sym_regex)) {
 			split($NF, symbol_array, /@@/);
-			
+
 			# Don't add local symbols of versioned libc's
 			if (VERSIONED_LIBC && !symbol_array[2])
 				continue;
@@ -68,7 +68,7 @@ BEGIN {
 					break;
 				}
 			}
-			
+
 			if (ADD) {
 				WEAK_SYMBOLS[SYMBOLS[x]] = WEAK_SYMBOLS[SYMBOLS[x]] " " $NF;
 				PROCESSED_SYMBOLS[$NF] = $NF;
@@ -85,10 +85,10 @@ END {
 	for (i = 1; i <= COUNT; i++) {
 		sym_index = SYMBOLS[i];
 		split(SYMBOL_LIST[sym_index], sym_full_names);
-		
+
 		for (x in sym_full_names) {
 			split(sym_full_names[x], symbol_array, /@|@@/);
-	
+
 			# Defualt symbol have '@@' and not '@', so name it by
 			# prepending '__' rather than the symbol version so
 			# that we know what the name is in libsandbox.c ...
@@ -99,7 +99,7 @@ END {
 				sym_real_name = sym_full_names[x];
 				gsub(/@|\./, "_", sym_real_name);
 			}
-			
+
 			printf("#define symname_%s \"%s\"\n", sym_real_name, sym_index);
 
 			# We handle non-versioned libc's by setting symver_*
@@ -109,7 +109,7 @@ END {
 			else
 				printf("#define symver_%s \"%s\"\n", sym_real_name,
 				       symbol_array[2]);
-	
+
 			printf("#define EXTERN_NAME %s\n", sym_index);
 			printf("#define WRAPPER_NAME %s\n", sym_real_name);
 			printf("#define WRAPPER_TRUE_NAME true_%s\n", sym_real_name);
@@ -121,7 +121,7 @@ END {
 			printf("#undef WRAPPER_TRUE_NAME\n");
 			printf("#undef WRAPPER_SYMNAME\n");
 			printf("#undef WRAPPER_SYMVER\n");
-		
+
 			if (symbol_array[2]) {
 				# Only add symbol versions for versioned libc's
 				if (sym_full_names[x] ~ /@@/)
@@ -138,7 +138,7 @@ END {
 
 			if (WEAK_SYMBOLS[sym_index]) {
 				split(WEAK_SYMBOLS[sym_index], sym_weak_full);
-				
+
 				for (y in sym_weak_full) {
 					split(sym_weak_full[y], sym_weak_array, /@@/);
 
@@ -150,7 +150,7 @@ END {
 							   sym_weak_array[1]);
 				}
 			}
-			
+
 			printf("\n");
 		}
 	}
