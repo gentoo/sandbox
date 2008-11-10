@@ -112,7 +112,7 @@ static int setup_access_var(const char *access_var)
   	int count = 0;
 	char *config = NULL;
 	char **confd_files = NULL;
-	bool use_confd = TRUE;
+	bool use_confd = true;
 
 	env_data = rc_dynbuf_new();
 	if (NULL == env_data)
@@ -130,7 +130,7 @@ static int setup_access_var(const char *access_var)
 	/* Append whatever might be already set.  If anything is set, we do
 	 * not process the sandbox.d/ files for this variable. */
 	if (NULL != getenv(access_var)) {
-		use_confd = FALSE;
+		use_confd = false;
 		if (-1 == rc_dynbuf_sprintf(env_data, env_data->wr_index ? ":%s" : "%s",
 					  getenv(access_var)))
 			goto error;
@@ -141,7 +141,7 @@ static int setup_access_var(const char *access_var)
 
 	/* Now scan the files in sandbox.d/ if the access variable was not
 	 * alreay set. */
-	confd_files = rc_ls_dir(SANDBOX_CONFD_DIR, FALSE, TRUE);
+	confd_files = rc_ls_dir(SANDBOX_CONFD_DIR, false, true);
 	if (NULL != confd_files) {
 		while (NULL != confd_files[count]) {
 			config = rc_get_cnf_entry(confd_files[count], access_var, ":");

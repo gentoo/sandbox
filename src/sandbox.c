@@ -38,7 +38,7 @@ int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	}
 
 	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
-	if (!rc_is_dir(VAR_TMPDIR, TRUE)) {
+	if (!rc_is_dir(VAR_TMPDIR, true)) {
 		perror("sandbox:  Failed to get var_tmp_dir");
 		return -1;
 	}
@@ -91,12 +91,12 @@ int print_sandbox_log(char *sandbox_log)
 	off_t len = 0;
 	char *buffer = NULL;
 
-	if (!rc_is_file(sandbox_log, FALSE)) {
+	if (!rc_is_file(sandbox_log, false)) {
 		perror("sandbox:  Log file is not a regular file");
 		return 0;
 	}
 
-	len = rc_get_size(sandbox_log, TRUE);
+	len = rc_get_size(sandbox_log, true);
 	if (0 == len)
 		return 0;
 
