@@ -31,13 +31,16 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS_ONCE([ \
 	dirent.h \
 	dlfcn.h \
+	elf.h \
 	errno.h \
+	execinfo.h \
 	fcntl.h \
 	libgen.h \
 	limits.h \
 	memory.h \
 	signal.h \
 	stdarg.h \
+	stdbool.h \
 	stddef.h \
 	stdio.h \
 	stdlib.h \
@@ -68,11 +71,27 @@ AC_FUNC_LSTAT
 AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
-AC_CHECK_FUNCS([ \
-	bzero ftruncate getcwd lchown memmove \
-	memcpy memset mkdir pathconf realpath \
-	rmdir setenv strcasecmp strchr strdup \
-	strerror strndup strrchr strspn strstr \
+AC_CHECK_FUNCS_ONCE([ \
+	backtrace \
+	ftruncate \
+	getcwd \
+	lchown \
+	memmove \
+	memcpy \
+	memset \
+	mkdir \
+	pathconf \
+	realpath \
+	rmdir \
+	setenv \
+	strcasecmp \
+	strchr \
+	strdup \
+	strerror \
+	strndup \
+	strrchr \
+	strspn \
+	strstr \
 	strtok_r \
 ])
 dnl For librcutil

@@ -15,8 +15,14 @@
 #ifdef HAVE_DLFCN_H
 # include <dlfcn.h>
 #endif
+#ifdef HAVE_ELF_H
+# include <elf.h>
+#endif
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
+#endif
+#ifdef HAVE_EXECINFO_H
+# include <execinfo.h>
 #endif
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
@@ -35,6 +41,9 @@
 #endif
 #ifdef HAVE_STDARG_H
 # include <stdarg.h>
+#endif
+#ifdef HAVE_STDBOOL_H
+# include <stdbool.h>
 #endif
 #ifdef HAVE_STDDEF_H
 # include <stddef.h>
