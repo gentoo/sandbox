@@ -39,7 +39,7 @@ wrappers.c: symbols.h
 
 SYMBOLS_FILE = $(srcdir)/symbols.h.in
 SYMBOLS_LIST = $(shell $(EGREP) -v '^\#' $(SYMBOLS_FILE))
-SYMBOLS_WRAPPERS = $(wildcard  $(srcdir)/wrapper-funcs/*.c)
+SYMBOLS_WRAPPERS = $(wildcard  $(srcdir)/wrapper-funcs/*.[ch])
 GEN_VERSION_MAP_SCRIPT = $(top_srcdir)/scripts/gen_symbol_version_map.awk
 GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk
 
