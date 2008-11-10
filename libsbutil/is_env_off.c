@@ -16,7 +16,7 @@ bool is_env_off (const char *env)
 	    ((0 == strncasecmp(getenv(env), "0", 1)) ||
 	     (0 == strncasecmp(getenv(env), "false", 5)) ||
 	     (0 == strncasecmp(getenv(env), "no", 2))))
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }

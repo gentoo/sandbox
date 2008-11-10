@@ -29,14 +29,14 @@ rc_get_cnf_entry (const char *pathname, const char *entry, const char *sep)
     return NULL;
 
   /* If it is not a file or symlink pointing to a file, bail */
-  if (!rc_is_file (pathname, TRUE))
+  if (!rc_is_file (pathname, true))
     {
       rc_errno_set (ENOENT);
       DBG_MSG ("'%s' is not a file or does not exist!\n", pathname);
       return NULL;
     }
 
-  if (0 == rc_get_size (pathname, TRUE))
+  if (0 == rc_get_size (pathname, true))
     {
       /* XXX: Should we set errno here ? */
       DBG_MSG ("'%s' have a size of 0!\n", pathname);

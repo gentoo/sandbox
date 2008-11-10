@@ -34,7 +34,7 @@ rc_dynbuf_new (void)
   dynbuf->length = DYNAMIC_BUFFER_SIZE;
   dynbuf->rd_index = 0;
   dynbuf->wr_index = 0;
-  dynbuf->file_map = FALSE;
+  dynbuf->file_map = false;
 
   return dynbuf;
 }
@@ -58,7 +58,7 @@ rc_dynbuf_new_mmap_file (const char *name)
 
   dynbuf->wr_index = dynbuf->length;
   dynbuf->rd_index = 0;
-  dynbuf->file_map = TRUE;
+  dynbuf->file_map = true;
 
   return dynbuf;
 }
@@ -434,21 +434,21 @@ bool
 rc_dynbuf_read_eof (rc_dynbuf_t *dynbuf)
 {
   if (!rc_check_arg_dynbuf (dynbuf))
-    return FALSE;
+    return false;
 
   if (dynbuf->rd_index >= dynbuf->wr_index)
-    return TRUE;
+    return true;
 
-  return FALSE;
+  return false;
 }
 
 inline bool
 rc_check_dynbuf (rc_dynbuf_t *dynbuf)
 {
   if ((NULL == dynbuf) || (NULL == dynbuf->data) || (0 == dynbuf->length))
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -461,8 +461,8 @@ __rc_check_arg_dynbuf (rc_dynbuf_t *dynbuf, const char *file, const char *func,
 
       debug_message (file, func, line, "Invalid dynamic buffer passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }

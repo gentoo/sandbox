@@ -11,7 +11,7 @@
 #include "headers.h"
 #include "rcscripts/rcutil.h"
 
-volatile static bool debug_enabled = TRUE;
+volatile static bool debug_enabled = true;
 volatile static int debug_errno = 0;
 
 static char log_domain_default[] = "rcscripts";
@@ -116,45 +116,45 @@ inline bool
 check_ptr (const void *ptr)
 {
   if (NULL == ptr)
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
 check_str (const char *str)
 {
   if ((NULL == str) || (0 == strlen (str)))
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
 check_strv (char **str)
 {
   if ((NULL == str) || (NULL == *str) || (0 == strlen (*str)))
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
 check_fd (int fd)
 {
   if ((0 >= fd) || (-1 == fcntl (fd, F_GETFL)))
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
 check_fp (FILE *fp)
 {
   if ((NULL == fp) || (-1 == fileno (fp)))
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -166,10 +166,10 @@ __check_arg_ptr (const void *ptr, const char *file, const char *func, size_t lin
 
       debug_message (file, func, line, "Invalid pointer passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -181,10 +181,10 @@ __check_arg_str (const char *str, const char *file, const char *func, size_t lin
 
       debug_message (file, func, line, "Invalid string passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -196,10 +196,10 @@ __check_arg_strv (char **str, const char *file, const char *func, size_t line)
 
       debug_message (file, func, line, "Invalid string array passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -211,10 +211,10 @@ __check_arg_fd (int fd, const char *file, const char *func, size_t line)
 
       debug_message (file, func, line, "Invalid file descriptor passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }
 
 inline bool
@@ -226,10 +226,10 @@ __check_arg_fp (FILE *fp, const char *file, const char *func, size_t line)
 
       debug_message (file, func, line, "Invalid file descriptor passed!\n");
 
-      return FALSE;
+      return false;
     }
 
-  return TRUE;
+  return true;
 }
 
 inline void *

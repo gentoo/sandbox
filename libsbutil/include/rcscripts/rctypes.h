@@ -21,9 +21,4 @@
 #endif
 #define MIN(_a, _b)	((_a) > (_b) ? (_b) : (_a))
 
-typedef enum {
-  FALSE,
-  TRUE
-} bool;
-
 #endif /* __RCTYPES_H__ */

@@ -18,13 +18,13 @@ rc_file_exists (const char *pathname)
   int retval;
 
   if (!check_str (pathname))
-    return FALSE;
+    return false;
 
   retval = lstat (pathname, &buf);
   if (-1 != retval)
-    retval = TRUE;
+    retval = true;
   else
-    retval = FALSE;
+    retval = false;
 
   return retval;
 }
@@ -36,13 +36,13 @@ rc_is_file (const char *pathname, bool follow_link)
   int retval;
 
   if (!check_str (pathname))
-    return FALSE;
+    return false;
 
   retval = follow_link ? stat (pathname, &buf) : lstat (pathname, &buf);
   if ((-1 != retval) && (S_ISREG (buf.st_mode)))
-    retval = TRUE;
+    retval = true;
   else
-    retval = FALSE;
+    retval = false;
 
   return retval;
 }
@@ -54,13 +54,13 @@ rc_is_link (const char *pathname)
   int retval;
 
   if (!check_str (pathname))
-    return FALSE;
+    return false;
 
   retval = lstat (pathname, &buf);
   if ((-1 != retval) && (S_ISLNK (buf.st_mode)))
-    retval = TRUE;
+    retval = true;
   else
-    retval = FALSE;
+    retval = false;
 
   return retval;
 }
@@ -72,13 +72,13 @@ rc_is_dir (const char *pathname, bool follow_link)
   int retval;
 
   if (!check_str (pathname))
-    return FALSE;
+    return false;
 
   retval = follow_link ? stat (pathname, &buf) : lstat (pathname, &buf);
   if ((-1 != retval) && (S_ISDIR (buf.st_mode)))
-    retval = TRUE;
+    retval = true;
   else
-    retval = FALSE;
+    retval = false;
 
   return retval;
 }
@@ -128,7 +128,7 @@ remove (const char *pathname)
   if (!check_arg_str (pathname))
     return -1;
 
-  if (rc_is_dir (pathname, FALSE))
+  if (rc_is_dir (pathname, false))
     retval = rmdir (pathname);
   else
     retval = unlink (pathname);
@@ -196,7 +196,7 @@ rc_mktree (const char *pathname, mode_t mode)
 	    }
 	  /* Not a directory or symlink pointing to a directory */
 	}
-      else if (!rc_is_dir (temp_name, TRUE))
+      else if (!rc_is_dir (temp_name, true))
 	{
 	  rc_errno_set (ENOTDIR);
 	  DBG_MSG ("Component in '%s' is not a directory!\n", temp_name);
@@ -239,7 +239,7 @@ rc_rmtree (const char *pathname)
       return -1;
     }
 
-  if (!rc_is_dir (pathname, FALSE))
+  if (!rc_is_dir (pathname, false))
     {
       rc_errno_set (ENOTDIR);
       DBG_MSG ("'%s' is not a directory!\n", pathname);
@@ -247,7 +247,7 @@ rc_rmtree (const char *pathname)
     }
 
 
-  dirlist = rc_ls_dir (pathname, TRUE, FALSE);
+  dirlist = rc_ls_dir (pathname, true, false);
   if ((NULL == dirlist) && (rc_errno_is_set ()))
     {
       /* Do not error out - caller should decide itself if it
@@ -260,7 +260,7 @@ rc_rmtree (const char *pathname)
     {
       /* If it is a directory, call rc_rmtree() again with
        * it as argument */
-      if (rc_is_dir (dirlist[i], FALSE))
+      if (rc_is_dir (dirlist[i], false))
 	{
 	  if (-1 == rc_rmtree (dirlist[i]))
 	    {
@@ -307,7 +307,7 @@ rc_ls_dir (const char *pathname, bool hidden, bool sort)
   if (!check_arg_str (pathname))
     return NULL;
 
-  if (!rc_is_dir (pathname, TRUE))
+  if (!rc_is_dir (pathname, true))
     {
       /* XXX: Should we error here? */
       DBG_MSG ("'%s' is not a directory.\n", pathname);
