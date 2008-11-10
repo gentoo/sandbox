@@ -64,9 +64,6 @@ volatile int sandbox_on = 1;
 static int sb_init = 0;
 static int sb_path_size_warning = 0;
 
-void __attribute__ ((constructor)) libsb_init(void);
-void __attribute__ ((destructor)) libsb_fini(void);
-
 static char *resolve_path(const char *, int);
 static int write_logfile(const char *, const char *, const char *,
 						 const char *, const char *, bool, bool);
@@ -84,14 +81,15 @@ static void init_env_entries(char ***, int *, const char *, const char *, int);
 
 static char log_domain[] = "libsandbox";
 
-void __attribute__ ((destructor)) libsb_fini(void)
+__attribute__((destructor))
+void libsb_fini(void)
 {
 	int x;
 
 	sb_init = 0;
 
 	if (NULL != cached_env_vars) {
-		for (x=0; x < 4; x++) {
+		for (x = 0; x < 4; ++x) {
 			if (NULL != cached_env_vars[x]) {
 				free(cached_env_vars[x]);
 				cached_env_vars[x] = NULL;
@@ -111,7 +109,8 @@ void __attribute__ ((destructor)) libsb_fini(void)
 			&(sbcontext.num_predict_prefixes));
 }
 
-void __attribute__ ((constructor)) libsb_init(void)
+__attribute__((constructor))
+void libsb_init(void)
 {
 	int old_errno = errno;
 
@@ -902,13 +901,11 @@ int before_syscall(int dirfd, const char *func, const char *file)
 
 	if (0 == sb_init) {
 		init_context(&sbcontext);
-		cached_env_vars = xmalloc(sizeof(char *) * 4);
+		cached_env_vars = xcalloc(4, sizeof(char *));
 		if (NULL == cached_env_vars) {
 			DBG_MSG("Unrecoverable error!\n");
 			abort();
 		}
-
-		cached_env_vars[0] = cached_env_vars[1] = cached_env_vars[2] = cached_env_vars[3] = NULL;
 		sb_init = 1;
 	}
 
@@ -918,16 +915,17 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		clean_env_entries(&(sbcontext.deny_prefixes),
 			&(sbcontext.num_deny_prefixes));
 
-		if (NULL != cached_env_vars[0])
+		if (NULL != cached_env_vars[0]) {
 			free(cached_env_vars[0]);
+			cached_env_vars[0] = NULL;
+		}
 
 		if (NULL != deny) {
 			init_env_entries(&(sbcontext.deny_prefixes),
 				&(sbcontext.num_deny_prefixes), ENV_SANDBOX_DENY, deny, 1);
 			cached_env_vars[0] = strdup(deny);
-		} else {
+		} else
 			cached_env_vars[0] = NULL;
-		}
 	}
 
 	if ((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] ||
@@ -936,16 +934,17 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		clean_env_entries(&(sbcontext.read_prefixes),
 			&(sbcontext.num_read_prefixes));
 
-		if (NULL != cached_env_vars[1])
+		if (NULL != cached_env_vars[1]) {
 			free(cached_env_vars[1]);
+			cached_env_vars[1] = NULL;
+		}
 
 		if (NULL != read) {
 			init_env_entries(&(sbcontext.read_prefixes),
 				&(sbcontext.num_read_prefixes), ENV_SANDBOX_READ, read, 1);
 			cached_env_vars[1] = strdup(read);
-		} else {
+		} else
 			cached_env_vars[1] = NULL;
-		}
 	}
 
 	if ((NULL == write && cached_env_vars[2] != write) || NULL == cached_env_vars[2] ||
@@ -954,16 +953,17 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		clean_env_entries(&(sbcontext.write_prefixes),
 			&(sbcontext.num_write_prefixes));
 
-		if (NULL != cached_env_vars[2])
+		if (NULL != cached_env_vars[2]) {
 			free(cached_env_vars[2]);
+			cached_env_vars[2] = NULL;
+		}
 
 		if (NULL != write) {
 			init_env_entries(&(sbcontext.write_prefixes),
 				&(sbcontext.num_write_prefixes), ENV_SANDBOX_WRITE, write, 1);
 			cached_env_vars[2] = strdup(write);
-		} else {
+		} else
 			cached_env_vars[2] = NULL;
-		}
 	}
 
 	if ((NULL == predict && cached_env_vars[3] != predict) || NULL == cached_env_vars[3] ||
@@ -972,17 +972,17 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		clean_env_entries(&(sbcontext.predict_prefixes),
 			&(sbcontext.num_predict_prefixes));
 
-		if (NULL != cached_env_vars[3])
+		if (NULL != cached_env_vars[3]) {
 			free(cached_env_vars[3]);
+			cached_env_vars[2] = NULL;
+		}
 
 		if (NULL != predict) {
 			init_env_entries(&(sbcontext.predict_prefixes),
 				&(sbcontext.num_predict_prefixes), ENV_SANDBOX_PREDICT, predict, 1);
 			cached_env_vars[3] = strdup(predict);
-		} else {
+		} else
 			cached_env_vars[3] = NULL;
-		}
-
 	}
 
 	/* Might have been reset in check_access() */
