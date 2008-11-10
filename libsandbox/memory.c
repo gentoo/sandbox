@@ -8,6 +8,8 @@
  */
 
 #include "headers.h"
+#include "libsandbox.h"
+#include "sbutil.h"
 
 #define SB_MALLOC_TO_MMAP(ptr) ((void*)(((size_t*)ptr) - 1))
 #define SB_MMAP_TO_MALLOC(ptr) ((void*)(((size_t*)ptr) + 1))
@@ -28,7 +30,17 @@ void free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
-	munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr));
+	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr))) {
+		int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
+		SB_EERROR(color, "sandbox memory corruption", " free(%p): %s\n",
+			ptr, strerror(errno));
+#ifdef HAVE_BACKTRACE
+		void *funcs[10];
+		int num_funcs;
+		num_funcs = backtrace(funcs, sizeof(funcs));
+		backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
+#endif
+	}
 }
 
 void *calloc(size_t nmemb, size_t size)
@@ -63,9 +75,6 @@ void *realloc(void *ptr, size_t size)
 	return ret;
 }
 
-#ifdef strdup
-#undef strdup
-#endif
 char *strdup(const char *s)
 {
 	size_t len;
