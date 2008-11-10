@@ -318,7 +318,7 @@ static char *getcmdline(void)
 	int fd;
 
 	if (-1 == stat(PROC_SELF_CMDLINE, &st)) {
-		/* Don't care if it do not exist */
+		/* Don't care if it does not exist */
 		errno = 0;
 		return NULL;
 	}

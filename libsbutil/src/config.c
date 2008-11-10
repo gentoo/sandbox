@@ -32,7 +32,7 @@ rc_get_cnf_entry (const char *pathname, const char *entry, const char *sep)
   if (!rc_is_file (pathname, TRUE))
     {
       rc_errno_set (ENOENT);
-      DBG_MSG ("'%s' is not a file or do not exist!\n", pathname);
+      DBG_MSG ("'%s' is not a file or does not exist!\n", pathname);
       return NULL;
     }
 
