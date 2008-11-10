@@ -12,6 +12,53 @@
 extern int EXTERN_NAME(WRAPPER_ARGS);
 static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
+/* See to see if this an ELF and if so, is it static which we can't wrap */
+void check_exec(const char *filename)
+{
+	int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
+	int fd;
+	unsigned char *elf;
+	struct stat st;
+
+	fd = open(filename, O_RDONLY);
+	if (fd == -1)
+		return;
+	if (stat(filename, &st))
+		goto out_fd;
+	elf = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	if (elf == MAP_FAILED)
+		goto out_fd;
+
+	if (elf[EI_MAG0] != ELFMAG0 &&
+	    elf[EI_MAG1] != ELFMAG1 &&
+	    elf[EI_MAG2] != ELFMAG2 &&
+	    elf[EI_MAG3] != ELFMAG3 &&
+	    !(elf[EI_CLASS] != ELFCLASS32 ||
+	      elf[EI_CLASS] != ELFCLASS64))
+		goto out_mmap;
+
+#define PARSE_ELF(n) \
+({ \
+	Elf##n##_Ehdr *ehdr = (void *)elf; \
+	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
+	uint16_t p; \
+	for (p = 0; p < ehdr->e_phnum; ++p) \
+		if (phdr[p].p_type == PT_INTERP) \
+			goto done; \
+})
+	if (elf[EI_CLASS] == ELFCLASS32)
+		PARSE_ELF(32);
+	else
+		PARSE_ELF(64);
+	SB_EWARN(color, "QA: Static ELF", " %s\n", filename);
+ done:
+
+ out_mmap:
+	munmap(elf, st.st_size);
+ out_fd:
+	close(fd);
+}
+
 int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	char **my_env = NULL;
@@ -24,6 +71,8 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 
 	if (!FUNCTION_SANDBOX_SAFE(STRING_NAME, filename))
 		return result;
+
+	check_exec(filename);
 
 	str_list_for_each_item(envp, entry, count) {
 		if (strstr(entry, LD_PRELOAD_EQ) != entry)
