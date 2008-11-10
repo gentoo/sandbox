@@ -8,9 +8,9 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS const char *pathname, __mode_t mode
+#define WRAPPER_ARGS const char *pathname, mode_t mode
 extern int EXTERN_NAME(WRAPPER_ARGS);
-/* XXX: We use the open64() call to simulate create64() */
+/* XXX: We use the open64() call to simulate creat64() */
 /* static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL; */
 
 int WRAPPER_NAME(WRAPPER_ARGS)

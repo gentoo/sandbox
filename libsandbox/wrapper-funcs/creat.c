@@ -10,7 +10,7 @@
 
 #define WRAPPER_ARGS const char *pathname, mode_t mode
 extern int EXTERN_NAME(WRAPPER_ARGS);
-/* XXX: We use the open() call to simulate create() */
+/* XXX: We use the open() call to simulate creat() */
 /* static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL; */
 
 int WRAPPER_NAME(WRAPPER_ARGS)

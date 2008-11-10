@@ -21,9 +21,8 @@ FILE *WRAPPER_NAME(WRAPPER_ARGS)
 	if ((NULL != mode) && (mode[0] == 'r')) {
 		/* XXX: If we're trying to read, fail normally if file does
 		 *      not stat */
-		if (-1 == stat(pathname, &st)) {
+		if (-1 == stat(pathname, &st))
 			return NULL;
-		}
 	}
 	errno = old_errno;
 

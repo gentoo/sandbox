@@ -8,7 +8,7 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS const char *path, TRUNCATE_T length
+#define WRAPPER_ARGS const char *path, off_t length
 extern int EXTERN_NAME(WRAPPER_ARGS);
 static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 
