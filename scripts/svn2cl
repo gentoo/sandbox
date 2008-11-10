@@ -245,7 +245,7 @@ do
   esac
 done
 
-XSL="/usr/share/svn2cl/svn2${OUTSTYLE}.xsl"
+XSL="${0%/*}/svn2${OUTSTYLE}.xsl"
 
 # check if the authors file is formatted as a legacy
 # colon separated file
