@@ -83,7 +83,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 
 	cd "${PWD}"
 	if [[ ${NOCOLOR} != "true" && ${NOCOLOR} != "yes" && ${NOCOLOR} != "1" ]] ; then
-		export PS1="\e[31;01m[s]\e[0m ${PS1}"
+		export PS1="\[\e[31;01m\][s]\[\e[0m\] ${PS1}"
 	else
 		export PS1="[s] ${PS1}"
 	fi
