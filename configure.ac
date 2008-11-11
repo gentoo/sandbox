@@ -232,6 +232,11 @@ dnl the variables ($sysconfdir defaults to "$prefix/etc")
 SANDBOX_DEFINES='-DETCDIR="\"$(sysconfdir)\"" -DLIBSANDBOX_PATH="\"$(libdir)\"" -DSANDBOX_BASHRC_PATH="\"$(pkgdatadir)\""'
 AC_SUBST([SANDBOX_DEFINES])
 
+CPPFLAGS="$CPPFLAGS -D_REENTRANT"
+if test "$GCC" = yes; then
+	CFLAGS="$CFLAGS -Wall"
+fi
+
 AC_OUTPUT([
 	Makefile
 	scripts/Makefile
