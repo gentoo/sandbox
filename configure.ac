@@ -10,6 +10,7 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
 AC_CHECK_PROGS([READELF], [readelf eu-readelf], [false])
+AM_MISSING_PROG([AUTOM4TE], [autom4te])
 
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
@@ -46,6 +47,7 @@ AC_CHECK_HEADERS_ONCE([ \
 	stdlib.h \
 	string.h \
 	strings.h \
+	syscall.h \
 	unistd.h \
 	utime.h \
 	sys/file.h \
@@ -237,6 +239,8 @@ if test "$GCC" = yes; then
 	CFLAGS="$CFLAGS -Wall"
 fi
 
+AC_CONFIG_TESTDIR([tests])
+
 AC_OUTPUT([
 	Makefile
 	scripts/Makefile
@@ -245,4 +249,7 @@ AC_OUTPUT([
 	libsbutil/Makefile
 	libsandbox/Makefile
 	src/Makefile
+	tests/atlocal
+	tests/Makefile
+	tests/package.m4
 ])

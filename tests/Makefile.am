@@ -1,0 +1,58 @@
+EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE)
+AT_FILES = local.at testsuite.at
+TESTSUITE = $(srcdir)/testsuite
+DISTCLEANFILES = atconfig
+
+check_PROGRAMS = \
+	access-0 \
+	chmod-0 \
+	chown-0 \
+	creat-0 \
+	creat64-0 \
+	faccessat-0 \
+	fchmodat-0 \
+	fchownat-0 \
+	fopen-0 \
+	fopen64-0 \
+	futimesat-0 \
+	lchown-0 \
+	link-0 \
+	linkat-0 \
+	lutimes-0 \
+	mkdir-0 \
+	mkdirat-0 \
+	mkfifo-0 \
+	mkfifoat-0 \
+	mknod-0 \
+	mknodat-0 \
+	open-0 \
+	open64-0 \
+	openat-0 \
+	openat64-0 \
+	opendir-0 \
+	rename-0 \
+	renameat-0 \
+	symlink-0 \
+	symlinkat-0 \
+	truncate-0 \
+	truncate64-0 \
+	unlink-0 \
+	unlinkat-0 \
+	utime-0 \
+	utimensat-0 \
+	utimes-0
+
+check-local: atconfig atlocal $(TESTSUITE)
+	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
+
+installcheck-local: atconfig atlocal $(TESTSUITE)
+	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir)' $(TESTSUITEFLAGS)
+
+clean-local:
+	test ! -f '$(TESTSUITE)' || \
+		$(SHELL) '$(TESTSUITE)' --clean
+
+AUTOTEST = $(AUTOM4TE) --language=autotest
+$(TESTSUITE): $(AT_FILES)
+	$(AUTOTEST) -I '$(srcdir)' -o $@.tmp $@.at
+	mv $@.tmp $@

@@ -1,0 +1,19 @@
+m4_defun([LDR_BINARY], [ldr])
+
+m4_defun([LDR_UART_LOADER], [fake-loadee])
+
+m4_defun([LDR_FILTER_VARS], [sed -e "s:$abs_srcdir/::g" -e 's: *$[]::'])
+
+m4_defun([LDRS_DIR], [$abs_srcdir/ldrs])
+m4_defun([ELFS_DIR], [$abs_srcdir/elfs])
+
+m4_defun([AT_LDR_CHECK],[dnl
+	AT_CHECK([
+($1) > stdout 2> stderr
+ret=$[]?
+LDR_FILTER_VARS stdout
+LDR_FILTER_VARS stderr 1>&2
+(exit $[]ret)
+],
+[$2],[$3],[$4],[$5],[$6])
+])

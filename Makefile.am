@@ -6,10 +6,12 @@ SUBDIRS = \
 	data       \
 	libsbutil  \
 	libsandbox \
-	src
+	src        \
+	tests
 
 libsandbox: libsbutil
 src: libsbutil
+tests: src
 
 EXTRA_DIST = headers.h localdecls.h ChangeLog.0
 

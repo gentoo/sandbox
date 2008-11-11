@@ -1,0 +1,8 @@
+AT_INIT
+
+dnl m4_include(create.at)
+dnl m4_include(dump.at)
+dnl m4_include(load.at)
+dnl m4_include(show.at)
+dnl m4_include(source.at)
+dnl m4_include(usage.at)
