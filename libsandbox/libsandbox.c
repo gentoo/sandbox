@@ -655,8 +655,10 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 	    (0 == strncmp(func, "unlink", 6)) ||
 	    (0 == strncmp(func, "rmdir", 5)) ||
 	    (0 == strncmp(func, "chown", 5)) ||
+	    (0 == strncmp(func, "fchownat", 8)) ||
 	    (0 == strncmp(func, "lchown", 6)) ||
 	    (0 == strncmp(func, "chmod", 5)) ||
+	    (0 == strncmp(func, "fchmodat", 8)) ||
 	    (0 == strncmp(func, "truncate", 8)) ||
 	    (0 == strncmp(func, "ftruncate", 9)) ||
 	    (0 == strncmp(func, "truncate64", 10)) ||
