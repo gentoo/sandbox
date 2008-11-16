@@ -46,10 +46,15 @@ check_PROGRAMS = \
 	utimensat-0 \
 	utimes-0 \
 	\
+	libsigsegv_tst \
 	sb_printf_tst
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
+
+if HAVE_LIBSIGSEGV
+libsigsegv_tst_LDADD = -lsigsegv
+endif
 
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)

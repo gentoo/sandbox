@@ -1,0 +1,7 @@
+AT_SETUP(libsigsegv)
+
+AT_SB_CHECK([libsigsegv_tst], [0], [dnl
+starting overflow ... caught segv ... OVERFLOW: OK!
+])
+
+AT_CLEANUP

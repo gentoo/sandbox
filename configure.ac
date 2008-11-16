@@ -44,6 +44,7 @@ AC_CHECK_HEADERS_ONCE([ \
 	limits.h \
 	memory.h \
 	signal.h \
+	sigsegv.h \
 	stdarg.h \
 	stdbool.h \
 	stddef.h \
@@ -88,6 +89,7 @@ AC_CHECK_FUNCS_ONCE([ \
 	mkdir \
 	pathconf \
 	realpath \
+	remove \
 	rmdir \
 	setenv \
 	strcasecmp \
@@ -100,8 +102,10 @@ AC_CHECK_FUNCS_ONCE([ \
 	strstr \
 	strtok_r \
 ])
-dnl For librcutil
-AC_CHECK_FUNCS([remove])
+AC_CHECK_LIB([sigsegv], [stackoverflow_install_handler],
+	[HAVE_LIBSIGSEGV=true],
+	[HAVE_LIBSIGSEGV=false])
+AM_CONDITIONAL(HAVE_LIBSIGSEGV, $HAVE_LIBSIGSEGV)
 
 dnl Check if gcc provides va_copy or __va_copy (for librcutil)
 AC_MSG_CHECKING([for va_copy])

@@ -1,1 +1,1 @@
-
+m4_defun([AT_SB_CHECK],[AT_CHECK([sandbox.sh $1],[$2],[$3],[$4],[$5],[$6])])
