@@ -6,6 +6,7 @@
 .libs
 Makefile
 Makefile.in
+.gdb_history
 
 /aclocal.m4
 /autom4te.cache/
