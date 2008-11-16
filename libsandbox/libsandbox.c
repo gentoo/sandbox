@@ -187,27 +187,30 @@ int canonicalize(const char *path, char *resolved_path)
 
 static char *resolve_path(const char *path, int follow_link)
 {
-	int old_errno = errno;
-	char tmp_str1[SB_PATH_MAX], tmp_str2[SB_PATH_MAX];
 	char *dname, *bname;
 	char *filtered_path;
 
 	if (NULL == path)
 		return NULL;
 
+	save_errno();
+
 	filtered_path = xmalloc(SB_PATH_MAX * sizeof(char));
 	if (NULL == filtered_path)
 		return NULL;
 
 	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path))
-			return NULL;
+		if (-1 == canonicalize(path, filtered_path)) {
+			free(filtered_path);
+			filtered_path = NULL;
+		}
 	} else {
 		/* Basically we get the realpath which should resolve symlinks,
 		 * etc.  If that fails (might not exist), we try to get the
 		 * realpath of the parent directory, as that should hopefully
 		 * exist.  If all else fails, just go with canonicalize */
 		if (NULL == realpath(path, filtered_path)) {
+			char tmp_str1[SB_PATH_MAX];
 			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
 
 			dname = dirname(tmp_str1);
@@ -216,9 +219,12 @@ static char *resolve_path(const char *path, int follow_link)
 			 * parent directory */
 			if (NULL == realpath(dname, filtered_path)) {
 				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path))
-					return NULL;
+				if (-1 == canonicalize(path, filtered_path)) {
+					free(filtered_path);
+					filtered_path = NULL;
+				}
 			} else {
+				char tmp_str2[SB_PATH_MAX];
 				/* OK, now add the basename to keep our access
 				 * checking happy (don't want '/usr/lib' if we
 				 * tried to do something with non-existing
@@ -234,7 +240,7 @@ static char *resolve_path(const char *path, int follow_link)
 		}
 	}
 
-	errno = old_errno;
+	restore_errno();
 
 	return filtered_path;
 }
