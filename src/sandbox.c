@@ -233,6 +233,42 @@ int main(int argc, char **argv)
 	/* Only print info if called with no arguments .... */
 	if (argc < 2)
 		print_debug = 1;
+	else {
+		/* handle a few common options */
+		if (!strcmp(argv[1], "--version") || !strcmp(argv[1], "-V")) {
+			puts(
+				"Gentoo path sandbox\n"
+				" version: " PACKAGE_VERSION "\n"
+				" C lib:   " LIBC_VERSION "\n"
+				" build:   " __DATE__ " " __TIME__ "\n"
+				" contact: " PACKAGE_BUGREPORT " via http://bugs.gentoo.org/\n"
+				" rtld:    "
+#ifdef BROKEN_RTLD_NEXT
+					"next is broken ;(\n"
+#else
+					"next is OK! :D\n"
+#endif
+				"\nconfigured with these options:\n"
+				SANDBOX_CONFIGURE_OPTS
+			);
+			return 0;
+		} else if (!strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) {
+			puts(
+				"Usage: sandbox [program [program args...]]\n"
+				"\n"
+				"Sandbox will start up a sandbox session and execute the specified program.\n"
+				"If no program is specified, an interactive shell is automatically launched.\n"
+				"You can use this to quickly test out sandbox behavior.\n"
+				"\n"
+				"Upon startup, initial settings are taken from these files / directories:\n"
+				"\t" SANDBOX_CONF_FILE "\n"
+				"\t" SANDBOX_CONFD_DIR "\n"
+				"\n"
+				"Contact: " PACKAGE_BUGREPORT " via http://bugs.gentoo.org/"
+			);
+			return 0;
+		}
+	}
 
 	if (print_debug)
 		puts(sandbox_banner);

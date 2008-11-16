@@ -1,7 +1,10 @@
 AC_PREREQ([2.61])
 AC_INIT([sandbox], [1.3.1], [sandbox@gentoo.org])
+sb_configure_opts="$*"
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
+
+AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts}"], [Arguments given to ./configure])
 
 dnl Checks for programs.
 AC_PROG_CC
