@@ -5,6 +5,7 @@ AC_CONFIG_HEADER([config.h])
 
 dnl Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_ISC_POSIX
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET

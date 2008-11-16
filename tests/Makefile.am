@@ -40,7 +40,12 @@ check_PROGRAMS = \
 	unlinkat-0 \
 	utime-0 \
 	utimensat-0 \
-	utimes-0
+	utimes-0 \
+	\
+	sb_printf_tst
+
+sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
+sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
 
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
