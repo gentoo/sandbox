@@ -324,13 +324,13 @@ static char *getcmdline(void)
 
 	proc_data = rc_dynbuf_new();
 	if (NULL == proc_data) {
-		DBG_MSG("Could not allocate dynamic buffer!\n");
+		SB_EERROR("ISE ", "Could not allocate dynamic buffer!\n");
 		return NULL;
 	}
 
 	fd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
 	if (fd < 0) {
-		DBG_MSG("Failed to open '%s'!\n", PROC_SELF_CMDLINE);
+		SB_EERROR("ISE ", "Failed to open '%s'!\n", PROC_SELF_CMDLINE);
 		return NULL;
 	}
 
@@ -341,7 +341,7 @@ static char *getcmdline(void)
 	do {
 		n = rc_dynbuf_write_fd(proc_data, fd, getpagesize());
 		if (-1 == n) {
-			DBG_MSG("Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
+			SB_EERROR("ISE ", "Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
 			goto error;
 		}
 	} while (0 < n);
@@ -572,7 +572,7 @@ done:
 	return;
 
 error:
-	DBG_MSG("Unrecoverable error!\n");
+	SB_EERROR("ISE ", "Unrecoverable error!\n");
 	abort();
 }
 
@@ -845,7 +845,7 @@ error:
 	}
 
 	/* If we get here, something bad happened */
-	DBG_MSG("Unrecoverable error!\n");
+	SB_EERROR("ISE ", "Unrecoverable error!\n");
 	abort();
 }
 
@@ -893,7 +893,7 @@ int before_syscall(int dirfd, const char *func, const char *file)
 	 * pita, so let's just wait until something actually uses this ...
 	 */
 	if (dirfd != AT_FDCWD) {
-		DBG_MSG("Unrecoverable error!  dirfd != AT_FDCWD\n");
+		SB_EERROR("ISE ", "Unrecoverable error!  dirfd != AT_FDCWD\n");
 		abort();
 	}
 
@@ -901,7 +901,7 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		init_context(&sbcontext);
 		cached_env_vars = xcalloc(4, sizeof(char *));
 		if (NULL == cached_env_vars) {
-			DBG_MSG("Unrecoverable error!\n");
+			SB_EERROR("ISE ", "Unrecoverable error!\n");
 			abort();
 		}
 		sb_init = 1;
