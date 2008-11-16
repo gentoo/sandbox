@@ -69,35 +69,40 @@
 
 #define SB_BUF_LEN             2048
 
+#define COLOR_NORMAL           "\033[0m"
+#define COLOR_GREEN            "\033[32;01m"
+#define COLOR_YELLOW           "\033[33;01m"
+#define COLOR_RED              "\033[31;01m"
+
 /* Gentoo style e* printing macro's */
 #define SB_EINFO(_color, _hilight, _args...) \
 	do { \
-		int old_errno = errno; \
+		save_errno(); \
 		if (_color) \
-			fprintf(stderr, "\033[32;01m" _hilight "\033[0m" _args); \
+			fprintf(stderr, COLOR_GREEN _hilight COLOR_NORMAL _args); \
 		else \
 			fprintf(stderr, _hilight _args); \
-		errno = old_errno; \
+		restore_errno(); \
 	} while (0)
 
 #define SB_EWARN(_color, _hilight, _args...) \
 	do { \
-		int old_errno = errno; \
+		save_errno(); \
 		if (_color) \
-			fprintf(stderr, "\033[33;01m" _hilight "\033[0m" _args); \
+			fprintf(stderr, COLOR_YELLOW _hilight COLOR_NORMAL _args); \
 		else \
 			fprintf(stderr, _hilight _args); \
-		errno = old_errno; \
+		restore_errno(); \
 	} while (0)
 
 #define SB_EERROR(_color, _hilight, _args...) \
 	do { \
-		int old_errno = errno; \
+		save_errno(); \
 		if (_color) \
-			fprintf(stderr, "\033[31;01m" _hilight "\033[0m" _args); \
+			fprintf(stderr, COLOR_RED _hilight COLOR_NORMAL _args); \
 		else \
 			fprintf(stderr, _hilight _args); \
-		errno = old_errno; \
+		restore_errno(); \
 	} while (0)
 
 void get_sandbox_lib(char *path);
@@ -115,6 +120,11 @@ int sb_open(const char *path, int flags, mode_t mode);
 size_t sb_read(int fd, void *buf, size_t count);
 size_t sb_write(int fd, const void *buf, size_t count);
 int sb_close(int fd);
+
+/* Reliable output */
+void sb_printf(const char *format, ...)                     __attribute__ ((__format__ (__printf__, 1, 2)));
+void sb_fdprintf(int fd, const char *format, ...)           __attribute__ ((__format__ (__printf__, 2, 3)));
+void sb_vfdprintf(int fd, const char *format, va_list args) __attribute__ ((__format__ (__printf__, 2, 0)));
 
 /* Macro for sb_read() to goto an label on error */
 #define SB_WRITE(_fd, _buf, _count, _error) \
