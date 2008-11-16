@@ -5,6 +5,8 @@ EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
 	test-skel-0.c \
 	tests.h
 
+INCLUDES = -I$(top_srcdir)
+
 check_PROGRAMS = \
 	access-0 \
 	chmod-0 \
