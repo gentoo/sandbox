@@ -86,6 +86,8 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 			}
 			case 's': {
 				char *s = va_arg(args, char *);
+				if (!s)
+					s = "(null)";
 				size_t len = strlen(s);
 				while (len < padding--)
 					sb_write(fd, " ", 1);
