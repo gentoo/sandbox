@@ -1,4 +1,4 @@
-AT_FILES = local.at testsuite.at
+AT_FILES = $(wildcard *.at)
 TESTSUITE = $(srcdir)/testsuite
 DISTCLEANFILES = atconfig
 EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \

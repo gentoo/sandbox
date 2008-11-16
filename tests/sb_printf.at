@@ -1,0 +1,62 @@
+AT_SETUP(sb_printf)
+
+AT_CHECK([sb_printf_tst], [0],[dnl
+1
+-1
+123
+-123
+1000
+1
+-1
+123
+-123
+1000
+0x1
+0xabcdef
+0x1
+0xABCDEF
+a
+0
+K
+wOOf
+CoW
+!HI!
+{pre}cow{post}
+{pre}cow{post}
+{pre}cow{post}
+{pre}cow{post}
+{pre} cow{post}
+{pre}  cow{post}
+%
+0x0000000000123456
+1
+-1
+123
+-123
+1000
+1
+4294967295
+123
+4294967173
+1000
+1
+abcdef
+1
+ABCDEF
+a
+0
+K
+wOOf
+CoW
+!HI!
+{pre}cow{post}
+{pre}cow{post}
+{pre}cow{post}
+{pre}cow{post}
+{pre} cow{post}
+{pre}  cow{post}
+%
+0x123456
+])
+
+AT_CLEANUP
