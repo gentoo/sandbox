@@ -24,6 +24,8 @@ void check_exec(const char *filename)
 		return;
 	if (stat(filename, &st))
 		goto out_fd;
+	if (st.st_size < EI_NIDENT)
+		goto out_fd;
 	elf = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (elf == MAP_FAILED)
 		goto out_fd;
@@ -41,6 +43,10 @@ void check_exec(const char *filename)
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
 	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
 	uint16_t p; \
+	if (st.st_size < sizeof(*ehdr)) \
+		goto out_mmap; \
+	if (st.st_size < ehdr->e_phoff + ehdr->e_phentsize * ehdr->e_phnum) \
+		goto out_mmap; \
 	for (p = 0; p < ehdr->e_phnum; ++p) \
 		if (phdr[p].p_type == PT_INTERP) \
 			goto done; \
