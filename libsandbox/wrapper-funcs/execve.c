@@ -15,7 +15,6 @@ static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
 /* See to see if this an ELF and if so, is it static which we can't wrap */
 void check_exec(const char *filename)
 {
-	int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 	int fd;
 	unsigned char *elf;
 	struct stat st;
@@ -50,7 +49,7 @@ void check_exec(const char *filename)
 		PARSE_ELF(32);
 	else
 		PARSE_ELF(64);
-	SB_EWARN(color, "QA: Static ELF", " %s\n", filename);
+	SB_EWARN("QA: Static ELF", " %s\n", filename);
  done:
 
  out_mmap:
