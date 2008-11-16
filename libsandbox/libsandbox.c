@@ -66,7 +66,7 @@ static int sb_path_size_warning = 0;
 
 static char *resolve_path(const char *, int);
 static int write_logfile(const char *, const char *, const char *,
-						 const char *, const char *, bool, bool);
+						 const char *, const char *, bool);
 static int check_prefixes(char **, int, const char *);
 static int check_access(sbcontext_t *, const char *, const char *, const char *);
 static int check_syscall(sbcontext_t *, const char *, const char *);
@@ -366,8 +366,7 @@ error:
 }
 
 static int write_logfile(const char *logfile, const char *func, const char *path,
-						 const char *apath, const char *rpath, bool access,
-						 bool color)
+						 const char *apath, const char *rpath, bool access)
 {
 	struct stat log_stat;
 	int stat_ret;
@@ -378,7 +377,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	errno = 0;
 	if ((0 == stat_ret) &&
 	    (0 == S_ISREG(log_stat.st_mode))) {
-		SB_EERROR(color, "SECURITY BREACH", "  '%s' %s\n", logfile,
+		SB_EERROR("SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
 		abort();
 	} else {
@@ -766,7 +765,6 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 	int old_errno = errno;
 	int result = 1;
 	int access = 0, debug = 0, verbose = 1;
-	int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
 
 	absolute_path = resolve_path(file, 0);
 	if (NULL == absolute_path)
@@ -789,13 +787,13 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if (1 == verbose) {
 		if ((0 == result) && (1 == sbcontext->show_access_violation)) {
-			SB_EERROR(color, "ACCESS DENIED", "  %s:%*s%s\n",
+			SB_EERROR("ACCESS DENIED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
-			SB_EINFO(color, "ACCESS ALLOWED", "  %s:%*s%s\n",
+			SB_EINFO("ACCESS ALLOWED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
-			SB_EWARN(color, "ACCESS PREDICTED", "  %s:%*s%s\n",
+			SB_EWARN("ACCESS PREDICTED", "  %s:%*s%s\n",
 				func, (int)(10 - strlen(func)), "", absolute_path);
 		}
 	}
@@ -805,8 +803,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if ((NULL != log_path) && (1 == access)) {
 		if (-1 == write_logfile(log_path, func, file, absolute_path,
-								resolved_path, (access == 1) ? 0 : 1,
-								color)) {
+								resolved_path, (access == 1) ? 0 : 1)) {
 			if (0 != errno)
 				goto error;
 		}
@@ -814,8 +811,7 @@ static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *
 
 	if ((NULL != debug_log_path) && (1 == debug)) {
 		if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
-								resolved_path, (access == 1) ? 0 : 1,
-								color)) {
+								resolved_path, (access == 1) ? 0 : 1)) {
 			if (0 != errno)
 				goto error;
 		}
@@ -840,7 +836,7 @@ error:
 	 * function handle it (see bug #94630 and #21766 for more info) */
 	if (ENAMETOOLONG == errno) {
 		if (0 == sb_path_size_warning) {
-			SB_EWARN(color, "PATH LENGTH", "  %s:%*s%s\n",
+			SB_EWARN("PATH LENGTH", "  %s:%*s%s\n",
 			      func, (int)(10 - strlen(func)), "", file);
 			sb_path_size_warning = 1;
 		}

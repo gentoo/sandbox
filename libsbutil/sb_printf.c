@@ -148,3 +148,26 @@ void sb_printf(const char *format, ...)
 	sb_vfdprintf(STDOUT_FILENO, format, args);
 	va_end(args);
 }
+
+static bool nocolor, init_color = false;
+void sb_efunc(int fd, const char *color, const char *hilight, const char *format, ...)
+{
+	save_errno();
+
+	if (!init_color) {
+		nocolor = is_env_on(ENV_NOCOLOR);
+		init_color = true;
+	}
+
+	if (!nocolor)
+		sb_fdprintf(fd, "%s%s%s", color, hilight, COLOR_NORMAL);
+	else
+		sb_fdprintf(fd, "%s", hilight);
+
+	va_list args;
+	va_start(args, format);
+	sb_vfdprintf(fd, format, args);
+	va_end(args);
+
+	restore_errno();
+}

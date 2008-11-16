@@ -87,7 +87,7 @@ int print_sandbox_log(char *sandbox_log)
 {
 	int sandbox_log_file = -1;
 	char *beep_count_env = NULL;
-	int i, color, beep_count = 0;
+	int i, beep_count = 0;
 	off_t len = 0;
 	char *buffer = NULL;
 
@@ -118,15 +118,13 @@ int print_sandbox_log(char *sandbox_log)
 	}
 	sb_close(sandbox_log_file);
 
-	color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
-
-	SB_EERROR(color,
+	SB_EERROR(
 	       "--------------------------- ACCESS VIOLATION SUMMARY ---------------------------",
 	       "\n");
-	SB_EERROR(color, "LOG FILE = \"%s\"", "\n\n", sandbox_log);
+	SB_EERROR("LOG FILE", " \"%s\"\n\n", sandbox_log);
 	fprintf(stderr, "%s", buffer);
 	free(buffer);
-	SB_EERROR(color,
+	SB_EERROR(
 	       "--------------------------------------------------------------------------------",
 	       "\n");
 

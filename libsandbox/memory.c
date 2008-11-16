@@ -31,8 +31,7 @@ void free(void *ptr)
 	if (ptr == NULL)
 		return;
 	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr))) {
-		int color = ((is_env_on(ENV_NOCOLOR)) ? 0 : 1);
-		SB_EERROR(color, "sandbox memory corruption", " free(%p): %s\n",
+		SB_EERROR("sandbox memory corruption", " free(%p): %s\n",
 			ptr, strerror(errno));
 #ifdef HAVE_BACKTRACE
 		void *funcs[10];
