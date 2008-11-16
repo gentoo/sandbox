@@ -7,6 +7,7 @@
  * The following conversion specifiers are supported:
  *	c - character
  *	s - string
+ *	d - integer
  *	i - integer
  *	u - unsigned integer
  *	X - HEX number
@@ -15,6 +16,7 @@
  *
  * The following modifiers are supported:
  *	z - size_t
+ *	* - width is an argument
  *
  * Copyright 1999-2008 Gentoo Foundation
  * Licensed under the GPL-2
@@ -22,6 +24,9 @@
 
 #include "headers.h"
 #include "sbutil.h"
+
+#define MOD_SIZE_T (1 << 0)
+#define MOD_STAR   (1 << 1)
 
 void sb_vfdprintf(int fd, const char *format, va_list args)
 {
@@ -44,7 +49,7 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 		int i;
 		unsigned int u, x;
 		char hex_base;
-		size_t hex_pad = 0;
+		size_t padding = 0;
 
 		unsigned int modifiers = 0;
  eat_more:
@@ -54,15 +59,24 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 				break;
 
 			case '%':
-				if (modifiers)
+				if (modifiers) {
+ inv_modifier:
 					sb_fdprintf(fd, "{invalid modifier in string: %s}", format);
+				}
 				sb_write(fd, conv, 1);
 				break;
 			case 'z':
 				++conv;
-				if (modifiers & 0x1)
-					sb_fdprintf(fd, "{invalid modifier in string: %s}", format);
-				modifiers |= 0x1;
+				if (modifiers & MOD_SIZE_T)
+					goto inv_modifier;
+				modifiers |= MOD_SIZE_T;
+				goto eat_more;
+			case '*':
+				++conv;
+				if (modifiers & MOD_STAR)
+					goto inv_modifier;
+				modifiers |= MOD_STAR;
+				padding = va_arg(args, int);
 				goto eat_more;
 
 			case 'c': {
@@ -72,10 +86,14 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 			}
 			case 's': {
 				char *s = va_arg(args, char *);
-				sb_write(fd, s, strlen(s));
+				size_t len = strlen(s);
+				while (len < padding--)
+					sb_write(fd, " ", 1);
+				sb_write(fd, s, len);
 				break;
 			}
 
+			case 'd':
 			case 'i': {
 				i = va_arg(args, int);
 				u = i;
@@ -112,7 +130,7 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 					u = x % 16;
 					buf[idx++] = (u < 10 ? '0' + u : hex_base + u - 10);
 				} while (x /= 16);
-				while (idx < hex_pad)
+				while (idx < padding)
 					buf[idx++] = '0';
 				buf[idx++] = 'x';
 				buf[idx++] = '0';
@@ -123,7 +141,7 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 			case 'p': {
 				void *p = va_arg(args, void *);
 				hex_base = 'a';
-				hex_pad = sizeof(p) * 2;
+				padding = sizeof(p) * 2;
 				x = (unsigned long)p;
 				goto out_ptr;
 			}
