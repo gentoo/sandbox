@@ -27,6 +27,12 @@ AC_PROG_LIBTOOL
 
 AC_PREFIX_DEFAULT([/usr])
 
+dnl this test fills up the stack and then triggers a segfault ...
+dnl but it's hard to wrap things without a stack, so let's ignore
+dnl this test for now ...
+ac_cv_header_sigsegv_h=no
+ac_cv_lib_sigsegv_stackoverflow_install_handler=false
+
 dnl Checks for libraries.
 dnl Checks for header files.
 AC_FUNC_ALLOCA

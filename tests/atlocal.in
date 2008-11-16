@@ -1,2 +1,1 @@
-export PATH=$abs_top_builddir/src:$abs_builddir:$PATH
-export LD_LIBRARY_PATH=$abs_top_builddir/libsandbox/.libs${LD_LIBRARY_PATH+:${LD_LIBRARY_PATH}}
+export PATH=$abs_top_srcdir/src:$abs_top_builddir/src:$abs_builddir:$PATH

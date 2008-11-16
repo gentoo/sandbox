@@ -1,12 +1,7 @@
 AT_SETUP(libsigsegv)
 
-ulimit -Ss 300
-AT_SB_CHECK([libsigsegv_tst], [1], [ignore], [ignore])
-dnl this test fills up the stack and then triggers a segfault ...
-dnl but it's hard to wrap things without a stack, so let's ignore
-dnl this test for now ...
-dnl AT_SB_CHECK([libsigsegv_tst], [0], [dnl
-dnl starting overflow ... caught segv ... OVERFLOW: OK!
-dnl ])
+AT_SB_CHECK([libsigsegv_tst], [0], [dnl
+starting overflow ... caught segv ... OVERFLOW: OK!
+])
 
 AT_CLEANUP
