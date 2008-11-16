@@ -882,6 +882,7 @@ int before_syscall(int dirfd, const char *func, const char *file)
 	char *read = getenv(ENV_SANDBOX_READ);
 	char *write = getenv(ENV_SANDBOX_WRITE);
 	char *predict = getenv(ENV_SANDBOX_PREDICT);
+	char *at_file_buf = NULL;
 
 	if (NULL == file || 0 == strlen(file)) {
 		/* The file/directory does not exist */
@@ -889,12 +890,17 @@ int before_syscall(int dirfd, const char *func, const char *file)
 		return 0;
 	}
 
-	/* While we certainly should implement this, it will probably be a
-	 * pita, so let's just wait until something actually uses this ...
+	/* The *at style functions have the following semantics:
+	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
+	 *	- file is absolute: dirfd is ignored
+	 *	- otherwise, file is relative to dirfd
+	 * Since maintaining fd state based on open's, we'll just utilize
+	 * the kernel doing it for us with /proc/<pid>/fd/ ...
 	 */
-	if (dirfd != AT_FDCWD) {
-		SB_EERROR("ISE ", "Unrecoverable error!  dirfd != AT_FDCWD\n");
-		abort();
+	if (dirfd != AT_FDCWD && file[0] != '/') {
+		at_file_buf = xmalloc(50 + strlen(file));
+		sprintf(at_file_buf, "/proc/%i/fd/%i/%s", getpid(), dirfd, file);
+		file = at_file_buf;
 	}
 
 	if (0 == sb_init) {
@@ -987,6 +993,9 @@ int before_syscall(int dirfd, const char *func, const char *file)
 	sbcontext.show_access_violation = 1;
 
 	result = check_syscall(&sbcontext, func, file);
+
+	if (at_file_buf)
+		free(at_file_buf);
 
 	errno = old_errno;
 

@@ -28,9 +28,9 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 	} else {
 		/* XXX: If we're not trying to create, fail normally if
 		 *      file does not stat */
-		if (-1 == stat(pathname, &st)) {
-			return -1;
-		}
+		if (dirfd == AT_FDCWD || pathname[0] == '/')
+			if (-1 == stat(pathname, &st))
+				return -1;
 	}
 	errno = old_errno;
 
