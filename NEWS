@@ -1,1 +1,29 @@
-read the ChangeLog
+sandbox-1.3.0
+
+- new wrappers for functions:
+	faccessat
+	fchmodat
+	fchownat
+	futimesat
+	linkat
+	lutimes
+	mkdirat
+	mkfifoat
+	mknodat
+	openat64
+	openat
+	renameat
+	symlinkat
+	unlinkat
+	utime
+	utimensat
+	utimes
+
+- warn whenever a static ELF is executed (since we can't wrap it)
+
+- internal I/O functions for libsandbox for reliable output
+
+- internal memory functions to avoid crashing with applications that implement
+  their own sets
+
+- a lot of source code cleanups
