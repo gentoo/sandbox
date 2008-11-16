@@ -11,7 +11,6 @@
 #include "headers.h"
 #include "rcscripts/rcutil.h"
 
-volatile static bool debug_enabled = true;
 volatile static int debug_errno = 0;
 
 static char log_domain_default[] = "rcscripts";
@@ -22,12 +21,6 @@ rc_log_domain (const char *new_domain)
 {
   if (check_str (new_domain))
     log_domain = (char *)new_domain;
-}
-
-void
-rc_debug_enabled (bool enabled)
-{
-  debug_enabled = enabled;
 }
 
 void
@@ -62,11 +55,6 @@ debug_message (const char *file, const char *func, int line,
   va_list arg;
   char *format_str;
   int length;
-
-#if !defined(RC_DEBUG)
-  if (!debug_enabled)
-    return;
-#endif
 
   length = strlen (log_domain) + strlen ("():       ") + 1;
   /* Do not use xmalloc() here, else we may have recursive issues */

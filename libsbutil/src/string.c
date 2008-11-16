@@ -12,25 +12,6 @@
 #include "rcscripts/rcutil.h"
 
 char *
-rc_memrepchr (char **str, char old, char new, size_t size)
-{
-  char *str_p;
-
-  if (!check_arg_strv (str))
-    return NULL;
-
-  str_p = memchr (*str, old, size);
-
-  while (NULL != str_p)
-    {
-      str_p[0] = new;
-      str_p = memchr (&str_p[1], old, size - (str_p - *str) - 1);
-    }
-
-  return *str;
-}
-
-char *
 rc_strcatpaths (const char *pathname1, const char *pathname2)
 {
   char *new_path = NULL;
