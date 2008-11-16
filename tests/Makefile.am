@@ -1,7 +1,8 @@
-EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE)
 AT_FILES = local.at testsuite.at
 TESTSUITE = $(srcdir)/testsuite
 DISTCLEANFILES = atconfig
+EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
+	test-skel-0.c
 
 check_PROGRAMS = \
 	access-0 \
