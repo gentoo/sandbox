@@ -185,8 +185,9 @@ int spawn_shell(char *argv_bash[], char **env, int debug)
 
 	/* Child's process */
 	if (0 == child_pid) {
-		execve(argv_bash[0], argv_bash, env);
-		_exit(EXIT_FAILURE);
+		int ret = execve(argv_bash[0], argv_bash, env);
+		perror("sandbox:  Failed to exec child");
+		_exit(ret);
 	} else if (child_pid < 0) {
 		if (debug)
 			fprintf(stderr, "Process failed to spawn!\n");
@@ -199,9 +200,14 @@ int spawn_shell(char *argv_bash[], char **env, int debug)
 	str_list_free(env);
 
 	ret = waitpid(child_pid, &status, 0);
-	if ((-1 == ret) || (status > 0)) {
-		if (debug)
-			fprintf(stderr, "Process returned with failed exit status!\n");
+	if (-1 == ret) {
+		perror("sandbox:  Failed to waitpid for child");
+		return 0;
+	} else if (status != 0) {
+		if (WIFSIGNALED(status))
+			psignal(WTERMSIG(status), "Sandboxed process killed by signal");
+		else if (debug)
+			fprintf(stderr, "Process returned with failed exit status %d!\n", WEXITSTATUS(status));
 		return 0;
 	}
 
