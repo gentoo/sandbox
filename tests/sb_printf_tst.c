@@ -3,8 +3,8 @@
 
 #define T(fmt, args...) \
 	do { \
-		printf(fmt "\n", ##args); \
-		sb_printf(fmt "\n", ##args); \
+		printf("%i: " fmt "\n", __LINE__, ##args); \
+		sb_printf("%i: " fmt "\n", __LINE__, ##args); \
 	} while (0)
 
 int main(int argc, char *argv[])
