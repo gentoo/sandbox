@@ -37,6 +37,7 @@ Makefile.in
 /tests/*-0
 /tests/*_tst
 /tests/atconfig
+/tests/atlocal
 /tests/package.m4
 /tests/testsuite
 /tests/testsuite.dir/
