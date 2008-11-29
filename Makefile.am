@@ -15,11 +15,13 @@ tests: src
 
 EXTRA_DIST = headers.h localdecls.h ChangeLog.0
 
+ChangeLog:
+	touch ChangeLog
+
 dist-hook:
 	set -e ; \
-	if [ -d "$(top_srcdir)/.svn" -a -x "$(top_srcdir)/scripts/svn2cl" ] ; then \
-		PATH="$${PATH}:$(top_srcdir)/scripts" svn2cl ; \
-		cp ChangeLog $(distdir)	; \
+	if [ -d "$(top_srcdir)/.git" ] ; then \
+		git --git-dir="$(top_srcdir)/.git" log > $(distdir)/ChangeLog ; \
 	elif [ ! -e "$(distdir)/ChangeLog" ] ; then \
 		if [ -e "$(top_srcdir)/ChangeLog" ] ; then \
 			cp "$(top_srcdir)/ChangeLog" "$(distdir)/ChangeLog" ; \
