@@ -109,21 +109,20 @@ END {
 			printf("{\n");
 		}
 
-		printf("  global:\n");
+		printf("\tglobal:\n");
 
 		split(SYMBOL_LIST[sym_version], sym_names);
 
-		for (x in sym_names) {
-			printf("    %s;\n", sym_names[x]);
-		}
+		for (x in sym_names)
+			printf("\t\t%s;\n", sym_names[x]);
 
 		if (!old_sym_version) {
-			printf("  local:\n");
-			printf("    *;\n");
+			printf("\tlocal:\n");
+			printf("\t\t*;\n");
 			printf("};\n");
-		} else {
+		} else
 			printf("} %s;\n", old_sym_version);
-		}
+		printf("\n");
 
 		old_sym_version = sym_version;
 	}
