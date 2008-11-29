@@ -95,7 +95,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 	sandboxon()  { export SANDBOX_ON="1" ; }
 	sandboxoff() { export SANDBOX_OFF="0" ; }
 
-	[[ -z ${CCACHE_DIR} ]] && export CCACHE_DIR=/root/.ccache
+	[[ -z ${CCACHE_DIR} ]] && [[ -w /root/.ccache ]] && export CCACHE_DIR=/root/.ccache
 	for var in CCACHE_DIR DISTCC_DIR ; do
 		[[ ${!var+set} == "set" ]] && addwrite ${!var}
 	done
