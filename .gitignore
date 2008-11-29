@@ -30,6 +30,7 @@ Makefile.in
 /ChangeLog
 
 /libsandbox/libsandbox.map
+/libsandbox/sb_nr.h
 /libsandbox/symbols.h
 
 /src/sandbox

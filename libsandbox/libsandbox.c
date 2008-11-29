@@ -28,6 +28,7 @@
 #include "sbutil.h"
 #include "libsandbox.h"
 #include "wrappers.h"
+#include "sb_nr.h"
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
@@ -68,8 +69,6 @@ static char *resolve_path(const char *, int);
 static int write_logfile(const char *, const char *, const char *,
 						 const char *, const char *, bool);
 static int check_prefixes(char **, int, const char *);
-static int check_access(sbcontext_t *, const char *, const char *, const char *);
-static int check_syscall(sbcontext_t *, const char *, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
@@ -599,7 +598,7 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 	return 0;
 }
 
-static int check_access(sbcontext_t *sbcontext, const char *func, const char *abs_path, const char *resolv_path)
+static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, const char *abs_path, const char *resolv_path)
 {
 	int old_errno = errno;
 	int result = 0;
@@ -617,17 +616,18 @@ static int check_access(sbcontext_t *sbcontext, const char *func, const char *ab
 		goto out;
 
 	if ((NULL != sbcontext->read_prefixes) &&
-	    ((0 == strncmp(func, "access_rd", 9)) ||
-	     (0 == strncmp(func, "open_rd", 7)) ||
-	     (0 == strncmp(func, "popen", 5)) ||
-	     (0 == strncmp(func, "opendir", 7)) ||
-	     (0 == strncmp(func, "system", 6)) ||
-	     (0 == strncmp(func, "execl", 5)) ||
-	     (0 == strncmp(func, "execlp", 6)) ||
-	     (0 == strncmp(func, "execle", 6)) ||
-	     (0 == strncmp(func, "execv", 5)) ||
-	     (0 == strncmp(func, "execvp", 6)) ||
-	     (0 == strncmp(func, "execve", 6)))) {
+	    (sb_nr == SB_NR_ACCESS_RD ||
+	     sb_nr == SB_NR_OPEN_RD   ||
+	   /*sb_nr == SB_NR_POPEN     ||*/
+	     sb_nr == SB_NR_OPENDIR   ||
+	   /*sb_nr == SB_NR_SYSTEM    ||
+	     sb_nr == SB_NR_EXECL     ||
+	     sb_nr == SB_NR_EXECLP    ||
+	     sb_nr == SB_NR_EXECLE    ||
+	     sb_nr == SB_NR_EXECV     ||
+	     sb_nr == SB_NR_EXECVP    ||*/
+	     sb_nr == SB_NR_EXECVE))
+	{
 		retval = check_prefixes(sbcontext->read_prefixes,
 					sbcontext->num_read_prefixes, resolv_path);
 		if (1 == retval) {
@@ -638,39 +638,41 @@ static int check_access(sbcontext_t *sbcontext, const char *func, const char *ab
 
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
-		if (0 == strncmp(func, "access_rd", 9)) {
+		if (sb_nr == SB_NR_ACCESS_RD) {
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
 	}
 
-	if ((0 == strncmp(func, "access_wr", 9)) ||
-	    (0 == strncmp(func, "open_wr", 7)) ||
-	    (0 == strncmp(func, "creat", 5)) ||
-	    (0 == strncmp(func, "creat64", 7)) ||
-	    (0 == strncmp(func, "mkdir", 5)) ||
-	    (0 == strncmp(func, "mknod", 5)) ||
-	    (0 == strncmp(func, "__xmknod", 8)) ||
-	    (0 == strncmp(func, "mkfifo", 6)) ||
-	    (0 == strncmp(func, "link", 4)) ||
-	    (0 == strncmp(func, "symlink", 7)) ||
-	    (0 == strncmp(func, "rename", 6)) ||
-	    (0 == strncmp(func, "lutimes", 7)) ||
-	    (0 == strncmp(func, "utimensat", 9)) ||
-	    (0 == strncmp(func, "utime", 5)) ||
-	    (0 == strncmp(func, "utimes", 6)) ||
-	    (0 == strncmp(func, "futimesat", 9)) ||
-	    (0 == strncmp(func, "unlink", 6)) ||
-	    (0 == strncmp(func, "rmdir", 5)) ||
-	    (0 == strncmp(func, "chown", 5)) ||
-	    (0 == strncmp(func, "fchownat", 8)) ||
-	    (0 == strncmp(func, "lchown", 6)) ||
-	    (0 == strncmp(func, "chmod", 5)) ||
-	    (0 == strncmp(func, "fchmodat", 8)) ||
-	    (0 == strncmp(func, "truncate", 8)) ||
-	    (0 == strncmp(func, "ftruncate", 9)) ||
-	    (0 == strncmp(func, "truncate64", 10)) ||
-	    (0 == strncmp(func, "ftruncate64", 11))) {
+	if (sb_nr == SB_NR_ACCESS_WR   ||
+	    sb_nr == SB_NR_OPEN_WR     ||
+	    sb_nr == SB_NR_CREAT       ||
+	    sb_nr == SB_NR_CREAT64     ||
+	    sb_nr == SB_NR_MKDIR       ||
+	  /*sb_nr == SB_NR_MKNOD       ||*/
+	    sb_nr == SB_NR___XMKNOD    ||
+	    sb_nr == SB_NR_MKFIFO      ||
+	    sb_nr == SB_NR_LINK        ||
+	    sb_nr == SB_NR_SYMLINK     ||
+	    sb_nr == SB_NR_RENAME      ||
+	    sb_nr == SB_NR_LUTIMES     ||
+	    sb_nr == SB_NR_UTIMENSAT   ||
+	    sb_nr == SB_NR_UTIME       ||
+	    sb_nr == SB_NR_UTIMES      ||
+	    sb_nr == SB_NR_FUTIMESAT   ||
+	    sb_nr == SB_NR_UNLINK      ||
+	    sb_nr == SB_NR_UNLINKAT    ||
+	    sb_nr == SB_NR_RMDIR       ||
+	    sb_nr == SB_NR_CHOWN       ||
+	    sb_nr == SB_NR_FCHOWNAT    ||
+	    sb_nr == SB_NR_LCHOWN      ||
+	    sb_nr == SB_NR_CHMOD       ||
+	    sb_nr == SB_NR_FCHMODAT    ||
+	    sb_nr == SB_NR_TRUNCATE    ||
+	  /*sb_nr == SB_NR_FTRUNCATE   ||*/
+	    sb_nr == SB_NR_TRUNCATE64/*||
+	    sb_nr == SB_NR_FTRUNCATE64*/)
+	{
 
 		retval = check_prefixes(sbcontext->write_denied_prefixes,
 					sbcontext->num_write_denied_prefixes,
@@ -693,11 +695,12 @@ static int check_access(sbcontext_t *sbcontext, const char *func, const char *ab
 		 * symlink, and give access only if the resolved path
 		 * of the symlink's parent also have write access. */
 		struct stat st;
-		if (((0 == strncmp(func, "unlink", 6)) ||
-		     (0 == strncmp(func, "lchown", 6)) ||
-		     (0 == strncmp(func, "rename", 6)) ||
-		     (0 == strncmp(func, "symlink", 7))) &&
-		    ((-1 != lstat(abs_path, &st)) && (S_ISLNK(st.st_mode)))) {
+		if ((sb_nr == SB_NR_UNLINK ||
+		     sb_nr == SB_NR_LCHOWN ||
+		     sb_nr == SB_NR_RENAME ||
+		     sb_nr == SB_NR_SYMLINK) &&
+		    ((-1 != lstat(abs_path, &st)) && (S_ISLNK(st.st_mode))))
+		{
 			/* Check if the symlink unresolved path have access */
 			retval = check_prefixes(sbcontext->write_prefixes,
 						sbcontext->num_write_prefixes, abs_path);
@@ -754,7 +757,7 @@ static int check_access(sbcontext_t *sbcontext, const char *func, const char *ab
 
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
-		if (0 == strncmp(func, "access_wr", 9)) {
+		if (sb_nr == SB_NR_ACCESS_WR) {
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
@@ -766,7 +769,7 @@ out:
 	return result;
 }
 
-static int check_syscall(sbcontext_t *sbcontext, const char *func, const char *file)
+static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, const char *file)
 {
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
@@ -792,7 +795,7 @@ static int check_syscall(sbcontext_t *sbcontext, const char *func, const char *f
 		verbose = 0;
 	}
 
-	result = check_access(sbcontext, func, absolute_path, resolved_path);
+	result = check_access(sbcontext, sb_nr, func, absolute_path, resolved_path);
 
 	if (1 == verbose) {
 		if ((0 == result) && (1 == sbcontext->show_access_violation)) {
@@ -880,7 +883,7 @@ int is_sandbox_on(void)
 	return result;
 }
 
-int before_syscall(int dirfd, const char *func, const char *file)
+int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 {
 	int old_errno = errno;
 	int result = 1;
@@ -999,7 +1002,7 @@ int before_syscall(int dirfd, const char *func, const char *file)
 	/* Might have been reset in check_access() */
 	sbcontext.show_access_violation = 1;
 
-	result = check_syscall(&sbcontext, func, file);
+	result = check_syscall(&sbcontext, sb_nr, func, file);
 
 	if (at_file_buf)
 		free(at_file_buf);
@@ -1019,27 +1022,27 @@ int before_syscall(int dirfd, const char *func, const char *file)
 	return result;
 }
 
-int before_syscall_access(int dirfd, const char *func, const char *file, int flags)
+int before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	const char *ext_func;
 	if (flags & W_OK)
-		ext_func = "access_wr";
+		sb_nr = SB_NR_ACCESS_WR, ext_func = "access_wr";
 	else
-		ext_func = "access_rd";
-	return before_syscall(dirfd, ext_func, file);
+		sb_nr = SB_NR_ACCESS_RD, ext_func = "access_rd";
+	return before_syscall(dirfd, sb_nr, ext_func, file);
 }
 
-int before_syscall_open_int(int dirfd, const char *func, const char *file, int flags)
+int before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	const char *ext_func;
 	if ((flags & O_WRONLY) || (flags & O_RDWR))
-		ext_func = "open_wr";
+		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
 	else
-		ext_func = "open_rd";
-	return before_syscall(dirfd, ext_func, file);
+		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
+	return before_syscall(dirfd, sb_nr, ext_func, file);
 }
 
-int before_syscall_open_char(int dirfd, const char *func, const char *file, const char *mode)
+int before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
 {
 	if (NULL == mode)
 		return 0;
@@ -1048,8 +1051,8 @@ int before_syscall_open_char(int dirfd, const char *func, const char *file, cons
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
 	     /* The strspn accept args are known non-writable modifiers */
 	     (strlen(++mode) == strspn(mode, "xbtmce"))))
-		ext_func = "open_rd";
+		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
 	else
-		ext_func = "open_wr";
-	return before_syscall(dirfd, "open_rd", file);
+		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
+	return before_syscall(dirfd, sb_nr, ext_func, file);
 }

@@ -34,7 +34,7 @@ libsandbox_la_SOURCES = \
 	wrappers.c   \
 	canonicalize.c
 
-libsandbox.c: libsandbox.map
+libsandbox.c: libsandbox.map sb_nr.h
 wrappers.c: symbols.h
 
 SYMBOLS_FILE = $(srcdir)/symbols.h.in
@@ -51,7 +51,11 @@ symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
 	$(READELF) -h -s $(LIBC_PATH) | \
 		$(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_HEADER_SCRIPT) > $@
 
-EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS)
+SB_NR_FILE = $(srcdir)/sb_nr.h.in
+sb_nr.h: symbols.h $(SB_NR_FILE)
+	$(EGREP) -h '^\#define SB_NR_' $^ > $@
 
-CLEANFILES = libsandbox.map symbols.h
+EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE)
+
+CLEANFILES = libsandbox.map sb_nr.h symbols.h
 DISTCLEANFILES = $(CLEANFILES)

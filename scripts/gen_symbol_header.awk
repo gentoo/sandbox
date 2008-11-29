@@ -116,6 +116,8 @@ END {
 			printf("#define WRAPPER_TRUE_NAME true_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMNAME symname_%s\n", sym_real_name);
 			printf("#define WRAPPER_SYMVER symver_%s\n", sym_real_name);
+			printf("#define SB_NR_%s %i\n", toupper(sym_index), i);
+			printf("#define WRAPPER_NR SB_NR_%s\n", toupper(sym_index));
 			printf("#include \"wrapper-funcs/%s.c\"\n", sym_index);
 			printf("#undef STRING_NAME\n");
 			printf("#undef EXTERN_NAME\n");
@@ -123,6 +125,7 @@ END {
 			printf("#undef WRAPPER_TRUE_NAME\n");
 			printf("#undef WRAPPER_SYMNAME\n");
 			printf("#undef WRAPPER_SYMVER\n");
+			printf("#undef WRAPPER_NR\n");
 			printf("#undef WRAPPER_ARGS\n");
 
 			if (symbol_array[2]) {
