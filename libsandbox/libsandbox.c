@@ -650,6 +650,7 @@ static int check_access(sbcontext_t *sbcontext, const char *func, const char *ab
 	    (0 == strncmp(func, "creat64", 7)) ||
 	    (0 == strncmp(func, "mkdir", 5)) ||
 	    (0 == strncmp(func, "mknod", 5)) ||
+	    (0 == strncmp(func, "__xmknod", 8)) ||
 	    (0 == strncmp(func, "mkfifo", 6)) ||
 	    (0 == strncmp(func, "link", 4)) ||
 	    (0 == strncmp(func, "symlink", 7)) ||
