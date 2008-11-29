@@ -654,6 +654,8 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 	    (0 == strncmp(func, "link", 4)) ||
 	    (0 == strncmp(func, "symlink", 7)) ||
 	    (0 == strncmp(func, "rename", 6)) ||
+	    (0 == strncmp(func, "lutimes", 7)) ||
+	    (0 == strncmp(func, "utimensat", 9)) ||
 	    (0 == strncmp(func, "utime", 5)) ||
 	    (0 == strncmp(func, "utimes", 6)) ||
 	    (0 == strncmp(func, "futimesat", 9)) ||
