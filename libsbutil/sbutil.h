@@ -75,9 +75,9 @@
 #define COLOR_RED              "\033[31;01m"
 
 /* Gentoo style e* printing macro's */
-#define SB_EINFO(_hilight, _args...) sb_efunc(STDOUT_FILENO, COLOR_GREEN, _hilight, _args)
-#define SB_EWARN(_hilight, _args...) sb_efunc(STDERR_FILENO, COLOR_YELLOW, _hilight, _args)
-#define SB_EERROR(_hilight, _args...) sb_efunc(STDERR_FILENO, COLOR_RED, _hilight, _args)
+#define SB_EINFO(_hilight, _args...) sb_efunc(COLOR_GREEN, _hilight, _args)
+#define SB_EWARN(_hilight, _args...) sb_efunc(COLOR_YELLOW, _hilight, _args)
+#define SB_EERROR(_hilight, _args...) sb_efunc(COLOR_RED, _hilight, _args)
 
 void get_sandbox_lib(char *path);
 void get_sandbox_rc(char *path);
@@ -99,7 +99,7 @@ int sb_close(int fd);
 __attribute__((__format__(__printf__, 1, 2))) void sb_printf(const char *format, ...);
 __attribute__((__format__(__printf__, 2, 3))) void sb_fdprintf(int fd, const char *format, ...);
 __attribute__((__format__(__printf__, 2, 0))) void sb_vfdprintf(int fd, const char *format, va_list args);
-__attribute__((__format__(__printf__, 4, 5))) void sb_efunc(int fd, const char *color, const char *hilight, const char *format, ...);
+__attribute__((__format__(__printf__, 3, 4))) void sb_efunc(const char *color, const char *hilight, const char *format, ...);
 
 /* Macro for sb_read() to goto an label on error */
 #define SB_WRITE(_fd, _buf, _count, _error) \

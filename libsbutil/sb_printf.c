@@ -161,18 +161,24 @@ void sb_fdprintf(int fd, const char *format, ...)
 	va_end(args);
 }
 
+/* All output goes to stderr as any unexpected interjection into stdout
+ * could easily break shell scripts and such that are piping or evaluating
+ * or some such thing.
+ */
 void sb_printf(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
-	sb_vfdprintf(STDOUT_FILENO, format, args);
+	sb_vfdprintf(STDERR_FILENO, format, args);
 	va_end(args);
 }
 
 static bool nocolor, init_color = false;
-void sb_efunc(int fd, const char *color, const char *hilight, const char *format, ...)
+void sb_efunc(const char *color, const char *hilight, const char *format, ...)
 {
 	save_errno();
+
+	int fd = STDERR_FILENO;
 
 	if (!init_color) {
 		nocolor = is_env_on(ENV_NOCOLOR);
