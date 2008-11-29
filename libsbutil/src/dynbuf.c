@@ -442,7 +442,7 @@ rc_dynbuf_read_eof (rc_dynbuf_t *dynbuf)
   return false;
 }
 
-inline bool
+bool
 rc_check_dynbuf (rc_dynbuf_t *dynbuf)
 {
   if ((NULL == dynbuf) || (NULL == dynbuf->data) || (0 == dynbuf->length))
@@ -451,7 +451,7 @@ rc_check_dynbuf (rc_dynbuf_t *dynbuf)
   return true;
 }
 
-inline bool
+bool
 __rc_check_arg_dynbuf (rc_dynbuf_t *dynbuf, const char *file, const char *func,
 		     size_t line)
 {

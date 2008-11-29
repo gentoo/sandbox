@@ -87,27 +87,22 @@ debug_message (const char *file, const char *func, int line,
  * They do not set errno.
  */
 
-inline bool check_ptr (const void *ptr);
-inline bool check_str (const char *str);
-inline bool check_strv (char **str);
-inline bool check_fd (int fd);
-inline bool check_fp (FILE * fp);
+bool check_ptr (const void *ptr);
+bool check_str (const char *str);
+bool check_strv (char **str);
+bool check_fd (int fd);
+bool check_fp (FILE * fp);
 
 /*
  * Functions and macro's to check validity of some types.
  * They DO set errno to EINVAL.
  */
 
-inline bool __check_arg_ptr (const void *ptr, const char *file, const char *func,
-			     size_t line);
-inline bool __check_arg_str (const char *str, const char *file, const char *func,
-			     size_t line);
-inline bool __check_arg_strv (char **str, const char *file, const char *func,
-			      size_t line);
-inline bool __check_arg_fd (int fd, const char *file, const char *func,
-			    size_t line);
-inline bool __check_arg_fp (FILE * fp, const char *file, const char *func,
-			    size_t line);
+bool __check_arg_ptr (const void *ptr, const char *file, const char *func, size_t line);
+bool __check_arg_str (const char *str, const char *file, const char *func, size_t line);
+bool __check_arg_strv (char **str, const char *file, const char *func, size_t line);
+bool __check_arg_fd (int fd, const char *file, const char *func, size_t line);
+bool __check_arg_fp (FILE * fp, const char *file, const char *func, size_t line);
 
 #define check_arg_ptr(_ptr) \
  __check_arg_ptr (_ptr, __FILE__, __func__, __LINE__)
@@ -125,12 +120,9 @@ inline bool __check_arg_fp (FILE * fp, const char *file, const char *func,
  * They set errno to ENOMEM and print debug info.
  */
 
-inline void *__xcalloc (size_t nmemb, size_t size, const char *file,
-			const char *func, size_t line);
-inline void *__xmalloc (size_t size, const char *file, const char *func,
-			size_t line);
-inline void *__xrealloc (void *ptr, size_t size, const char *file,
-			 const char *func, size_t line);
+void *__xcalloc (size_t nmemb, size_t size, const char *file, const char *func, size_t line);
+void *__xmalloc (size_t size, const char *file, const char *func, size_t line);
+void *__xrealloc (void *ptr, size_t size, const char *file, const char *func, size_t line);
 
 #define xcalloc(_nmemb, _size) \
  __xcalloc (_nmemb, _size, __FILE__, __func__, __LINE__)
@@ -139,8 +131,7 @@ inline void *__xrealloc (void *ptr, size_t size, const char *file,
 #define xrealloc(_ptr, _size) \
  __xrealloc (_ptr, _size, __FILE__, __func__, __LINE__)
 
-inline char *__xstrndup (const char *str, size_t size, const char *file,
-			 const char *func, size_t line);
+char *__xstrndup (const char *str, size_t size, const char *file, const char *func, size_t line);
 
 #define xstrndup(_str, _size) \
  __xstrndup (_str, _size, __FILE__, __func__, __LINE__)

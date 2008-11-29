@@ -42,9 +42,8 @@ int rc_dynbuf_replace_char (rc_dynbuf_t *dynbuf, const char old, const char new)
 
 bool rc_dynbuf_read_eof (rc_dynbuf_t *dynbuf);
 
-inline bool rc_check_dynbuf (rc_dynbuf_t *dynbuf);
-inline bool __rc_check_arg_dynbuf (rc_dynbuf_t *dynbuf, const char *file,
-				 const char *func, size_t line);
+bool rc_check_dynbuf (rc_dynbuf_t *dynbuf);
+bool __rc_check_arg_dynbuf (rc_dynbuf_t *dynbuf, const char *file, const char *func, size_t line);
 
 #define rc_check_arg_dynbuf(_dynbuf) \
  __rc_check_arg_dynbuf (_dynbuf, __FILE__, __func__, __LINE__)

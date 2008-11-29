@@ -100,7 +100,7 @@ debug_message (const char *file, const char *func, int line,
   free (format_str);
 }
 
-inline bool
+bool
 check_ptr (const void *ptr)
 {
   if (NULL == ptr)
@@ -109,7 +109,7 @@ check_ptr (const void *ptr)
   return true;
 }
 
-inline bool
+bool
 check_str (const char *str)
 {
   if ((NULL == str) || (0 == strlen (str)))
@@ -118,7 +118,7 @@ check_str (const char *str)
   return true;
 }
 
-inline bool
+bool
 check_strv (char **str)
 {
   if ((NULL == str) || (NULL == *str) || (0 == strlen (*str)))
@@ -127,7 +127,7 @@ check_strv (char **str)
   return true;
 }
 
-inline bool
+bool
 check_fd (int fd)
 {
   if ((0 >= fd) || (-1 == fcntl (fd, F_GETFL)))
@@ -136,7 +136,7 @@ check_fd (int fd)
   return true;
 }
 
-inline bool
+bool
 check_fp (FILE *fp)
 {
   if ((NULL == fp) || (-1 == fileno (fp)))
@@ -145,7 +145,7 @@ check_fp (FILE *fp)
   return true;
 }
 
-inline bool
+bool
 __check_arg_ptr (const void *ptr, const char *file, const char *func, size_t line)
 {
   if (!check_ptr (ptr))
@@ -160,7 +160,7 @@ __check_arg_ptr (const void *ptr, const char *file, const char *func, size_t lin
   return true;
 }
 
-inline bool
+bool
 __check_arg_str (const char *str, const char *file, const char *func, size_t line)
 {
   if (!check_str (str))
@@ -175,7 +175,7 @@ __check_arg_str (const char *str, const char *file, const char *func, size_t lin
   return true;
 }
 
-inline bool
+bool
 __check_arg_strv (char **str, const char *file, const char *func, size_t line)
 {
   if (!check_strv (str))
@@ -190,7 +190,7 @@ __check_arg_strv (char **str, const char *file, const char *func, size_t line)
   return true;
 }
 
-inline bool
+bool
 __check_arg_fd (int fd, const char *file, const char *func, size_t line)
 {
   if (!check_fd (fd))
@@ -205,7 +205,7 @@ __check_arg_fd (int fd, const char *file, const char *func, size_t line)
   return true;
 }
 
-inline bool
+bool
 __check_arg_fp (FILE *fp, const char *file, const char *func, size_t line)
 {
   if (!check_fp (fp))
@@ -220,7 +220,7 @@ __check_arg_fp (FILE *fp, const char *file, const char *func, size_t line)
   return true;
 }
 
-inline void *
+void *
 __xcalloc(size_t nmemb, size_t size, const char *file,
 	  const char *func, size_t line)
 {
@@ -240,7 +240,7 @@ __xcalloc(size_t nmemb, size_t size, const char *file,
   return new_ptr;
 }
 
-inline void *
+void *
 __xmalloc (size_t size, const char *file, const char *func, size_t line)
 {
   void *new_ptr;
@@ -259,7 +259,7 @@ __xmalloc (size_t size, const char *file, const char *func, size_t line)
   return new_ptr;
 }
 
-inline void *
+void *
 __xrealloc (void *ptr, size_t size, const char *file,
 	    const char *func, size_t line)
 {
@@ -279,7 +279,7 @@ __xrealloc (void *ptr, size_t size, const char *file,
   return new_ptr;
 }
 
-inline char *
+char *
 __xstrndup (const char *str, size_t size, const char *file,
 	    const char *func, size_t line)
 {
