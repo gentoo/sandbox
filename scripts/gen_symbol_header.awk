@@ -1,5 +1,5 @@
 BEGIN {
-	COUNT = split(ENVIRON["SYMBOLS"], SYMBOLS);
+	COUNT = split(" " SYMBOLS_LIST, SYMBOLS);
 }
 
 /^  OS\/ABI:/ {
@@ -82,7 +82,7 @@ END {
 	printf("#define __symbols_h\n\n");
 
 	# We use the order in SYMBOLS, as some wrappers depends on others ...
-	for (i = 1; i <= COUNT; i++) {
+	for (i = 1; i <= COUNT; ++i) {
 		sym_index = SYMBOLS[i];
 		split(SYMBOL_LIST[sym_index], sym_full_names);
 

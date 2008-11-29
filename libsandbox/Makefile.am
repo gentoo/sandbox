@@ -38,38 +38,18 @@ libsandbox.c: libsandbox.map
 wrappers.c: symbols.h
 
 SYMBOLS_FILE = $(srcdir)/symbols.h.in
-SYMBOLS_LIST = $(shell $(EGREP) -v '^\#' $(SYMBOLS_FILE))
+SYMBOLS_LIST = $(shell $(SED) -n '/^[^\#]/p' $(SYMBOLS_FILE))
 SYMBOLS_WRAPPERS = $(wildcard  $(srcdir)/wrapper-funcs/*.[ch])
 GEN_VERSION_MAP_SCRIPT = $(top_srcdir)/scripts/gen_symbol_version_map.awk
 GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk
 
 libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
-	@echo "Generating $@"; \
-	if [ ! -e "$(LIBC_PATH)" ]; then\
-		echo -e "\n*** Cannot find LIBC_PATH '$(LIBC_PATH)' !\n"; \
-		exit 1; \
-	fi; \
-	export SYMBOLS="$(SYMBOLS_LIST)"; \
-	if ! $(READELF) -h -s $(LIBC_PATH) | \
-		$(AWK) -f $(GEN_VERSION_MAP_SCRIPT) > $@ ; \
-	then \
-		echo "\n*** Failed to generate '$@' !\n"; \
-		exit 1; \
-	fi
+	$(READELF) -h -s $(LIBC_PATH) | \
+		$(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_VERSION_MAP_SCRIPT) > $@
 
 symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
-	@echo "Generating $@"; \
-	if [ ! -e "$(LIBC_PATH)" ]; then\
-		echo -e "\n*** Cannot find LIBC_PATH '$(LIBC_PATH)' !\n"; \
-		exit 1; \
-	fi; \
-	export SYMBOLS="$(SYMBOLS_LIST)"; \
-	if ! $(READELF) -h -s $(LIBC_PATH) | \
-		$(AWK) -f $(GEN_HEADER_SCRIPT) > $@ ; \
-	then \
-		echo "\n*** Failed to generate '$@' !\n"; \
-		exit 1; \
-	fi
+	$(READELF) -h -s $(LIBC_PATH) | \
+		$(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_HEADER_SCRIPT) > $@
 
 EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS)
 

@@ -1,5 +1,5 @@
 BEGIN {
-	split(ENVIRON["SYMBOLS"], SYMBOLS);
+	split(" " SYMBOLS_LIST, SYMBOLS);
 }
 
 /^  OS\/ABI:/ {
@@ -86,21 +86,20 @@ BEGIN {
 }
 
 END {
-	for (sym_version in SYMBOL_LIST) {
+	COUNT = 0;
+	delete VERSION_LIST
+	for (sym_version in SYMBOL_LIST)
 		if (sym_version)
-			VERSIONS = VERSIONS " " sym_version;
-	}
+			VERSION_LIST[COUNT++] = sym_version;
 
 	# We need the symbol versions sorted alphabetically ...
-	if (VERSIONS) {
-		split(VERSIONS, VERSION_LIST);
-		COUNT = asort(VERSION_LIST);
-	} else {
+	if (COUNT)
+		asort(VERSION_LIST);
+	else
 		# Handle non-versioned libc's like uClibc ...
 		COUNT = 1;
-	}
 
-	for (i = 1; i <= COUNT; i++) {
+	for (i = 1; i <= COUNT; ++i) {
 		if (VERSION_LIST[i]) {
 			sym_version = VERSION_LIST[i];
 			printf("%s {\n", sym_version);
