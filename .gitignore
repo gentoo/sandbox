@@ -33,6 +33,7 @@ Makefile.in
 /libsandbox/symbols.h
 
 /src/sandbox
+/src/sandbox.sh
 
 /tests/*-0
 /tests/*_tst

@@ -255,7 +255,7 @@ fi
 
 AC_CONFIG_TESTDIR([tests])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 	Makefile
 	scripts/Makefile
 	etc/Makefile
@@ -263,7 +263,10 @@ AC_OUTPUT([
 	libsbutil/Makefile
 	libsandbox/Makefile
 	src/Makefile
+	src/sandbox.sh
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4
 ])
+AC_CONFIG_COMMANDS([config-perms], [chmod +x src/sandbox.sh])
+AC_OUTPUT
