@@ -220,6 +220,7 @@ rm -f libctest*
 if test x"$LIBC_PATH" = x || ! test -r "$LIBC_PATH" ; then
   AC_MSG_ERROR([Unable to determine LIBC PATH ($LIBC_PATH)])
 fi
+AC_DEFINE_UNQUOTED([LIBC_PATH], ["$LIBC_PATH"], [Full path to the libc])
 AC_MSG_RESULT([$LIBC_PATH])
 AC_SUBST([LIBC_PATH])
 

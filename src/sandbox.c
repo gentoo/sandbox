@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 			puts(
 				"Gentoo path sandbox\n"
 				" version: " PACKAGE_VERSION "\n"
-				" C lib:   " LIBC_VERSION "\n"
+				" C lib:   " LIBC_VERSION " (" LIBC_PATH ")\n"
 				" build:   " __DATE__ " " __TIME__ "\n"
 				" contact: " PACKAGE_BUGREPORT " via http://bugs.gentoo.org/\n"
 				" rtld:    "
