@@ -248,6 +248,20 @@ dnl the variables ($sysconfdir defaults to "$prefix/etc")
 SANDBOX_DEFINES='-DETCDIR="\"$(sysconfdir)\"" -DLIBSANDBOX_PATH="\"$(libdir)\"" -DSANDBOX_BASHRC_PATH="\"$(pkgdatadir)\""'
 AC_SUBST([SANDBOX_DEFINES])
 
+dnl Check for toolchain features
+dnl We need -fexceptions here, else we do not catch exceptions
+dnl (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions)
+AC_MSG_CHECKING([how to enable exception handling])
+for CFLAG_EXCEPTIONS in -fexceptions "" ; do
+	ac_save_CFLAGS=$CFLAGS
+	CFLAGS="$CFLAGS -fexceptions"
+	AC_TRY_COMPILE([],[],[ok=yes],[ok=no])
+	CFLAGS=$ac_save_CFLAGS
+	test "$ok" = "yes" && break
+done
+AC_MSG_RESULT($CFLAG_EXCEPTIONS)
+AC_SUBST([CFLAG_EXCEPTIONS])
+
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 if test "$GCC" = yes; then
 	CFLAGS="$CFLAGS -Wall"

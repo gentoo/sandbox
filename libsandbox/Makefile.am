@@ -11,9 +11,7 @@ INCLUDES = \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include
 
-# We need -fexceptions here, else we do not catch exceptions
-# (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions).
-libsandbox_la_CFLAGS = -fexceptions
+libsandbox_la_CFLAGS = $(CFLAG_EXCEPTIONS)
 # Could use the following to libsandbox_la_LIBADD, but then libtool links it
 # with --whole-archive, and libsandbox.so increase with a few KB in size:
 #	$(top_builddir)/libsbutil/libsbutil.la
