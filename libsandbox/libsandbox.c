@@ -452,7 +452,7 @@ error:
 	return -1;
 }
 
-static void init_context(sbcontext_t * context)
+static void init_context(sbcontext_t *context)
 {
 	context->show_access_violation = 1;
 	context->deny_prefixes = NULL;
@@ -599,7 +599,7 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 	return 0;
 }
 
-static int check_access(sbcontext_t * sbcontext, const char *func, const char *abs_path, const char *resolv_path)
+static int check_access(sbcontext_t *sbcontext, const char *func, const char *abs_path, const char *resolv_path)
 {
 	int old_errno = errno;
 	int result = 0;
@@ -670,8 +670,6 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 	    (0 == strncmp(func, "ftruncate", 9)) ||
 	    (0 == strncmp(func, "truncate64", 10)) ||
 	    (0 == strncmp(func, "ftruncate64", 11))) {
-		struct stat st;
-		char proc_self_fd[SB_PATH_MAX];
 
 		retval = check_prefixes(sbcontext->write_denied_prefixes,
 					sbcontext->num_write_denied_prefixes,
@@ -693,6 +691,7 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 		 * passed path is writable, and if so, check if its a
 		 * symlink, and give access only if the resolved path
 		 * of the symlink's parent also have write access. */
+		struct stat st;
 		if (((0 == strncmp(func, "unlink", 6)) ||
 		     (0 == strncmp(func, "lchown", 6)) ||
 		     (0 == strncmp(func, "rename", 6)) ||
@@ -728,11 +727,12 @@ static int check_access(sbcontext_t * sbcontext, const char *func, const char *a
 				}
 			}
 		}
-unlink_hack_end:
+ unlink_hack_end: ;
 
 		/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
 		 *      It needs to be here, as for each process '/proc/self'
 		 *      will differ ... */
+		char proc_self_fd[SB_PATH_MAX];
 		if ((0 == strncmp(resolv_path, PROC_DIR, strlen(PROC_DIR))) &&
 		    (NULL != realpath(PROC_SELF_FD, proc_self_fd))) {
 			if (0 == strncmp(resolv_path, proc_self_fd,
@@ -765,7 +765,7 @@ out:
 	return result;
 }
 
-static int check_syscall(sbcontext_t * sbcontext, const char *func, const char *file)
+static int check_syscall(sbcontext_t *sbcontext, const char *func, const char *file)
 {
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
@@ -867,8 +867,6 @@ int is_sandbox_on(void)
 	 * sources should NEVER set it, else the sandbox is enabled
 	 * in some cases when run in parallel with another sandbox,
 	 * but not even in the sandbox shell.
-	 *
-	 * Azarah (3 Aug 2002)
 	 */
 	if ((is_env_on(ENV_SANDBOX_ON)) &&
 	    (1 == sandbox_on) &&
