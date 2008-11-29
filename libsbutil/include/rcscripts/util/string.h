@@ -11,33 +11,6 @@
 #ifndef __RC_STRING_H__
 #define __RC_STRING_H__
 
-#include <stdio.h>
-
-/* Gentoo style e* printing macro's */
-#define EINFO(_args...) \
- do { \
-   save_errno (); \
-   printf (" \033[32;01m*\033[0m " _args); \
-   restore_errno (); \
- } while (0)
-
-#define EWARN(_args...) \
- do { \
-   save_errno (); \
-   printf (" \033[33;01m*\033[0m " _args); \
-   restore_errno (); \
- } while (0)
-
-#define EERROR(_args...) \
- do { \
-   save_errno (); \
-   fprintf (stderr, " \033[31;01m*\033[0m " _args); \
-   restore_errno (); \
- } while (0)
-
-/* String functions.  Return a string on success, or NULL on error
- * or no action taken.  On error errno will be set.*/
-char *rc_memrepchr (char **str, char old, char _new, size_t size);
 /* Concat two paths adding '/' if needed.  Memory will be allocated
  * with the malloc() call. */
 char *rc_strcatpaths (const char *pathname1, const char *pathname2);

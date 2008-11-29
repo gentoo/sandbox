@@ -18,6 +18,5 @@
 #include "rcscripts/util/list.h"
 #include "rcscripts/util/str_list.h"
 #include "rcscripts/util/dynbuf.h"
-#include "rcscripts/util/simple-regex.h"
 
 #endif /* __RCUTIL_H__ */

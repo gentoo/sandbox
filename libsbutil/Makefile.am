@@ -28,7 +28,6 @@ libsbutil_la_SOURCES =                        \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/list.h         \
 	include/rcscripts/util/str_list.h     \
-	include/rcscripts/util/simple-regex.h \
 	include/rcscripts/util/debug.h        \
 	src/debug.c                           \
 	include/rcscripts/util/string.h       \
