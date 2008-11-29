@@ -17,7 +17,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE(STRING_NAME, pathname) {
+	if (FUNCTION_SANDBOX_SAFE(pathname)) {
 		check_dlsym(true_open64_DEFAULT, symname_open64_DEFAULT,
 			    symver_open64_DEFAULT);
 		result = true_open64_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);

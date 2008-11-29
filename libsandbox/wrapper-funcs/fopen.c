@@ -26,7 +26,7 @@ FILE *WRAPPER_NAME(WRAPPER_ARGS)
 	}
 	errno = old_errno;
 
-	if FUNCTION_SANDBOX_SAFE_OPEN_CHAR(STRING_NAME, pathname, mode) {
+	if (FUNCTION_SANDBOX_SAFE_OPEN_CHAR(pathname, mode)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(pathname, mode);

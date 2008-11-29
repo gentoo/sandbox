@@ -33,7 +33,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 	}
 	errno = old_errno;
 
-	if FUNCTION_SANDBOX_SAFE_OPEN_INT(STRING_NAME, pathname, flags) {
+	if (FUNCTION_SANDBOX_SAFE_OPEN_INT(pathname, flags)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		if (flags & O_CREAT)

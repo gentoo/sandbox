@@ -29,7 +29,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 	}
 	errno = old_errno;
 
-	if FUNCTION_SANDBOX_SAFE(STRING_NAME, pathname) {
+	if (FUNCTION_SANDBOX_SAFE(pathname)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(pathname);

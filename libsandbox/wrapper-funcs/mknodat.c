@@ -16,7 +16,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE_AT(dirfd, STRING_NAME, pathname) {
+	if (FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(dirfd, pathname, mode, dev);

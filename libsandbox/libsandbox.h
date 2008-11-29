@@ -14,25 +14,25 @@
 #undef strdup
 
 /* Macros to check if a function should be executed */
-#define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _func, _path) \
-	((0 == is_sandbox_on()) || (1 == before_syscall(_dirfd, _func, _path)))
-#define FUNCTION_SANDBOX_SAFE(_func, _path) \
-        FUNCTION_SANDBOX_SAFE_AT(AT_FDCWD, _func, _path)
+#define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _path) \
+	((0 == is_sandbox_on()) || (1 == before_syscall(_dirfd, STRING_NAME, _path)))
+#define FUNCTION_SANDBOX_SAFE(_path) \
+        FUNCTION_SANDBOX_SAFE_AT(AT_FDCWD, _path)
 
-#define FUNCTION_SANDBOX_SAFE_ACCESS_AT(_dirfd, _func, _path, _flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_access(_dirfd, _func, _path, _flags)))
-#define FUNCTION_SANDBOX_SAFE_ACCESS(_func, _path, _flags) \
-        FUNCTION_SANDBOX_SAFE_ACCESS_AT(AT_FDCWD, _func, _path, _flags)
+#define FUNCTION_SANDBOX_SAFE_ACCESS_AT(_dirfd, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_access(_dirfd, STRING_NAME, _path, _flags)))
+#define FUNCTION_SANDBOX_SAFE_ACCESS(_path, _flags) \
+        FUNCTION_SANDBOX_SAFE_ACCESS_AT(AT_FDCWD, _path, _flags)
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(_dirfd, _func, _path, _flags) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(_dirfd, _func, _path, _flags)))
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_func, _path, _flags) \
-        FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(AT_FDCWD, _func, _path, _flags)
+#define FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(_dirfd, _path, _flags) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_int(_dirfd, STRING_NAME, _path, _flags)))
+#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_path, _flags) \
+        FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(AT_FDCWD, _path, _flags)
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(_dirfd, _func, _path, _mode) \
-	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(_dirfd, _func, _path, _mode)))
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_func, _path, _mode) \
-        FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(AT_FDCWD, _func, _path, _mode)
+#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(_dirfd, _path, _mode) \
+	((0 == is_sandbox_on()) || (1 == before_syscall_open_char(_dirfd, STRING_NAME, _path, _mode)))
+#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_path, _mode) \
+        FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
 int canonicalize(const char *, char *);
 

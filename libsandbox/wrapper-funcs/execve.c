@@ -74,7 +74,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 	int result = -1;
 	int count;
 
-	if (!FUNCTION_SANDBOX_SAFE(STRING_NAME, filename))
+	if (!FUNCTION_SANDBOX_SAFE(filename))
 		return result;
 
 	check_exec(filename);

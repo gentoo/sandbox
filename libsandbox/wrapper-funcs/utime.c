@@ -13,7 +13,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE(STRING_NAME, filename) {
+	if (FUNCTION_SANDBOX_SAFE(filename)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(filename, times);

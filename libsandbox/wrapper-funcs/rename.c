@@ -16,8 +16,9 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if (FUNCTION_SANDBOX_SAFE(STRING_NAME, oldpath) &&
-	    FUNCTION_SANDBOX_SAFE(STRING_NAME, newpath)) {
+	if (FUNCTION_SANDBOX_SAFE(oldpath) &&
+	    FUNCTION_SANDBOX_SAFE(newpath))
+	{
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(oldpath, newpath);

@@ -13,7 +13,7 @@ int WRAPPER_NAME(WRAPPER_ARGS)
 {
 	int result = -1;
 
-	if FUNCTION_SANDBOX_SAFE_AT(newdirfd, STRING_NAME, newpath) {
+	if (FUNCTION_SANDBOX_SAFE_AT(newdirfd, newpath)) {
 		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 		result = WRAPPER_TRUE_NAME(oldpath, newdirfd, newpath);
