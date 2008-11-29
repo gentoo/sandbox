@@ -10,6 +10,7 @@ dnl Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_ISC_POSIX
+AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
@@ -192,7 +193,6 @@ fi
 dnl Check if libc provides RTLD_NEXT
 AC_MSG_CHECKING([for RTLD_NEXT])
 AC_TRY_COMPILE([
-    #define _GNU_SOURCE
     #include <dlfcn.h>
   ], [
     #if !defined(RTLD_NEXT)
@@ -204,7 +204,6 @@ AC_TRY_COMPILE([
 )
 AC_MSG_RESULT([$have_rtld_next])
 if test x"$have_rtld_next" = xyes ; then
-  CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
   AC_DEFINE([HAVE_RTLD_NEXT], [1], [Have RTLD_NEXT enabled libc])
 fi
 
