@@ -80,11 +80,15 @@ BEGIN {
 END {
 	printf("#ifndef __symbols_h\n");
 	printf("#define __symbols_h\n\n");
+	printf("#define SB_NR_UNDEF -99999\n\n");
 
 	# We use the order in SYMBOLS, as some wrappers depends on others ...
 	for (i = 1; i <= COUNT; ++i) {
 		sym_index = SYMBOLS[i];
-		split(SYMBOL_LIST[sym_index], sym_full_names);
+		full_count = split(SYMBOL_LIST[sym_index], sym_full_names);
+
+		if (full_count == 0)
+			printf("#define SB_NR_%s SB_NR_UNDEF\n", toupper(sym_index));
 
 		for (x in sym_full_names) {
 			split(sym_full_names[x], symbol_array, /@|@@/);
