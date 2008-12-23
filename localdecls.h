@@ -51,6 +51,13 @@
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
+/* If the system is old and does not support *at funcs, then define
+ * it ourself.  Shouldn't matter based on how we use it.
+ */
+#ifndef AT_FDCWD
+# define AT_FDCWD -100
+#endif
+
 #if !HAVE_DLVSYM
 # define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif
