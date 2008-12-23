@@ -696,6 +696,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		 * of the symlink's parent also have write access. */
 		struct stat st;
 		if ((sb_nr == SB_NR_UNLINK ||
+		     sb_nr == SB_NR_UNLINKAT ||
 		     sb_nr == SB_NR_LCHOWN ||
 		     sb_nr == SB_NR_RENAME ||
 		     sb_nr == SB_NR_SYMLINK) &&
