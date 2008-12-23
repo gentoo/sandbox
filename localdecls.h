@@ -47,6 +47,10 @@
 # error PATH_MAX not defined!
 #endif
 
+#ifndef MAP_ANONYMOUS
+# define MAP_ANONYMOUS MAP_ANON
+#endif
+
 #if !HAVE_DLVSYM
 # define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif
