@@ -43,11 +43,11 @@ GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk
 
 libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 	$(READELF) -h -s $(LIBC_PATH) | \
-		$(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_VERSION_MAP_SCRIPT) > $@
+		LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_VERSION_MAP_SCRIPT) > $@
 
 symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
 	$(READELF) -h -s $(LIBC_PATH) | \
-		$(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_HEADER_SCRIPT) > $@
+		LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = $(srcdir)/sb_nr.h.in
 sb_nr.h: symbols.h $(SB_NR_FILE)
