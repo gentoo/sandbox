@@ -147,10 +147,10 @@ fi
 if test x"$enable_shared" != xyes ; then
   AC_MSG_ERROR([dont be a Kumba, omitting a libsandbox.so is stupid])
 fi
-if echo $CFLAGS | $EGREP -e -static  >/dev/null 2>&1; then
+if echo " $CFLAGS " | $EGREP ' -static ' >/dev/null 2>&1; then
   AC_MSG_ERROR([dont be a Kumba, using -static in CFLAGS is stupid])
 fi
-if echo $LDFLAGS | $EGREP -e -static  >/dev/null 2>&1; then
+if echo " $LDFLAGS " | $EGREP ' -static ' >/dev/null 2>&1; then
   AC_MSG_ERROR([dont be a Kumba, using -static in LDFLAGS is stupid])
 fi
 
