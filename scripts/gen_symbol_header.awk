@@ -131,6 +131,11 @@ END {
 			printf("#undef WRAPPER_SYMVER\n");
 			printf("#undef WRAPPER_NR\n");
 			printf("#undef WRAPPER_ARGS\n");
+			printf("#undef WRAPPER_ARGS_PROTO\n");
+			printf("#undef WRAPPER_SAFE\n");
+			printf("#undef WRAPPER_RET_TYPE\n");
+			printf("#undef WRAPPER_RET_DEFAULT\n");
+			printf("#undef WRAPPER_PRE_CHECKS\n");
 
 			if (symbol_array[2]) {
 				# Only add symbol versions for versioned libc's

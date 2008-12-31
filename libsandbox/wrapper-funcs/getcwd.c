@@ -8,11 +8,12 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS char *buf, size_t size
-extern char *WRAPPER_NAME(WRAPPER_ARGS);
-static char *(*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
+#define WRAPPER_ARGS_PROTO char *buf, size_t size
+#define WRAPPER_ARGS dirfd, filename, times
+extern char *WRAPPER_NAME(WRAPPER_ARGS_PROTO);
+static char *(*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 
-char *WRAPPER_NAME(WRAPPER_ARGS)
+char *WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	char *result = NULL;
 

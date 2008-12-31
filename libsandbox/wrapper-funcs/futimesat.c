@@ -5,19 +5,7 @@
  * Licensed under the GPL-2
  */
 
-#define WRAPPER_ARGS int dirfd, const char *filename, const struct timeval times[]
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
-
-int WRAPPER_NAME(WRAPPER_ARGS)
-{
-	int result = -1;
-
-	if (FUNCTION_SANDBOX_SAFE_AT(dirfd, filename)) {
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(dirfd, filename, times);
-	}
-
-	return result;
-}
+#define WRAPPER_ARGS_PROTO int dirfd, const char *filename, const struct timeval times[]
+#define WRAPPER_ARGS dirfd, filename, times
+#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, filename)
+#include "__wrapper_simple.c"

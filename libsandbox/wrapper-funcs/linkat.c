@@ -5,19 +5,7 @@
  * Licensed under the GPL-2
  */
 
-#define WRAPPER_ARGS int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
-
-int WRAPPER_NAME(WRAPPER_ARGS)
-{
-	int result = -1;
-
-	if (FUNCTION_SANDBOX_SAFE_AT(newdirfd, newpath)) {
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(olddirfd, oldpath, newdirfd, newpath, flags);
-	}
-
-	return result;
-}
+#define WRAPPER_ARGS_PROTO int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags
+#define WRAPPER_ARGS olddirfd, oldpath, newdirfd, newpath, flags
+#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(newdirfd, newpath)
+#include "__wrapper_simple.c"

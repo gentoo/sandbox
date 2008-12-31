@@ -3,24 +3,9 @@
  *
  * Copyright 1999-2008 Gentoo Foundation
  * Licensed under the GPL-2
- *
- *  Partly Copyright (C) 1998-9 Pancrazio `Ezio' de Mauro <p@demauro.net>,
- *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS int dirfd, const char *path, mode_t mode, int flags
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
-
-int WRAPPER_NAME(WRAPPER_ARGS)
-{
-	int result = -1;
-
-	if (FUNCTION_SANDBOX_SAFE_AT(dirfd, path)) {
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(dirfd, path, mode, flags);
-	}
-
-	return result;
-}
+#define WRAPPER_ARGS_PROTO int dirfd, const char *path, mode_t mode, int flags
+#define WRAPPER_ARGS dirfd, path, mode, flags
+#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, path)
+#include "__wrapper_simple.c"

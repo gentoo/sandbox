@@ -8,9 +8,10 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS const char *filename, char *const argv[], char *const envp[]
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
+#define WRAPPER_ARGS_PROTO const char *filename, char *const argv[], char *const envp[]
+#define WRAPPER_ARGS filename, argv, envp
+extern int EXTERN_NAME(WRAPPER_ARGS_PROTO);
+static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 
 /* See to see if this an ELF and if so, is it static which we can't wrap */
 void check_exec(const char *filename)
@@ -64,7 +65,7 @@ void check_exec(const char *filename)
 	close(fd);
 }
 
-int WRAPPER_NAME(WRAPPER_ARGS)
+int WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	char **my_env = NULL;
 	char *entry;

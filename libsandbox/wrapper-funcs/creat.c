@@ -8,12 +8,13 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define WRAPPER_ARGS const char *pathname, mode_t mode
-extern int EXTERN_NAME(WRAPPER_ARGS);
+#define WRAPPER_ARGS_PROTO const char *pathname, mode_t mode
+#define WRAPPER_ARGS pathname, mode
+extern int EXTERN_NAME(WRAPPER_ARGS_PROTO);
 /* XXX: We use the open() call to simulate creat() */
-/* static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL; */
+/* static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL; */
 
-int WRAPPER_NAME(WRAPPER_ARGS)
+int WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	int result = -1;
 

@@ -5,19 +5,7 @@
  * Licensed under the GPL-2
  */
 
-#define WRAPPER_ARGS const char *pathname
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
-
-int WRAPPER_NAME(WRAPPER_ARGS)
-{
-	int result = -1;
-
-	if (FUNCTION_SANDBOX_SAFE(pathname)) {
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(pathname);
-	}
-
-	return result;
-}
+#define WRAPPER_ARGS_PROTO const char *pathname
+#define WRAPPER_ARGS pathname
+#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE(pathname)
+#include "__wrapper_simple.c"

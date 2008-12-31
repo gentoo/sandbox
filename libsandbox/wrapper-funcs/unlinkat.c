@@ -5,35 +5,34 @@
  * Licensed under the GPL-2
  */
 
-#define WRAPPER_ARGS int dirfd, const char *pathname, int flags
-extern int EXTERN_NAME(WRAPPER_ARGS);
-static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS) = NULL;
+#ifndef WRAPPER_ARGS_PROTO /* let unlink() use us */
+# define WRAPPER_ARGS_PROTO int dirfd, const char *pathname, int flags
+# define WRAPPER_ARGS dirfd, pathname, flags
+# define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname)
+#endif
 
-int WRAPPER_NAME(WRAPPER_ARGS)
+static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 {
-	int result = -1, old_errno = errno;
 	char canonic[SB_PATH_MAX];
+	save_errno();
 
 	if (-1 == canonicalize(pathname, canonic))
 		/* Path is too long to canonicalize, do not fail, but just let
 		 * the real function handle it (see bug #94630 and #21766). */
 		if (ENAMETOOLONG != errno)
-			return -1;
+			return false;
 
 	/* XXX: Hack to make sure sandboxed process cannot remove
 	 * a device node, bug #79836. */
 	if ((0 == strncmp(canonic, "/dev/null", 9)) ||
 	    (0 == strncmp(canonic, "/dev/zero", 9))) {
 		errno = EACCES;
-		return result;
-	}
-	errno = old_errno;
-
-	if (FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname)) {
-		check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
-			    WRAPPER_SYMVER);
-		result = WRAPPER_TRUE_NAME(dirfd, pathname, flags);
+		return false;
 	}
 
-	return result;
+	restore_errno();
+	return true;
 }
+#define WRAPPER_PRE_CHECKS() if (!sb_unlinkat_pre_check(WRAPPER_ARGS)) return result;
+
+#include "__wrapper_simple.c"
