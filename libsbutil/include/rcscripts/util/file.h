@@ -35,9 +35,6 @@ off_t rc_get_size (const char *pathname, bool follow_link);
 time_t rc_get_mtime (const char *pathname, bool follow_link);
 
 /* The following functions return 0 on success, or -1 with errno set on error. */
-#if !defined(HAVE_REMOVE)
-int remove (const char *pathname);
-#endif
 int rc_mktree (const char *pathname, mode_t mode);
 int rc_rmtree (const char *pathname);
 

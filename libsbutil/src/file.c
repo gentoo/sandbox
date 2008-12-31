@@ -119,30 +119,6 @@ rc_get_mtime (const char *pathname, bool follow_link)
   return retval;
 }
 
-#if !defined(HAVE_REMOVE)
-int
-remove (const char *pathname)
-{
-  int retval;
-
-  if (!check_arg_str (pathname))
-    return -1;
-
-  if (rc_is_dir (pathname, false))
-    retval = rmdir (pathname);
-  else
-    retval = unlink (pathname);
-
-  if (0 != errno)
-    {
-      rc_errno_set (errno);
-      DBG_MSG ("Failed to remove() '%s'!\n", pathname);
-    }
-
-  return retval;
-}
-#endif
-
 int
 rc_mktree (const char *pathname, mode_t mode)
 {
