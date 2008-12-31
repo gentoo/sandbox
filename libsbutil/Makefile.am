@@ -11,6 +11,7 @@ LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
 noinst_LTLIBRARIES = libsbutil.la
 
+libsbutil_la_LDFLAGS = -no-undefined
 libsbutil_la_SOURCES =                        \
 	sbutil.h                              \
 	get_sandbox_lib.c                     \

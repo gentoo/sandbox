@@ -22,6 +22,7 @@ libsandbox_la_LIBADD = \
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 libsandbox_la_LDFLAGS = \
+	-no-undefined \
 	-nodefaultlibs \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
