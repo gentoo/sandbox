@@ -57,17 +57,7 @@ debug_message (const char *file, const char *func, int line,
   int length;
 
   length = strlen (log_domain) + strlen ("():       ") + 1;
-  /* Do not use xmalloc() here, else we may have recursive issues */
-  format_str = malloc (length);
-  if (NULL == format_str)
-    {
-      fprintf (stderr, "(%s) error: in %s, function %s(), line %i:\n",
-	       log_domain, __FILE__, __func__, __LINE__);
-      fprintf (stderr, "(%s)        Failed to allocate buffer!\n",
-	       log_domain);
-      abort ();
-    }
-
+  format_str = xmalloc (length);
   snprintf (format_str, length, "(%s)      ", log_domain);
 
   va_start (arg, format);
@@ -218,84 +208,4 @@ __check_arg_fp (FILE *fp, const char *file, const char *func, size_t line)
     }
 
   return true;
-}
-
-void *
-__xcalloc(size_t nmemb, size_t size, const char *file,
-	  const char *func, size_t line)
-{
-  void *new_ptr;
-
-  new_ptr = calloc (nmemb, size);
-  if (NULL == new_ptr)
-    {
-      /* Set errno in case specific malloc() implementation does not */
-      rc_errno_set (ENOMEM);
-
-      debug_message (file, func, line, "Failed to allocate buffer!\n");
-
-      return NULL;
-    }
-
-  return new_ptr;
-}
-
-void *
-__xmalloc (size_t size, const char *file, const char *func, size_t line)
-{
-  void *new_ptr;
-
-  new_ptr = malloc (size);
-  if (NULL == new_ptr)
-    {
-      /* Set errno in case specific malloc() implementation does not */
-      rc_errno_set (ENOMEM);
-
-      debug_message (file, func, line, "Failed to allocate buffer!\n");
-
-      return NULL;
-    }
-
-  return new_ptr;
-}
-
-void *
-__xrealloc (void *ptr, size_t size, const char *file,
-	    const char *func, size_t line)
-{
-  void *new_ptr;
-
-  new_ptr = realloc (ptr, size);
-  if (NULL == new_ptr)
-    {
-      /* Set errno in case specific realloc() implementation does not */
-      rc_errno_set (ENOMEM);
-
-      debug_message (file, func, line, "Failed to reallocate buffer!\n");
-
-      return NULL;
-    }
-
-  return new_ptr;
-}
-
-char *
-__xstrndup (const char *str, size_t size, const char *file,
-	    const char *func, size_t line)
-{
-  char *new_ptr;
-
-  new_ptr = rc_strndup (str, size);
-  if (NULL == new_ptr)
-    {
-      /* Set errno in case specific realloc() implementation does not */
-      rc_errno_set (ENOMEM);
-
-      debug_message (file, func, line,
-		     "Failed to duplicate string via rc_strndup() !\n");
-
-      return NULL;
-    }
-
-  return new_ptr;
 }

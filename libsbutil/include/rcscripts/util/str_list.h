@@ -64,7 +64,7 @@
        goto _error; \
      } \
    _string_list = _tmp_p; \
-   _tmp_str = xstrndup (_item, strlen (_item)); \
+   _tmp_str = xstrdup (_item); \
    if (NULL == _tmp_str) \
      { \
        goto _error; \

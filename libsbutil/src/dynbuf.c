@@ -21,15 +21,7 @@ rc_dynbuf_new (void)
   rc_dynbuf_t *dynbuf = NULL;
 
   dynbuf = xmalloc (sizeof (rc_dynbuf_t));
-  if (NULL == dynbuf)
-    return NULL;
-
   dynbuf->data = xmalloc (DYNAMIC_BUFFER_SIZE);
-  if (NULL == dynbuf->data)
-    {
-      free (dynbuf);
-      return NULL;
-    }
 
   dynbuf->length = DYNAMIC_BUFFER_SIZE;
   dynbuf->rd_index = 0;
@@ -45,8 +37,6 @@ rc_dynbuf_new_mmap_file (const char *name)
   rc_dynbuf_t *dynbuf = NULL;
 
   dynbuf = xmalloc (sizeof (rc_dynbuf_t));
-  if (NULL == dynbuf)
-    return NULL;
 
   if (-1 == rc_file_map (name, &dynbuf->data, &dynbuf->length))
     {
@@ -90,8 +80,6 @@ rc_dynbuf_reallocate (rc_dynbuf_t *dynbuf, size_t needed)
 	len = dynbuf->length + DYNAMIC_BUFFER_SIZE;
 
       new_ptr = xrealloc (dynbuf->data, len);
-      if (NULL == new_ptr)
-	return NULL;
 
       dynbuf->data = new_ptr;
       dynbuf->length = len;
@@ -393,8 +381,6 @@ rc_dynbuf_read_line (rc_dynbuf_t *dynbuf)
     {
       buf = xstrndup ((dynbuf->data + dynbuf->rd_index),
 		      (count - dynbuf->rd_index));
-      if (NULL == buf)
-	return NULL;
 
       dynbuf->rd_index = count;
 

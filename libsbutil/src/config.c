@@ -100,26 +100,12 @@ rc_get_cnf_entry (const char *pathname, const char *entry, const char *sep)
 	      if (NULL != value)
 		free (value);
 
-	      value = xstrndup (token, strlen (token));
-	      if (NULL == value)
-		{
-		  rc_dynbuf_free (dynbuf);
-		  free (buf);
-
-		  return NULL;
-		}
+	      value = xstrdup (token);
 	    }
 	  else
 	    {
 	      value = xrealloc (value, strlen(value) + strlen(token) +
 				strlen(sep) + 1);
-	      if (NULL == value)
-		{
-		  rc_dynbuf_free (dynbuf);
-		  free (buf);
-
-		  return NULL;
-		}
 	      snprintf(value + strlen(value), strlen(token) + strlen(sep) + 1,
 		       "%s%s", sep, token);
 	    }

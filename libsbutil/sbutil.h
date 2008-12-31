@@ -110,4 +110,23 @@ __attribute__((__format__(__printf__, 3, 4))) void sb_efunc(const char *color, c
 			goto _error; \
 	} while (0)
 
+/* Memory functions */
+void *__xcalloc(size_t nmemb, size_t size, const char *file, const char *func, size_t line);
+void *__xmalloc(size_t size, const char *file, const char *func, size_t line);
+void *__xzalloc(size_t size /*, const char *file, const char *func, size_t line */);
+void *__xrealloc(void *ptr, size_t size, const char *file, const char *func, size_t line);
+char *__xstrdup(const char *str, const char *file, const char *func, size_t line);
+char *__xstrndup(const char *str, size_t size, const char *file, const char *func, size_t line);
+#define xcalloc(_nmemb, _size) __xcalloc(_nmemb, _size, __FILE__, __func__, __LINE__)
+#define xmalloc(_size)         __xmalloc(_size, __FILE__, __func__, __LINE__)
+#define xzalloc(_size)         __xzalloc(_size /*, __FILE__, __func__, __LINE__ */)
+#define xrealloc(_ptr, _size)  __xrealloc(_ptr, _size, __FILE__, __func__, __LINE__)
+#define xstrdup(_str)          __xstrdup(_str, __FILE__, __func__, __LINE__)
+#define xstrndup(_str, _size)  __xstrndup(_str, _size, __FILE__, __func__, __LINE__)
+
+/* errno helpers */
+#define save_errno()    int old_errno = errno;
+#define restore_errno() errno = old_errno;
+#define saved_errno     old_errno
+
 #endif /* __SBUTIL_H__ */

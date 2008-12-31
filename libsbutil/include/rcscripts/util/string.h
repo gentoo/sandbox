@@ -15,7 +15,4 @@
  * with the malloc() call. */
 char *rc_strcatpaths (const char *pathname1, const char *pathname2);
 
-/* Compat functions for GNU extensions */
-char *rc_strndup (const char *str, size_t size);
-
 #endif /* __RC_STRING_H__ */

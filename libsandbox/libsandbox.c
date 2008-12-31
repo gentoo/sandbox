@@ -195,8 +195,6 @@ static char *resolve_path(const char *path, int follow_link)
 	save_errno();
 
 	filtered_path = xmalloc(SB_PATH_MAX * sizeof(char));
-	if (NULL == filtered_path)
-		return NULL;
 
 	if (0 == follow_link) {
 		if (-1 == canonicalize(path, filtered_path)) {
@@ -328,10 +326,6 @@ static char *getcmdline(void)
 	}
 
 	proc_data = rc_dynbuf_new();
-	if (NULL == proc_data) {
-		SB_EERROR("ISE ", "Could not allocate dynamic buffer!\n");
-		return NULL;
-	}
 
 	fd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
 	if (fd < 0) {
@@ -526,11 +520,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 
 	/* num_delimiters might be 0, and we need 2 entries at least */
 	pfx_array = xmalloc(((num_delimiters * 2) + 2) * sizeof(char *));
-	if (NULL == pfx_array)
-		goto error;
-	buffer = rc_strndup(prefixes_env, prefixes_env_length);
-	if (NULL == buffer)
-		goto error;
+	buffer = strdup(prefixes_env);
 	buffer_ptr = buffer;
 
 #ifdef HAVE_STRTOK_R
@@ -549,17 +539,13 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			/* Now add the realpath if it exists and
 			 * are not a duplicate */
 			rpath = xmalloc(SB_PATH_MAX * sizeof(char));
-			if (NULL != rpath) {
-				pfx_item = realpath(*(&(pfx_item) - 1), rpath);
-				if ((NULL != pfx_item) &&
-				    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
-					pfx_num++;
-				} else {
-					free(rpath);
-					pfx_item = NULL;
-				}
+			pfx_item = realpath(*(&(pfx_item) - 1), rpath);
+			if ((NULL != pfx_item) &&
+			    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
+				pfx_num++;
 			} else {
-				goto error;
+				free(rpath);
+				pfx_item = NULL;
 			}
 		}
 
@@ -575,10 +561,6 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 done:
 	errno = old_errno;
 	return;
-
-error:
-	SB_EERROR("ISE ", "Unrecoverable error!\n");
-	abort();
 }
 
 static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
@@ -917,10 +899,6 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	if (0 == sb_init) {
 		init_context(&sbcontext);
 		cached_env_vars = xcalloc(4, sizeof(char *));
-		if (NULL == cached_env_vars) {
-			SB_EERROR("ISE ", "Unrecoverable error!\n");
-			abort();
-		}
 		sb_init = 1;
 	}
 

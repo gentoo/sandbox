@@ -44,13 +44,7 @@ void free(void *ptr)
 
 void *calloc(size_t nmemb, size_t size)
 {
-	void *ret;
-	size_t malloc_size = nmemb * size;
-	ret = malloc(malloc_size); /* dont care about overflow */
-	if (ret == NULL)
-		return NULL;
-	memset(ret, 0x00, malloc_size);
-	return ret;
+	return xzalloc(nmemb * size); /* dont care about overflow */
 }
 
 void *realloc(void *ptr, size_t size)
@@ -59,16 +53,14 @@ void *realloc(void *ptr, size_t size)
 	size_t old_malloc_size;
 
 	if (ptr == NULL)
-		return malloc(size);
+		return xmalloc(size);
 	if (size == 0) {
 		free(ptr);
 		return ptr;
 	}
 
 	old_malloc_size = SB_MALLOC_TO_SIZE(ptr);
-	ret = malloc(size);
-	if (ret == NULL)
-		return NULL;
+	ret = xmalloc(size);
 	memcpy(ret, ptr, MIN(size, old_malloc_size));
 	free(ptr);
 	return ret;
@@ -83,8 +75,6 @@ char *strdup(const char *s)
 		return NULL;
 
 	len = strlen(s);
-	ret = malloc(len + 1);
-	if (ret == NULL)
-		return NULL;
+	ret = xmalloc(len + 1);
 	return memcpy(ret, s, len + 1);
 }

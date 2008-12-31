@@ -18,4 +18,6 @@
 
 #include "rcscripts/util/str_list.h"	/* used by libsandbox/execve wrapper */
 
+#include "sbutil.h"
+
 #endif /* __RCUTIL_H__ */

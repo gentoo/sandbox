@@ -76,8 +76,6 @@ erealpath(const char *name, char *resolved)
 
 	if (resolved == NULL) {
 		rpath = xmalloc(path_max);
-		if (rpath == NULL)
-			return NULL;
 	} else
 		rpath = resolved;
 	rpath_limit = rpath + path_max;
@@ -133,8 +131,6 @@ erealpath(const char *name, char *resolved)
 				else
 					new_size += path_max;
 				new_rpath = (char *) xrealloc(rpath, new_size);
-				if (new_rpath == NULL)
-					goto error;
 				rpath = new_rpath;
 				rpath_limit = rpath + new_size;
 

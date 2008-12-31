@@ -106,12 +106,11 @@ int print_sandbox_log(char *sandbox_log)
 		return 0;
 	}
 
-	buffer = xmalloc((len + 1) * sizeof(char));
+	buffer = xzalloc((len + 1) * sizeof(char));
 	if (NULL == buffer) {
 		perror("sandbox:  Could not allocate buffer for Log file");
 		return 0;
 	}
-	memset(buffer, 0, len + 1);
 	if (-1 == sb_read(sandbox_log_file, buffer, len)) {
 		perror("sandbox:  Could read Log file");
 		return 0;

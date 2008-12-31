@@ -25,6 +25,7 @@ libsbutil_la_SOURCES =                        \
 	sb_write.c                            \
 	sb_close.c                            \
 	sb_printf.c                           \
+	sb_memory.c                           \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/str_list.h     \
 	include/rcscripts/util/debug.h        \

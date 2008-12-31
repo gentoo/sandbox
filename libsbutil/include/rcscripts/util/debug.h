@@ -14,10 +14,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-#define save_errno()	int old_errno = errno;
-#define restore_errno() errno = old_errno;
-#define saved_errno	old_errno
-
 void
 rc_log_domain (const char *new_domain);
 void
@@ -114,26 +110,5 @@ bool __check_arg_fp (FILE * fp, const char *file, const char *func, size_t line)
  __check_arg_fd (_fd, __FILE__, __func__, __LINE__)
 #define check_arg_fp(_fp) \
  __check_arg_fp (_fp, __FILE__, __func__, __LINE__)
-
-/*
- * Various memory allocation functions and macro's.
- * They set errno to ENOMEM and print debug info.
- */
-
-void *__xcalloc (size_t nmemb, size_t size, const char *file, const char *func, size_t line);
-void *__xmalloc (size_t size, const char *file, const char *func, size_t line);
-void *__xrealloc (void *ptr, size_t size, const char *file, const char *func, size_t line);
-
-#define xcalloc(_nmemb, _size) \
- __xcalloc (_nmemb, _size, __FILE__, __func__, __LINE__)
-#define xmalloc(_size) \
- __xmalloc (_size, __FILE__, __func__, __LINE__)
-#define xrealloc(_ptr, _size) \
- __xrealloc (_ptr, _size, __FILE__, __func__, __LINE__)
-
-char *__xstrndup (const char *str, size_t size, const char *file, const char *func, size_t line);
-
-#define xstrndup(_str, _size) \
- __xstrndup (_str, _size, __FILE__, __func__, __LINE__)
 
 #endif /* __RC_DEBUG_H__ */

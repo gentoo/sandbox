@@ -24,36 +24,10 @@ rc_strcatpaths (const char *pathname1, const char *pathname2)
   lenght = strlen (pathname1) + strlen (pathname2) + 2;
   /* lenght + '\0' */
   new_path = xmalloc (lenght);
-  if (NULL == new_path)
-    return NULL;
 
   snprintf (new_path, lenght, "%s%s%s", pathname1,
 	    (pathname1[strlen (pathname1) - 1] != '/') ? "/" : "",
 	    pathname2);
 
   return new_path;
-}
-
-char *
-rc_strndup (const char *str, size_t size)
-{
-  char *new_str = NULL;
-  size_t len;
-
-  /* We cannot check if its a valid string here, as it might
-   * not be '\0' terminated ... */
-  if (!check_arg_ptr (str))
-    return NULL;
-
-  /* Check lenght of str without breaching the size limit */
-  for (len = 0; (len < size) && ('\0' != str[len]); len++);
-
-  new_str = xmalloc (len + 1);
-  if (NULL == new_str)
-    return NULL;
-
-  /* Make sure our string is NULL terminated */
-  new_str[len] = '\0';
-
-  return (char *) memcpy (new_str, str, len);
 }

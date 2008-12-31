@@ -226,8 +226,6 @@ static int sb_setenv(char ***envp, const char *name, const char *val)
 
 	/* strlen(name) + strlen(val) + '=' + '\0' */
 	tmp_string = xmalloc((strlen(name) + strlen(val) + 2) * sizeof(char));
-	if (NULL == tmp_string)
-		goto error;
 
 	snprintf(tmp_string, strlen(name) + strlen(val) + 2,
 		 "%s=%s", name, val);
@@ -276,17 +274,11 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 		ld_preload_envvar = xcalloc(strlen(orig_ld_preload_envvar) +
 				strlen(sandbox_info->sandbox_lib) + 2,
 				sizeof(char));
-		if (NULL == ld_preload_envvar)
-			return NULL;
 		snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
 				strlen(sandbox_info->sandbox_lib) + 2, "%s %s",
 				sandbox_info->sandbox_lib, orig_ld_preload_envvar);
-	} else {
-		ld_preload_envvar = rc_strndup(sandbox_info->sandbox_lib,
-				strlen(sandbox_info->sandbox_lib));
-		if (NULL == ld_preload_envvar)
-			return NULL;
-	}
+	} else
+		ld_preload_envvar = xstrdup(sandbox_info->sandbox_lib);
 	/* Do not unset this, as strange things might happen */
 	/* unsetenv(ENV_LD_PRELOAD); */
 
