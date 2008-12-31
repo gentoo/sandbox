@@ -21,6 +21,5 @@
  * together seperated by 'sep'. */
 char *rc_get_cnf_entry (const char *pathname, const char *entry,
 			const char *sep);
-char ** rc_get_list_file (char **list, char *filename);
 
 #endif /* __RC_CONFIG_H__ */

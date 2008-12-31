@@ -230,7 +230,7 @@ static char *resolve_path(const char *path, int follow_link)
 				 * file '/usr/lib/cf*' ...) */
 				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
 
-				bname = rc_basename(tmp_str2);
+				bname = basename(tmp_str2);
 				snprintf((char *)(filtered_path + strlen(filtered_path)),
 					SB_PATH_MAX - strlen(filtered_path), "%s%s",
 					(filtered_path[strlen(filtered_path) - 1] != '/') ? "/" : "",

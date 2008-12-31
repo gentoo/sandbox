@@ -17,7 +17,5 @@ char *rc_strcatpaths (const char *pathname1, const char *pathname2);
 
 /* Compat functions for GNU extensions */
 char *rc_strndup (const char *str, size_t size);
-/* Same as basename(3), but do not modify path */
-char *rc_basename (const char *path);
 
 #endif /* __RC_STRING_H__ */

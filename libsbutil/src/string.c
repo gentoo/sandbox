@@ -57,16 +57,3 @@ rc_strndup (const char *str, size_t size)
 
   return (char *) memcpy (new_str, str, len);
 }
-
-char *
-rc_basename (const char *path)
-{
-  char *new_path = NULL;
-
-  if (!check_arg_str (path))
-    return NULL;
-
-  /* Copied from glibc */
-  new_path = strrchr (path, '/');
-  return new_path ? new_path + 1 : (char *) path;
-}

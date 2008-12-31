@@ -10,13 +10,12 @@
 #ifndef __RCUTIL_H__
 #define __RCUTIL_H__
 
-#include "rcscripts/rctypes.h"
 #include "rcscripts/util/debug.h"
 #include "rcscripts/util/string.h"
 #include "rcscripts/util/file.h"
 #include "rcscripts/util/config.h"
-#include "rcscripts/util/list.h"
-#include "rcscripts/util/str_list.h"
 #include "rcscripts/util/dynbuf.h"
+
+#include "rcscripts/util/str_list.h"	/* used by libsandbox/execve wrapper */
 
 #endif /* __RCUTIL_H__ */
