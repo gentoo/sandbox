@@ -16,6 +16,8 @@
 #include "headers.h"
 #include "include/rcscripts/rcutil.h"
 
+#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+
 #define SANDBOX_CONF_FILE      ETCDIR "/sandbox.conf"
 #define SANDBOX_CONFD_DIR      ETCDIR "/sandbox.d"
 

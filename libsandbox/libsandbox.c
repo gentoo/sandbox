@@ -47,16 +47,19 @@ char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
 	int show_access_violation;
-	char **deny_prefixes;
-	int num_deny_prefixes;
-	char **read_prefixes;
-	int num_read_prefixes;
-	char **write_prefixes;
-	int num_write_prefixes;
-	char **predict_prefixes;
-	int num_predict_prefixes;
-	char **write_denied_prefixes;
-	int num_write_denied_prefixes;
+	char **prefixes[5];
+	int num_prefixes[5];
+#define             deny_prefixes     prefixes[0]
+#define         num_deny_prefixes num_prefixes[0]
+#define             read_prefixes     prefixes[1]
+#define         num_read_prefixes num_prefixes[1]
+#define            write_prefixes     prefixes[2]
+#define        num_write_prefixes num_prefixes[2]
+#define          predict_prefixes     prefixes[3]
+#define      num_predict_prefixes num_prefixes[3]
+#define     write_denied_prefixes     prefixes[4]
+#define num_write_denied_prefixes num_prefixes[4]
+#define MAX_DYN_PREFIXES 4 /* the first 4 are dynamic */
 } sbcontext_t;
 
 static sbcontext_t sbcontext;
@@ -88,7 +91,7 @@ void libsb_fini(void)
 	sb_init = 0;
 
 	if (NULL != cached_env_vars) {
-		for (x = 0; x < 4; ++x) {
+		for (x = 0; x < MAX_DYN_PREFIXES; ++x) {
 			if (NULL != cached_env_vars[x]) {
 				free(cached_env_vars[x]);
 				cached_env_vars[x] = NULL;
@@ -98,14 +101,9 @@ void libsb_fini(void)
 		cached_env_vars = NULL;
 	}
 
-	clean_env_entries(&(sbcontext.deny_prefixes),
-			&(sbcontext.num_deny_prefixes));
-	clean_env_entries(&(sbcontext.read_prefixes),
-			&(sbcontext.num_read_prefixes));
-	clean_env_entries(&(sbcontext.write_prefixes),
-			&(sbcontext.num_write_prefixes));
-	clean_env_entries(&(sbcontext.predict_prefixes),
-			&(sbcontext.num_predict_prefixes));
+	for (x = 0; x < MAX_DYN_PREFIXES; ++x)
+		clean_env_entries(&(sbcontext.prefixes[x]),
+				&(sbcontext.num_prefixes[x]));
 }
 
 __attribute__((constructor))
@@ -160,8 +158,8 @@ int canonicalize(const char *path, char *resolved_path)
 
 		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
 			return -1;
-		snprintf((char *)(resolved_path + strlen(resolved_path)),
-			SB_PATH_MAX - strlen(resolved_path), "/%s", path);
+		size_t len = strlen(resolved_path);
+		snprintf(resolved_path + len, SB_PATH_MAX - len, "/%s", path);
 
 		if (NULL == erealpath(resolved_path, resolved_path)) {
 			if (errno == ENAMETOOLONG) {
@@ -229,9 +227,9 @@ static char *resolve_path(const char *path, int follow_link)
 				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
 
 				bname = basename(tmp_str2);
-				snprintf((char *)(filtered_path + strlen(filtered_path)),
-					SB_PATH_MAX - strlen(filtered_path), "%s%s",
-					(filtered_path[strlen(filtered_path) - 1] != '/') ? "/" : "",
+				size_t len = strlen(filtered_path);
+				snprintf(filtered_path + len, SB_PATH_MAX - len, "%s%s",
+					(filtered_path[len - 1] != '/') ? "/" : "",
 					bname);
 			}
 		}
@@ -447,17 +445,8 @@ error:
 
 static void init_context(sbcontext_t *context)
 {
+	memset(context, 0x00, sizeof(*context));
 	context->show_access_violation = 1;
-	context->deny_prefixes = NULL;
-	context->num_deny_prefixes = 0;
-	context->read_prefixes = NULL;
-	context->num_read_prefixes = 0;
-	context->write_prefixes = NULL;
-	context->num_write_prefixes = 0;
-	context->predict_prefixes = NULL;
-	context->num_predict_prefixes = 0;
-	context->write_denied_prefixes = NULL;
-	context->num_write_denied_prefixes = 0;
 }
 
 static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
@@ -565,17 +554,13 @@ done:
 
 static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 {
-	int i = 0;
-
-	if (NULL == prefixes)
+	if (!prefixes)
 		return 0;
 
-	for (i = 0; i < num_prefixes; i++) {
-		if (NULL != prefixes[i]) {
-			if (0 == strncmp(path, prefixes[i], strlen(prefixes[i])))
-				return 1;
-		}
-	}
+	size_t i;
+	for (i = 0; i < num_prefixes; ++i)
+		if (prefixes[i] && !strncmp(path, prefixes[i], strlen(prefixes[i])))
+			return 1;
 
 	return 0;
 }
@@ -593,11 +578,10 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		goto out;
 
 	/* Hardcode denying write to log dir */
-	if (0 == strncmp(resolv_path, SANDBOX_LOG_LOCATION,
-			 strlen(SANDBOX_LOG_LOCATION)))
+	if (0 == strcmp(resolv_path, SANDBOX_LOG_LOCATION))
 		goto out;
 
-	if ((NULL != sbcontext->read_prefixes) &&
+	if (sbcontext->read_prefixes &&
 	    (sb_nr == SB_NR_ACCESS_RD ||
 	     sb_nr == SB_NR_OPEN_RD   ||
 	   /*sb_nr == SB_NR_POPEN     ||*/
@@ -720,10 +704,10 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		 *      It needs to be here, as for each process '/proc/self'
 		 *      will differ ... */
 		char proc_self_fd[SB_PATH_MAX];
-		if ((0 == strncmp(resolv_path, PROC_DIR, strlen(PROC_DIR))) &&
-		    (NULL != realpath(PROC_SELF_FD, proc_self_fd))) {
-			if (0 == strncmp(resolv_path, proc_self_fd,
-					 strlen(proc_self_fd))) {
+		if ((0 == strcmp(resolv_path, PROC_DIR)) &&
+		    (NULL != realpath(PROC_SELF_FD, proc_self_fd)))
+		{
+			if (0 == strcmp(resolv_path, proc_self_fd)) {
 				result = 1;
 				goto out;
 			}
@@ -855,12 +839,13 @@ int is_sandbox_on(void)
 	 * in some cases when run in parallel with another sandbox,
 	 * but not even in the sandbox shell.
 	 */
-	if ((is_env_on(ENV_SANDBOX_ON)) &&
-	    (1 == sandbox_on) &&
-	    (NULL != getenv(ENV_SANDBOX_ACTIVE)) &&
-	    (0 == strncmp(getenv(ENV_SANDBOX_ACTIVE), SANDBOX_ACTIVE, 13))) {
+	char *sb_env_active = getenv(ENV_SANDBOX_ACTIVE);
+	if ((1 == sandbox_on) &&
+	    sb_env_active &&
+	    is_env_on(ENV_SANDBOX_ON) &&
+	    (0 == strcmp(sb_env_active, SANDBOX_ACTIVE)))
 		result = 1;
-	} else
+	else
 		result = 0;
 	restore_errno();
 	return result;
@@ -871,13 +856,9 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	int old_errno = errno;
 	int result = 1;
 //	static sbcontext_t sbcontext;
-	char *deny = getenv(ENV_SANDBOX_DENY);
-	char *read = getenv(ENV_SANDBOX_READ);
-	char *write = getenv(ENV_SANDBOX_WRITE);
-	char *predict = getenv(ENV_SANDBOX_PREDICT);
 	char *at_file_buf = NULL;
 
-	if (NULL == file || 0 == strlen(file)) {
+	if (file == NULL || file[0] == '\0') {
 		/* The file/directory does not exist */
 		errno = ENOENT;
 		return 0;
@@ -902,80 +883,34 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 		sb_init = 1;
 	}
 
-	if ((NULL == deny && cached_env_vars[0] != deny) || NULL == cached_env_vars[0] ||
-		strcmp(cached_env_vars[0], deny) != 0) {
+	char *sb_env_names[4] = {
+		ENV_SANDBOX_DENY,
+		ENV_SANDBOX_READ,
+		ENV_SANDBOX_WRITE,
+		ENV_SANDBOX_PREDICT,
+	};
 
-		clean_env_entries(&(sbcontext.deny_prefixes),
-			&(sbcontext.num_deny_prefixes));
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(sb_env_names); ++i) {
+		char *sb_env = getenv(sb_env_names[i]);
 
-		if (NULL != cached_env_vars[0]) {
-			free(cached_env_vars[0]);
-			cached_env_vars[0] = NULL;
+		if ((!sb_env && cached_env_vars[i]) ||
+		    !cached_env_vars[i] ||
+		    strcmp(cached_env_vars[i], sb_env) != 0)
+		{
+			clean_env_entries(&(sbcontext.prefixes[i]),
+				&(sbcontext.num_prefixes[i]));
+
+			if (cached_env_vars[i])
+				free(cached_env_vars[i]);
+
+			if (sb_env) {
+				init_env_entries(&(sbcontext.prefixes[i]),
+					&(sbcontext.num_prefixes[i]), sb_env_names[i], sb_env, 1);
+				cached_env_vars[i] = strdup(sb_env);
+			} else
+				cached_env_vars[i] = NULL;
 		}
-
-		if (NULL != deny) {
-			init_env_entries(&(sbcontext.deny_prefixes),
-				&(sbcontext.num_deny_prefixes), ENV_SANDBOX_DENY, deny, 1);
-			cached_env_vars[0] = strdup(deny);
-		} else
-			cached_env_vars[0] = NULL;
-	}
-
-	if ((NULL == read && cached_env_vars[1] != read) || NULL == cached_env_vars[1] ||
-		strcmp(cached_env_vars[1], read) != 0) {
-
-		clean_env_entries(&(sbcontext.read_prefixes),
-			&(sbcontext.num_read_prefixes));
-
-		if (NULL != cached_env_vars[1]) {
-			free(cached_env_vars[1]);
-			cached_env_vars[1] = NULL;
-		}
-
-		if (NULL != read) {
-			init_env_entries(&(sbcontext.read_prefixes),
-				&(sbcontext.num_read_prefixes), ENV_SANDBOX_READ, read, 1);
-			cached_env_vars[1] = strdup(read);
-		} else
-			cached_env_vars[1] = NULL;
-	}
-
-	if ((NULL == write && cached_env_vars[2] != write) || NULL == cached_env_vars[2] ||
-		strcmp(cached_env_vars[2], write) != 0) {
-
-		clean_env_entries(&(sbcontext.write_prefixes),
-			&(sbcontext.num_write_prefixes));
-
-		if (NULL != cached_env_vars[2]) {
-			free(cached_env_vars[2]);
-			cached_env_vars[2] = NULL;
-		}
-
-		if (NULL != write) {
-			init_env_entries(&(sbcontext.write_prefixes),
-				&(sbcontext.num_write_prefixes), ENV_SANDBOX_WRITE, write, 1);
-			cached_env_vars[2] = strdup(write);
-		} else
-			cached_env_vars[2] = NULL;
-	}
-
-	if ((NULL == predict && cached_env_vars[3] != predict) || NULL == cached_env_vars[3] ||
-		strcmp(cached_env_vars[3], predict) != 0) {
-
-		clean_env_entries(&(sbcontext.predict_prefixes),
-			&(sbcontext.num_predict_prefixes));
-
-		if (NULL != cached_env_vars[3]) {
-			free(cached_env_vars[3]);
-			cached_env_vars[2] = NULL;
-		}
-
-		if (NULL != predict) {
-			init_env_entries(&(sbcontext.predict_prefixes),
-				&(sbcontext.num_predict_prefixes), ENV_SANDBOX_PREDICT, predict, 1);
-			cached_env_vars[3] = strdup(predict);
-		} else
-			cached_env_vars[3] = NULL;
 	}
 
 	/* Might have been reset in check_access() */

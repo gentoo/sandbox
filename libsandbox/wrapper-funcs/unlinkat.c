@@ -24,8 +24,9 @@ static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 
 	/* XXX: Hack to make sure sandboxed process cannot remove
 	 * a device node, bug #79836. */
-	if ((0 == strncmp(canonic, "/dev/null", 9)) ||
-	    (0 == strncmp(canonic, "/dev/zero", 9))) {
+	if (0 == strcmp(canonic, "/dev/null") ||
+	    0 == strcmp(canonic, "/dev/zero"))
+	{
 		errno = EACCES;
 		return false;
 	}
