@@ -17,14 +17,10 @@ int get_tmp_dir(char *path)
 {
 	save_errno();
 
-	if (NULL == realpath(getenv(ENV_TMPDIR) ? getenv(ENV_TMPDIR)
-					      : TMPDIR,
-				path)) {
+	if (NULL == realpath(getenv(ENV_TMPDIR) ? : TMPDIR, path))
 		if (NULL == realpath(TMPDIR, path))
 			return -1;
-	}
 
-	/* Reset errno in case realpath set it */
 	restore_errno();
 
 	return 0;
