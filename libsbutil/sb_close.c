@@ -24,7 +24,8 @@ int sb_close(int fd)
 	} while ((res < 0) && (EINTR == errno));
 
 	/* Do not care about errors here */
-	errno = 0;
+	if (-1 != res)
+		errno = 0;
 
 	return res;
 }
