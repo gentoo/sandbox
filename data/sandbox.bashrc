@@ -29,6 +29,11 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
 			export RC_NOCOLOR="yes"
 		source /etc/init.d/functions.sh
+		if [ $? -ne 0 ] ; then
+			einfo() { echo " INFO: $*"; }
+			ewarn() { echo " WARN: $*"; }
+			eerror() { echo " ERR: $*"; }
+		fi
 		echo
 		einfo "Loading sandboxed shell"
 		einfo " Log File:           ${SANDBOX_LOG}"
