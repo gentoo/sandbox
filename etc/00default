@@ -18,19 +18,3 @@ SANDBOX_WRITE="/usr/tmp/conftest:/usr/lib/conftest:/usr/lib32/conftest:/usr/lib6
 
 # Usually writes in /home should not cause violations
 SANDBOX_PREDICT="${HOME}"
-
-
-#
-# The following should be moved to respective packages
-#
-
-# This should be handled by gnome-base/gconf
-SANDBOX_WRITE="${HOME}/.gconfd/lock"
-# This should be handled by app-text/scrollkeeper
-SANDBOX_WRITE="/var/log/scrollkeeper.log"
-
-# These should be handled by dev-lang/python or sys-apps/portage
-SANDBOX_PREDICT="/usr/lib/python2.0/:/usr/lib/python2.1/:/usr/lib/python2.2/:/usr/lib/python2.3/:/usr/lib/python2.4/:/usr/lib/python2.5/:/usr/lib/python3.0/"
-# These should be handled by sys-libs/nss-db
-SANDBOX_PREDICT="/var/db/aliases.db:/var/db/netgroup.db:/var/db/netmasks.db:/var/db/ethers.db:/var/db/rpc.db:/var/db/protocols.db:/var/db/services.db:/var/db/networks.db:/var/db/hosts.db:/var/db/group.db:/var/db/passwd.db"
-
