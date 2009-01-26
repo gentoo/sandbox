@@ -824,7 +824,7 @@ error:
 	}
 
 	/* If we get here, something bad happened */
-	SB_EERROR("ISE ", "Unrecoverable error!\n");
+	SB_EERROR("ISE ", "Unrecoverable error: %s\n", strerror(errno));
 	abort();
 }
 
