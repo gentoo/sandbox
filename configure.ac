@@ -229,7 +229,7 @@ dnl libc to load and search with dl*() calls
 AC_MSG_CHECKING([libc version])
 dnl the sed script at the end here looks funny but it's ok ...
 echo "int main(void) { return 0; }" > libctest.c
-$CC $CFLAGS $CPPFLAGS $LDFLAGS -Wall -o libctest libctest.c
+$CC $CFLAGS $CPPFLAGS $LDFLAGS -o libctest libctest.c
 LIBC_VERSION=$(
 	$READELF -d libctest | \
 	grep NEEDED.*libc\\.so | \
