@@ -73,6 +73,22 @@ __xstrdup(const char *str, const char *file, const char *func, size_t line)
 	return ret;
 }
 
+#ifndef HAVE_STRNDUP
+static inline char *sb_strndup(const char *str, size_t n)
+{
+	size_t r;
+	for (r = 0; r < n; ++r)
+		if (!str[r])
+			break;
+
+	char *ret = xmalloc(r + 1);
+	memcpy(ret, str, r);
+	ret[r] = '\0';
+	return ret;
+}
+# define strndup sb_strndup
+#endif
+
 char *
 __xstrndup(const char *str, size_t size, const char *file, const char *func, size_t line)
 {
