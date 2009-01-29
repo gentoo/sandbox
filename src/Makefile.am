@@ -13,7 +13,7 @@ INCLUDES = \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include
 
-sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la -ldl
+sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la $(LIBDL)
 sandbox_SOURCES = \
 	environ.c \
 	sandbox.h \
