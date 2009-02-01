@@ -81,8 +81,6 @@ static void init_env_entries(char ***, int *, const char *, const char *, int);
  * Initialize the shabang
  */
 
-static char log_domain[] = "libsandbox";
-
 __attribute__((destructor))
 void libsb_fini(void)
 {
@@ -115,7 +113,6 @@ void libsb_init(void)
 	mtrace();
 #endif
 
-	rc_log_domain(log_domain);
 	sb_set_open(libsb_open);
 
 	/* Get the path and name to this library */
