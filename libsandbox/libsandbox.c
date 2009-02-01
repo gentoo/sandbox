@@ -309,59 +309,7 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
-static char *getcmdline(void)
-{
-	rc_dynbuf_t *proc_data;
-	struct stat st;
-	char *buf;
-	size_t n;
-	int fd;
-
-	if (-1 == stat(PROC_SELF_CMDLINE, &st)) {
-		/* Don't care if it does not exist */
-		errno = 0;
-		return NULL;
-	}
-
-	proc_data = rc_dynbuf_new();
-
-	fd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
-	if (fd < 0) {
-		SB_EERROR("ISE ", "Failed to open '%s'!\n", PROC_SELF_CMDLINE);
-		return NULL;
-	}
-
-	/* Read PAGE_SIZE at a time -- whenever EOF or an error is found
-	 * (don't care) give up and return.
-	 * XXX: Some linux kernels especially needed read() to read PAGE_SIZE
-	 *      at a time. */
-	do {
-		n = rc_dynbuf_write_fd(proc_data, fd, getpagesize());
-		if (-1 == n) {
-			SB_EERROR("ISE ", "Failed to read from '%s'!\n", PROC_SELF_CMDLINE);
-			goto error;
-		}
-	} while (0 < n);
-
-	sb_close(fd);
-
-	rc_dynbuf_replace_char(proc_data, '\0', ' ');
-
-	buf = rc_dynbuf_read_line(proc_data);
-	if (NULL == buf)
-		goto error;
-
-	rc_dynbuf_free(proc_data);
-
-	return buf;
-
-error:
-	if (NULL != proc_data)
-		rc_dynbuf_free(proc_data);
-
-	return NULL;
-}
-
+#define _SB_WRITE_STR(str) SB_WRITE(logfd, str, strlen(str), error)
 static int write_logfile(const char *logfile, const char *func, const char *path,
 						 const char *apath, const char *rpath, bool access)
 {
@@ -377,69 +325,77 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 		SB_EERROR("SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
 		abort();
-	} else {
-		logfd = sb_open(logfile, O_APPEND | O_WRONLY |
-				O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP |
-				S_IROTH);
-		if (logfd >= 0) {
-			char *cmdline;
-
-			if (0 != stat_ret) {
-				SB_WRITE(logfd, LOG_STRING, strlen(LOG_STRING), error);
-				SB_WRITE(logfd, LOG_FMT_FUNC, strlen(LOG_FMT_FUNC), error);
-				SB_WRITE(logfd, LOG_FMT_ACCESS, strlen(LOG_FMT_ACCESS), error);
-				SB_WRITE(logfd, LOG_FMT_PATH, strlen(LOG_FMT_PATH), error);
-				SB_WRITE(logfd, LOG_FMT_APATH, strlen(LOG_FMT_APATH), error);
-				SB_WRITE(logfd, LOG_FMT_RPATH, strlen(LOG_FMT_RPATH), error);
-				SB_WRITE(logfd, LOG_FMT_CMDLINE, strlen(LOG_FMT_CMDLINE), error);
-				SB_WRITE(logfd, "\n", 1, error);
-			} else {
-				/* Already have data in the log, so add a newline to space the
-				 * log entries.
-				 */
-				SB_WRITE(logfd, "\n", 1, error);
-			}
-
-			SB_WRITE(logfd, "F: ", 3, error);
-			SB_WRITE(logfd, func, strlen(func), error);
-			SB_WRITE(logfd, "\n", 1, error);
-			SB_WRITE(logfd, "S: ", 3, error);
-			if (access)
-				SB_WRITE(logfd, "allow", 5, error);
-			else
-				SB_WRITE(logfd, "deny", 4, error);
-			SB_WRITE(logfd, "\n", 1, error);
-			SB_WRITE(logfd, "P: ", 3, error);
-			SB_WRITE(logfd, path, strlen(path), error);
-			SB_WRITE(logfd, "\n", 1, error);
-			SB_WRITE(logfd, "A: ", 3, error);
-			SB_WRITE(logfd, apath, strlen(apath), error);
-			SB_WRITE(logfd, "\n", 1, error);
-			SB_WRITE(logfd, "R: ", 3, error);
-			SB_WRITE(logfd, rpath, strlen(rpath), error);
-			SB_WRITE(logfd, "\n", 1, error);
-
-			cmdline = getcmdline();
-			if (NULL != cmdline) {
-				SB_WRITE(logfd, "C: ", 3, error);
-				SB_WRITE(logfd, cmdline, strlen(cmdline),
-					 error);
-				SB_WRITE(logfd, "\n", 1, error);
-
-				free(cmdline);
-			} else if (0 != errno) {
-				goto error;
-			}
-
-			sb_close(logfd);
-		} else {
-			goto error;
-		}
 	}
+
+	logfd = sb_open(logfile,
+		O_APPEND | O_WRONLY | O_CREAT,
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (logfd == -1) {
+		SB_EERROR("ISE:write_logfile ", "unable to append logfile\n");
+		return -1;
+	}
+
+	if (0 != stat_ret) {
+		_SB_WRITE_STR(LOG_STRING);
+		_SB_WRITE_STR(LOG_FMT_FUNC);
+		_SB_WRITE_STR(LOG_FMT_ACCESS);
+		_SB_WRITE_STR(LOG_FMT_PATH);
+		_SB_WRITE_STR(LOG_FMT_APATH);
+		_SB_WRITE_STR(LOG_FMT_RPATH);
+		_SB_WRITE_STR(LOG_FMT_CMDLINE);
+		_SB_WRITE_STR("\n");
+	} else
+		/* Already have data in the log, so add a newline to space the
+		 * log entries.
+		 */
+		_SB_WRITE_STR("\n");
+
+	_SB_WRITE_STR("F: ");
+	_SB_WRITE_STR(func);
+	_SB_WRITE_STR("\n");
+	_SB_WRITE_STR("S: ");
+	if (access)
+		_SB_WRITE_STR("allow");
+	else
+		_SB_WRITE_STR("deny");
+	_SB_WRITE_STR("\n");
+	_SB_WRITE_STR("P: ");
+	_SB_WRITE_STR(path);
+	_SB_WRITE_STR("\n");
+	_SB_WRITE_STR("A: ");
+	_SB_WRITE_STR(apath);
+	_SB_WRITE_STR("\n");
+	_SB_WRITE_STR("R: ");
+	_SB_WRITE_STR(rpath);
+	_SB_WRITE_STR("\n");
+
+
+	_SB_WRITE_STR("C: ");
+	int cmdlinefd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
+	if (cmdlinefd != -1) {
+		size_t pagesz = getpagesize();
+		char *buf = xmalloc(pagesz);
+		size_t len, i;
+		while (1) {
+			len = sb_read(cmdlinefd, buf, pagesz);
+			if (len == -1) {
+				SB_EERROR("ISE:write_logfile ", "cmdlinefd read error\n");
+				break;
+			} else if (!len)
+				break;
+			for (i = 0; i < len; ++i)
+				if (!buf[i])
+					buf[i] = ' ';
+			SB_WRITE(logfd, buf, len, error);
+		}
+		sb_close(cmdlinefd);
+	} else
+		_SB_WRITE_STR("<unable to read " PROC_SELF_CMDLINE ">");
+	_SB_WRITE_STR("\n");
 
 	return 0;
 
-error:
+ error:
 	return -1;
 }
 
