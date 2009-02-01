@@ -83,49 +83,37 @@ int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	return 0;
 }
 
-int print_sandbox_log(char *sandbox_log)
+void print_sandbox_log(char *sandbox_log)
 {
-	int sandbox_log_file = -1;
-	char *beep_count_env = NULL;
-	int i, beep_count = 0;
-	off_t len = 0;
-	char *buffer = NULL;
-
-	if (!rc_is_file(sandbox_log, false)) {
-		perror("sandbox:  Log file is not a regular file");
-		return 0;
-	}
-
-	len = rc_get_size(sandbox_log, true);
-	if (0 == len)
-		return 0;
+	int sandbox_log_file, beep_count;
+	char *beep_count_env;
+	size_t len;
+	char buffer[1024];
 
 	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
 		perror("sandbox:  Could not open Log file");
-		return 0;
+		return;
 	}
 
-	buffer = xzalloc((len + 1) * sizeof(char));
-	if (NULL == buffer) {
-		perror("sandbox:  Could not allocate buffer for Log file");
-		return 0;
-	}
-	if (-1 == sb_read(sandbox_log_file, buffer, len)) {
-		perror("sandbox:  Could read Log file");
-		return 0;
+	SB_EERROR("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------", "\n");
+	SB_EERROR("LOG FILE", " \"%s\"\n\n", sandbox_log);
+
+	while (1) {
+		len = sb_read(sandbox_log_file, buffer, sizeof(buffer));
+		if (len == -1) {
+			perror("sandbox:  sb_read(logfile) failed");
+			break;
+		} else if (!len)
+			break;
+		if (sb_write(STDERR_FILENO, buffer, len) != len) {
+			perror("sandbox:  sb_write(logfile) failed");
+			break;
+		}
 	}
 	sb_close(sandbox_log_file);
 
-	SB_EERROR(
-	       "--------------------------- ACCESS VIOLATION SUMMARY ---------------------------",
-	       "\n");
-	SB_EERROR("LOG FILE", " \"%s\"\n\n", sandbox_log);
-	fprintf(stderr, "%s", buffer);
-	free(buffer);
-	SB_EERROR(
-	       "--------------------------------------------------------------------------------",
-	       "\n");
+	SB_EERROR("--------------------------------------------------------------------------------", "\n");
 
 	beep_count_env = getenv(ENV_SANDBOX_BEEP);
 	if (beep_count_env)
@@ -133,13 +121,11 @@ int print_sandbox_log(char *sandbox_log)
 	else
 		beep_count = DEFAULT_BEEP_COUNT;
 
-	for (i = 0; i < beep_count; i++) {
+	while (beep_count--) {
 		fputc('\a', stderr);
-		if (i < beep_count - 1)
+		if (beep_count)
 			sleep(1);
 	}
-
-	return 1;
 }
 
 void stop(int signum)
