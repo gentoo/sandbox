@@ -15,9 +15,6 @@
 #include "sbutil.h"
 #include "sandbox.h"
 
-#define sb_warn(fmt, args...)  fprintf(stderr, "%s" fmt "\n", "sandbox:  ", ## args)
-#define sb_pwarn(fmt, args...) sb_warn(fmt ": %s\n", ## args, strerror(errno))
-
 static int print_debug = 0;
 #define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
 #define dputs(str) do { if (print_debug) puts(str); } while (0)

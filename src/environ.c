@@ -235,7 +235,7 @@ static int sb_setenv(char ***envp, const char *name, const char *val)
 	return 0;
 
 error:
-	perror("sandbox:  Out of memory (sb_setenv)");
+	sb_pwarn("out of memory");
 	exit(EXIT_FAILURE);
 }
 
