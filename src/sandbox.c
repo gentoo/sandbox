@@ -23,7 +23,7 @@ volatile static pid_t child_pid = 0;
 static char log_domain[] = "sandbox";
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 
-int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
+static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
 	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
 		/* Portage handle setting SANDBOX_WRITE itself. */
@@ -83,7 +83,7 @@ int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	return 0;
 }
 
-void print_sandbox_log(char *sandbox_log)
+static void print_sandbox_log(char *sandbox_log)
 {
 	int sandbox_log_file, beep_count;
 	char *beep_count_env;
@@ -128,7 +128,7 @@ void print_sandbox_log(char *sandbox_log)
 	}
 }
 
-void stop(int signum)
+static void stop(int signum)
 {
 	if (0 == stop_called) {
 		stop_called = 1;
@@ -140,7 +140,7 @@ void stop(int signum)
 	}
 }
 
-void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
+static void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 {
 	if (0 == stop_called) {
 		stop_called = 1;
@@ -161,7 +161,7 @@ void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 	}
 }
 
-int spawn_shell(char *argv_bash[], char **env, int debug)
+static int spawn_shell(char *argv_bash[], char **env, int debug)
 {
 	int status = 0;
 	int ret = 0;
