@@ -16,8 +16,6 @@
 
 void
 rc_log_domain (const char *new_domain);
-void
-rc_debug_enabled (bool enabled);
 
 /* Using errno to try and create a debug system that will 'trace' from the
  * point the initial error occured, is highly messy and needs strict errno
@@ -38,45 +36,13 @@ rc_errno_is_set (void);
 
 #define rc_errno_save()		int _rc_old_errno = rc_errno_get ();
 #define rc_errno_restore()	rc_errno_set (_rc_old_errno);
-#define rc_errno_saved		_rc_old_errno
 
 void
 debug_message (const char *file, const char *func, int line,
 	       const char *format, ...);
 
 #define DBG_MSG(_format, _arg...) \
- do { \
-   debug_message (__FILE__, __func__, __LINE__, _format, ## _arg); \
- } while (0)
-
-#define FATAL_ERROR() \
- do { \
-   save_errno (); \
-   fprintf(stderr, "ERROR: file '%s', function '%s', line %i.\n", \
-	   __FILE__, __func__, __LINE__); \
-   restore_errno (); \
-   if (0 != errno) \
-     { \
-       perror("ERROR"); \
-     } \
-   exit(EXIT_FAILURE); \
- } while (0)
-
-#define NEG_FATAL_ERROR(_x) \
- do { \
-   if (-1 == _x) \
-     { \
-       FATAL_ERROR(); \
-     } \
- } while (0)
-
-#define NULL_FATAL_ERROR(_x) \
- do { \
-   if (NULL == _x) \
-     { \
-       FATAL_ERROR(); \
-     } \
- } while (0)
+	debug_message (__FILE__, __func__, __LINE__, _format, ## _arg)
 
 /*
  * Functions to check validity of some types.

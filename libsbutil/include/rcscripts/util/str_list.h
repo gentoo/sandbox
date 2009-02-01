@@ -130,48 +130,6 @@
     } while (NULL != _str_p1); \
  } while (0)
 
-/* Delete one entry from the string list, and shift the rest down if the entry
- * was not at the end.  For now we do not resize the amount of entries the
- * string list can contain, and free the memory for the matching item */
-#define str_list_del_item(_string_list, _item, _error) \
- do { \
-   int _i = 0; \
-   if (!check_str (_item)) \
-     { \
-       goto _error; \
-     } \
-   if (NULL == _string_list) \
-     { \
-       rc_errno_set (EINVAL); \
-       DBG_MSG ("Invalid string list passed!\n"); \
-       goto _error; \
-     } \
-   while (NULL != _string_list[_i]) \
-     { \
-       if (0 == strcmp (_item, _string_list[_i])) \
-	 { \
-	   break; \
-	 } \
-       else \
-	 { \
-	   _i++; \
-	 } \
-     } \
-   if (NULL == _string_list[_i]) \
-     { \
-       rc_errno_set (EINVAL); \
-       DBG_MSG ("Invalid string list item passed!\n"); \
-       goto _error; \
-     } \
-   free (_string_list[_i]); \
-   /* Shift all the following items one forward */ \
-   do { \
-     _string_list[_i] = _string_list[_i+1]; \
-     /* This stupidity is to shutup gcc */ \
-     _i++; \
-   } while (NULL != _string_list[_i]); \
- } while (0)
-
 /* Step through each entry in the string list, setting '_pos' to the
  * beginning of the entry.  '_counter' is used by the macro as index,
  * but should not be used by code as index (or if really needed, then
@@ -180,36 +138,6 @@
 #define str_list_for_each_item(_string_list, _pos, _counter) \
  if ((NULL != _string_list) && (0 == (_counter = 0))) \
    while (NULL != (_pos = _string_list[_counter++]))
-
-/* Same as above (with the same warning about '_counter').  Now we just
- * have '_next' that are also used for indexing.  Once again rather refrain
- * from using it if not absolutely needed.  The major difference to above,
- * is that it should be safe from having the item removed from under you. */
-#define str_list_for_each_item_safe(_string_list, _pos, _next, _counter) \
- if ((NULL != _string_list) && (0 == (_counter = 0))) \
-   /* First part of the while checks if this is the
-    * first loop, and if so setup _pos and _next
-    * and increment _counter */ \
-   while ((((0 == _counter) \
-	    && (NULL != (_pos = _string_list[_counter])) \
-	    && (_pos != (_next = _string_list[++_counter]))) \
-	  /* Second part is when it is not the first loop
-	   * and _pos was not removed from under us.  We
-	   * just increment _counter, and setup _pos and
-	   * _next */ \
-	  || ((0 != _counter) \
-	      && (_pos == _string_list[_counter-1]) \
-	      && (_next == _string_list[_counter]) \
-	      && (NULL != (_pos = _string_list[_counter])) \
-	      && (_pos != (_next = _string_list[++_counter]))) \
-	  /* Last part is when _pos was removed from under
-	   * us.  We basically just setup _pos and _next,
-	   * but leave _counter alone */ \
-	  || ((0 != _counter) \
-	      && (_pos != _string_list[_counter-1]) \
-	      && (_next == _string_list[_counter-1]) \
-	      && (NULL != (_pos = _string_list[_counter-1])) \
-	      && (_pos != (_next = _string_list[_counter])))))
 
 /* Just free the whole string list */
 #define str_list_free(_string_list) \
