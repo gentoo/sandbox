@@ -15,13 +15,19 @@
 #include "sbutil.h"
 #include "sandbox.h"
 
+#define sb_warn(fmt, args...)  fprintf(stderr, "%s" fmt "\n", "sandbox:  ", ## args)
+#define sb_pwarn(fmt, args...) sb_warn(fmt ": %s\n", ## args, strerror(errno))
+
 static int print_debug = 0;
+#define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
+#define dputs(str) do { if (print_debug) puts(str); } while (0)
 
 volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;
 
 static char log_domain[] = "sandbox";
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
+static const char sandbox_footer[] = "--------------------------------------------------------------------------------";
 
 static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
@@ -30,7 +36,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 		sandbox_info->work_dir[0] = '\0';
 	} else {
 		if (NULL == getcwd(sandbox_info->work_dir, SB_PATH_MAX)) {
-			perror("sandbox:  Failed to get current directory");
+			sb_pwarn("failed to get current directory");
 			return -1;
 		}
 		if (interactive)
@@ -38,7 +44,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	}
 
 	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
-		perror("sandbox:  Failed to get tmp_dir");
+		sb_pwarn("failed to get tmp_dir");
 		return -1;
 	}
 	setenv(ENV_TMPDIR, sandbox_info->tmp_dir, 1);
@@ -59,7 +65,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	get_sandbox_log(sandbox_info->sandbox_log);
 	if (rc_file_exists(sandbox_info->sandbox_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_log)) {
-			perror("sandbox:  Could not unlink old log file");
+			sb_pwarn("could not unlink old log file");
 			return -1;
 		}
 	}
@@ -68,7 +74,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
 	if (rc_file_exists(sandbox_info->sandbox_debug_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
-			perror("sandbox:  Could not unlink old debug log file");
+			sb_pwarn("could not unlink old debug log file");
 			return -1;
 		}
 	}
@@ -85,7 +91,7 @@ static void print_sandbox_log(char *sandbox_log)
 
 	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
-		perror("sandbox:  Could not open Log file");
+		sb_pwarn("could not open og file");
 		return;
 	}
 
@@ -95,12 +101,12 @@ static void print_sandbox_log(char *sandbox_log)
 	while (1) {
 		len = sb_read(sandbox_log_file, buffer, sizeof(buffer));
 		if (len == -1) {
-			perror("sandbox:  sb_read(logfile) failed");
+			sb_pwarn("sb_read(logfile) failed");
 			break;
 		} else if (!len)
 			break;
 		if (sb_write(STDERR_FILENO, buffer, len) != len) {
-			perror("sandbox:  sb_write(logfile) failed");
+			sb_pwarn("sb_write(logfile) failed");
 			break;
 		}
 	}
@@ -125,20 +131,16 @@ static void stop(int signum)
 {
 	if (0 == stop_called) {
 		stop_called = 1;
-		printf("sandbox:  Caught signal %d in pid %d\n",
-		       signum, getpid());
-	} else {
-		fprintf(stderr,
-			"sandbox:  Signal already caught and busy still cleaning up!\n");
-	}
+		sb_warn("caught signal %d in pid %d\n", signum, getpid());
+	} else
+		sb_warn("signal already caught and busy still cleaning up!");
 }
 
 static void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 {
 	if (0 == stop_called) {
 		stop_called = 1;
-		printf("sandbox:  Caught signal %d in pid %d\n",
-		       signum, getpid());
+		sb_warn("caught signal %d in pid %d", signum, getpid());
 
 		/* FIXME: This is really bad form, as we should kill the whole process
 		 *        tree, but currently that is too much work and not worth the
@@ -148,10 +150,8 @@ static void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 		if (siginfo->si_pid > 0)
 			kill(siginfo->si_pid, SIGKILL);
 		kill(child_pid, SIGKILL);
-	} else {
-		fprintf(stderr,
-			"sandbox:  Signal already caught and busy still cleaning up!\n");
-	}
+	} else
+		sb_warn("signal already caught and busy still cleaning up!");
 }
 
 static int spawn_shell(char *argv_bash[], char **env, int debug)
@@ -164,11 +164,11 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 	/* Child's process */
 	if (0 == child_pid) {
 		int ret = execve(argv_bash[0], argv_bash, env);
-		perror("sandbox:  Failed to exec child");
+		sb_pwarn("failed to exec child");
 		_exit(ret);
 	} else if (child_pid < 0) {
 		if (debug)
-			fprintf(stderr, "Process failed to spawn!\n");
+			sb_pwarn("process failed to spawn!");
 		return 0;
 	}
 
@@ -179,13 +179,13 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 
 	ret = waitpid(child_pid, &status, 0);
 	if (-1 == ret) {
-		perror("sandbox:  Failed to waitpid for child");
+		sb_pwarn("failed to waitpid for child");
 		return 0;
 	} else if (status != 0) {
 		if (WIFSIGNALED(status))
 			psignal(WTERMSIG(status), "Sandboxed process killed by signal");
 		else if (debug)
-			fprintf(stderr, "Process returned with failed exit status %d!\n", WEXITSTATUS(status));
+			sb_warn("process returned with failed exit status %d!", WEXITSTATUS(status));
 		return 0;
 	}
 
@@ -248,37 +248,33 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (print_debug)
-		puts(sandbox_banner);
+	dputs(sandbox_banner);
 
 	/* check if a sandbox is already running */
 	if (NULL != getenv(ENV_SANDBOX_ACTIVE)) {
-		fprintf(stderr, "Not launching a new sandbox instance\n");
-		fprintf(stderr, "Another one is already running in this process hierarchy.\n");
+		sb_warn("not launching a new sandbox instance as another");
+		sb_warn("one is already running in this process hierarchy");
 		exit(EXIT_FAILURE);
 	}
 
 	/* determine the location of all the sandbox support files */
-	if (print_debug)
-		printf("Detection of the support files.\n");
+	dputs("Detection of the support files.");
 
 	if (-1 == setup_sandbox(&sandbox_info, print_debug)) {
-		fprintf(stderr, "sandbox:  Failed to setup sandbox.");
+		sb_warn("failed to setup sandbox");
 		exit(EXIT_FAILURE);
 	}
 
 	/* verify the existance of required files */
-	if (print_debug)
-		printf("Verification of the required files.\n");
+	dputs("Verification of the required files.");
 
 	if (!rc_file_exists(sandbox_info.sandbox_rc)) {
-		perror("sandbox:  Could not open the sandbox rc file");
+		sb_pwarn("could not open the sandbox rc file");
 		exit(EXIT_FAILURE);
 	}
 
 	/* set up the required environment variables */
-	if (print_debug)
-		printf("Setting up the required environment variables.\n");
+	dputs("Setting up the required environment variables.");
 
 	/* If not in portage, cd into it work directory */
 	if ('\0' != sandbox_info.work_dir[0])
@@ -327,13 +323,9 @@ int main(int argc, char **argv)
 	sigaction (SIGUSR1, &act_new, NULL);
 
 	/* STARTING PROTECTED ENVIRONMENT */
-	if (print_debug) {
-		printf("The protected environment has been started.\n");
-		printf("--------------------------------------------------------------------------------\n");
-	}
-
-	if (print_debug)
-		printf("Process being started in forked instance.\n");
+	dputs("The protected environment has been started.");
+	dputs(sandbox_footer);
+	dputs("Process being started in forked instance.");
 
 	/* Start Bash */
 	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
@@ -345,22 +337,17 @@ int main(int argc, char **argv)
 	argv_bash = NULL;
 	sandbox_environ = NULL;
 
-	if (print_debug)
-		printf("Cleaning up sandbox process\n");
-
-	if (print_debug) {
-		puts(sandbox_banner);
-		printf("The protected environment has been shut down.\n");
-	}
+	dputs("Cleaning up sandbox process");
+	dputs(sandbox_banner);
+	dputs("The protected environment has been shut down.");
 
 	if (rc_file_exists(sandbox_info.sandbox_log)) {
 		sandbox_log_presence = 1;
 		print_sandbox_log(sandbox_info.sandbox_log);
-	} else if (print_debug) {
-		printf("--------------------------------------------------------------------------------\n");
-	}
+	} else
+		dputs(sandbox_footer);
 
-	if ((sandbox_log_presence) || (!success))
+	if (sandbox_log_presence || !success)
 		return 1;
 	else
 		return 0;
@@ -369,6 +356,6 @@ oom_error:
 	if (NULL != argv_bash)
 		str_list_free(argv_bash);
 
-	perror("sandbox:  Out of memory (environ)");
+	sb_pwarn("out of memory (environ)");
 	exit(EXIT_FAILURE);
 }
