@@ -19,7 +19,6 @@ struct sandbox_info_t {
 	char sandbox_lib[SB_PATH_MAX];
 	char sandbox_rc[SB_PATH_MAX];
 	char work_dir[SB_PATH_MAX];
-	char var_tmp_dir[SB_PATH_MAX];
 	char tmp_dir[SB_PATH_MAX];
 	char *home_dir;
 } sandbox_info_t;

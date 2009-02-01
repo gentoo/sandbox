@@ -37,13 +37,6 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 			setenv(ENV_SANDBOX_WORKDIR, sandbox_info->work_dir, 1);
 	}
 
-	/* Do not resolve symlinks, etc .. libsandbox will handle that. */
-	if (!rc_is_dir(VAR_TMPDIR, true)) {
-		perror("sandbox:  Failed to get var_tmp_dir");
-		return -1;
-	}
-	snprintf(sandbox_info->var_tmp_dir, SB_PATH_MAX, "%s", VAR_TMPDIR);
-
 	if (-1 == get_tmp_dir(sandbox_info->tmp_dir)) {
 		perror("sandbox:  Failed to get tmp_dir");
 		return -1;

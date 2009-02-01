@@ -37,7 +37,6 @@
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
 #define TMPDIR                 "/tmp"
-#define VAR_TMPDIR             "/var/tmp"
 #define PORTAGE_TMPDIR         "/var/tmp/portage"
 #define SANDBOX_LOG_LOCATION   "/var/log/sandbox"
 #define LOG_FILE_PREFIX        "/sandbox-"
