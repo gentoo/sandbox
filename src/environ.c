@@ -11,14 +11,6 @@
 #include "sbutil.h"
 #include "sandbox.h"
 
-static char *subst_env_vars(rc_dynbuf_t *);
-static void setup_cfg_var(const char *);
-static int setup_access_var(const char *);
-static int setup_cfg_vars(struct sandbox_info_t *);
-static int sb_setenv(char ***, const char *, const char *);
-
-extern char **environ;
-
 /* Replace '${FOO}' style strings in passed data with the value of named
  * environment variable. */
 static char *subst_env_vars(rc_dynbuf_t *env_data)
@@ -28,8 +20,6 @@ static char *subst_env_vars(rc_dynbuf_t *env_data)
 	char *var_start, *var_stop;
 
 	new_data = rc_dynbuf_new();
-	if (NULL == new_data)
-		return NULL;
 
 	tmp_data = rc_dynbuf_read_line(env_data);
 	if (NULL == tmp_data)
@@ -108,15 +98,13 @@ static void setup_cfg_var(const char *env_var)
  * the environment. */
 static int setup_access_var(const char *access_var)
 {
-	rc_dynbuf_t *env_data = NULL;
+	rc_dynbuf_t *env_data;
   	int count = 0;
-	char *config = NULL;
-	char **confd_files = NULL;
+	char *config;
+	char **confd_files;
 	bool use_confd = true;
 
 	env_data = rc_dynbuf_new();
-	if (NULL == env_data)
-		return -1;
 
 	/* Now get the defaults for the access variable from sandbox.conf.
 	 * These do not get overridden via the environment. */
@@ -220,9 +208,9 @@ static int setup_cfg_vars(struct sandbox_info_t *sandbox_info)
 	return 0;
 }
 
-static int sb_setenv(char ***envp, const char *name, const char *val)
+static void sb_setenv(char ***envp, const char *name, const char *val)
 {
-	char *tmp_string = NULL;
+	char *tmp_string;
 
 	/* strlen(name) + strlen(val) + '=' + '\0' */
 	tmp_string = xmalloc((strlen(name) + strlen(val) + 2) * sizeof(char));
@@ -232,9 +220,9 @@ static int sb_setenv(char ***envp, const char *name, const char *val)
 
 	str_list_add_item((*envp), tmp_string, error);
 
-	return 0;
+	return;
 
-error:
+ error:
 	sb_pwarn("out of memory");
 	exit(EXIT_FAILURE);
 }

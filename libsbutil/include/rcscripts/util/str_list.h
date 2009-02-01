@@ -32,10 +32,6 @@
      } \
    /* Amount of entries + new + terminator */ \
    _tmp_p = xrealloc (_string_list, sizeof (char *) * (_i + 2)); \
-   if (NULL == _tmp_p) \
-     { \
-       goto _error; \
-     } \
    _string_list = _tmp_p; \
    _string_list[_i] = _item; \
    /* Terminator */ \
@@ -59,16 +55,8 @@
      } \
    /* Amount of entries + new + terminator */ \
    _tmp_p = xrealloc (_string_list, sizeof (char *) * (_i + 2)); \
-   if (NULL == _tmp_p) \
-     { \
-       goto _error; \
-     } \
    _string_list = _tmp_p; \
    _tmp_str = xstrdup (_item); \
-   if (NULL == _tmp_str) \
-     { \
-       goto _error; \
-     } \
    _string_list[_i] = _tmp_str; \
    /* Terminator */ \
    _string_list[_i+1] = NULL; \
@@ -92,10 +80,6 @@
      } \
    /* Amount of entries + new + terminator */ \
    _tmp_p = xrealloc (_string_list, sizeof (char *) * (_i + 2)); \
-   if (NULL == _tmp_p) \
-     { \
-       goto _error; \
-     } \
    _string_list = _tmp_p; \
    if (0 == _i) \
      { \
