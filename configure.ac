@@ -264,6 +264,10 @@ AC_SUBST([CFLAG_EXCEPTIONS])
 
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 AX_CFLAGS_WARN_ALL
+AX_CHECK_COMPILER_FLAGS(
+	[-ffunction-sections -fdata-sections],
+	[CFLAGS="$CFLAGS -ffunction-sections -fdata-sections" LDFLAGS="$LDFLAGS -Wl,--gc-sections"]
+)
 
 AC_CONFIG_TESTDIR([tests])
 
