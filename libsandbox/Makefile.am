@@ -24,6 +24,7 @@ libsandbox_la_LIBADD = \
 libsandbox_la_LDFLAGS = \
 	-no-undefined \
 	-nodefaultlibs \
+	-avoid-version \
 	-Wl,--version-script,libsandbox.map
 libsandbox_la_SOURCES = \
 	libsandbox.h \
