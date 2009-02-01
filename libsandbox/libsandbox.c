@@ -335,42 +335,35 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 		return -1;
 	}
 
-	if (0 != stat_ret) {
-		_SB_WRITE_STR(LOG_STRING);
-		_SB_WRITE_STR(LOG_FMT_FUNC);
-		_SB_WRITE_STR(LOG_FMT_ACCESS);
-		_SB_WRITE_STR(LOG_FMT_PATH);
-		_SB_WRITE_STR(LOG_FMT_APATH);
-		_SB_WRITE_STR(LOG_FMT_RPATH);
-		_SB_WRITE_STR(LOG_FMT_CMDLINE);
-		_SB_WRITE_STR("\n");
-	} else
-		/* Already have data in the log, so add a newline to space the
-		 * log entries.
-		 */
-		_SB_WRITE_STR("\n");
+	if (0 != stat_ret)
+		_SB_WRITE_STR(
+			LOG_STRING
+			LOG_FMT_FUNC
+			LOG_FMT_ACCESS
+			LOG_FMT_PATH
+			LOG_FMT_APATH
+			LOG_FMT_RPATH
+			LOG_FMT_CMDLINE
+		);
+	/* Already have data in the log, so add a newline to space the
+	 * log entries.
+	 */
 
-	_SB_WRITE_STR("F: ");
+	_SB_WRITE_STR("\nF: ");
 	_SB_WRITE_STR(func);
-	_SB_WRITE_STR("\n");
-	_SB_WRITE_STR("S: ");
+	_SB_WRITE_STR("\nS: ");
 	if (access)
 		_SB_WRITE_STR("allow");
 	else
 		_SB_WRITE_STR("deny");
-	_SB_WRITE_STR("\n");
-	_SB_WRITE_STR("P: ");
+	_SB_WRITE_STR("\nP: ");
 	_SB_WRITE_STR(path);
-	_SB_WRITE_STR("\n");
-	_SB_WRITE_STR("A: ");
+	_SB_WRITE_STR("\nA: ");
 	_SB_WRITE_STR(apath);
-	_SB_WRITE_STR("\n");
-	_SB_WRITE_STR("R: ");
+	_SB_WRITE_STR("\nR: ");
 	_SB_WRITE_STR(rpath);
-	_SB_WRITE_STR("\n");
 
-
-	_SB_WRITE_STR("C: ");
+	_SB_WRITE_STR("\nC: ");
 	int cmdlinefd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
 	if (cmdlinefd != -1) {
 		size_t pagesz = getpagesize();
