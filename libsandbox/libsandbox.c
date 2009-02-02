@@ -618,14 +618,13 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			retval = check_prefixes(sbcontext->write_prefixes,
 						sbcontext->num_write_prefixes, abs_path);
 			if (1 == retval) { /* Does have write access on path */
-				char tmp_buf[SB_PATH_MAX];
-				char *dname, *rpath;
+				char *dname, *dname_buf, *rpath;
 
-				snprintf(tmp_buf, SB_PATH_MAX, "%s", abs_path);
-
-				dname = dirname(tmp_buf);
+				dname_buf = strdup(abs_path);
+				dname = dirname(dname_buf);
 				/* Get symlink resolved path */
 				rpath = resolve_path(dname, 1);
+				free(dname_buf);
 				if (NULL == rpath)
 					/* Don't really worry here about
 					 * memory issues */
@@ -674,6 +673,17 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
+
+		/* If operating on a location those parent dirs do not exist,
+		 * then let it through as the OS itself will trigger a fail.
+		 * This is like fopen("/foo/bar", "w") and /foo/ does not
+		 * exist.  All the functions filtered thus far fall into that
+		 * behavior category, so no need to check the syscall.
+		 */
+		char *dname_buf = strdup(resolv_path);
+		if (access(dirname(dname_buf), F_OK))
+			result = 1;
+		free(dname_buf);
 	}
 
 out:
