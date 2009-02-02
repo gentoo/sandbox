@@ -248,34 +248,28 @@ int main(int argc, char **argv)
 	dputs(sandbox_banner);
 
 	/* check if a sandbox is already running */
-	if (NULL != getenv(ENV_SANDBOX_ACTIVE)) {
-		sb_warn("not launching a new sandbox instance as another");
-		sb_warn("one is already running in this process hierarchy");
-		exit(EXIT_FAILURE);
-	}
+	if (NULL != getenv(ENV_SANDBOX_ACTIVE))
+		sb_err("not launching a new sandbox as one is already running in this process hierarchy");
 
 	/* determine the location of all the sandbox support files */
 	dputs("Detection of the support files.");
 
-	if (-1 == setup_sandbox(&sandbox_info, print_debug)) {
-		sb_warn("failed to setup sandbox");
-		exit(EXIT_FAILURE);
-	}
+	if (-1 == setup_sandbox(&sandbox_info, print_debug))
+		sb_err("failed to setup sandbox");
 
 	/* verify the existance of required files */
 	dputs("Verification of the required files.");
 
-	if (!rc_file_exists(sandbox_info.sandbox_rc)) {
-		sb_pwarn("could not open the sandbox rc file");
-		exit(EXIT_FAILURE);
-	}
+	if (!rc_file_exists(sandbox_info.sandbox_rc))
+		sb_perr("could not open the sandbox rc file");
 
 	/* set up the required environment variables */
 	dputs("Setting up the required environment variables.");
 
 	/* If not in portage, cd into it work directory */
 	if ('\0' != sandbox_info.work_dir[0])
-		chdir(sandbox_info.work_dir);
+		if (chdir(sandbox_info.work_dir))
+			sb_perr("chdir(%s) failed", sandbox_info.work_dir);
 
 	/* Setup the child environment stuff.
 	 * XXX:  We free this in spawn_shell(). */
@@ -351,6 +345,5 @@ oom_error:
 	if (NULL != argv_bash)
 		str_list_free(argv_bash);
 
-	sb_pwarn("out of memory (environ)");
-	exit(EXIT_FAILURE);
+	sb_perr("out of memory (environ)");
 }
