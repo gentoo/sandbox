@@ -71,8 +71,7 @@ static char *subst_env_vars(rc_dynbuf_t *env_data)
 	return tmp_data;
 
 error:
-	if (NULL != new_data)
-		rc_dynbuf_free(new_data);
+	rc_dynbuf_free(new_data);
 	if (NULL != tmp_data)
 		free(tmp_data);
 
@@ -101,7 +100,7 @@ static int setup_access_var(const char *access_var)
 	rc_dynbuf_t *env_data;
   	int count = 0;
 	char *config;
-	char **confd_files;
+	char **confd_files = NULL;
 	bool use_confd = true;
 
 	env_data = rc_dynbuf_new();
@@ -145,6 +144,7 @@ static int setup_access_var(const char *access_var)
 		}
 
 		str_list_free(confd_files);
+		confd_files = NULL;
 	}
 
 done:
@@ -164,8 +164,7 @@ done:
 	return 0;
 
 error:
-	if (NULL != env_data)
-		rc_dynbuf_free(env_data);
+	rc_dynbuf_free(env_data);
 	if (NULL != config)
 		free(config);
 	if (NULL != confd_files)
