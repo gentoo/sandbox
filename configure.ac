@@ -264,10 +264,12 @@ AC_SUBST([CFLAG_EXCEPTIONS])
 
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 AX_CFLAGS_WARN_ALL
-AX_CHECK_COMPILER_FLAGS(
-	[-ffunction-sections -fdata-sections],
-	[CFLAGS="$CFLAGS -ffunction-sections -fdata-sections" LDFLAGS="$LDFLAGS -Wl,--gc-sections"]
-)
+AC_DEFUN([SB_CHECK_CFLAG],[AX_CHECK_COMPILER_FLAGS([$1],[CFLAGS="$CFLAGS $1"])])
+SB_CHECK_CFLAG([-fdata-sections])
+SB_CHECK_CFLAG([-ffunction-sections])
+AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINKER_FLAGS([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])
+SB_CHECK_LDFLAG([--as-needed])
+SB_CHECK_LDFLAG([--gc-sections])
 
 AC_CONFIG_TESTDIR([tests])
 
