@@ -289,6 +289,20 @@ AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINKER_FLAGS([-Wl,$1],[LDFLAGS="$LDFLAGS -W
 SB_CHECK_LDFLAG([--as-needed])
 SB_CHECK_LDFLAG([--gc-sections])
 
+AC_DEFUN([SB_CHECK_LDFLAG_VER],[dnl
+if test "x${LDFLAG_VER}" = "x" ; then
+	echo '{};' > conftest.map
+	AX_CHECK_LINKER_FLAGS([-Wl,$1,conftest.map],[LDFLAG_VER="-Wl,$1"])
+	rm -f conftest.map
+fi])
+LDFLAG_VER=
+SB_CHECK_LDFLAG_VER([--version-script])
+SB_CHECK_LDFLAG_VER([-M])
+if test "x${LDFLAG_VER}" = "x" ; then
+	AC_MSG_ERROR([unable to find a linker flag for versioning])
+fi
+AC_SUBST([LDFLAG_VER])
+
 AC_CONFIG_TESTDIR([tests])
 
 AC_CONFIG_FILES([
