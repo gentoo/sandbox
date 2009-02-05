@@ -36,6 +36,9 @@
 #ifdef HAVE_MEMORY_H
 # include <memory.h>
 #endif
+#ifdef HAVE_SIGINFO_H
+# include <siginfo.h>
+#endif
 #ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
