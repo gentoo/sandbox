@@ -22,6 +22,7 @@ mkdirat
 opendir
 mknod
 mknodat
+_xmknod
 __xmknod
 mkfifo
 mkfifoat
