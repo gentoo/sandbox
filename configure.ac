@@ -181,7 +181,7 @@ AC_CHECK_LIB([$DL_LIB], [dlvsym],
 dnl when using libc5, (f)trucate's offset argument type is size_t with
 dnl libc5, but it's off_t with libc6 (glibc2).
 AC_MSG_CHECKING([truncate argument type])
-TRUNC_ARG_TYPE=`echo '#include <unistd.h>' | $CC -E - | grep -q 'truncate.*size_t'`
+TRUNC_ARG_TYPE=`echo '#include <unistd.h>' | $CC -E - | $EGREP -q 'truncate.*size_t'`
 if test "$TRUNC_ARG_TYPE"x != x ; then
   AC_MSG_RESULT([size_t])
   AC_DEFINE([TRUNCATE_T], [size_t], [truncate arg type])
@@ -211,10 +211,28 @@ dnl we need to handle symbols differently based upon their version,
 dnl but we have to know which symbols the libc supports first
 AC_MSG_CHECKING([libc path])
 echo "int main(void) { return 0; }" > libctest.c
-$CC $CFLAGS $CPPFLAGS $LDFLAGS -Wl,-verbose -o libctest libctest.c > libctest.log 2>&1
-cat libctest.log 1>&AS_MESSAGE_LOG_FD
+try_libc_path="$CC $CFLAGS $CPPFLAGS $LDFLAGS -o libctest libctest.c > libctest.log 2>&1"
+try_link() {
+	(
+		echo "try_link: trying: ${try_libc_path} $1"
+		eval ${try_libc_path} $1
+		ret=$?
+		cat libctest.log 1>&AS_MESSAGE_LOG_FD
+		if test ${ret} -eq 0 ; then
+			echo "try_link: SUCCESS"
+		else
+			echo "try_link: FAILURE (ret = ${ret})"
+		fi
+		exit ${ret}
+	) 1>&AS_MESSAGE_LOG_FD
+}
 LIBC_PATH=$(
+if try_link -Wl,--verbose ; then
 	$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}' libctest.log
+elif try_link -Wl,-m ; then
+	set -- `$EGREP -o '/[[^ ]]*/libc.so' libctest.log`
+	echo $1
+fi
 )
 rm -f libctest*
 if test x"$LIBC_PATH" = x || ! test -r "$LIBC_PATH" ; then
@@ -232,7 +250,7 @@ echo "int main(void) { return 0; }" > libctest.c
 $CC $CFLAGS $CPPFLAGS $LDFLAGS -o libctest libctest.c
 LIBC_VERSION=$(
 	$READELF -d libctest | \
-	grep NEEDED.*libc\\.so | \
+	$EGREP NEEDED.*libc\\.so | \
 	$AWK '{print $NF}' | sed -e ['s:\[::' -e 's:\]::']
 )
 rm -f libctest*
