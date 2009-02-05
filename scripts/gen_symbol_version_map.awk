@@ -12,6 +12,11 @@ BEGIN {
 	if ($0 ~ "^Symbol (.*)table '.symtab'")
 		nextfile;
 
+	# Only check FUNCtion symbols which are not LOCAL, or
+	# do not have DEFAULT visibility
+	if ($4 != "FUNC" || $5 == "LOCAL" || $6 != "DEFAULT")
+		next;
+
 	for (x in SYMBOLS) {
 		sym_regex = "^" SYMBOLS[x] "(@|$)";
 		# On x86, x86_64 and others, $8 is the symbol name, but on
