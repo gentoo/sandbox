@@ -365,20 +365,21 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 	if (cmdlinefd != -1) {
 		size_t pagesz = getpagesize();
 		char *buf = xmalloc(pagesz);
-		size_t len, i;
 		while (1) {
-			len = sb_read(cmdlinefd, buf, pagesz);
+			size_t len = sb_read(cmdlinefd, buf, pagesz);
 			if (len == -1) {
 				SB_EERROR("ISE:write_logfile ", "cmdlinefd read error\n");
 				break;
 			} else if (!len)
 				break;
+			size_t i;
 			for (i = 0; i < len; ++i)
 				if (!buf[i])
 					buf[i] = ' ';
 			SB_WRITE(logfd, buf, len, error);
 		}
 		sb_close(cmdlinefd);
+		free(buf);
 	} else
 		_SB_WRITE_STR("<unable to read " PROC_SELF_CMDLINE ">");
 	_SB_WRITE_STR("\n");
