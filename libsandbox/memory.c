@@ -36,7 +36,7 @@ void free(void *ptr)
 #ifdef HAVE_BACKTRACE
 		void *funcs[10];
 		int num_funcs;
-		num_funcs = backtrace(funcs, sizeof(funcs));
+		num_funcs = backtrace(funcs, ARRAY_SIZE(funcs));
 		backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
 #endif
 	}
