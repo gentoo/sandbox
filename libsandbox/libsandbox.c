@@ -668,6 +668,20 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			goto out;
 		}
 
+		/* A very common bug (apparently) is for .py[co] files to fall out
+		 * of sync with their .py source files.  Rather than trigger a hard
+		 * failure, let's just whine about it.  Once python itself gets
+		 # sorted out, we can drop this #256953.
+		 */
+		size_t len = strlen(resolv_path);
+		if (len > 4) {
+			const char *py = resolv_path + len - 4;
+			if (!strcmp(py, ".pyc") || !strcmp(py, ".pyo")) {
+				sbcontext->show_access_violation = 0;
+				goto out;
+			}
+		}
+
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
 		if (sb_nr == SB_NR_ACCESS_WR) {
