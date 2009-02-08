@@ -16,7 +16,7 @@ declare -r SANDBOX_ACTIVE
 
 # Only do Mike's sandboxshell mojo if we are interactive, and if
 # we are connected to a terminal (ie, not piped, etc)
-if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
+if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" ]] ; then
 	trap ":" INT QUIT TSTP
 
 	# Make sure this do not get recusively called
@@ -25,7 +25,8 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 	# Do not set this, as user might want to override path, etc ...
 	#source /etc/profile
 
-	(
+	if [[ ${__SANDBOX_TESTING} != "yes" ]] ; then
+		(
 		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
 			export RC_NOCOLOR="yes"
 		source /etc/init.d/functions.sh
@@ -47,7 +48,8 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] ; then
 		einfo " adddeny <path>:     deny access to <path>"
 		einfo " addpredict <path>:  allow fake access to <path>"
 		echo
-	)
+		)
+	fi
 
 	# do ebuild environment loading ... detect if we're in portage
 	# build area or not ... uNF uNF uNF

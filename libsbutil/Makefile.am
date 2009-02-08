@@ -14,6 +14,7 @@ noinst_LTLIBRARIES = libsbutil.la
 libsbutil_la_LDFLAGS = -no-undefined
 libsbutil_la_SOURCES =                        \
 	sbutil.h                              \
+	get_sandbox_conf.c                    \
 	get_sandbox_lib.c                     \
 	get_sandbox_rc.c                      \
 	get_sandbox_log.c                     \

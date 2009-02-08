@@ -2,3 +2,4 @@ AT_INIT
 
 m4_include(libsigsegv.at)
 m4_include(sb_printf.at)
+m4_include(script.at)

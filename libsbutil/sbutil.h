@@ -91,6 +91,7 @@
 #define SB_EWARN(_hilight, _args...) sb_efunc(COLOR_YELLOW, _hilight, _args)
 #define SB_EERROR(_hilight, _args...) sb_efunc(COLOR_RED, _hilight, _args)
 
+char *get_sandbox_conf(void);
 void get_sandbox_lib(char *path);
 void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path);

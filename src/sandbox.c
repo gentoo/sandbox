@@ -248,8 +248,9 @@ int main(int argc, char **argv)
 	dputs(sandbox_banner);
 
 	/* check if a sandbox is already running */
-	if (NULL != getenv(ENV_SANDBOX_ACTIVE))
-		sb_err("not launching a new sandbox as one is already running in this process hierarchy");
+	if (!is_env_on("__SANDBOX_TESTING"))
+		if (NULL != getenv(ENV_SANDBOX_ACTIVE))
+			sb_err("not launching a new sandbox as one is already running in this process hierarchy");
 
 	/* determine the location of all the sandbox support files */
 	dputs("Detection of the support files.");

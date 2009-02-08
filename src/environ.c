@@ -78,6 +78,14 @@ error:
 	return NULL;
 }
 
+static char *sb_conf_file(void)
+{
+	static char *conf_file;
+	if (!conf_file)
+		conf_file = get_sandbox_conf();
+	return conf_file;
+}
+
 /* Get passed variable from sandbox.conf, and set it in the environment. */
 static void setup_cfg_var(const char *env_var)
 {
@@ -86,7 +94,7 @@ static void setup_cfg_var(const char *env_var)
 	/* We check if the variable is set in the environment, and if not, we
 	 * get it from sandbox.conf, and if they exist, we just add them to the
 	 * environment if not already present. */
-	config = rc_get_cnf_entry(SANDBOX_CONF_FILE, env_var, NULL);
+	config = rc_get_cnf_entry(sb_conf_file(), env_var, NULL);
 	if (NULL != config) {
 		setenv(ENV_SANDBOX_VERBOSE, config, 0);
 		free(config);
@@ -107,7 +115,7 @@ static int setup_access_var(const char *access_var)
 
 	/* Now get the defaults for the access variable from sandbox.conf.
 	 * These do not get overridden via the environment. */
-	config = rc_get_cnf_entry(SANDBOX_CONF_FILE, access_var, ":");
+	config = rc_get_cnf_entry(sb_conf_file(), access_var, ":");
 	if (NULL != config) {
 		if (-1 == rc_dynbuf_write(env_data, config, strlen(config)))
 			goto error;

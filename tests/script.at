@@ -1,0 +1,12 @@
+m4_defun([SB_CHECK],[dnl
+AT_SETUP([scripts/$1])
+AT_CHECK(
+	[sandbox.sh . $abs_top_srcdir/tests/script-$1.sh; echo moo],
+	[0],
+	m4_ifval($2,$2,[ignore]),
+	m4_ifval($3,$3,[ignore]))
+AT_CLEANUP])
+
+SB_CHECK(0)
+SB_CHECK(1,, [touch: cannot touch `/a/b/c/d/e/f/g/no/real/path/so/dont/make/it': No such file or directory
+])
