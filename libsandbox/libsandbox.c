@@ -664,6 +664,20 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			goto out;
 		}
 
+		/* If operating on a location those parent dirs do not exist,
+		 * then let it through as the OS itself will trigger a fail.
+		 * This is like fopen("/foo/bar", "w") and /foo/ does not
+		 * exist.  All the functions filtered thus far fall into that
+		 * behavior category, so no need to check the syscall.
+		 */
+		char *dname_buf = strdup(resolv_path);
+		int aret = access(dirname(dname_buf), F_OK);
+		free(dname_buf);
+		if (aret) {
+			result = 1;
+			goto out;
+		}
+
 		retval = check_prefixes(sbcontext->predict_prefixes,
 					sbcontext->num_predict_prefixes, resolv_path);
 		if (1 == retval) {
@@ -676,7 +690,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		/* A very common bug (apparently) is for .py[co] files to fall out
 		 * of sync with their .py source files.  Rather than trigger a hard
 		 * failure, let's just whine about it.  Once python itself gets
-		 # sorted out, we can drop this #256953.
+		 * sorted out, we can drop this #256953.
 		 */
 		size_t len = strlen(resolv_path);
 		if (len > 4) {
@@ -693,17 +707,6 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			sbcontext->show_access_violation = 0;
 			goto out;
 		}
-
-		/* If operating on a location those parent dirs do not exist,
-		 * then let it through as the OS itself will trigger a fail.
-		 * This is like fopen("/foo/bar", "w") and /foo/ does not
-		 * exist.  All the functions filtered thus far fall into that
-		 * behavior category, so no need to check the syscall.
-		 */
-		char *dname_buf = strdup(resolv_path);
-		if (access(dirname(dname_buf), F_OK))
-			result = 1;
-		free(dname_buf);
 	}
 
 out:
