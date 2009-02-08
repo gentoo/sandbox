@@ -524,8 +524,13 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
-	/* Hardcode denying write to log dir */
-	if (0 == strcmp(resolv_path, SANDBOX_LOG_LOCATION))
+	/* Hardcode denying write to the whole log dir.  While this is a
+	 * parial match and so rejects paths that also start with this
+	 * string, that isn't going to happen in real life so live with
+	 * it.  We can't append a slash to this path either as that would
+	 * allow people to open the dir itself for writing.
+	 */
+	if (!strncmp(resolv_path, SANDBOX_LOG_LOCATION, strlen(SANDBOX_LOG_LOCATION)))
 		goto out;
 
 	if (sbcontext->read_prefixes &&
