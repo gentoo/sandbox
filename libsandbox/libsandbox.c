@@ -651,17 +651,17 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		}
  unlink_hack_end: ;
 
-		/* XXX: Hack to allow writing to '/proc/self/fd' (bug #91516)
-		 *      It needs to be here, as for each process '/proc/self'
-		 *      will differ ... */
+		/* Hack to allow writing to '/proc/self/fd' #91516.  It needs
+		 * to be here as for each process, the '/proc/self' symlink
+		 * will differ ...
+		 */
 		char proc_self_fd[SB_PATH_MAX];
-		if ((0 == strcmp(resolv_path, PROC_DIR)) &&
-		    (NULL != realpath(PROC_SELF_FD, proc_self_fd)))
+		if (!strncmp(resolv_path, PROC_DIR, strlen(PROC_DIR)) &&
+		    NULL != realpath(PROC_SELF_FD, proc_self_fd) &&
+		    !strncmp(resolv_path, proc_self_fd, strlen(proc_self_fd)))
 		{
-			if (0 == strcmp(resolv_path, proc_self_fd)) {
-				result = 1;
-				goto out;
-			}
+			result = 1;
+			goto out;
 		}
 
 		retval = check_prefixes(sbcontext->predict_prefixes,
