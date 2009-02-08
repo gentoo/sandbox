@@ -1,62 +1,33 @@
 AT_SETUP(sb_printf)
 
-AT_CHECK([sb_printf_tst], [0], [dnl
-1
--1
-123
--123
-1000
-1
--1
-123
--123
-1000
-0x1
-0xabcdef
-0x1
-0xABCDEF
-a
-0
-K
-wOOf
-CoW
-!HI!
-{pre}cow{post}
-{pre}cow{post}
-{pre}cow{post}
-{pre}cow{post}
-{pre} cow{post}
-{pre}  cow{post}
-%
-0x0000000000123456
-1
--1
-123
--123
-1000
-1
-4294967295
-123
-4294967173
-1000
-1
-abcdef
-1
-ABCDEF
-a
-0
-K
-wOOf
-CoW
-!HI!
-{pre}cow{post}
-{pre}cow{post}
-{pre}cow{post}
-{pre}cow{post}
-{pre} cow{post}
-{pre}  cow{post}
-%
-0x123456
-])
+AT_CHECK([dnl
+sb_printf_tst | awk 'BEGIN { ret = 0 }
+{
+	if (G == "") {
+		G = $0
+		next
+	}
+	glibc = G
+	G = ""
+
+	# easy case -- glibc output matches our output
+	if (glibc == $0)
+		next
+	# not so easy -- we format sandbox printf() the way we like
+
+	# %x -- we prefix output with 0x
+	if ($1 ~ /%[[xX]]/)
+		gsub(/\<0x/, "")
+
+	# %p -- we zero pad the output
+	if ($1 ~ /%p/)
+		gsub(/\<0x0+/, "0x")
+
+	if (glibc == $0)
+		next
+	printf "FAIL:\nglibc:%s\nsandbox:%s\n", glibc, $0
+	ret = 1
+}
+END { exit ret }'], [0])
 
 AT_CLEANUP

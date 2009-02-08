@@ -1,14 +1,19 @@
 #include "headers.h"
 #include "sbutil.h"
 
+#define _T(func, fmt, args...) func("%i:[%s] " fmt "\n", __LINE__, fmt, ##args)
 #define T(fmt, args...) \
 	do { \
-		printf("%i: " fmt "\n", __LINE__, ##args); \
-		sb_printf("%i: " fmt "\n", __LINE__, ##args); \
+		_T(printf, fmt, ## args); \
+		_T(sb_printf, fmt, ## args); \
 	} while (0)
 
 int main(int argc, char *argv[])
 {
+	/* sandbox outputs to stderr, so unify it */
+	dup2(STDOUT_FILENO, STDERR_FILENO);
+	setbuf(stdout, NULL);
+
 	T("%i", argc);
 	T("%i", -argc);
 	T("%d", 123);

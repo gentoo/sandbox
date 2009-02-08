@@ -46,7 +46,6 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 
 		char buf[50];
 		size_t idx;
-		int i;
 		unsigned int u, x;
 		char hex_base;
 		size_t padding = 0;
@@ -97,7 +96,11 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 
 			case 'd':
 			case 'i': {
-				i = va_arg(args, int);
+				long i;
+				if (modifiers & MOD_SIZE_T)
+					i = va_arg(args, ssize_t);
+				else
+					i = va_arg(args, int);
 				u = i;
 				if (i < 0) {
 					sb_write(fd, "-", 1);
@@ -125,7 +128,10 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 			case 'x': {
 				hex_base = 'a';
  out_hex:
-				x = va_arg(args, unsigned int);
+				if (modifiers & MOD_SIZE_T)
+					x = va_arg(args, size_t);
+				else
+					x = va_arg(args, unsigned int);
  out_ptr:
 				idx = 0;
 				do {
