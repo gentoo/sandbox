@@ -51,6 +51,10 @@
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
+#ifndef HAVE_DECL_ENVIRON
+extern char **environ;
+#endif
+
 /* If the system is old and does not support *at funcs, then define
  * it ourself.  Shouldn't matter based on how we use it.
  */

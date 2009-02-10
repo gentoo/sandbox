@@ -73,11 +73,13 @@ AC_CHECK_HEADERS_ONCE([ \
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+dnl Do this after all headers have been checked.
 AC_C_CONST
 AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
 AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_DECLS_ONCE([environ])
 
 dnl Checks for library functions.
 AC_FUNC_CHOWN
