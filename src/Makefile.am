@@ -1,7 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 
-EXTRA_DIST = sandbox.sh
-
 bin_PROGRAMS = sandbox
 
 AM_CPPFLAGS = \

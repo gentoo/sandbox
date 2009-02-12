@@ -62,7 +62,8 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	get_sandbox_log(sandbox_info->sandbox_log);
 	if (rc_file_exists(sandbox_info->sandbox_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_log)) {
-			sb_pwarn("could not unlink old log file");
+			sb_pwarn("could not unlink old log file: %s",
+			         sandbox_info->sandbox_log);
 			return -1;
 		}
 	}
@@ -71,7 +72,8 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
 	if (rc_file_exists(sandbox_info->sandbox_debug_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
-			sb_pwarn("could not unlink old debug log file");
+			sb_pwarn("could not unlink old debug log file: %s",
+			         sandbox_info->sandbox_debug_log);
 			return -1;
 		}
 	}
@@ -88,7 +90,7 @@ static void print_sandbox_log(char *sandbox_log)
 
 	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
-		sb_pwarn("could not open og file");
+		sb_pwarn("could not open log file: %s", sandbox_log);
 		return;
 	}
 
@@ -262,7 +264,7 @@ int main(int argc, char **argv)
 	dputs("Verification of the required files.");
 
 	if (!rc_file_exists(sandbox_info.sandbox_rc))
-		sb_perr("could not open the sandbox rc file");
+		sb_perr("could not open the sandbox rc file: %s", sandbox_info.sandbox_rc);
 
 	/* set up the required environment variables */
 	dputs("Setting up the required environment variables.");
