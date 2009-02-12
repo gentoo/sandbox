@@ -1,10 +1,6 @@
 #!/bin/sh
 # http://bugs.gentoo.org/139591
 addwrite $PWD
-td=".tmp.${0##*/}"
-rm -rf $td
-mkdir $td
-pushd $td >/dev/null
 
 cat << EOF > test1
 #!/bin/sh
@@ -26,6 +22,4 @@ chmod a+rx test[123]
 
 ./test1
 
-popd >/dev/null
-rm -rf $td
 exit 0
