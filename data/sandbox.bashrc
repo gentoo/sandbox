@@ -22,7 +22,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 	# Make sure this do not get recusively called
 	unset SANDBOX_INTRACTV
 
-	# Do not set this, as user might want to override path, etc ...
+	# Do not set this, as user might want to override path, etc ... #139591
 	#source /etc/profile
 
 	if [[ ${__SANDBOX_TESTING} != "yes" ]] ; then
