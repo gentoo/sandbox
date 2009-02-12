@@ -302,11 +302,22 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* set up the required signal handlers */
-	signal(SIGHUP, &stop);
-	signal(SIGINT, &stop);
-	signal(SIGQUIT, &stop);
-	signal(SIGTERM, &stop);
+	/* set up the required signal handlers ... but allow SIGHUP to be
+	 * ignored in case people are running `nohup ...` #217898
+	 */
+	if (signal(SIGHUP, &stop) == SIG_IGN)
+		signal(SIGHUP, SIG_IGN);
+#define wsignal(sig, act) \
+	do { \
+		sighandler_t _old = signal(sig, act); \
+		if (_old == SIG_ERR) \
+			sb_pwarn("unable to bind signal %s\n", #sig); \
+		else if (_old != SIG_DFL) \
+			sb_warn("signal %s already had a handler ...\n", #sig); \
+	} while (0)
+	wsignal(SIGINT, &stop);
+	wsignal(SIGQUIT, &stop);
+	wsignal(SIGTERM, &stop);
 	act_new.sa_sigaction = usr1_handler;
 	sigemptyset (&act_new.sa_mask);
 	act_new.sa_flags = SA_SIGINFO | SA_RESTART;
