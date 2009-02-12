@@ -1,3 +1,4 @@
+#define CONFIG HAVE_FCHMODAT
 #define FUNC fchmodat
 #define SFUNC "fchmodat"
 #define FUNC_STR "%i, \"%s\", %o, %x"

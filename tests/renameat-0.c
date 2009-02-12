@@ -1,3 +1,4 @@
+#define CONFIG HAVE_RENAMEAT
 #define FUNC renameat
 #define SFUNC "renameat"
 #define FUNC_STR "%i, \"%s\", %i, \"%s\""

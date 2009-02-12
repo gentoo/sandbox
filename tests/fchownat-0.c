@@ -1,3 +1,4 @@
+#define CONFIG HAVE_FCHOWNAT
 #define FUNC fchownat
 #define SFUNC "fchownat"
 #define FUNC_STR "%i, \"%s\", %i, %i, %x"

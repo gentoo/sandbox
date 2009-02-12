@@ -1,3 +1,4 @@
+#define CONFIG HAVE_LUTIMES
 #define FUNC lutimes
 #define SFUNC "lutimes"
 #define FUNC_STR "\"%s\", %p"

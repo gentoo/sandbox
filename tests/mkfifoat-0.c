@@ -1,3 +1,4 @@
+#define CONFIG HAVE_MKFIFOAT
 #define FUNC mkfifoat
 #define SFUNC "mkfifoat"
 #define FUNC_STR "%i, \"%s\", %o"

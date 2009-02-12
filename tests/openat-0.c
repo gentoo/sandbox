@@ -1,3 +1,4 @@
+#define CONFIG HAVE_OPENAT
 #define FUNC openat
 #define SFUNC "openat"
 #define FUNC_STR "%i, \"%s\", %o"

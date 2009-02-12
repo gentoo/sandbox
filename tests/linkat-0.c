@@ -1,3 +1,4 @@
+#define CONFIG HAVE_LINKAT
 #define FUNC linkat
 #define SFUNC "linkat"
 #define FUNC_STR "%i, \"%s\", %i, \"%s\", %x"

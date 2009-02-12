@@ -1,3 +1,4 @@
+#define CONFIG HAVE_MKNODAT
 #define FUNC mknodat
 #define SFUNC "mknodat"
 #define FUNC_STR "%i, \"%s\", %o, %x"

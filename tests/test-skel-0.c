@@ -1,7 +1,12 @@
 #include "tests.h"
 
+#ifndef CONFIG
+# define CONFIG 1
+#endif
+
 int main(int argc, char *argv[])
 {
+#if CONFIG
 	int i, test_ret;
 
 	if ((argc - 1) % (ARG_CNT + 1) || argc == 1) {
@@ -30,4 +35,8 @@ int main(int argc, char *argv[])
 	}
 
 	return test_ret;
+#else
+	puts("not implemented");
+	return 0;
+#endif
 }

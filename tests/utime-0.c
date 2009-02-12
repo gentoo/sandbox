@@ -1,3 +1,4 @@
+#define CONFIG HAVE_UTIME
 #define FUNC utime
 #define SFUNC "utime"
 #define FUNC_STR "\"%s\", %p"

@@ -1,3 +1,4 @@
+#define CONFIG HAVE_FACCESSAT
 #define FUNC faccessat
 #define SFUNC "faccessat"
 #define FUNC_STR "%i, \"%s\", %x, %x"

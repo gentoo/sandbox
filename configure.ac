@@ -90,16 +90,28 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS_ONCE([ \
 	backtrace \
+	faccessat \
+	fchmodat \
+	fchownat \
 	ftruncate \
+	futimesat \
 	getcwd \
 	lchown \
+	linkat \
+	lutimes \
 	memmove \
 	memcpy \
 	memset \
 	mkdir \
+	mkdirat \
+	mkfifoat \
+	mknodat \
+	openat \
+	openat64 \
 	pathconf \
 	realpath \
 	remove \
+	renameat \
 	rmdir \
 	setenv \
 	strcasecmp \
@@ -111,6 +123,11 @@ AC_CHECK_FUNCS_ONCE([ \
 	strspn \
 	strstr \
 	strtok_r \
+	symlinkat \
+	unlinkat \
+	utime \
+	utimensat \
+	utimes \
 ])
 AC_CHECK_LIB([sigsegv], [stackoverflow_install_handler],
 	[HAVE_LIBSIGSEGV=true],

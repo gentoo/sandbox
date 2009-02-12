@@ -1,3 +1,4 @@
+#define CONFIG HAVE_FUTIMESAT
 #define FUNC futimesat
 #define SFUNC "futimesat"
 #define FUNC_STR "%i, \"%s\", %p"

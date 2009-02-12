@@ -1,3 +1,4 @@
+#define CONFIG HAVE_SYMLINKAT
 #define FUNC symlinkat
 #define SFUNC "symlinkat"
 #define FUNC_STR "\"%s\", %i, \"%s\""

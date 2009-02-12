@@ -1,3 +1,4 @@
+#define CONFIG HAVE_UNLINKAT
 #define FUNC unlinkat
 #define SFUNC "unlinkat"
 #define FUNC_STR "%i, \"%s\", %x"

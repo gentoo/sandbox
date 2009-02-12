@@ -1,3 +1,4 @@
+#define CONFIG HAVE_UTIMENSAT
 #define FUNC utimensat
 #define SFUNC "utimensat"
 #define FUNC_STR "%i, \"%s\", %p, %x"

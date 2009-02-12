@@ -1,3 +1,4 @@
+#define CONFIG HAVE_MKDIRAT
 #define FUNC mkdirat
 #define SFUNC "mkdirat"
 #define FUNC_STR "%i, \"%s\", %o"
