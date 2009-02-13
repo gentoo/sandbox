@@ -3,7 +3,11 @@
  * internal routines, since we can't trust the current process to have a
  * malloc/free implementation that is sane and available at all times.
  *
- * Copyright 1999-2008 Gentoo Foundation
+ * Note that we want to check and return NULL as normal and not call other
+ * x*() type funcs.  That way the higher levels (which are calling the x*()
+ * versions) will see NULL and trigger the right kind of error message.
+ *
+ * Copyright 1999-2009 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
@@ -42,9 +46,13 @@ void free(void *ptr)
 	}
 }
 
+/* Hrm, implement a zalloc() ? */
 void *calloc(size_t nmemb, size_t size)
 {
-	return xzalloc(nmemb * size); /* dont care about overflow */
+	void *ret = malloc(nmemb * size); /* dont care about overflow */
+	if (ret)
+		memset(ret, 0, nmemb * size);
+	return ret;
 }
 
 void *realloc(void *ptr, size_t size)
@@ -53,14 +61,16 @@ void *realloc(void *ptr, size_t size)
 	size_t old_malloc_size;
 
 	if (ptr == NULL)
-		return xmalloc(size);
+		return malloc(size);
 	if (size == 0) {
 		free(ptr);
 		return ptr;
 	}
 
 	old_malloc_size = SB_MALLOC_TO_SIZE(ptr);
-	ret = xmalloc(size);
+	ret = malloc(size);
+	if (!ret)
+		return ret;
 	memcpy(ret, ptr, MIN(size, old_malloc_size));
 	free(ptr);
 	return ret;
@@ -75,6 +85,8 @@ char *strdup(const char *s)
 		return NULL;
 
 	len = strlen(s);
-	ret = xmalloc(len + 1);
+	ret = malloc(len + 1);
+	if (!ret)
+		return ret;
 	return memcpy(ret, s, len + 1);
 }
