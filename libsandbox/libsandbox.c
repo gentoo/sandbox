@@ -66,7 +66,6 @@ static sbcontext_t sbcontext;
 static char **cached_env_vars;
 volatile int sandbox_on = 1;
 static int sb_init = 0;
-static int sb_path_size_warning = 0;
 
 static char *resolve_path(const char *, int);
 static int write_logfile(const char *, const char *, const char *,
@@ -715,6 +714,11 @@ out:
 	return result;
 }
 
+/* Return values:
+ *  0: failure, caller should abort
+ *  1: things worked out fine
+ *  2: things worked out fine, but the errno should not be restored
+ */
 static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, const char *file)
 {
 	char *absolute_path = NULL;
@@ -791,16 +795,10 @@ error:
 		free(resolved_path);
 
 	/* The path is too long to be canonicalized, so just warn and let the
-	 * function handle it (see bug #94630 and #21766 for more info) */
-	if (ENAMETOOLONG == errno) {
-		if (0 == sb_path_size_warning) {
-			SB_EWARN("PATH LENGTH", "  %s:%*s%s\n",
-			      func, (int)(10 - strlen(func)), "", file);
-			sb_path_size_warning = 1;
-		}
-
-		return 1;
-	}
+	 * function handle it (see bugs #21766 #94630 #101728 #227947)
+	 */
+	if (ENAMETOOLONG == errno)
+		return 2;
 
 	/* If we get here, something bad happened */
 	SB_EERROR("ISE ", "Unrecoverable error: %s\n", strerror(errno));
@@ -900,8 +898,6 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	if (at_file_buf)
 		free(at_file_buf);
 
-	errno = old_errno;
-
 	if (0 == result) {
 		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))
 			kill(atoi(getenv(ENV_SANDBOX_PID)), SIGUSR1);
@@ -910,7 +906,8 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 		 *        error to be returned (EINVAL for invalid mode for
 		 *        fopen() and co, ETOOLONG, etc). */
 		errno = EACCES;
-	}
+	} else if (result == 1)
+		errno = old_errno;
 
 	return result;
 }
