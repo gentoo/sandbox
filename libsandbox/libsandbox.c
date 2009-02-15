@@ -744,17 +744,14 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, co
 
 	result = check_access(sbcontext, sb_nr, func, absolute_path, resolved_path);
 
-	if (1 == verbose) {
-		if ((0 == result) && (1 == sbcontext->show_access_violation)) {
-			SB_EERROR("ACCESS DENIED", "  %s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", absolute_path);
-		} else if ((1 == debug) && (1 == sbcontext->show_access_violation)) {
-			SB_EINFO("ACCESS ALLOWED", "  %s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", absolute_path);
-		} else if ((1 == debug) && (0 == sbcontext->show_access_violation)) {
-			SB_EWARN("ACCESS PREDICTED", "  %s:%*s%s\n",
-				func, (int)(10 - strlen(func)), "", absolute_path);
-		}
+	if (verbose) {
+		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
+		if (!result && sbcontext->show_access_violation)
+			SB_EERROR("ACCESS DENIED",   "  %s:%*s%s\n", func, sym_len, "", absolute_path);
+		else if (debug && sbcontext->show_access_violation)
+			SB_EINFO("ACCESS ALLOWED",   "  %s:%*s%s\n", func, sym_len, "", absolute_path);
+		else if (debug && !sbcontext->show_access_violation)
+			SB_EWARN("ACCESS PREDICTED", "  %s:%*s%s\n", func, sym_len, "", absolute_path);
 	}
 
 	if ((0 == result) && (1 == sbcontext->show_access_violation))

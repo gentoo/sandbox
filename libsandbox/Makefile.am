@@ -53,7 +53,7 @@ symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
 
 SB_NR_FILE = $(srcdir)/sb_nr.h.in
 sb_nr.h: symbols.h $(SB_NR_FILE)
-	$(EGREP) -h '^\#define SB_NR_' $^ > $@
+	$(EGREP) -h '^\#define SB_' $^ > $@
 
 EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE)
 

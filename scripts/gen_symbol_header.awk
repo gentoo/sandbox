@@ -82,10 +82,15 @@ END {
 	printf("#define __symbols_h\n\n");
 	printf("#define SB_NR_UNDEF -99999\n\n");
 
+	SB_MAX_STRING_LEN = 0
+
 	# We use the order in SYMBOLS, as some wrappers depends on others ...
 	for (i = 1; i <= COUNT; ++i) {
 		sym_index = SYMBOLS[i];
 		full_count = split(SYMBOL_LIST[sym_index], sym_full_names);
+
+		if (length(sym_index) > SB_MAX_STRING_LEN)
+			SB_MAX_STRING_LEN = length(sym_index);
 
 		if (full_count == 0)
 			printf("#define SB_NR_%s SB_NR_UNDEF\n", toupper(sym_index));
@@ -169,6 +174,8 @@ END {
 			printf("\n");
 		}
 	}
+
+	printf("#define SB_MAX_STRING_LEN %i\n\n", SB_MAX_STRING_LEN);
 
 	printf("#endif /* __symbols_h */\n");
 }
