@@ -1,3 +1,5 @@
+/* strace -e raw=mknod mknod ... */
+
 #define FUNC mknod
 #define SFUNC "mknod"
 #define FUNC_STR "\"%s\", %o, %x"

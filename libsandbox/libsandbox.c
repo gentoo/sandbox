@@ -561,7 +561,10 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 	    sb_nr == SB_NR_CREAT64     ||
 	    sb_nr == SB_NR_MKDIR       ||
 	    sb_nr == SB_NR_MKNOD       ||
+	    sb_nr == SB_NR_MKNODAT     ||
+	    sb_nr == SB_NR__XMKNOD     ||
 	    sb_nr == SB_NR___XMKNOD    ||
+	    sb_nr == SB_NR___XMKNODAT  ||
 	    sb_nr == SB_NR_MKFIFO      ||
 	    sb_nr == SB_NR_LINK        ||
 	    sb_nr == SB_NR_SYMLINK     ||

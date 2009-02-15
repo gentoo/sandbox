@@ -1,3 +1,5 @@
+/* strace -e raw=mknodat mknod ... */
+
 #define CONFIG HAVE_MKNODAT
 #define FUNC mknodat
 #define SFUNC "mknodat"

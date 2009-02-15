@@ -24,6 +24,7 @@ mknod
 mknodat
 _xmknod
 __xmknod
+__xmknodat
 mkfifo
 mkfifoat
 access
