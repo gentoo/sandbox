@@ -63,7 +63,7 @@ typedef struct {
 } sbcontext_t;
 
 static sbcontext_t sbcontext;
-static char **cached_env_vars;
+static char *cached_env_vars[MAX_DYN_PREFIXES];
 volatile int sandbox_on = 1;
 static int sb_init = 0;
 
@@ -87,15 +87,11 @@ void libsb_fini(void)
 
 	sb_init = 0;
 
-	if (NULL != cached_env_vars) {
-		for (x = 0; x < MAX_DYN_PREFIXES; ++x) {
-			if (NULL != cached_env_vars[x]) {
-				free(cached_env_vars[x]);
-				cached_env_vars[x] = NULL;
-			}
+	for (x = 0; x < MAX_DYN_PREFIXES; ++x) {
+		if (NULL != cached_env_vars[x]) {
+			free(cached_env_vars[x]);
+			cached_env_vars[x] = NULL;
 		}
-		free(cached_env_vars);
-		cached_env_vars = NULL;
 	}
 
 	for (x = 0; x < MAX_DYN_PREFIXES; ++x)
@@ -856,7 +852,6 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 
 	if (0 == sb_init) {
 		init_context(&sbcontext);
-		cached_env_vars = xcalloc(4, sizeof(char *));
 		sb_init = 1;
 	}
 
