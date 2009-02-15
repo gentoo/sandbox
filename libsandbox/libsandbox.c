@@ -240,7 +240,6 @@ char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
 	char *tmpbuf, *oldbuf = buf;
-	int old_errno;
 
 	/* Need to disable sandbox, as on non-linux libc's, opendir() is
 	 * used by some getcwd() implementations and resolves to the sandbox
@@ -259,14 +258,12 @@ char *egetcwd(char *buf, size_t size)
 	 *  - Whatever I forgot about
 	 */
 	if ((tmpbuf) && (errno == 0)) {
-		old_errno = errno;
-		lstat(buf, &st);
+		save_errno();
+		if (!lstat(buf, &st))
+			/* errno is set only on failure */
+			errno = 0;
 
-		if (errno == ENOENT) {
-		  	/* If getcwd() allocated the buffer, free it. */
-			if (NULL == oldbuf)
-				free(tmpbuf);
-
+		if (errno == ENOENT)
 			/* If lstat() failed with eerror = ENOENT, then its
 			 * possible that we are running on an older kernel
 			 * which had issues with returning invalid paths if
@@ -275,8 +272,8 @@ char *egetcwd(char *buf, size_t size)
 			 * what the issue is.
 			 */
 		  	errno = ENAMETOOLONG;
-			return NULL;
-		} else if (errno != 0) {
+
+		if (errno) {
 		  	/* If getcwd() allocated the buffer, free it. */
 			if (NULL == oldbuf)
 				free(tmpbuf);
@@ -289,7 +286,7 @@ char *egetcwd(char *buf, size_t size)
 			return NULL;
 		}
 
-		errno = old_errno;
+		restore_errno();
 	} else if (errno != 0) {
 
 		/* Make sure we do not return garbage if the current libc or
