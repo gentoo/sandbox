@@ -17,8 +17,7 @@ static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 	save_errno();
 
 	if (-1 == canonicalize(pathname, canonic))
-		/* Path is too long to canonicalize, do not fail, but just let
-		 * the real function handle it (see bug #94630 and #21766). */
+		/* see comments in check_syscall() */
 		if (ENAMETOOLONG != errno)
 			return false;
 
