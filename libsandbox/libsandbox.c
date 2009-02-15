@@ -46,7 +46,7 @@
 char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
-	int show_access_violation;
+	bool show_access_violation;
 	char **prefixes[5];
 	int num_prefixes[5];
 #define             deny_prefixes     prefixes[0]
@@ -64,12 +64,10 @@ typedef struct {
 
 static sbcontext_t sbcontext;
 static char *cached_env_vars[MAX_DYN_PREFIXES];
-volatile int sandbox_on = 1;
-static int sb_init = 0;
+volatile bool sandbox_on = true;
+static bool sb_init = false;
 
 static char *resolve_path(const char *, int);
-static int write_logfile(const char *, const char *, const char *,
-						 const char *, const char *, bool);
 static int check_prefixes(char **, int, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
@@ -85,7 +83,7 @@ void libsb_fini(void)
 {
 	int x;
 
-	sb_init = 0;
+	sb_init = false;
 
 	for (x = 0; x < MAX_DYN_PREFIXES; ++x) {
 		if (NULL != cached_env_vars[x]) {
@@ -113,7 +111,7 @@ void libsb_init(void)
 	/* Get the path and name to this library */
 	get_sandbox_lib(sandbox_lib);
 
-//	sb_init = 1;
+//	sb_init = true;
 
 	errno = old_errno;
 }
@@ -245,10 +243,10 @@ char *egetcwd(char *buf, size_t size)
 	 * used by some getcwd() implementations and resolves to the sandbox
 	 * opendir() wrapper, causing infinit recursion and finially crashes.
 	 */
-	sandbox_on = 0;
+	sandbox_on = false;
 	errno = 0;
 	tmpbuf = libsb_getcwd(buf, size);
-	sandbox_on = 1;
+	sandbox_on = true;
 
 	/* We basically try to figure out if we can trust what getcwd()
 	 * returned.  If one of the following happens kernel/libc side,
@@ -299,8 +297,8 @@ char *egetcwd(char *buf, size_t size)
 }
 
 #define _SB_WRITE_STR(str) SB_WRITE(logfd, str, strlen(str), error)
-static int write_logfile(const char *logfile, const char *func, const char *path,
-						 const char *apath, const char *rpath, bool access)
+static bool write_logfile(const char *logfile, const char *func, const char *path,
+                          const char *apath, const char *rpath, bool access)
 {
 	struct stat log_stat;
 	int stat_ret;
@@ -321,7 +319,7 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (logfd == -1) {
 		SB_EERROR("ISE:write_logfile ", "unable to append logfile\n");
-		return -1;
+		goto error;
 	}
 
 	if (0 != stat_ret)
@@ -376,16 +374,16 @@ static int write_logfile(const char *logfile, const char *func, const char *path
 		_SB_WRITE_STR("<unable to read " PROC_SELF_CMDLINE ">");
 	_SB_WRITE_STR("\n");
 
-	return 0;
+	return true;
 
  error:
-	return -1;
+	return false;
 }
 
 static void init_context(sbcontext_t *context)
 {
 	memset(context, 0x00, sizeof(*context));
-	context->show_access_violation = 1;
+	context->show_access_violation = true;
 }
 
 static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
@@ -428,7 +426,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	if (NULL == prefixes_env) {
 		/* Do not warn if this is in init stage, as we might get
 		 * issues due to LD_PRELOAD already set (bug #91431). */
-		if (1 == sb_init)
+		if (sb_init)
 			fprintf(stderr,
 				"libsandbox:  The '%s' env variable is not defined!\n",
 				env);
@@ -550,7 +548,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
 		if (sb_nr == SB_NR_ACCESS_RD) {
-			sbcontext->show_access_violation = 0;
+			sbcontext->show_access_violation = false;
 			goto out;
 		}
 	}
@@ -679,7 +677,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		if (1 == retval) {
 			/* Is a known access violation, so deny access,
 			 * and do not log it */
-			sbcontext->show_access_violation = 0;
+			sbcontext->show_access_violation = false;
 			goto out;
 		}
 
@@ -692,7 +690,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		if (len > 4) {
 			const char *py = resolv_path + len - 4;
 			if (!strcmp(py, ".pyc") || !strcmp(py, ".pyo")) {
-				sbcontext->show_access_violation = 0;
+				sbcontext->show_access_violation = false;
 				goto out;
 			}
 		}
@@ -700,7 +698,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		/* If we are here, and still no joy, and its the access() call,
 		 * do not log it, but just return -1 */
 		if (sb_nr == SB_NR_ACCESS_WR) {
-			sbcontext->show_access_violation = 0;
+			sbcontext->show_access_violation = false;
 			goto out;
 		}
 	}
@@ -720,10 +718,10 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, co
 {
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
-	char *log_path = NULL, *debug_log_path = NULL;
+	char *log_path, *debug_log_path;
 	int old_errno = errno;
-	int result = 1;
-	int access = 0, debug = 0, verbose = 1;
+	int result;
+	bool access, debug, verbose;
 
 	absolute_path = resolve_path(file, 0);
 	if (NULL == absolute_path)
@@ -732,15 +730,11 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, co
 	if (NULL == resolved_path)
 		goto error;
 
+	verbose = is_env_on(ENV_SANDBOX_VERBOSE);
 	log_path = getenv(ENV_SANDBOX_LOG);
-	if (is_env_on(ENV_SANDBOX_DEBUG)) {
+	debug = is_env_on(ENV_SANDBOX_DEBUG);
+	if (debug)
 		debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
-		debug = 1;
-	}
-
-	if (is_env_off(ENV_SANDBOX_VERBOSE)) {
-		verbose = 0;
-	}
 
 	result = check_access(sbcontext, sb_nr, func, absolute_path, resolved_path);
 
@@ -754,23 +748,21 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, co
 			SB_EWARN("ACCESS PREDICTED", "  %s:%*s%s\n", func, sym_len, "", absolute_path);
 	}
 
-	if ((0 == result) && (1 == sbcontext->show_access_violation))
-		access = 1;
+	if ((0 == result) && sbcontext->show_access_violation)
+		access = false;
+	else
+		access = true;
 
-	if ((NULL != log_path) && (1 == access)) {
-		if (-1 == write_logfile(log_path, func, file, absolute_path,
-								resolved_path, (access == 1) ? 0 : 1)) {
-			if (0 != errno)
-				goto error;
-		}
+	if (log_path && !access) {
+		bool worked = write_logfile(log_path, func, file, absolute_path, resolved_path, access);
+		if (!worked && errno)
+			goto error;
 	}
 
-	if ((NULL != debug_log_path) && (1 == debug)) {
-		if (-1 == write_logfile(debug_log_path, func, file, absolute_path,
-								resolved_path, (access == 1) ? 0 : 1)) {
-			if (0 != errno)
-				goto error;
-		}
+	if (debug_log_path && debug) {
+		bool worked = write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
+		if (!worked && errno)
+			goto error;
 	}
 
 	if (NULL != absolute_path)
@@ -799,9 +791,9 @@ error:
 	abort();
 }
 
-int is_sandbox_on(void)
+bool is_sandbox_on(void)
 {
-	int result;
+	bool result;
 	save_errno();
 
 	/* $SANDBOX_ACTIVE is an env variable that should ONLY
@@ -811,28 +803,28 @@ int is_sandbox_on(void)
 	 * but not even in the sandbox shell.
 	 */
 	char *sb_env_active = getenv(ENV_SANDBOX_ACTIVE);
-	if ((1 == sandbox_on) &&
+	if (sandbox_on &&
 	    sb_env_active &&
 	    is_env_on(ENV_SANDBOX_ON) &&
 	    (0 == strcmp(sb_env_active, SANDBOX_ACTIVE)))
-		result = 1;
+		result = true;
 	else
-		result = 0;
+		result = false;
 	restore_errno();
 	return result;
 }
 
-int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
+bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 {
 	int old_errno = errno;
-	int result = 1;
+	int result;
 //	static sbcontext_t sbcontext;
 	char *at_file_buf = NULL;
 
 	if (file == NULL || file[0] == '\0') {
 		/* The file/directory does not exist */
 		errno = ENOENT;
-		return 0;
+		return false;
 	}
 
 	/* The *at style functions have the following semantics:
@@ -848,9 +840,9 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 		file = at_file_buf;
 	}
 
-	if (0 == sb_init) {
+	if (!sb_init) {
 		init_context(&sbcontext);
-		sb_init = 1;
+		sb_init = true;
 	}
 
 	char *sb_env_names[4] = {
@@ -884,7 +876,7 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	}
 
 	/* Might have been reset in check_access() */
-	sbcontext.show_access_violation = 1;
+	sbcontext.show_access_violation = true;
 
 	result = check_syscall(&sbcontext, sb_nr, func, file);
 
@@ -902,10 +894,10 @@ int before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	} else if (result == 1)
 		errno = old_errno;
 
-	return result;
+	return result ? true : false;
 }
 
-int before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int flags)
+bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	const char *ext_func;
 	if (flags & W_OK)
@@ -915,7 +907,7 @@ int before_syscall_access(int dirfd, int sb_nr, const char *func, const char *fi
 	return before_syscall(dirfd, sb_nr, ext_func, file);
 }
 
-int before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *file, int flags)
+bool before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	const char *ext_func;
 	if ((flags & O_WRONLY) || (flags & O_RDWR))
@@ -925,10 +917,10 @@ int before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *
 	return before_syscall(dirfd, sb_nr, ext_func, file);
 }
 
-int before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
+bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
 {
 	if (NULL == mode)
-		return 0;
+		return false;
 
 	const char *ext_func;
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||

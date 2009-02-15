@@ -21,11 +21,11 @@ char *WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	 * used by some getcwd() implementations and resolves to the sandbox
 	 * opendir() wrapper, causing infinit recursion and finially crashes.
 	 */
-	sandbox_on = 0;
+	sandbox_on = false;
 	check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME,
 			    WRAPPER_SYMVER);
 	result = WRAPPER_TRUE_NAME(buf, size);
-	sandbox_on = 1;
+	sandbox_on = true;
 
 	return result;
 }

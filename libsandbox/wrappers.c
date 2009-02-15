@@ -32,7 +32,7 @@
 static void *libc_handle = NULL;
 
 extern char sandbox_lib[SB_PATH_MAX];
-extern int sandbox_on;
+extern bool sandbox_on;
 
 /* Need to include the function wrappers here, as they are needed below */
 #include "symbols.h"

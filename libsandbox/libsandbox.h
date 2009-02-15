@@ -15,7 +15,7 @@
 
 /* Macros to check if a function should be executed */
 #define _FUNCTION_SANDBOX_SAFE(test) \
-	(0 == is_sandbox_on() || 1 == (test))
+	(!is_sandbox_on() || (test))
 
 #define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _path) \
        _FUNCTION_SANDBOX_SAFE(before_syscall(_dirfd, WRAPPER_NR, STRING_NAME, _path))
@@ -39,11 +39,11 @@
 
 int canonicalize(const char *, char *);
 
-int is_sandbox_on(void);
-int before_syscall(int, int, const char *, const char *);
-int before_syscall_access(int, int, const char *, const char *, int);
-int before_syscall_open_int(int, int, const char *, const char *, int);
-int before_syscall_open_char(int, int, const char *, const char *, const char *);
+bool is_sandbox_on(void);
+bool before_syscall(int, int, const char *, const char *);
+bool before_syscall_access(int, int, const char *, const char *, int);
+bool before_syscall_open_int(int, int, const char *, const char *, int);
+bool before_syscall_open_char(int, int, const char *, const char *, const char *);
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
