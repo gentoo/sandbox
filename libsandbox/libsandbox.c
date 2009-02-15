@@ -390,23 +390,24 @@ static void init_context(sbcontext_t *context)
 
 static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 {
-	int old_errno = errno;
-	int i = 0;
+	if (*prefixes_array == NULL)
+		return;
 
-	if (NULL != *prefixes_array) {
-		for (i = 0; i < *prefixes_num; i++) {
-			if (NULL != (*prefixes_array)[i]) {
-				free((*prefixes_array)[i]);
-				(*prefixes_array)[i] = NULL;
-			}
+	size_t i;
+	save_errno();
+
+	for (i = 0; i < *prefixes_num; ++i) {
+		if (NULL != (*prefixes_array)[i]) {
+			free((*prefixes_array)[i]);
+			(*prefixes_array)[i] = NULL;
 		}
-		if (NULL != *prefixes_array)
-			free(*prefixes_array);
-		*prefixes_array = NULL;
-		*prefixes_num = 0;
 	}
+	if (NULL != *prefixes_array)
+		free(*prefixes_array);
+	*prefixes_array = NULL;
+	*prefixes_num = 0;
 
-	errno = old_errno;
+	restore_errno();
 }
 
 #define pfx_num		(*prefixes_num)
