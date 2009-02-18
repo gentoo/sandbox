@@ -23,10 +23,8 @@
  * then try to resolve it again. */
 #define check_dlsym(_name, _symname, _symver) \
 { \
-	int old_errno = errno; \
 	if (NULL == _name) \
 		_name = get_dlsym(_symname, _symver); \
-	errno = old_errno; \
 }
 
 static void *libc_handle = NULL;
