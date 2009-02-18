@@ -106,7 +106,7 @@ void libsb_init(void)
 	mtrace();
 #endif
 
-	sb_set_open(libsb_open);
+	sb_set_open(sb_unwrapped_open);
 
 	/* Get the path and name to this library */
 	get_sandbox_lib(sandbox_lib);

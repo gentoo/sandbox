@@ -71,25 +71,3 @@ void *get_dlsym(const char *symname, const char *symver)
 
 	return symaddr;
 }
-
-int libsb_open(const char *pathname, int flags, ...)
-{
-	va_list ap;
-	int mode = 0;
-	int result = -1;
-
-	if (flags & O_CREAT) {
-		va_start(ap, flags);
-		mode = va_arg(ap, int);
-		va_end(ap);
-	}
-
-	check_dlsym(true_open_DEFAULT, symname_open_DEFAULT,
-		    symver_open_DEFAULT);
-	if (flags & O_CREAT)
-		result = true_open_DEFAULT(pathname, flags, mode);
-	else
-		result = true_open_DEFAULT(pathname, flags);
-
-	return result;
-}

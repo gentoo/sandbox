@@ -14,10 +14,12 @@
 
 void *get_dlsym(const char *, const char *);
 
-/* Wrapper for internal use of functions in libsandbox */
-int libsb_open(const char *, int, ...);
-
+/* Wrapper for internal use of functions in libsandbox.  Should really
+ * autogenerate this header ...
+ */
 #define                sb_unwrapped_getcwd sb_unwrapped_getcwd_DEFAULT
 attribute_hidden char *sb_unwrapped_getcwd (char *, size_t);
+#define                sb_unwrapped_open   sb_unwrapped_open_DEFAULT
+attribute_hidden int   sb_unwrapped_open   (const char *, int, mode_t);
 
 #endif /* __WRAPPERS_H__ */
