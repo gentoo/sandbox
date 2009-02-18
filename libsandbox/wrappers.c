@@ -93,11 +93,3 @@ int libsb_open(const char *pathname, int flags, ...)
 
 	return result;
 }
-
-char *libsb_getcwd(char *buf, size_t size)
-{
-	check_dlsym(true_getcwd_DEFAULT, symname_getcwd_DEFAULT,
-		    symver_getcwd_DEFAULT);
-
-	return true_getcwd_DEFAULT(buf, size);
-}

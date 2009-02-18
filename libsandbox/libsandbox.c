@@ -245,7 +245,7 @@ char *egetcwd(char *buf, size_t size)
 	 */
 	sandbox_on = false;
 	errno = 0;
-	tmpbuf = libsb_getcwd(buf, size);
+	tmpbuf = sb_unwrapped_getcwd(buf, size);
 	sandbox_on = true;
 
 	/* We basically try to figure out if we can trust what getcwd()
