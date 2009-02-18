@@ -1,3 +1,4 @@
+#define CONFIG HAVE_FOPEN64
 #define FUNC fopen64
 #define SFUNC "fopen64"
 #define FUNC_STR "\"%s\", \"%s\""

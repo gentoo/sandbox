@@ -1,3 +1,4 @@
+#define CONFIG HAVE_TRUNCATE64
 #define FUNC truncate64
 #define SFUNC "truncate64"
 #define FUNC_STR "\"%s\", %i"

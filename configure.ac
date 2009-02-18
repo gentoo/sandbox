@@ -93,9 +93,11 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS_ONCE([ \
 	backtrace \
+	creat64 \
 	faccessat \
 	fchmodat \
 	fchownat \
+	fopen64 \
 	ftruncate \
 	futimesat \
 	getcwd \
@@ -109,6 +111,7 @@ AC_CHECK_FUNCS_ONCE([ \
 	mkdirat \
 	mkfifoat \
 	mknodat \
+	open64 \
 	openat \
 	openat64 \
 	pathconf \
@@ -127,6 +130,7 @@ AC_CHECK_FUNCS_ONCE([ \
 	strstr \
 	strtok_r \
 	symlinkat \
+	truncate64 \
 	unlinkat \
 	utime \
 	utimensat \

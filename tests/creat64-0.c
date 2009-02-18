@@ -1,3 +1,4 @@
+#define CONFIG HAVE_CREAT64
 #define FUNC creat64
 #define SFUNC "creat64"
 #define FUNC_STR "\"%s\", %o"
