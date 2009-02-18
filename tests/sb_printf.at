@@ -1,7 +1,7 @@
 AT_SETUP(sb_printf)
 
 AT_CHECK([dnl
-sb_printf_tst | awk 'BEGIN { ret = 0 }
+sb_printf_tst | ${AWK} 'BEGIN { ret = 0 }
 {
 	if (G == "") {
 		G = $0
