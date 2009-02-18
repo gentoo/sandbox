@@ -51,7 +51,7 @@
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
-#ifndef HAVE_DECL_ENVIRON
+#if !HAVE_DECL_ENVIRON
 extern char **environ;
 #endif
 
