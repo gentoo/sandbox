@@ -3,6 +3,7 @@ AC_INIT([sandbox], [1.3.8], [sandbox@gentoo.org])
 sb_configure_opts="$*"
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts}"], [Arguments given to ./configure])
 
