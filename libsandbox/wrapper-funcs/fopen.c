@@ -15,14 +15,17 @@
 #define SB_FOPEN_PRE_CHECK
 static inline bool sb_fopen_pre_check(WRAPPER_ARGS_PROTO)
 {
-	save_errno();
 	if ((NULL != mode) && (mode[0] == 'r')) {
+		save_errno();
+
 		/* If we're trying to read, fail normally if file does not stat */
 		struct stat st;
 		if (-1 == stat(pathname, &st))
 			return false;
+
+		restore_errno();
 	}
-	restore_errno();
+
 	return true;
 }
 #endif
