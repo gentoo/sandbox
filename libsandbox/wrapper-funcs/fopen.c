@@ -29,6 +29,6 @@ static inline bool sb_fopen_pre_check(WRAPPER_ARGS_PROTO)
 	return true;
 }
 #endif
-#define WRAPPER_PRE_CHECKS() if (!sb_fopen_pre_check(WRAPPER_ARGS)) return result;
+#define WRAPPER_PRE_CHECKS() sb_fopen_pre_check(WRAPPER_ARGS)
 
 #include "__wrapper_simple.c"

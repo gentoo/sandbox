@@ -14,6 +14,7 @@
 static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 {
 	char canonic[SB_PATH_MAX];
+
 	save_errno();
 
 	if (-1 == canonicalize(pathname, canonic))
@@ -31,8 +32,9 @@ static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 	}
 
 	restore_errno();
+
 	return true;
 }
-#define WRAPPER_PRE_CHECKS() if (!sb_unlinkat_pre_check(WRAPPER_ARGS)) return result;
+#define WRAPPER_PRE_CHECKS() sb_unlinkat_pre_check(WRAPPER_ARGS)
 
 #include "__wrapper_simple.c"
