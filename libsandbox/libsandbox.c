@@ -814,6 +814,9 @@ bool is_sandbox_on(void)
 	return result;
 }
 
+/* Need to protect the global sbcontext structure */
+static pthread_mutex_t sb_syscall_lock = PTHREAD_MUTEX_INITIALIZER;
+
 bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 {
 	int old_errno = errno;
@@ -839,6 +842,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 		sprintf(at_file_buf, "/proc/%i/fd/%i/%s", getpid(), dirfd, file);
 		file = at_file_buf;
 	}
+
+	pthread_mutex_lock(&sb_syscall_lock);
 
 	if (!sb_init) {
 		init_context(&sbcontext);
@@ -879,6 +884,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	sbcontext.show_access_violation = true;
 
 	result = check_syscall(&sbcontext, sb_nr, func, file);
+
+	pthread_mutex_unlock(&sb_syscall_lock);
 
 	if (at_file_buf)
 		free(at_file_buf);

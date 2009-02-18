@@ -50,6 +50,7 @@ AC_CHECK_HEADERS_ONCE([ \
 	libgen.h \
 	limits.h \
 	memory.h \
+	pthread.h \
 	siginfo.h \
 	signal.h \
 	sigsegv.h \
