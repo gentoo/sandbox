@@ -45,6 +45,9 @@ bool before_syscall_access(int, int, const char *, const char *, int);
 bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
 
+extern char sandbox_lib[SB_PATH_MAX];
+extern volatile bool sandbox_on;
+
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);

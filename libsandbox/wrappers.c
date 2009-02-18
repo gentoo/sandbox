@@ -19,24 +19,9 @@
 # define USE_RTLD_NEXT
 #endif
 
-/* Macro to check if a wrapper is defined, if not
- * then try to resolve it again. */
-#define check_dlsym(_name, _symname, _symver) \
-{ \
-	if (NULL == _name) \
-		_name = get_dlsym(_symname, _symver); \
-}
-
 static void *libc_handle = NULL;
 
-extern char sandbox_lib[SB_PATH_MAX];
-extern bool sandbox_on;
-
-/* Need to include the function wrappers here, as they are needed below */
-#include "symbols.h"
-
-
-void *get_dlsym(const char *symname, const char *symver)
+static void *get_dlsym(const char *symname, const char *symver)
 {
 	void *symaddr = NULL;
 
@@ -71,3 +56,15 @@ void *get_dlsym(const char *symname, const char *symver)
 
 	return symaddr;
 }
+
+/* Macro to check if a wrapper is defined, if not
+ * then try to resolve it again.
+ */
+#define check_dlsym(_name, _symname, _symver) \
+{ \
+	if (NULL == _name) \
+		_name = get_dlsym(_symname, _symver); \
+}
+
+/* Need to include the function wrappers here, as they are needed below */
+#include "symbols.h"
