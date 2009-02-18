@@ -81,6 +81,7 @@ AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
 AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
 AC_CHECK_DECLS_ONCE([environ])
 
 dnl Checks for library functions.

@@ -53,6 +53,16 @@
 extern char **environ;
 #endif
 
+#ifndef HAVE_SIGHANDLER_T
+# if defined(HAVE_SIG_T)
+typedef sig_t sighandler_t;
+# elif defined(HAVE___SIGHANDLER_T)
+typedef __sighandler_t sighandler_t;
+# else
+#  error "your system blows chunks: no signal() type"
+# endif
+#endif
+
 /* If the system is old and does not support *at funcs, then define
  * it ourself.  Shouldn't matter based on how we use it.
  */
