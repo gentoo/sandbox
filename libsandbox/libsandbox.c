@@ -665,7 +665,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 		 * behavior category, so no need to check the syscall.
 		 */
 		char *dname_buf = strdup(resolv_path);
-		int aret = access(dirname(dname_buf), F_OK);
+		int aret = sb_unwrapped_access(dirname(dname_buf), F_OK);
 		free(dname_buf);
 		if (aret) {
 			result = 1;
