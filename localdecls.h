@@ -32,8 +32,6 @@
 
 #endif
 
-#define GLIBC_MINOR __GLIBC_MINOR__
-
 #ifdef PATH_MAX
 # define SB_PATH_MAX PATH_MAX * 2
 # if (SB_PATH_MAX >= INT_MAX) || (SB_PATH_MAX < PATH_MAX)
