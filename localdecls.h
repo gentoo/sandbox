@@ -78,5 +78,6 @@ extern char **environ;
 # define weak_alias(_name, _aliasname) \
 	extern __typeof (_name) _aliasname __attribute__ ((weak, alias (#_name)));
 
+#define attribute_hidden __attribute__((visibility("hidden")))
 
 #endif
