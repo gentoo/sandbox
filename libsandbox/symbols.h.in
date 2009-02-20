@@ -11,7 +11,9 @@ fchmodat
 chown
 fchownat
 open
+__open_2
 openat
+__openat_2
 creat
 fopen
 lchown
@@ -39,7 +41,9 @@ unlink
 unlinkat
 getcwd
 open64
+__open64_2
 openat64
+__openat64_2
 creat64
 fopen64
 truncate64
