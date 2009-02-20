@@ -18,11 +18,8 @@ int WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	int result = -1;
 
-	if (FUNCTION_SANDBOX_SAFE(pathname)) {
-		check_dlsym(true_open_DEFAULT, symname_open_DEFAULT,
-			    symver_open_DEFAULT);
-		result = true_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
-	}
+	if (FUNCTION_SANDBOX_SAFE(pathname))
+		result = sb_unwrapped_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
 
 	return result;
 }
