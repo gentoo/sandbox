@@ -16,54 +16,44 @@
 #else
 # define USE_AT 0
 #endif
-#define WRAPPER_RET_TYPE int
-#define WRAPPER_RET_DEFAULT -1
 
-extern WRAPPER_RET_TYPE EXTERN_NAME(WRAPPER_ARGS_PROTO);
-static WRAPPER_RET_TYPE (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
+#ifndef PRE_CHECK_FUNC
+# define _PRE_CHECK_FUNC(x) sb_##x##_pre_check
+# define PRE_CHECK_FUNC(x)  _PRE_CHECK_FUNC(x)
+#endif
 
-attribute_hidden
-WRAPPER_RET_TYPE SB_HIDDEN_FUNC(WRAPPER_NAME)(WRAPPER_ARGS_PROTO_FULL)
+static inline bool PRE_CHECK_FUNC(WRAPPER_NAME)(_WRAPPER_ARGS_PROTO)
 {
-	check_dlsym(WRAPPER_TRUE_NAME, WRAPPER_SYMNAME, WRAPPER_SYMVER);
-	return WRAPPER_TRUE_NAME(WRAPPER_ARGS_FULL);
-}
-
-/* Eventually, there is a third parameter: it's mode_t mode */
-WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
-{
-	WRAPPER_RET_TYPE result = WRAPPER_RET_DEFAULT;
-
 	if (!(flags & O_CREAT)) {
 		save_errno();
 
-		/* XXX: If we're not trying to create, fail normally if
-		 *      file does not stat */
+		/* If we're not trying to create, fail normally if
+		 * file does not stat
+		 */
 		struct stat st;
 #if USE_AT
 		if (dirfd == AT_FDCWD || pathname[0] == '/')
 #endif
 #undef USE_AT
 			if (-1 == stat(pathname, &st))
-				return -1;
+				return false;
 
 		restore_errno();
 	}
 
-	if (WRAPPER_SAFE()) {
-		int mode = 0;
-		if (flags & O_CREAT) {
-			va_list ap;
-			va_start(ap, flags);
-			mode = va_arg(ap, int);
-			va_end(ap);
-		}
-		result = SB_HIDDEN_FUNC(WRAPPER_NAME)(WRAPPER_ARGS_FULL);
+	return true;
+}
+#define WRAPPER_PRE_CHECKS() PRE_CHECK_FUNC(WRAPPER_NAME)(WRAPPER_ARGS)
+
+#define WRAPPER_SAFE_POST_EXPAND \
+	int mode = 0; \
+	if (flags & O_CREAT) { \
+		va_list ap; \
+		va_start(ap, flags); \
+		mode = va_arg(ap, int); \
+		va_end(ap); \
 	}
 
-	return result;
-}
+#include "__wrapper_simple.c"
 
 #undef _WRAPPER_ARGS_PROTO
-#undef WRAPPER_ARGS_PROTO_FULL
-#undef WRAPPER_ARGS_FULL
