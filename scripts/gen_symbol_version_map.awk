@@ -52,6 +52,12 @@ BEGIN {
 			}
 		}
 
+		# No apparent need to handle weak __XXX symbols ... so disable
+		# until we have documentation on why ...
+		# If we do re-add this, need to update the `readelf` call in
+		# libsandbox/ to include the -h flag again.
+		continue;
+
 		sym_regex = "^__" SYMBOLS[x] "(@@|$)";
 		if (($5 == "WEAK") && ($NF ~ sym_regex)) {
 			split($NF, symbol_array, /@@/);
