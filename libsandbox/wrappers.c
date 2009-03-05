@@ -32,10 +32,13 @@ static void *get_dlsym(const char *symname, const char *symver)
 	/* Checking for -1UL is significant on hardened!
 	 * USE_RTLD_NEXT returns it as a sign of being unusable.
 	 * However using !x or NULL checks does NOT pick it up!
+	 * That is also why we need to save/restore errno #260765.
 	 */
 #define INVALID_LIBC_HANDLE(x) (!x || NULL == x || (void *)-1UL == x)
 	if (INVALID_LIBC_HANDLE(libc_handle)) {
+		save_errno();
 		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
+		restore_errno();
 		if (INVALID_LIBC_HANDLE(libc_handle)) {
 			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
 				dlerror());
@@ -48,6 +51,7 @@ static void *get_dlsym(const char *symname, const char *symver)
 		symaddr = dlsym(libc_handle, symname);
 	else
 		symaddr = dlvsym(libc_handle, symname, symver);
+
 	if (!symaddr) {
 		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
 			symname, dlerror());
