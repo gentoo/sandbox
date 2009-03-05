@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([sandbox], [1.3.9], [sandbox@gentoo.org])
+AC_INIT([sandbox], [1.4], [sandbox@gentoo.org])
 sb_configure_opts="$*"
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
