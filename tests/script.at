@@ -11,3 +11,4 @@ SB_CHECK(0)
 SB_CHECK(1,, [touch: cannot touch `/a/b/c/d/e/f/g/no/real/path/so/dont/make/it': No such file or directory
 ])
 SB_CHECK(2, [hi])
+SB_CHECK(3, [OK])
