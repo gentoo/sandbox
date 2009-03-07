@@ -25,20 +25,20 @@
 static inline bool PRE_CHECK_FUNC(WRAPPER_NAME)(_WRAPPER_ARGS_PROTO)
 {
 	if (!(flags & O_CREAT)) {
-		save_errno();
-
 		/* If we're not trying to create, fail normally if
 		 * file does not stat
 		 */
-		struct stat st;
 #if USE_AT
 		if (dirfd == AT_FDCWD || pathname[0] == '/')
 #endif
 #undef USE_AT
+		{
+			struct stat st;
+			save_errno();
 			if (-1 == stat(pathname, &st))
 				return false;
-
-		restore_errno();
+			restore_errno();
+		}
 	}
 
 	return true;
