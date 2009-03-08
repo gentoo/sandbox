@@ -26,6 +26,8 @@ static char log_domain[] = "sandbox";
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 static const char sandbox_footer[] = "--------------------------------------------------------------------------------";
 
+const char env_sandbox_testing[] = "__SANDBOX_TESTING";
+
 static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
 	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
@@ -250,7 +252,7 @@ int main(int argc, char **argv)
 	dputs(sandbox_banner);
 
 	/* check if a sandbox is already running */
-	if (!is_env_on("__SANDBOX_TESTING"))
+	if (!is_env_on(ENV_SANDBOX_TESTING))
 		if (NULL != getenv(ENV_SANDBOX_ACTIVE))
 			sb_err("not launching a new sandbox as one is already running in this process hierarchy");
 

@@ -16,3 +16,9 @@ sandbox_SOURCES = \
 	environ.c \
 	sandbox.h \
 	sandbox.c
+
+install-exec-hook:
+	sed -i.tmp \
+		's:__SANDBOX_TESTING:\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00:' \
+		$(DESTDIR)$(bindir)/sandbox
+	rm -f $(DESTDIR)$(bindir)/sandbox.tmp

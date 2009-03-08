@@ -56,6 +56,9 @@
 #define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
 #define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"
 
+extern const char env_sandbox_testing[];
+#define ENV_SANDBOX_TESTING    env_sandbox_testing
+
 #define ENV_SANDBOX_LIB        "SANDBOX_LIB"
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
 #define ENV_SANDBOX_LOG        "SANDBOX_LOG"

@@ -17,7 +17,7 @@ char *get_sandbox_conf(void)
 {
 	char *ret = SANDBOX_CONF_FILE;
 	save_errno();
-	if (is_env_on("__SANDBOX_TESTING")) {
+	if (is_env_on(ENV_SANDBOX_TESTING)) {
 		char *abs = getenv("abs_top_srcdir");
 		ret = xmalloc(strlen(abs) + strlen(LOCAL_SANDBOX_CONF_FILE) + 1);
 		sprintf(ret, "%s%s", abs, LOCAL_SANDBOX_CONF_FILE);
