@@ -21,18 +21,23 @@ static void _get_sb_log(char *path, const char *env, const char *prefix)
 
 	sandbox_log_env = getenv(env);
 
-	/* THIS CHUNK BREAK THINGS BY DOING THIS:
-	 * SANDBOX_LOG=/tmp/sandbox-app-admin/superadduser-1.0.7-11063.log
-	 */
-	if ((NULL != sandbox_log_env) &&
-	    (NULL != strchr(sandbox_log_env, '/')))
-	    sandbox_log_env = NULL;
+	if (sandbox_log_env && is_env_on(ENV_SANDBOX_TESTING)) {
+		/* When testing, just use what the env says to */
+		strncpy(path, sandbox_log_env, SB_PATH_MAX);
+	} else {
+		/* THIS CHUNK BREAK THINGS BY DOING THIS:
+		 * SANDBOX_LOG=/tmp/sandbox-app-admin/superadduser-1.0.7-11063.log
+		 */
+		if ((NULL != sandbox_log_env) &&
+		    (NULL != strchr(sandbox_log_env, '/')))
+		    sandbox_log_env = NULL;
 
-	snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
+		snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
 			SANDBOX_LOG_LOCATION, prefix,
 			(sandbox_log_env == NULL ? "" : sandbox_log_env),
 			(sandbox_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);
+	}
 
 	restore_errno();
 }

@@ -1,0 +1,2 @@
+m4_defun([SB_SECTION],[chmod])
+SB_CHECK(1)

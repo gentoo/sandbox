@@ -8,6 +8,9 @@ EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
 INCLUDES = -I$(top_srcdir)
 
 check_PROGRAMS = \
+	get-group \
+	get-user \
+	\
 	access-0 \
 	chmod-0 \
 	chown-0 \
@@ -50,7 +53,14 @@ check_PROGRAMS = \
 	sb_printf_tst
 
 dist_check_SCRIPTS = \
-	access.sh \
+	access-1.sh \
+	chmod-1.sh \
+	chown-1.sh \
+	fchmodat-1.sh \
+	fchownat-1.sh \
+	fchownat-2.sh \
+	lchown-1.sh \
+	script-0 \
 	script-0.sh \
 	script-1.sh \
 	script-2.sh \

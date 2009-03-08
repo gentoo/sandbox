@@ -8,13 +8,13 @@
 
 #define process_args() \
 	s = argv[i++]; \
-	int olddirfd = atoi(s); \
+	int olddirfd = at_get_fd(s); \
 	\
 	s = argv[i++]; \
 	char *oldpath = s; \
 	\
 	s = argv[i++]; \
-	int newdirfd = atoi(s); \
+	int newdirfd = at_get_fd(s); \
 	\
 	s = argv[i++]; \
 	char *newpath = s;

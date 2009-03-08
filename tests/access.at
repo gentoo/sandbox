@@ -1,0 +1,2 @@
+m4_defun([SB_SECTION],[access])
+SB_CHECK(1)

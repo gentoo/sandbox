@@ -4,6 +4,25 @@
 # define CONFIG 1
 #endif
 
+int at_get_fd(const char *str_dirfd)
+{
+	if (!strcmp(str_dirfd, "AT_FDCWD"))
+		return AT_FDCWD;
+	else
+		return atoi(str_dirfd);
+}
+
+int at_get_flags(const char *str_flags)
+{
+	if (!strcmp(str_flags, "AT_SYMLINK_NOFOLLOW"))
+		return AT_SYMLINK_NOFOLLOW;
+	else {
+		int flags = 0;
+		sscanf(str_flags, "%i", &flags);
+		return flags;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 #if CONFIG
@@ -23,12 +42,12 @@ int main(int argc, char *argv[])
 		char *s;
 
 		s = argv[i++];
-		int ret = atoi(s);
+		long ret = atoi(s);
 
 		process_args();
 
-		int actual_ret = (int)FUNC(FUNC_IMP);
-		printf("%s: " SFUNC "(" FUNC_STR ") = %i (wanted %i)\n",
+		long actual_ret = (long)FUNC(FUNC_IMP);
+		printf("%s: " SFUNC "(" FUNC_STR ") = %li (wanted %li)\n",
 			(actual_ret == ret) ? "PASS" : "FAIL",
 			FUNC_IMP, actual_ret, ret);
 		if (actual_ret != ret) ++test_ret;
@@ -37,6 +56,6 @@ int main(int argc, char *argv[])
 	return test_ret;
 #else
 	puts("not implemented");
-	return 0;
+	return 77;
 #endif
 }

@@ -8,13 +8,12 @@
 
 #define process_args() \
 	s = argv[i++]; \
-	int dirfd = atoi(s); \
+	int dirfd = at_get_fd(s); \
 	\
 	s = argv[i++]; \
 	char *path = s; \
 	\
 	s = argv[i++]; \
-	int flags; \
-	sscanf(s, "%i", &flags);
+	int flags = at_get_flags(s);
 
 #include "test-skel-0.c"

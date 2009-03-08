@@ -1,5 +1,11 @@
 AT_INIT
 
+m4_include(access.at)
+m4_include(chmod.at)
+m4_include(chown.at)
+m4_include(fchmodat.at)
+m4_include(fchownat.at)
+m4_include(lchown.at)
 m4_include(libsigsegv.at)
 m4_include(sb_printf.at)
 m4_include(script.at)

@@ -27,6 +27,9 @@
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
+#ifdef HAVE_GRP_H
+# include <grp.h>
+#endif
 #ifdef HAVE_LIBGEN_H
 # include <libgen.h>
 #endif
@@ -38,6 +41,9 @@
 #endif
 #ifdef HAVE_PTHREAD_H
 # include <pthread.h>
+#endif
+#ifdef HAVE_PWD_H
+# include <pwd.h>
 #endif
 #ifdef HAVE_SIGINFO_H
 # include <siginfo.h>

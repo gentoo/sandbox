@@ -48,10 +48,12 @@ AC_CHECK_HEADERS_ONCE([ \
 	errno.h \
 	execinfo.h \
 	fcntl.h \
+	grp.h \
 	libgen.h \
 	limits.h \
 	memory.h \
 	pthread.h \
+	pwd.h \
 	siginfo.h \
 	signal.h \
 	sigsegv.h \

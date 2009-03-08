@@ -10,7 +10,7 @@
 
 #define process_args() \
 	s = argv[i++]; \
-	int dirfd = atoi(s); \
+	int dirfd = at_get_fd(s); \
 	\
 	s = argv[i++]; \
 	char *file = s; \

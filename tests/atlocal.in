@@ -1,3 +1,6 @@
-export abs_top_srcdir abs_top_builddir abs_builddir
-export PATH=$abs_top_srcdir/src:$abs_top_builddir/src:$abs_builddir:$PATH
+export abs_top_srcdir abs_top_builddir abs_srcdir abs_builddir
+export PATH=$abs_top_srcdir/src:$abs_top_builddir/src:$abs_builddir:$abs_srcdir:$PATH
 export AWK="@AWK@"
+
+export SB_UID=$(get-user)
+export SB_GID=$(get-group)

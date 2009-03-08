@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
 	T("%d", 123);
 	T("%d", -123);
 	T("%u", 1000);
-	T("%zi", argc);
-	T("%zi", -argc);
-	T("%zd", 123);
-	T("%zd", -123);
-	T("%zu", 1000);
+	T("%zi", (ssize_t)argc);
+	T("%zi", (ssize_t)-argc);
+	T("%zd", (ssize_t)123);
+	T("%zd", (ssize_t)-123);
+	T("%zu", (size_t)1000);
 
 	T("%x", argc);
 	T("%x", 0xabcdef);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	T("%s", "CoW");
 	T("%s", "!HI!");
 
-	size_t i;
+	int i;
 	for (i = 0; i < 6; ++i)
 		T("%s%*s%s", "{pre}", i, "cow", "{post}");
 

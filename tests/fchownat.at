@@ -1,0 +1,3 @@
+m4_defun([SB_SECTION],[fchownat])
+SB_CHECK(1)
+SB_CHECK(2)

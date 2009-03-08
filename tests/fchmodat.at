@@ -1,0 +1,2 @@
+m4_defun([SB_SECTION],[fchmodat])
+SB_CHECK(1)
