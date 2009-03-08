@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO int dirfd, const char *filename, const struct timespec times[], int flags
 #define WRAPPER_ARGS dirfd, filename, times, flags
-#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, filename)
+#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, filename, flags)
 #include "__wrapper_simple.c"

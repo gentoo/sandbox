@@ -68,6 +68,7 @@ typedef __sighandler_t sighandler_t;
  */
 #ifndef AT_FDCWD
 # define AT_FDCWD -100
+# define AT_SYMLINK_NOFOLLOW 0
 #endif
 
 #if !HAVE_DLVSYM

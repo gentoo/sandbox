@@ -8,7 +8,7 @@
 #ifndef WRAPPER_ARGS_PROTO /* let mkdir() use us */
 # define WRAPPER_ARGS_PROTO int dirfd, const char *pathname, mode_t mode
 # define WRAPPER_ARGS dirfd, pathname, mode
-# define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname)
+# define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname, 0)
 #endif
 
 static inline bool sb_mkdirat_pre_check(WRAPPER_ARGS_PROTO)

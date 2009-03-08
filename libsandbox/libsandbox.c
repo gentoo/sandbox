@@ -503,17 +503,53 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 	return 0;
 }
 
-static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, const char *abs_path, const char *resolv_path)
+/* Is this a func that works on symlinks, and is the file a symlink ? */
+static bool symlink_func(int sb_nr, int flags, const char *abs_path)
+{
+	struct stat st;
+
+	/* These funcs always operate on symlinks */
+	if (!(sb_nr == SB_NR_UNLINK   ||
+	      sb_nr == SB_NR_UNLINKAT ||
+	      sb_nr == SB_NR_LCHOWN   ||
+	      sb_nr == SB_NR_RENAME   ||
+	      sb_nr == SB_NR_SYMLINK))
+	{
+		/* These funcs sometimes operate on symlinks */
+		if (!((sb_nr == SB_NR_FCHOWNAT ||
+		       sb_nr == SB_NR_FCHMODAT ||
+		       sb_nr == SB_NR_UTIMENSAT) &&
+		      (flags & AT_SYMLINK_NOFOLLOW)))
+			return false;
+	}
+
+	if (-1 != lstat(abs_path, &st) && S_ISLNK(st.st_mode))
+		return true;
+	else
+		return false;
+}
+
+static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
+                        int flags, const char *abs_path, const char *resolv_path)
 {
 	int old_errno = errno;
 	int result = 0;
 	int retval;
+	bool sym_func = symlink_func(sb_nr, flags, abs_path);
 
 	retval = check_prefixes(sbcontext->deny_prefixes,
-				sbcontext->num_deny_prefixes, resolv_path);
+		sbcontext->num_deny_prefixes, abs_path);
 	if (1 == retval)
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
+
+	if (!sym_func) {
+		retval = check_prefixes(sbcontext->deny_prefixes,
+			sbcontext->num_deny_prefixes, resolv_path);
+		if (1 == retval)
+			/* Fall in a read/write denied path, Deny Access */
+			goto out;
+	}
 
 	/* Hardcode denying write to the whole log dir.  While this is a
 	 * parial match and so rejects paths that also start with this
@@ -601,19 +637,15 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func, con
 			goto out;
 		}
 
-		/* XXX: Hack to enable us to remove symlinks pointing
-		 * to protected stuff.  First we make sure that the
-		 * passed path is writable, and if so, check if its a
-		 * symlink, and give access only if the resolved path
-		 * of the symlink's parent also have write access. */
-		struct stat st;
-		if ((sb_nr == SB_NR_UNLINK ||
-		     sb_nr == SB_NR_UNLINKAT ||
-		     sb_nr == SB_NR_LCHOWN ||
-		     sb_nr == SB_NR_RENAME ||
-		     sb_nr == SB_NR_SYMLINK) &&
-		    ((-1 != lstat(abs_path, &st)) && (S_ISLNK(st.st_mode))))
-		{
+		/* XXX: Hack to enable us to remove symlinks pointing to
+		 * protected stuff.  First we make sure that the passed path
+		 * is writable, and if so, check if it's a symlink, and give
+		 * access only if the resolved path of the symlink's parent
+		 * also have write access.  We also want to let through funcs
+		 * whose flags say they will operate on symlinks themselves
+		 * rather than dereferencing them.
+		 */
+		if (sym_func) {
 			/* Check if the symlink unresolved path have access */
 			retval = check_prefixes(sbcontext->write_prefixes,
 						sbcontext->num_write_prefixes, abs_path);
@@ -714,7 +746,8 @@ out:
  *  1: things worked out fine
  *  2: things worked out fine, but the errno should not be restored
  */
-static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, const char *file)
+static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
+                         const char *file, int flags)
 {
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
@@ -736,7 +769,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func, co
 	if (debug)
 		debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
 
-	result = check_access(sbcontext, sb_nr, func, absolute_path, resolved_path);
+	result = check_access(sbcontext, sb_nr, func, flags, absolute_path, resolved_path);
 
 	if (verbose) {
 		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
@@ -817,12 +850,12 @@ bool is_sandbox_on(void)
 /* Need to protect the global sbcontext structure */
 static pthread_mutex_t sb_syscall_lock = PTHREAD_MUTEX_INITIALIZER;
 
-bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
+bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	int old_errno = errno;
 	int result;
 //	static sbcontext_t sbcontext;
-	char *at_file_buf = NULL;
+	char at_file_buf[SB_PATH_MAX];
 
 	if (file == NULL || file[0] == '\0') {
 		/* The file/directory does not exist */
@@ -833,13 +866,19 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	/* The *at style functions have the following semantics:
 	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
 	 *	- file is absolute: dirfd is ignored
-	 *	- otherwise, file is relative to dirfd
-	 * Since maintaining fd state based on open's, we'll just utilize
-	 * the kernel doing it for us with /proc/<pid>/fd/ ...
+	 *	- otherwise: file is relative to dirfd
+	 * Since maintaining fd state based on open's is real messy, we'll
+	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
 	 */
 	if (dirfd != AT_FDCWD && file[0] != '/') {
-		at_file_buf = xmalloc(50 + strlen(file));
-		sprintf(at_file_buf, "/proc/%i/fd/%i/%s", getpid(), dirfd, file);
+		size_t at_len = sizeof(at_file_buf) - 1 - 1 - strlen(file);
+		sprintf(at_file_buf, "/proc/%i/fd/%i", getpid(), dirfd);
+		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
+		if (ret == -1)
+			return false;
+		at_file_buf[ret] = '/';
+		at_file_buf[ret + 1] = '\0';
+		strcat(at_file_buf, file);
 		file = at_file_buf;
 	}
 
@@ -883,12 +922,9 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file)
 	/* Might have been reset in check_access() */
 	sbcontext.show_access_violation = true;
 
-	result = check_syscall(&sbcontext, sb_nr, func, file);
+	result = check_syscall(&sbcontext, sb_nr, func, file, flags);
 
 	pthread_mutex_unlock(&sb_syscall_lock);
-
-	if (at_file_buf)
-		free(at_file_buf);
 
 	if (0 == result) {
 		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))
@@ -911,7 +947,7 @@ bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *f
 		sb_nr = SB_NR_ACCESS_WR, ext_func = "access_wr";
 	else
 		sb_nr = SB_NR_ACCESS_RD, ext_func = "access_rd";
-	return before_syscall(dirfd, sb_nr, ext_func, file);
+	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
 }
 
 bool before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *file, int flags)
@@ -921,7 +957,7 @@ bool before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char 
 		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
 	else
 		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
-	return before_syscall(dirfd, sb_nr, ext_func, file);
+	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
 }
 
 bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
@@ -936,5 +972,5 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
 	else
 		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
-	return before_syscall(dirfd, sb_nr, ext_func, file);
+	return before_syscall(dirfd, sb_nr, ext_func, file, 0);
 }

@@ -17,10 +17,10 @@
 #define _FUNCTION_SANDBOX_SAFE(test) \
 	(!is_sandbox_on() || (test))
 
-#define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _path) \
-       _FUNCTION_SANDBOX_SAFE(before_syscall(_dirfd, WRAPPER_NR, STRING_NAME, _path))
+#define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _path, _flags) \
+       _FUNCTION_SANDBOX_SAFE(before_syscall(_dirfd, WRAPPER_NR, STRING_NAME, _path, _flags))
 #define FUNCTION_SANDBOX_SAFE(_path) \
-        FUNCTION_SANDBOX_SAFE_AT(AT_FDCWD, _path)
+        FUNCTION_SANDBOX_SAFE_AT(AT_FDCWD, _path, 0)
 
 #define FUNCTION_SANDBOX_SAFE_ACCESS_AT(_dirfd, _path, _flags) \
        _FUNCTION_SANDBOX_SAFE(before_syscall_access(_dirfd, WRAPPER_NR, STRING_NAME, _path, _flags))
@@ -40,7 +40,7 @@
 int canonicalize(const char *, char *);
 
 bool is_sandbox_on(void);
-bool before_syscall(int, int, const char *, const char *);
+bool before_syscall(int, int, const char *, const char *, int);
 bool before_syscall_access(int, int, const char *, const char *, int);
 bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
