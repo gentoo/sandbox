@@ -14,11 +14,22 @@ extern int EXTERN_NAME(WRAPPER_ARGS_PROTO);
 static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 
 /* See to see if this an ELF and if so, is it static which we can't wrap */
-void check_exec(const char *filename)
+static void check_exec(const char *filename, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
 	struct stat st;
+
+#ifdef __linux__
+	/* Filter some common safe static things */
+	if (!strncmp(argv[0], "/lib", 4) && strstr(argv[0], ".so.")) {
+		/* Packages often run `ldd /some/binary` which will in
+		 * turn run `/lib/ld-linux.so.2 --verify /some/binary`
+		 */
+		if (!strcmp(argv[1], "--verify"))
+			return;
+	}
+#endif
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1)
@@ -56,7 +67,16 @@ void check_exec(const char *filename)
 		PARSE_ELF(32);
 	else
 		PARSE_ELF(64);
-	SB_EWARN("QA: Static ELF", " %s\n", filename);
+
+	SB_EWARN("QA: Static ELF", " %s: ", filename);
+	size_t i;
+	for (i = 0; argv[i]; ++i)
+		if (strchr(argv[i], ' '))
+			sb_printf("'%s' ", argv[i]);
+		else
+			sb_printf("%s ", argv[i]);
+	sb_printf("\n");
+
  done:
 
  out_mmap:
@@ -78,7 +98,7 @@ int WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	if (!FUNCTION_SANDBOX_SAFE(filename))
 		return result;
 
-	check_exec(filename);
+	check_exec(filename, argv);
 
 	str_list_for_each_item(envp, entry, count) {
 		if (strstr(entry, LD_PRELOAD_EQ) != entry)
