@@ -63,6 +63,19 @@ typedef __sighandler_t sighandler_t;
 # endif
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
+#endif
+#ifndef MAX
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+#endif
+#ifndef MIN
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#endif
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
 /* If the system is old and does not support *at funcs, then define
  * it ourself.  Shouldn't matter based on how we use it.
  */
