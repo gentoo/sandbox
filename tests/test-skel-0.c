@@ -23,6 +23,17 @@ int at_get_flags(const char *str_flags)
 	}
 }
 
+mode_t sscanf_mode_t(const char *str_mode)
+{
+	/* some systems (like Linux) have a 32bit mode_t.  Others
+	 * (like FreeBSD) have a 16bit mode_t.  We can't straight
+	 * sscanf() into it otherwise we might smash the stack.
+	 */
+	int mode;
+	sscanf(str_mode, "%i", &mode);
+	return (mode_t)mode;
+}
+
 int main(int argc, char *argv[])
 {
 #if CONFIG

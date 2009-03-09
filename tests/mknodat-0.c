@@ -16,8 +16,7 @@
 	char *file = s; \
 	\
 	s = argv[i++]; \
-	mode_t mode; \
-	sscanf(s, "%i", &mode); \
+	mode_t mode = sscanf_mode_t(s); \
 	\
 	s = argv[i++]; \
 	dev_t dev; \
