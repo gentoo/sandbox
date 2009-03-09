@@ -2,5 +2,7 @@ export abs_top_srcdir abs_top_builddir abs_srcdir abs_builddir
 export PATH=$abs_top_srcdir/src:$abs_top_builddir/src:$abs_builddir:$abs_srcdir:$PATH
 export AWK="@AWK@"
 
-export SB_UID=$(get-user)
-export SB_GID=$(get-group)
+if ! ${at_clean} ; then
+	export SB_UID=$(get-user)
+	export SB_GID=$(get-group)
+fi
