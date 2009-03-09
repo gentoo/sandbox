@@ -1,4 +1,4 @@
 #!/bin/sh
-addpredict /
-touch /a/b/c/d/e/f/g/no/real/path/so/dont/make/it
+# http://bugs.gentoo.org/257418
+(>/dev/fd/3)
 exit 0

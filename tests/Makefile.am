@@ -60,8 +60,8 @@ dist_check_SCRIPTS = \
 	fchownat-1.sh \
 	fchownat-2.sh \
 	lchown-1.sh \
+	open-1.sh \
 	script-0 \
-	script-0.sh \
 	script-1.sh \
 	script-2.sh \
 	script-3.sh
