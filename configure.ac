@@ -1,10 +1,11 @@
 AC_PREREQ([2.61])
 AC_INIT([sandbox], [1.5], [sandbox@gentoo.org])
-sb_configure_opts="$*"
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
+dnl we want to strip out quote chars and normalize whitespace
+sb_configure_opts=$(eval echo ${ac_configure_args})
 AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts}"], [Arguments given to ./configure])
 
 dnl Checks for programs.
