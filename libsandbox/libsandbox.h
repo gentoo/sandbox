@@ -37,8 +37,6 @@
 #define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_path, _mode) \
         FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
-int canonicalize(const char *, char *);
-
 bool is_sandbox_on(void);
 bool before_syscall(int, int, const char *, const char *, int);
 bool before_syscall_access(int, int, const char *, const char *, int);
@@ -48,8 +46,11 @@ bool before_syscall_open_char(int, int, const char *, const char *, const char *
 extern char sandbox_lib[SB_PATH_MAX];
 extern volatile bool sandbox_on;
 
+void sb_dump_backtrace(void);
+
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);
+int canonicalize(const char *, char *);
 
 #endif /* __LIBSANDBOX_H__ */

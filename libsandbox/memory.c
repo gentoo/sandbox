@@ -37,12 +37,7 @@ void free(void *ptr)
 	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr))) {
 		SB_EERROR("sandbox memory corruption", " free(%p): %s\n",
 			ptr, strerror(errno));
-#ifdef HAVE_BACKTRACE
-		void *funcs[10];
-		int num_funcs;
-		num_funcs = backtrace(funcs, ARRAY_SIZE(funcs));
-		backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
-#endif
+		sb_dump_backtrace();
 	}
 }
 

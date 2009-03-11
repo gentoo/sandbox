@@ -300,6 +300,45 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
+void sb_dump_backtrace(void)
+{
+#ifdef HAVE_BACKTRACE
+	void *funcs[10];
+	int num_funcs;
+	num_funcs = backtrace(funcs, ARRAY_SIZE(funcs));
+	backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
+#endif
+}
+
+__attribute__((noreturn))
+void sb_abort(void)
+{
+	sb_dump_backtrace();
+
+#ifndef NDEBUG
+	if (is_env_on("SANDBOX_GDB")) {
+		SB_EINFO("\nattempting to autolaunch gdb", " please wait ...\n\n");
+		pid_t crashed_pid = getpid();
+		switch (fork()) {
+			case -1: break;
+			case 0: {
+				char pid[10];
+				snprintf(pid, sizeof(pid), "%i", crashed_pid);
+				unsetenv(ENV_LD_PRELOAD);
+				/*sb_unwrapped_*/execlp("gdb", "gdb", "--quiet", "--pid", pid, "-ex", "bt full", NULL);
+				break;
+			}
+			default: {
+				int status;
+				wait(&status);
+			}
+		}
+	}
+#endif
+
+	abort();
+}
+
 #define _SB_WRITE_STR(str) SB_WRITE(logfd, str, strlen(str), error)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
@@ -813,20 +852,19 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	return result;
 
 error:
-	if (NULL != absolute_path)
-		free(absolute_path);
-	if (NULL != resolved_path)
-		free(resolved_path);
-
 	/* The path is too long to be canonicalized, so just warn and let the
 	 * function handle it (see bugs #21766 #94630 #101728 #227947)
 	 */
-	if (ENAMETOOLONG == errno)
+	if (ENAMETOOLONG == errno) {
+		free(absolute_path);
+		free(resolved_path);
 		return 2;
+	}
 
 	/* If we get here, something bad happened */
-	SB_EERROR("ISE ", "Unrecoverable error: %s\n", strerror(errno));
-	abort();
+	SB_EERROR("ISE ", "Unrecoverable error: %s\n\tabs_path: %s\n\tres_path: %s\n",
+		strerror(errno), absolute_path, resolved_path);
+	sb_abort();
 }
 
 bool is_sandbox_on(void)
