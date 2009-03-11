@@ -47,7 +47,15 @@ __openat64_2
 creat64
 fopen64
 truncate64
+#execl
+#execle
+#execlp
+execv
 execve
+execvp
+fexecve
+system
+popen
 utime
 utimes
 utimensat

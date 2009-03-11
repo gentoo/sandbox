@@ -4,8 +4,5 @@ cache results of filesystem checks
 
 add tests to make sure errno is saved/restored properly
 
-z handling in sp_printf
-
-running tests inside of sandbox inside of sandbox
-
-make distcheck -- path to config files fail
+wrappers for execl{,l,p} ... unfortunately, we'll probably have to basically
+reimplement the functions (building up argv[] and then call the execv* ver)

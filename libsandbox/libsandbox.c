@@ -563,15 +563,16 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (sbcontext->read_prefixes &&
 	    (sb_nr == SB_NR_ACCESS_RD ||
 	     sb_nr == SB_NR_OPEN_RD   ||
-	   /*sb_nr == SB_NR_POPEN     ||*/
 	     sb_nr == SB_NR_OPENDIR   ||
-	   /*sb_nr == SB_NR_SYSTEM    ||
-	     sb_nr == SB_NR_EXECL     ||
+	     sb_nr == SB_NR_POPEN     ||
+	     sb_nr == SB_NR_SYSTEM    ||
+	   /*sb_nr == SB_NR_EXECL     ||
 	     sb_nr == SB_NR_EXECLP    ||
-	     sb_nr == SB_NR_EXECLE    ||
+	     sb_nr == SB_NR_EXECLE    ||*/
 	     sb_nr == SB_NR_EXECV     ||
-	     sb_nr == SB_NR_EXECVP    ||*/
-	     sb_nr == SB_NR_EXECVE))
+	     sb_nr == SB_NR_EXECVP    ||
+	     sb_nr == SB_NR_EXECVE    ||
+	     sb_nr == SB_NR_FEXECVE))
 	{
 		retval = check_prefixes(sbcontext->read_prefixes,
 					sbcontext->num_read_prefixes, resolv_path);
