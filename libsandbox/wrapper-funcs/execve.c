@@ -12,6 +12,7 @@
 #define WRAPPER_ARGS filename, argv, envp
 extern int EXTERN_NAME(WRAPPER_ARGS_PROTO);
 static int (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
+static FILE *tty_fp = NULL;
 
 /* See to see if this an ELF and if so, is it static which we can't wrap */
 static void check_exec(const char *filename, char *const argv[])
@@ -19,6 +20,11 @@ static void check_exec(const char *filename, char *const argv[])
 	int fd;
 	unsigned char *elf;
 	struct stat st;
+
+	if (!tty_fp)
+		tty_fp = fopen("/dev/tty", "ae");
+	if (!tty_fp)
+		return;
 
 #ifdef __linux__
 	/* Filter some common safe static things */
@@ -68,14 +74,19 @@ static void check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
-	SB_EWARN("QA: Static ELF", " %s: ", filename);
+	/* Write to tty_fd because stderr is not always 100% safe.  If running
+	 * tests and validating output, this may break things.  #261957
+	 * Writing to /dev/tty directly might annoy some people ... perhaps
+	 * we should attempt to hijack the log fd from portage ...
+	 */
+	sb_fprintf(tty_fp, "QA: Static ELF: %s: ", filename);
 	size_t i;
 	for (i = 0; argv[i]; ++i)
 		if (strchr(argv[i], ' '))
-			sb_printf("'%s' ", argv[i]);
+			sb_fprintf(tty_fp, "'%s' ", argv[i]);
 		else
-			sb_printf("%s ", argv[i]);
-	sb_printf("\n");
+			sb_fprintf(tty_fp, "%s ", argv[i]);
+	sb_fprintf(tty_fp, "\n");
 
  done:
 
