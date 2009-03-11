@@ -49,6 +49,7 @@ check_PROGRAMS = \
 	utimensat-0 \
 	utimes-0 \
 	\
+	getcwd-gnulib_tst \
 	libsigsegv_tst \
 	sb_printf_tst
 
@@ -65,7 +66,8 @@ dist_check_SCRIPTS = \
 	script-1.sh \
 	script-2.sh \
 	script-3.sh \
-	script-4.sh
+	script-4.sh \
+	script-5.sh
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la

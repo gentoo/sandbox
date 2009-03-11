@@ -225,7 +225,11 @@ static char *resolve_path(const char *path, int follow_link)
 		}
 	}
 
-	restore_errno();
+	/* If things failed, don't restore errno.  More info at comment at
+	 * end of check_syscall() function.
+	 */
+	if (filtered_path)
+		restore_errno();
 
 	return filtered_path;
 }
