@@ -1,3 +1,6 @@
 #!/bin/sh
-# dummy for local.at:SB_CHECK()
-exit 0
+# shell scripts only get properly wrapped if our native shell is the
+# same abi as the compiled libsandbox #259244
+sh=$(scanelf -BF'%M#F' /bin/sh)
+sb=$(scanelf -BF'%M#F' "${abs_top_builddir}"/libsandbox/.libs/libsandbox.so)
+[ "${sh}" = "${sb}" ] && exit 0 || exit 77

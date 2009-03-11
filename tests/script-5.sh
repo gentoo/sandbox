@@ -1,6 +1,7 @@
 #!/bin/sh
 # make sure extra long paths don't cause sandbox to shit itself
 # (actual exit status is irrelevant as it depends on host libc)
+[ "${at_xfail}" = "yes" ] && exit 77 # see script-0
 
 addwrite $PWD
 getcwd-gnulib_tst

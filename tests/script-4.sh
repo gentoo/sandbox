@@ -1,5 +1,6 @@
 #!/bin/sh
 # make sure LD_PRELOAD makes it back into env on exec
+[ "${at_xfail}" = "yes" ] && exit 77 # see script-0
 
 checkit() {
 	if ! eval "$@" | grep -q '^LD_PRELOAD=.*libsandbox.so.*' ; then
