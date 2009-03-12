@@ -20,7 +20,7 @@ static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 	if (-1 == canonicalize(pathname, canonic))
 		/* see comments in check_syscall() */
 		if (ENAMETOOLONG != errno)
-			return false;
+			goto error;
 
 	/* XXX: Hack to make sure sandboxed process cannot remove
 	 * a device node, bug #79836. */
@@ -28,12 +28,18 @@ static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
 	    0 == strcmp(canonic, "/dev/zero"))
 	{
 		errno = EACCES;
-		return false;
+		goto error;
 	}
 
 	restore_errno();
 
 	return true;
+
+ error:
+	if (is_env_on(ENV_SANDBOX_DEBUG))
+		SB_EINFO("EARLY FAIL", "  %s(%s): %s\n",
+			STRING_NAME, pathname, strerror(errno));
+	return false;
 }
 #define WRAPPER_PRE_CHECKS() sb_unlinkat_pre_check(WRAPPER_ARGS)
 

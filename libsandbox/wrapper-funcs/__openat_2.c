@@ -31,8 +31,12 @@ static inline bool PRE_CHECK_FUNC(WRAPPER_NAME)(WRAPPER_ARGS_PROTO)
 		{
 			struct stat st;
 			save_errno();
-			if (-1 == stat(pathname, &st))
+			if (-1 == stat(pathname, &st)) {
+				if (is_env_on(ENV_SANDBOX_DEBUG))
+					SB_EINFO("EARLY FAIL", "  %s(%s): %s\n",
+						STRING_NAME, pathname, strerror(errno));
 				return false;
+			}
 			restore_errno();
 		}
 	}

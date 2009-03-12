@@ -19,8 +19,12 @@ static inline bool sb_mkdirat_pre_check(WRAPPER_ARGS_PROTO)
 
 	if (-1 == canonicalize(pathname, canonic))
 		/* see comments in check_syscall() */
-		if (ENAMETOOLONG != errno)
+		if (ENAMETOOLONG != errno) {
+			if (is_env_on(ENV_SANDBOX_DEBUG))
+				SB_EINFO("EARLY FAIL", "  %s(%s) @ canonicalize: %s\n",
+					STRING_NAME, pathname, strerror(errno));
 			return false;
+		}
 
 	/* XXX: Hack to prevent errors if the directory exist, and are
 	 * not writable - we rather return EEXIST than fail.  This can
@@ -30,6 +34,9 @@ static inline bool sb_mkdirat_pre_check(WRAPPER_ARGS_PROTO)
 	 */
 	struct stat st;
 	if (0 == lstat(canonic, &st)) {
+		if (is_env_on(ENV_SANDBOX_DEBUG))
+			SB_EINFO("EARLY FAIL", "  %s(%s) @ lstat: %s\n",
+				STRING_NAME, pathname, strerror(errno));
 		errno = EEXIST;
 		return false;
 	}
