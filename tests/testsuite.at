@@ -1,12 +1,17 @@
 AT_INIT
 
-m4_include(access.at)
-m4_include(chmod.at)
-m4_include(chown.at)
-m4_include(fchmodat.at)
-m4_include(fchownat.at)
-m4_include(lchown.at)
-m4_include(libsigsegv.at)
-m4_include(open.at)
-m4_include(sb_printf.at)
-m4_include(script.at)
+m4_defun([sb_inc],[dnl
+m4_defun([SB_SECTION],[$1])
+m4_include([]SB_SECTION[.at])
+])
+
+sb_inc([access])
+sb_inc([chmod])
+sb_inc([chown])
+sb_inc([fchmodat])
+sb_inc([fchownat])
+sb_inc([lchown])
+sb_inc([libsigsegv])
+sb_inc([open])
+sb_inc([sb_printf])
+sb_inc([script])

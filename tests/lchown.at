@@ -1,2 +1,1 @@
-m4_defun([SB_SECTION],[lchown])
 SB_CHECK(1)

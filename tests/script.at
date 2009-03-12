@@ -1,4 +1,3 @@
-m4_defun([SB_SECTION],[script])
 SB_CHECK(1)
 SB_CHECK(2, [hi])
 SB_CHECK(3, [OK])
