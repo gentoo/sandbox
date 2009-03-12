@@ -67,7 +67,8 @@ dist_check_SCRIPTS = \
 	script-2.sh \
 	script-3.sh \
 	script-4.sh \
-	script-5.sh
+	script-5.sh \
+	script-6.sh
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la

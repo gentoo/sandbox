@@ -170,7 +170,7 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 	} else if (child_pid < 0) {
 		if (debug)
 			sb_pwarn("process failed to spawn!");
-		return 0;
+		return 1;
 	}
 
 	/* fork() creates a copy of this, so no need to use more memory than
@@ -181,23 +181,23 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 	ret = waitpid(child_pid, &status, 0);
 	if (-1 == ret) {
 		sb_pwarn("failed to waitpid for child");
-		return 0;
+		return 1;
 	} else if (status != 0) {
-		if (WIFSIGNALED(status))
+		if (WIFSIGNALED(status)) {
 			psignal(WTERMSIG(status), "Sandboxed process killed by signal");
-		else if (debug)
+			return 128 + WTERMSIG(status);
+		} else if (debug)
 			sb_warn("process returned with failed exit status %d!", WEXITSTATUS(status));
-		return 0;
+		return WEXITSTATUS(status) ? : 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int main(int argc, char **argv)
 {
 	struct sigaction act_new;
 
-	int success = 1;
 	int sandbox_log_presence = 0;
 
 	struct sandbox_info_t sandbox_info;
@@ -333,8 +333,7 @@ int main(int argc, char **argv)
 	dputs("Process being started in forked instance.");
 
 	/* Start Bash */
-	if (!spawn_shell(argv_bash, sandbox_environ, print_debug))
-		success = 0;
+	int shell_exit = spawn_shell(argv_bash, sandbox_environ, print_debug);
 
 	/* As spawn_shell() free both argv_bash and sandbox_environ, make sure
 	 * we do not run into issues in future if we need a OOM error below
@@ -352,10 +351,9 @@ int main(int argc, char **argv)
 	} else
 		dputs(sandbox_footer);
 
-	if (sandbox_log_presence || !success)
-		return 1;
-	else
-		return 0;
+	if (sandbox_log_presence && shell_exit == 0)
+		shell_exit = 1;
+	return shell_exit;
 
 oom_error:
 	if (NULL != argv_bash)

@@ -7,7 +7,7 @@ AT_SETUP([SB_SECTION/$1])
 AT_XFAIL_IF([]SB_SECTION[-0 >/dev/null ; test $? -eq 77])
 AT_SB_CHECK(
 	[. $abs_top_srcdir/tests/]SB_SECTION[-$1.sh],
-	[0],
+	m4_ifval($4,$4,[0]),
 	m4_ifval($2,$2,[ignore]),
 	m4_ifval($3,$3,[ignore]))
 AT_CLEANUP])
