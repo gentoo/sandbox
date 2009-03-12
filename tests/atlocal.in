@@ -10,3 +10,7 @@ if ! ${at_clean} ; then
 fi
 
 export at_xfail
+
+# portage likes to do `addpredict /` ... we dont need/want
+# that garbage messing up our env
+export SANDBOX_PREDICT=${SANDBOX_PREDICT%:/}
