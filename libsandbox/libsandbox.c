@@ -895,7 +895,6 @@ static pthread_mutex_t sb_syscall_lock = PTHREAD_MUTEX_INITIALIZER;
 
 bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
-	int old_errno = errno;
 	int result;
 //	static sbcontext_t sbcontext;
 	char at_file_buf[SB_PATH_MAX];
@@ -905,6 +904,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		errno = ENOENT;
 		return false;
 	}
+
+	save_errno();
 
 	/* The *at style functions have the following semantics:
 	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
@@ -917,8 +918,14 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		size_t at_len = sizeof(at_file_buf) - 1 - 1 - strlen(file);
 		sprintf(at_file_buf, "/proc/%i/fd/%i", getpid(), dirfd);
 		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
-		if (ret == -1)
+		if (ret == -1) {
+			/* see comments at end of check_syscall() */
+			if (errno == ENAMETOOLONG) {
+				restore_errno();
+				return true;
+			}
 			return false;
+		}
 		at_file_buf[ret] = '/';
 		at_file_buf[ret + 1] = '\0';
 		strcat(at_file_buf, file);
@@ -978,7 +985,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		 *        fopen() and co, ETOOLONG, etc). */
 		errno = EACCES;
 	} else if (result == 1)
-		errno = old_errno;
+		restore_errno();
 
 	return result ? true : false;
 }
