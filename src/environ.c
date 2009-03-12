@@ -262,16 +262,20 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	unsetenv(ENV_SANDBOX_INTRACTV);
 	unsetenv(ENV_BASH_ENV);
 
-	if (NULL != getenv(ENV_LD_PRELOAD)) {
-		have_ld_preload = 1;
-		orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
-
-		ld_preload_envvar = xcalloc(strlen(orig_ld_preload_envvar) +
-				strlen(sandbox_info->sandbox_lib) + 2,
-				sizeof(char));
-		snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
-				strlen(sandbox_info->sandbox_lib) + 2, "%s %s",
-				sandbox_info->sandbox_lib, orig_ld_preload_envvar);
+	orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
+	if (orig_ld_preload_envvar) {
+		if (!strstr(orig_ld_preload_envvar, sandbox_info->sandbox_lib)) {
+			have_ld_preload = 1;
+			ld_preload_envvar = xcalloc(strlen(orig_ld_preload_envvar) +
+					strlen(sandbox_info->sandbox_lib) + 2,
+					sizeof(char));
+			snprintf(ld_preload_envvar, strlen(orig_ld_preload_envvar) +
+					strlen(sandbox_info->sandbox_lib) + 2, "%s %s",
+					sandbox_info->sandbox_lib, orig_ld_preload_envvar);
+		} else {
+			have_ld_preload = 2;
+			ld_preload_envvar = NULL;
+		}
 	} else
 		ld_preload_envvar = xstrdup(sandbox_info->sandbox_lib);
 	/* Do not unset this, as strange things might happen */
@@ -299,7 +303,7 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	if (!getenv(ENV_NOCOLOR))
 		sb_setenv(&new_environ, ENV_NOCOLOR, "no");
 	/* If LD_PRELOAD was not set, set it here, else do it below */
-	if (1 != have_ld_preload)
+	if (!have_ld_preload)
 		sb_setenv(&new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
 
 	/* Make sure our bashrc gets preference */
