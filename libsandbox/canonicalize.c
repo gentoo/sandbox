@@ -47,7 +47,7 @@
 char *
 erealpath(const char *name, char *resolved)
 {
-	char *rpath, *dest;
+	char *rpath, *dest, *recover;
 	const char *start, *end, *rpath_limit;
 	long int path_max;
 
@@ -80,13 +80,63 @@ erealpath(const char *name, char *resolved)
 		rpath = resolved;
 	rpath_limit = rpath + path_max;
 
+	recover = NULL;
 	if (name[0] != '/') {
 		if (!egetcwd(rpath, path_max)) {
 			rpath[0] = '\0';
 			goto error;
 		}
+
+		/* Can we actually access the working dir (sane perms) ?
+		 * If not, try a little harder to consume this path in
+		 * case it has symlinks out into a better world ...
+		 */
+		struct stat st;
+		if (lstat(rpath, &st) == -1 && errno == EACCES) {
+			char *p = rpath;
+			strcpy(rpath, name);
+			do {
+				p = strchr(p, '/');
+				if (p) *p = '\0';
+				if (lstat(rpath, &st))
+					break;
+				if (S_ISLNK(st.st_mode)) {
+					ssize_t cnt = readlink(rpath, rpath, path_max);
+					if (cnt == -1)
+						break;
+					rpath[cnt] = '\0';
+					if (p) {
+						size_t bytes_left = strlen(p);
+						if (bytes_left >= path_max)
+							break;
+						strncat(rpath, name + (p - rpath + 1),
+							path_max - bytes_left - 1);
+					}
+
+					/* Ok, we have a chance at something better.  If
+					 * this fails, we give up.  Otherwise we set things
+					 * to match the new paths that we've found and hook
+					 * back into the normal process.
+					 */
+					recover = erealpath(rpath, NULL);
+					if (recover) {
+						if (recover[0] != '/') {
+							strcpy(rpath, recover);
+							break;
+						} else {
+							name = recover;
+							goto recover_full;
+						}
+					} else
+						goto error;
+				}
+				if (p) *p++ = '/';
+			} while (p);
+		}
+
 		dest = strchr(rpath, '\0');
 	} else {
+ recover_full:
 		rpath[0] = '/';
 		dest = rpath + 1;
 	}
@@ -148,13 +198,14 @@ erealpath(const char *name, char *resolved)
 #endif
 	*dest = '\0';
 
-	return resolved ? rpath : memcpy(resolved, rpath, dest - rpath + 1);
+	return rpath;
 
 error:
 	if (resolved)
 		snprintf(resolved, path_max, "%s", rpath);
 	else
 		free(rpath);
+	free(recover);
 	return NULL;
 }
 

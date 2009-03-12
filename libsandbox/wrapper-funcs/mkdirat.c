@@ -22,9 +22,12 @@ static inline bool sb_mkdirat_pre_check(WRAPPER_ARGS_PROTO)
 		if (ENAMETOOLONG != errno)
 			return false;
 
-	/* XXX: Hack to prevent errors if the directory exist,
-	 * and are not writable - we rather return EEXIST rather
-	 * than failing */
+	/* XXX: Hack to prevent errors if the directory exist, and are
+	 * not writable - we rather return EEXIST than fail.  This can
+	 * occur if doing something like `mkdir -p /`.  We certainly do
+	 * not want to pass this attempt up to the higher levels as those
+	 * will trigger a sandbox violation.
+	 */
 	struct stat st;
 	if (0 == lstat(canonic, &st)) {
 		errno = EEXIST;

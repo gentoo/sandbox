@@ -275,7 +275,7 @@ char *egetcwd(char *buf, size_t size)
 			 */
 		  	errno = ENAMETOOLONG;
 
-		if (errno) {
+		if (errno && errno != EACCES) {
 		  	/* If getcwd() allocated the buffer, free it. */
 			if (NULL == oldbuf)
 				free(tmpbuf);
@@ -801,10 +801,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	bool access, debug, verbose;
 
 	absolute_path = resolve_path(file, 0);
-	if (NULL == absolute_path)
-		goto error;
 	resolved_path = resolve_path(file, 1);
-	if (NULL == resolved_path)
+	if (!absolute_path || !resolved_path)
 		goto error;
 
 	verbose = is_env_on(ENV_SANDBOX_VERBOSE);
@@ -851,7 +849,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 
 	return result;
 
-error:
+ error:
 	/* The path is too long to be canonicalized, so just warn and let the
 	 * function handle it (see bugs #21766 #94630 #101728 #227947)
 	 */
@@ -862,8 +860,9 @@ error:
 	}
 
 	/* If we get here, something bad happened */
-	SB_EERROR("ISE ", "Unrecoverable error: %s\n\tabs_path: %s\n\tres_path: %s\n",
-		strerror(errno), absolute_path, resolved_path);
+	SB_EERROR("ISE ", "%s(%s): %s\n"
+		"\tabs_path: %s\n" "\tres_path: %s\n",
+		func, file, strerror(errno), absolute_path, resolved_path);
 	sb_abort();
 }
 
