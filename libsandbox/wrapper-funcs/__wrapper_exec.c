@@ -20,7 +20,32 @@ static WRAPPER_RET_TYPE (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 #ifndef SB_EXEC_COMMON
 #define SB_EXEC_COMMON
 
-static FILE *tty_fp = NULL;
+static char *flatten_args(char *const argv[])
+{
+	char *ret;
+	size_t i, len;
+
+	len = 1;
+	for (i = 0; argv[i]; ++i) {
+		len += strlen(argv[i]) + 1;
+		if (strchr(argv[i], ' '))
+			len += 2;
+	}
+
+	ret = xmalloc(len);
+	ret[0] = '\0';
+	for (i = 0; argv[i]; ++i) {
+		if (strchr(argv[i], ' ')) {
+			strcat(ret, "'");
+			strcat(ret, argv[i]);
+			strcat(ret, "'");
+		} else
+			strcat(ret, argv[i]);
+		strcat(ret, " ");
+	}
+
+	return ret;
+}
 
 /* See to see if this an ELF and if so, is it static which we can't wrap */
 static void sb_check_exec(const char *filename, char *const argv[])
@@ -29,20 +54,21 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	unsigned char *elf;
 	struct stat st;
 
-	if (!tty_fp)
-		tty_fp = fopen("/dev/tty", "ae");
-	if (!tty_fp)
-		return;
-
 #ifdef __linux__
-	/* Filter some common safe static things */
+	/* Filter some common safe static things ...
+	 * Should make a whitelist system for this ...
+	 */
 	if (!strncmp(argv[0], "/lib", 4) && strstr(argv[0], ".so.")) {
 		/* Packages often run `ldd /some/binary` which will in
 		 * turn run `/lib/ld-linux.so.2 --verify /some/binary`
 		 */
 		if (!strcmp(argv[1], "--verify"))
 			return;
-	}
+
+	} else if (argv[1] && !strcmp(argv[1], "prelink") &&
+	           argv[2] && !strcmp(argv[2], "--version"))
+		/* Portage likes to run `prelink --version` */
+		return;
 #endif
 
 	fd = open(filename, O_RDONLY);
@@ -82,19 +108,9 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
-	/* Write to tty_fd because stderr is not always 100% safe.  If running
-	 * tests and validating output, this may break things.  #261957
-	 * Writing to /dev/tty directly might annoy some people ... perhaps
-	 * we should attempt to hijack the log fd from portage ...
-	 */
-	sb_fprintf(tty_fp, "QA: Static ELF: %s: ", filename);
-	size_t i;
-	for (i = 0; argv[i]; ++i)
-		if (strchr(argv[i], ' '))
-			sb_fprintf(tty_fp, "'%s' ", argv[i]);
-		else
-			sb_fprintf(tty_fp, "%s ", argv[i]);
-	sb_fprintf(tty_fp, "\n");
+	char *args = flatten_args(argv);
+	sb_eqawarn("Static ELF: %s: %s\n", filename, args);
+	free(args);
 
  done:
 

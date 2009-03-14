@@ -27,6 +27,7 @@ libsandbox_la_LDFLAGS = \
 	-avoid-version \
 	$(LDFLAG_VER),libsandbox.map
 libsandbox_la_SOURCES = \
+	eqawarn.c    \
 	libsandbox.h \
 	libsandbox.c \
 	memory.c     \

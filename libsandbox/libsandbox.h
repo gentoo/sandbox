@@ -46,6 +46,7 @@ bool before_syscall_open_char(int, int, const char *, const char *, const char *
 extern char sandbox_lib[SB_PATH_MAX];
 extern volatile bool sandbox_on;
 
+__attribute__((__format__(__printf__, 1, 2))) void sb_eqawarn(const char *format, ...);
 void sb_dump_backtrace(void);
 
 /* glibc modified realpath() function */

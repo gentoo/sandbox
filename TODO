@@ -6,3 +6,9 @@ add tests to make sure errno is saved/restored properly
 
 wrappers for execl{,l,p} ... unfortunately, we'll probably have to basically
 reimplement the functions (building up argv[] and then call the execv* ver)
+
+erealpath() might deref symlinks when working with unreadable paths as non-root
+even when working on funcs that do not deref funcs themselves ... this isnt a
+real big issue though
+
+add a whitelist system for static binaries rather than hardcoding into source

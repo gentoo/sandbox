@@ -104,6 +104,7 @@ __attribute__((__format__(__printf__, 2, 3))) void sb_fdprintf(int fd, const cha
 __attribute__((__format__(__printf__, 2, 0))) void sb_vfdprintf(int fd, const char *format, va_list args);
 __attribute__((__format__(__printf__, 3, 4))) void sb_efunc(const char *color, const char *hilight, const char *format, ...);
 #define sb_fprintf(fp, ...) sb_fdprintf(fileno(fp), __VA_ARGS__)
+#define sb_vfprintf(fp, ...) sb_vfdprintf(fileno(fp), __VA_ARGS__)
 
 /* Macro for sb_read() to goto an label on error */
 #define SB_WRITE(_fd, _buf, _count, _error) \
