@@ -20,56 +20,12 @@ static WRAPPER_RET_TYPE (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 #ifndef SB_EXEC_COMMON
 #define SB_EXEC_COMMON
 
-static char *flatten_args(char *const argv[])
-{
-	char *ret;
-	size_t i, len;
-
-	len = 1;
-	for (i = 0; argv[i]; ++i) {
-		len += strlen(argv[i]) + 1;
-		if (strchr(argv[i], ' '))
-			len += 2;
-	}
-
-	ret = xmalloc(len);
-	ret[0] = '\0';
-	for (i = 0; argv[i]; ++i) {
-		if (strchr(argv[i], ' ')) {
-			strcat(ret, "'");
-			strcat(ret, argv[i]);
-			strcat(ret, "'");
-		} else
-			strcat(ret, argv[i]);
-		strcat(ret, " ");
-	}
-
-	return ret;
-}
-
-/* See to see if this an ELF and if so, is it static which we can't wrap */
+/* Check to see if this a static ELF and if so, protect using trace mechanisms */
 static void sb_check_exec(const char *filename, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
 	struct stat st;
-
-#ifdef __linux__
-	/* Filter some common safe static things ...
-	 * Should make a whitelist system for this ...
-	 */
-	if (!strncmp(argv[0], "/lib", 4) && strstr(argv[0], ".so.")) {
-		/* Packages often run `ldd /some/binary` which will in
-		 * turn run `/lib/ld-linux.so.2 --verify /some/binary`
-		 */
-		if (!strcmp(argv[1], "--verify"))
-			return;
-
-	} else if (argv[1] && !strcmp(argv[1], "prelink") &&
-	           argv[2] && !strcmp(argv[2], "--version"))
-		/* Portage likes to run `prelink --version` */
-		return;
-#endif
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1)
@@ -108,9 +64,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
-	char *args = flatten_args(argv);
-	sb_eqawarn("Static ELF: %s: %s\n", filename, args);
-	free(args);
+	trace_main(filename, argv);
 
  done:
 

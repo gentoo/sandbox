@@ -56,10 +56,14 @@ bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
 
 extern char sandbox_lib[SB_PATH_MAX];
-extern volatile bool sandbox_on;
+extern bool sandbox_on;
+extern pid_t trace_pid;
+
+void trace_main(const char *filename, char *const argv[]);
 
 __attribute__((__format__(__printf__, 1, 2))) void sb_eqawarn(const char *format, ...);
 void sb_dump_backtrace(void);
+__attribute__((noreturn)) void sb_abort(void);
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);

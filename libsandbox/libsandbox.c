@@ -64,7 +64,7 @@ typedef struct {
 
 static sbcontext_t sbcontext;
 static char *cached_env_vars[MAX_DYN_PREFIXES];
-volatile bool sandbox_on = true;
+bool sandbox_on = true;
 static bool sb_init = false;
 
 static char *resolve_path(const char *, int);
@@ -194,7 +194,13 @@ static char *resolve_path(const char *path, int follow_link)
 		 * etc.  If that fails (might not exist), we try to get the
 		 * realpath of the parent directory, as that should hopefully
 		 * exist.  If all else fails, just go with canonicalize */
-		if (NULL == realpath(path, filtered_path)) {
+		char *ret;
+		if (trace_pid)
+			ret = erealpath(path, filtered_path);
+		else
+			ret = realpath(path, filtered_path);
+
+		if (!ret) {
 			char tmp_str1[SB_PATH_MAX];
 			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
 
@@ -202,7 +208,11 @@ static char *resolve_path(const char *path, int follow_link)
 
 			/* If not, then check if we can resolve the
 			 * parent directory */
-			if (NULL == realpath(dname, filtered_path)) {
+			if (trace_pid)
+				ret = erealpath(path, filtered_path);
+			else
+				ret = realpath(path, filtered_path);
+			if (!ret) {
 				/* Fall back to canonicalize */
 				if (-1 == canonicalize(path, filtered_path)) {
 					free(filtered_path);
@@ -242,6 +252,17 @@ char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
 	char *tmpbuf, *oldbuf = buf;
+
+	/* If tracing a child, our cwd may not be the same as the child's */
+	if (trace_pid) {
+		char proc[20];
+		sprintf(proc, "/proc/%i/cwd", trace_pid);
+		ssize_t ret = readlink(proc, buf, size);
+		if (ret == -1)
+			return NULL;
+		buf[ret] = '\0';
+		return buf;
+	}
 
 	/* Need to disable sandbox, as on non-linux libc's, opendir() is
 	 * used by some getcwd() implementations and resolves to the sandbox
@@ -354,7 +375,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	    (0 == S_ISREG(log_stat.st_mode))) {
 		SB_EERROR("SECURITY BREACH", "  '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
-		abort();
+		sb_abort();
 	}
 
 	logfd = sb_open(logfile,
@@ -915,7 +936,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	 */
 	if (dirfd != AT_FDCWD && file[0] != '/') {
 		size_t at_len = sizeof(at_file_buf) - 1 - 1 - strlen(file);
-		sprintf(at_file_buf, "/proc/%i/fd/%i", getpid(), dirfd);
+		sprintf(at_file_buf, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
 		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
 		if (ret == -1) {
 			/* see comments at end of check_syscall() */

@@ -31,32 +31,41 @@ libsandbox_la_SOURCES = \
 	libsandbox.h \
 	libsandbox.c \
 	memory.c     \
+	trace.c      \
 	wrappers.h   \
 	wrappers.c   \
 	canonicalize.c
 
 libsandbox.c: libsandbox.map sb_nr.h
+trace.c: trace.h sb_nr.h $(TRACE_FILES)
 wrappers.c: symbols.h
+
+TRACE_FILES = $(wildcard $(srcdir)/trace/*.[ch] $(srcdir)/trace/*/*.[ch])
+
+SCRIPT_DIR = $(top_srcdir)/scripts
 
 SYMBOLS_FILE = $(srcdir)/symbols.h.in
 SYMBOLS_LIST = $(shell $(SED) -n '/^[^\#]/p' $(SYMBOLS_FILE))
-SYMBOLS_WRAPPERS = $(wildcard  $(srcdir)/wrapper-funcs/*.[ch])
-GEN_VERSION_MAP_SCRIPT = $(top_srcdir)/scripts/gen_symbol_version_map.awk
-GEN_HEADER_SCRIPT = $(top_srcdir)/scripts/gen_symbol_header.awk
+SYMBOLS_WRAPPERS = $(wildcard $(srcdir)/wrapper-funcs/*.[ch])
+GEN_VERSION_MAP_SCRIPT = $(SCRIPT_DIR)/gen_symbol_version_map.awk
+GEN_HEADER_SCRIPT = $(SCRIPT_DIR)/gen_symbol_header.awk
+GEN_TRACE_SCRIPT = $(SCRIPT_DIR)/gen_trace_header.awk
+SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f
 
 libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
-	$(READELF) -s $(LIBC_PATH) | \
-		LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_VERSION_MAP_SCRIPT) > $@
+	$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
 
 symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
-	$(READELF) -s $(LIBC_PATH) | \
-		LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f $(GEN_HEADER_SCRIPT) > $@
+	$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = $(srcdir)/sb_nr.h.in
 sb_nr.h: symbols.h $(SB_NR_FILE)
 	$(EGREP) -h '^\#define SB_' $^ > $@
 
-EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE)
+trace.h: $(GEN_TRACE_SCRIPT)
+	$(COMPILE) -E -dD $(top_srcdir)/headers.h | $(SB_AWK) $(GEN_TRACE_SCRIPT) > $@
 
-CLEANFILES = libsandbox.map sb_nr.h symbols.h
+EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES)
+
+CLEANFILES = libsandbox.map sb_nr.h symbols.h trace.h
 DISTCLEANFILES = $(CLEANFILES)

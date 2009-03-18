@@ -71,9 +71,13 @@ AC_CHECK_HEADERS_ONCE([ \
 	sys/file.h \
 	sys/mman.h \
 	sys/param.h \
+	sys/ptrace.h \
+	sys/reg.h \
 	sys/stat.h \
+	sys/syscall.h \
 	sys/time.h \
 	sys/types.h \
+	sys/user.h \
 	sys/wait.h \
 ])
 
@@ -118,6 +122,7 @@ AC_CHECK_FUNCS_ONCE([ \
 	openat \
 	openat64 \
 	pathconf \
+	ptrace \
 	realpath \
 	remove \
 	renameat \

@@ -93,14 +93,26 @@
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
+#ifdef HAVE_SYS_PTRACE_H
+# include <sys/ptrace.h>
+#endif
+#ifdef HAVE_SYS_REG_H
+# include <sys/reg.h>
+#endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_SYSCALL_H
+# include <sys/syscall.h>
 #endif
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
 #endif
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_USER_H
+# include <sys/user.h>
 #endif
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>

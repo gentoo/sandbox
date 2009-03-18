@@ -63,6 +63,9 @@ void *realloc(void *ptr, size_t size)
 	}
 
 	old_malloc_size = SB_MALLOC_TO_SIZE(ptr);
+	/* Since mmap() is heavy, don't bother shrinking */
+	if (size <= old_malloc_size)
+		return ptr;
 	ret = malloc(size);
 	if (!ret)
 		return ret;

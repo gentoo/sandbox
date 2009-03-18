@@ -1,6 +1,14 @@
-implement limited support for static ELFs with ptrace ?
+try out tracing on *BSD and Solaris
+
+add tests for tracing static binaries
+
+trace static children of static children
+
+inject errors into trace when violation occurs rather than kill the child
 
 cache results of filesystem checks
+
+review erealpath vs realpath usage
 
 add tests to make sure errno is saved/restored properly
 
@@ -10,5 +18,3 @@ reimplement the functions (building up argv[] and then call the execv* ver)
 erealpath() might deref symlinks when working with unreadable paths as non-root
 even when working on funcs that do not deref funcs themselves ... this isnt a
 real big issue though
-
-add a whitelist system for static binaries rather than hardcoding into source
