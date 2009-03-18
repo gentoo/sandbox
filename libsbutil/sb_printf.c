@@ -25,8 +25,9 @@
 #include "headers.h"
 #include "sbutil.h"
 
-#define MOD_SIZE_T (1 << 0)
-#define MOD_STAR   (1 << 1)
+#define MOD_STAR   (1 << 0)
+#define MOD_SIZE_T (1 << 1)
+#define MOD_LONG_T (1 << 2)
 
 void sb_vfdprintf(int fd, const char *format, va_list args)
 {
@@ -64,6 +65,12 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 				}
 				sb_write(fd, conv, 1);
 				break;
+			case 'l':
+				++conv;
+				if (modifiers & MOD_LONG_T)
+					goto inv_modifier;
+				modifiers |= MOD_LONG_T;
+				goto eat_more;
 			case 'z':
 				++conv;
 				if (modifiers & MOD_SIZE_T)
@@ -99,6 +106,8 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 				long i;
 				if (modifiers & MOD_SIZE_T)
 					i = va_arg(args, ssize_t);
+				else if (modifiers & MOD_LONG_T)
+					i = va_arg(args, long);
 				else
 					i = va_arg(args, int);
 				u = i;
