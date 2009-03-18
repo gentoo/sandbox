@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=sandboxshell
+Type=Application
+Comment=launch a sandboxed shell ... useful for debugging ebuilds
+Exec=sandboxshell
+TryExec=sandboxshell
+Icon=sandbox.svg
+Categories=Development;
+Terminal=true
