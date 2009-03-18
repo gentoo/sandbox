@@ -8,7 +8,7 @@
 #ifndef WRAPPER_ARGS_PROTO /* let open() use us */
 # define WRAPPER_ARGS_PROTO int dirfd, const char *pathname, int flags
 # define WRAPPER_ARGS dirfd, pathname, flags
-# define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(dirfd, pathname, flags)
+# define WRAPPER_SAFE() SB_SAFE_OPEN_INT_AT(dirfd, pathname, flags)
 # define USE_AT 1
 #else
 # define USE_AT 0

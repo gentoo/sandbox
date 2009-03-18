@@ -234,7 +234,7 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	if (strchr(path, '/'))
 # endif
 	{
-		if (!FUNCTION_SANDBOX_SAFE(path))
+		if (!SB_SAFE(path))
 			return result;
 
 		sb_check_exec(path, argv);

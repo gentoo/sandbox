@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO const char *path, mode_t mode
 #define WRAPPER_ARGS path, mode
-#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE(path)
+#define WRAPPER_SAFE() SB_SAFE(path)
 #include "__wrapper_simple.c"

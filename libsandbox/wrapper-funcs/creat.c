@@ -18,7 +18,7 @@ int WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	int result = -1;
 
-	if (FUNCTION_SANDBOX_SAFE(pathname))
+	if (SB_SAFE(pathname))
 		result = sb_unwrapped_open_DEFAULT(pathname, O_CREAT | O_WRONLY | O_TRUNC, mode);
 
 	return result;

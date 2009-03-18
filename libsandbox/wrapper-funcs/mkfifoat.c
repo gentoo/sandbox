@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO int dirfd, const char *pathname, mode_t mode
 #define WRAPPER_ARGS dirfd, pathname, mode
-#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname, 0)
+#define WRAPPER_SAFE() SB_SAFE_AT(dirfd, pathname, 0)
 #include "__wrapper_simple.c"

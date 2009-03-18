@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO const char *oldpath, int newdirfd, const char *newpath
 #define WRAPPER_ARGS oldpath, newdirfd, newpath
-#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(newdirfd, newpath, 0)
+#define WRAPPER_SAFE() SB_SAFE_AT(newdirfd, newpath, 0)
 #include "__wrapper_simple.c"

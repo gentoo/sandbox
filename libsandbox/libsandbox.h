@@ -14,28 +14,40 @@
 #undef strdup
 
 /* Macros to check if a function should be executed */
-#define _FUNCTION_SANDBOX_SAFE(test) \
+#define __SB_SAFE(test) \
 	(!is_sandbox_on() || (test))
 
-#define FUNCTION_SANDBOX_SAFE_AT(_dirfd, _path, _flags) \
-       _FUNCTION_SANDBOX_SAFE(before_syscall(_dirfd, WRAPPER_NR, STRING_NAME, _path, _flags))
-#define FUNCTION_SANDBOX_SAFE(_path) \
-        FUNCTION_SANDBOX_SAFE_AT(AT_FDCWD, _path, 0)
+#define _SB_SAFE_AT(_nr, _name, _dirfd, _path, _flags) \
+       __SB_SAFE(before_syscall(_dirfd, _nr, _name, _path, _flags))
+#define  SB_SAFE_AT(_dirfd, _path, _flags) \
+        _SB_SAFE_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
+#define _SB_SAFE(_nr, _name, _path) \
+        _SB_SAFE_AT(_nr, _name, AT_FDCWD, _path, 0)
+#define  SB_SAFE(_path) \
+         SB_SAFE_AT(AT_FDCWD, _path, 0)
 
-#define FUNCTION_SANDBOX_SAFE_ACCESS_AT(_dirfd, _path, _flags) \
-       _FUNCTION_SANDBOX_SAFE(before_syscall_access(_dirfd, WRAPPER_NR, STRING_NAME, _path, _flags))
-#define FUNCTION_SANDBOX_SAFE_ACCESS(_path, _flags) \
-        FUNCTION_SANDBOX_SAFE_ACCESS_AT(AT_FDCWD, _path, _flags)
+#define _SB_SAFE_ACCESS_AT(_nr, _name, _dirfd, _path, _flags) \
+       __SB_SAFE(before_syscall_access(_dirfd, _nr, _name, _path, _flags))
+#define  SB_SAFE_ACCESS_AT(_dirfd, _path, _flags) \
+        _SB_SAFE_ACCESS_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
+#define _SB_SAFE_ACCESS(_nr, _name, _path, _flags) \
+        _SB_SAFE_ACCESS_AT(_nr, _name, AT_FDCWD, _path, _flags)
+#define  SB_SAFE_ACCESS(_path, _flags) \
+         SB_SAFE_ACCESS_AT(AT_FDCWD, _path, _flags)
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(_dirfd, _path, _flags) \
-       _FUNCTION_SANDBOX_SAFE(before_syscall_open_int(_dirfd, WRAPPER_NR, STRING_NAME, _path, _flags))
-#define FUNCTION_SANDBOX_SAFE_OPEN_INT(_path, _flags) \
-        FUNCTION_SANDBOX_SAFE_OPEN_INT_AT(AT_FDCWD, _path, _flags)
+#define _SB_SAFE_OPEN_INT_AT(_nr, _name, _dirfd, _path, _flags) \
+       __SB_SAFE(before_syscall_open_int(_dirfd, _nr, _name, _path, _flags))
+#define  SB_SAFE_OPEN_INT_AT(_dirfd, _path, _flags) \
+        _SB_SAFE_OPEN_INT_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
+#define _SB_SAFE_OPEN_INT(_nr, _name, _path, _flags) \
+        _SB_SAFE_OPEN_INT_AT(_nr, _name, AT_FDCWD, _path, _flags)
+#define  SB_SAFE_OPEN_INT(_path, _flags) \
+         SB_SAFE_OPEN_INT_AT(AT_FDCWD, _path, _flags)
 
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(_dirfd, _path, _mode) \
-       _FUNCTION_SANDBOX_SAFE(before_syscall_open_char(_dirfd, WRAPPER_NR, STRING_NAME, _path, _mode))
-#define FUNCTION_SANDBOX_SAFE_OPEN_CHAR(_path, _mode) \
-        FUNCTION_SANDBOX_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
+#define  SB_SAFE_OPEN_CHAR_AT(_dirfd, _path, _mode) \
+       __SB_SAFE(before_syscall_open_char(_dirfd, WRAPPER_NR, STRING_NAME, _path, _mode))
+#define  SB_SAFE_OPEN_CHAR(_path, _mode) \
+         SB_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
 bool is_sandbox_on(void);
 bool before_syscall(int, int, const char *, const char *, int);

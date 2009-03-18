@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO const char *pathname
 #define WRAPPER_ARGS pathname
-#define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE(pathname)
+#define WRAPPER_SAFE() SB_SAFE(pathname)
 #include "__wrapper_simple.c"

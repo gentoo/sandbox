@@ -8,7 +8,7 @@
 #ifndef WRAPPER_ARGS_PROTO /* let unlink() use us */
 # define WRAPPER_ARGS_PROTO int dirfd, const char *pathname, int flags
 # define WRAPPER_ARGS dirfd, pathname, flags
-# define WRAPPER_SAFE() FUNCTION_SANDBOX_SAFE_AT(dirfd, pathname, flags)
+# define WRAPPER_SAFE() SB_SAFE_AT(dirfd, pathname, flags)
 #endif
 
 static inline bool sb_unlinkat_pre_check(WRAPPER_ARGS_PROTO)
