@@ -318,6 +318,10 @@ SB_CHECK_CFLAG([-ffunction-sections])
 AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINKER_FLAGS([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])
 SB_CHECK_LDFLAG([--as-needed])
 SB_CHECK_LDFLAG([--gc-sections])
+case $host_os in
+	dnl bsd is dumb (environ)
+	*linux*) SB_CHECK_LDFLAG([--no-undefined]) ;;
+esac
 
 AC_DEFUN([SB_CHECK_LDFLAG_VER],[dnl
 if test "x${LDFLAG_VER}" = "x" ; then
