@@ -295,6 +295,22 @@ fi
 AC_MSG_RESULT([$LIBC_VERSION])
 AC_DEFINE_UNQUOTED([LIBC_VERSION], ["$LIBC_VERSION"], [Name of libc to hook into])
 
+dnl Check for /proc/ features
+AC_DEFUN([SB_CHECK_PATH],[dnl
+	AC_MSG_CHECKING([for $1])
+	if test -e "$1$2" ; then
+		AC_DEFINE([SANDBOX]m4_translit(m4_toupper([$1]), [/], [_]),
+		          [1], [System has /proc/self/fd/])
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no])
+	fi
+])
+SB_CHECK_PATH([/proc/self/fd], [/0])
+SB_CHECK_PATH([/dev/fd], [/0])
+SB_CHECK_PATH([/proc/self/cmdline])
+SB_CHECK_PATH([/proc/1/cmdline])
+
 dnl We add to CPPFLAGS rather than doing AC_DEFINE_UNQUOTED
 dnl so we dont have to worry about fully expanding all of
 dnl the variables ($sysconfdir defaults to "$prefix/etc")

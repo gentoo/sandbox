@@ -39,10 +39,6 @@
 #define LOG_FMT_RPATH			"FORMAT: R - Canonical Path\n"
 #define LOG_FMT_CMDLINE			"FORMAT: C - Command Line\n"
 
-#define PROC_DIR			"/proc"
-#define PROC_SELF_FD			PROC_DIR "/self/fd"
-#define PROC_SELF_CMDLINE		PROC_DIR "/self/cmdline"
-
 char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
@@ -114,6 +110,29 @@ void libsb_init(void)
 //	sb_init = true;
 
 	errno = old_errno;
+}
+
+static const char *sb_get_fd_dir(void)
+{
+#if defined(SANDBOX_PROC_SELF_FD)
+	return "/proc/self/fd";
+#elif defined(SANDBOX_DEV_FD)
+	return "/dev/fd";
+#else
+# error "how do i access a proc's fd/ tree ?"
+#endif
+}
+
+static const char *sb_get_cmdline(pid_t pid)
+{
+#if !defined(SANDBOX_PROC_1_CMDLINE)
+# error "how do i access a proc's cmdline ?"
+#endif
+	static char path[256];
+	if (!pid)
+		pid = getpid();
+	sprintf(path, "/proc/%i/cmdline", pid);
+	return path;
 }
 
 int canonicalize(const char *path, char *resolved_path)
@@ -415,7 +434,8 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	_SB_WRITE_STR(rpath);
 
 	_SB_WRITE_STR("\nC: ");
-	int cmdlinefd = sb_open(PROC_SELF_CMDLINE, O_RDONLY, 0);
+	char *cmdline = sb_get_cmdline(trace_pid);
+	int cmdlinefd = sb_open(cmdline, O_RDONLY, 0);
 	if (cmdlinefd != -1) {
 		size_t pagesz = getpagesize();
 		char *buf = xmalloc(pagesz);
@@ -434,8 +454,10 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 		}
 		sb_close(cmdlinefd);
 		free(buf);
-	} else
-		_SB_WRITE_STR("<unable to read " PROC_SELF_CMDLINE ">");
+	} else {
+		_SB_WRITE_STR("unable to read ");
+		_SB_WRITE_STR(cmdline);
+	}
 	_SB_WRITE_STR("\n");
 
 	return true;
@@ -747,8 +769,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		 * will differ ...
 		 */
 		char proc_self_fd[SB_PATH_MAX];
-		if (!strncmp(resolv_path, PROC_DIR, strlen(PROC_DIR)) &&
-		    NULL != realpath(PROC_SELF_FD, proc_self_fd) &&
+		if (realpath(sb_get_fd_dir(), proc_self_fd) &&
 		    !strncmp(resolv_path, proc_self_fd, strlen(proc_self_fd)))
 		{
 			result = 1;
