@@ -54,24 +54,8 @@ check_PROGRAMS = \
 	sb_printf_tst
 
 dist_check_SCRIPTS = \
-	access-1.sh \
-	chmod-1.sh \
-	chown-1.sh \
-	fchmodat-1.sh \
-	fchownat-1.sh \
-	fchownat-2.sh \
-	lchown-1.sh \
-	mkdir-1.sh \
-	mkdir-2.sh \
-	mkdir-3.sh \
-	open-1.sh \
-	script-0 \
-	script-1.sh \
-	script-2.sh \
-	script-3.sh \
-	script-4.sh \
-	script-5.sh \
-	script-6.sh
+	$(wildcard *-?.sh) \
+	script-0
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
