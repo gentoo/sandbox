@@ -76,6 +76,16 @@ mode_t sscanf_mode_t(const char *str_mode)
 	return (mode_t)mode;
 }
 
+dev_t sscanf_dev_t(const char *str_dev)
+{
+	/* Similar issue with dev_t as mode_t.  Can't assume that
+	 * sizeof(dev_t) == sizeof(int).  Often dev_t is 64bit.
+	 */
+	int dev;
+	sscanf(str_dev, "%i", &dev);
+	return (dev_t)dev;
+}
+
 int lookup_errno(const char *str_errno)
 {
 	struct {

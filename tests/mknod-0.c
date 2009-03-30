@@ -2,8 +2,8 @@
 
 #define FUNC mknod
 #define SFUNC "mknod"
-#define FUNC_STR "\"%s\", %o, %x"
-#define FUNC_IMP file, mode, dev
+#define FUNC_STR "\"%s\", %o, %llx"
+#define FUNC_IMP file, mode, (unsigned long long)dev
 #define ARG_CNT 3
 #define ARG_USE "<file> <mode> <dev>"
 
@@ -15,7 +15,6 @@
 	mode_t mode = sscanf_mode_t(s); \
 	\
 	s = argv[i++]; \
-	dev_t dev; \
-	sscanf(s, "%i", &dev);
+	dev_t dev = sscanf_dev_t(s);
 
 #include "test-skel-0.c"

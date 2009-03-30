@@ -3,7 +3,7 @@
 #define SFUNC "mkdirat"
 #define FUNC_STR "%i, \"%s\", %o"
 #define FUNC_IMP dirfd, path, mode
-#define ARG_CNT 2
+#define ARG_CNT 3
 #define ARG_USE "<dirfd> <path> <mode>"
 
 #define process_args() \

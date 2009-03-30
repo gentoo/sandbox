@@ -3,8 +3,8 @@
 #define CONFIG HAVE_MKNODAT
 #define FUNC mknodat
 #define SFUNC "mknodat"
-#define FUNC_STR "%i, \"%s\", %o, %x"
-#define FUNC_IMP dirfd, file, mode, dev
+#define FUNC_STR "%i, \"%s\", %o, %llx"
+#define FUNC_IMP dirfd, file, mode, (unsigned long long)dev
 #define ARG_CNT 4
 #define ARG_USE "<dirfd> <file> <mode> <dev>"
 
@@ -19,7 +19,6 @@
 	mode_t mode = sscanf_mode_t(s); \
 	\
 	s = argv[i++]; \
-	dev_t dev; \
-	sscanf(s, "%i", &dev);
+	dev_t dev = sscanf_dev_t(s);
 
 #include "test-skel-0.c"
