@@ -434,7 +434,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	_SB_WRITE_STR(rpath);
 
 	_SB_WRITE_STR("\nC: ");
-	char *cmdline = sb_get_cmdline(trace_pid);
+	const char *cmdline = sb_get_cmdline(trace_pid);
 	int cmdlinefd = sb_open(cmdline, O_RDONLY, 0);
 	if (cmdlinefd != -1) {
 		size_t pagesz = getpagesize();
