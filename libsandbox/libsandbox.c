@@ -970,6 +970,12 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 				restore_errno();
 				return true;
 			}
+			if (is_env_on(ENV_SANDBOX_DEBUG))
+				SB_EINFO("AT_FD LOOKUP", "  fail: %s: %s\n",
+					at_file_buf, strerror(errno));
+			/* If the fd isn't found, some guys (glibc) expect errno */
+			if (errno == ENOENT)
+				errno = EBADF;
 			return false;
 		}
 		at_file_buf[ret] = '/';
