@@ -677,41 +677,41 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	}
 
 	if (sb_nr == SB_NR_ACCESS_WR   ||
-	    sb_nr == SB_NR_OPEN_WR     ||
+	    sb_nr == SB_NR_CHMOD       ||
+	    sb_nr == SB_NR_CHOWN       ||
 	    sb_nr == SB_NR_CREAT       ||
 	    sb_nr == SB_NR_CREAT64     ||
-	    sb_nr == SB_NR_MKDIR       ||
-	    sb_nr == SB_NR_MKDIRAT     ||
-	    sb_nr == SB_NR_MKNOD       ||
-	    sb_nr == SB_NR_MKNODAT     ||
-	    sb_nr == SB_NR__XMKNOD     ||
-	    sb_nr == SB_NR___XMKNOD    ||
-	    sb_nr == SB_NR___XMKNODAT  ||
-	    sb_nr == SB_NR_MKFIFO      ||
-	    sb_nr == SB_NR_MKFIFOAT    ||
+	    sb_nr == SB_NR_FCHMODAT    ||
+	    sb_nr == SB_NR_FCHOWNAT    ||
+	  /*sb_nr == SB_NR_FTRUNCATE   ||
+	    sb_nr == SB_NR_FTRUNCATE64 ||*/
+	    sb_nr == SB_NR_FUTIMESAT   ||
+	    sb_nr == SB_NR_LCHOWN      ||
 	    sb_nr == SB_NR_LINK        ||
 	    sb_nr == SB_NR_LINKAT      ||
-	    sb_nr == SB_NR_SYMLINK     ||
-	    sb_nr == SB_NR_SYMLINKAT   ||
+	    sb_nr == SB_NR_LUTIMES     ||
+	    sb_nr == SB_NR_MKDIR       ||
+	    sb_nr == SB_NR_MKDIRAT     ||
+	    sb_nr == SB_NR_MKFIFO      ||
+	    sb_nr == SB_NR_MKFIFOAT    ||
+	    sb_nr == SB_NR_MKNOD       ||
+	    sb_nr == SB_NR_MKNODAT     ||
+	    sb_nr == SB_NR_OPEN_WR     ||
 	    sb_nr == SB_NR_RENAME      ||
 	    sb_nr == SB_NR_RENAMEAT    ||
-	    sb_nr == SB_NR_LUTIMES     ||
-	    sb_nr == SB_NR_UTIMENSAT   ||
-	    sb_nr == SB_NR_UTIME       ||
-	    sb_nr == SB_NR_UTIMES      ||
-	    sb_nr == SB_NR_FUTIMESAT   ||
+	    sb_nr == SB_NR_RMDIR       ||
+	    sb_nr == SB_NR_SYMLINK     ||
+	    sb_nr == SB_NR_SYMLINKAT   ||
+	    sb_nr == SB_NR_TRUNCATE    ||
+	    sb_nr == SB_NR_TRUNCATE64  ||
 	    sb_nr == SB_NR_UNLINK      ||
 	    sb_nr == SB_NR_UNLINKAT    ||
-	    sb_nr == SB_NR_RMDIR       ||
-	    sb_nr == SB_NR_CHOWN       ||
-	    sb_nr == SB_NR_FCHOWNAT    ||
-	    sb_nr == SB_NR_LCHOWN      ||
-	    sb_nr == SB_NR_CHMOD       ||
-	    sb_nr == SB_NR_FCHMODAT    ||
-	    sb_nr == SB_NR_TRUNCATE    ||
-	  /*sb_nr == SB_NR_FTRUNCATE   ||*/
-	    sb_nr == SB_NR_TRUNCATE64/*||
-	    sb_nr == SB_NR_FTRUNCATE64*/)
+	    sb_nr == SB_NR_UTIME       ||
+	    sb_nr == SB_NR_UTIMENSAT   ||
+	    sb_nr == SB_NR_UTIMES      ||
+	    sb_nr == SB_NR__XMKNOD     ||
+	    sb_nr == SB_NR___XMKNOD    ||
+	    sb_nr == SB_NR___XMKNODAT)
 	{
 
 		retval = check_prefixes(sbcontext->write_denied_prefixes,
