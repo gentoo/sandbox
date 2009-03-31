@@ -20,7 +20,6 @@
 #define SANDBOX_CONFD_DIR      ETCDIR "/sandbox.d"
 
 #define LD_PRELOAD_EQ          "LD_PRELOAD="
-#define LD_PRELOAD_FILE        "/etc/ld.so.preload"
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
 #define TMPDIR                 "/tmp"

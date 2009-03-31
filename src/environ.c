@@ -192,8 +192,6 @@ static int setup_cfg_vars(struct sandbox_info_t *sandbox_info)
 
 	if (-1 == setup_access_var(ENV_SANDBOX_DENY))
 		return -1;
-	if (NULL == getenv(ENV_SANDBOX_DENY))
-		setenv(ENV_SANDBOX_DENY, LD_PRELOAD_FILE, 1);
 
 	if (-1 == setup_access_var(ENV_SANDBOX_READ))
 		return -1;
