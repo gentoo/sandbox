@@ -4,9 +4,12 @@
 addwrite $PWD
 
 rm -rf deny link
+(
+set -e
 mkdir deny
 touch deny/file
 ln -s deny/file link
+) || exit 1
 
 adddeny $PWD/deny
 

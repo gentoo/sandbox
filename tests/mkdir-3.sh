@@ -11,6 +11,8 @@ rm -rf base
 
 export SANDBOX_LOG=$PWD/sb.log
 
+set -e
+
 mkdir -p base/d
 cd base/d
 chmod a-r .
@@ -18,11 +20,10 @@ chmod a-rx ..
 ln -s / root
 
 # this should trigger a sb violation
-mkdir-0 -1 root/aksdfjasdfjaskdfjasdfla 0777
+(mkdir-0 -1 root/aksdfjasdfjaskdfjasdfla 0777)
 test -s "${SANDBOX_LOG}"
-ret=$?
 
 chmod a+rx ..
 chmod a+r .
 
-exit ${ret}
+exit 0

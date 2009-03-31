@@ -3,6 +3,6 @@
 
 addwrite $PWD
 
-touch file
+touch file || exit 1
 symlinkat-0 0 file AT_FDCWD sym || exit 1
 [ -e file -a -L sym ]

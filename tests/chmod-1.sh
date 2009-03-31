@@ -4,9 +4,12 @@
 addwrite $PWD
 
 rm -rf deny link sb.log
+(
+set -e
 mkdir deny
 touch deny/file
 ln -s deny/file link
+) || exit 1
 
 # this *should not* trigger a sandbox violation
 chmod-0 0 link 0666 || exit 1
