@@ -92,9 +92,19 @@ int lookup_errno(const char *str_errno)
 		const char *name;
 		int val;
 	} const tbl[] = {
+		PAIR(EACCES)
+		PAIR(EBADF)
+		PAIR(EEXIST)
+		PAIR(EFAULT)
 		PAIR(EINVAL)
+		PAIR(EISDIR)
+		PAIR(ELOOP)
+		PAIR(ENAMETOOLONG)
+		PAIR(ENODEV)
 		PAIR(ENOENT)
+		PAIR(ENOTDIR)
 		PAIR(EPERM)
+		PAIR(ETXTBSY)
 	};
 	int i;
 	for (i = 0; i < ARRAY_SIZE(tbl); ++i)
