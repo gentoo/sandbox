@@ -228,9 +228,9 @@ static char *resolve_path(const char *path, int follow_link)
 			/* If not, then check if we can resolve the
 			 * parent directory */
 			if (trace_pid)
-				ret = erealpath(path, filtered_path);
+				ret = erealpath(dname, filtered_path);
 			else
-				ret = realpath(path, filtered_path);
+				ret = realpath(dname, filtered_path);
 			if (!ret) {
 				/* Fall back to canonicalize */
 				if (-1 == canonicalize(path, filtered_path)) {
