@@ -24,7 +24,7 @@ cat << EOF > git-run.sh
 ./configure -q -C $(sandbox -V | tail -n1)
 ${make} clean
 ${make}
-./src/sandbox.sh ./git-run-sandbox.sh
+./src/sandbox.sh . ./data/sandbox.bashrc \; . ./git-run-sandbox.sh
 EOF
 chmod a+rx git-run.sh
 
