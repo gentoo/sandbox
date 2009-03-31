@@ -106,6 +106,7 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 					kill(trace_pid, SIGCONT);
 				case SIGTRAP:
 					child_stopped = true;
+				case SIGCHLD:
 				case SIGCONT:
 					return;
 			}
@@ -114,7 +115,6 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 
 	SB_EERROR("ISE:trace_child_signal ", "child signal %i, code %i, status %i\n",
 		signo, info->si_code, info->si_status);
-	sb_abort();
 }
 
 static const struct {
