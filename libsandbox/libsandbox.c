@@ -125,7 +125,7 @@ static const char *sb_get_fd_dir(void)
 
 static const char *sb_get_cmdline(pid_t pid)
 {
-#if !defined(SANDBOX_PROC_1_CMDLINE)
+#if !defined(SANDBOX_PROC_1_CMDLINE) && !defined(SANDBOX_PROC_SELF_CMDLINE) && !defined(SANDBOX_PROC_dd_CMDLINE)
 # error "how do i access a proc's cmdline ?"
 #endif
 	static char path[256];
