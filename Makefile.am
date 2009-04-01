@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS  = -I m4
-AUTOMAKE_OPTIONS = dist-lzma no-dist-gzip
+MAKEFLAGS = --no-print-directory
 
 SUBDIRS = \
 	scripts    \
