@@ -30,6 +30,24 @@ AC_PROG_LIBTOOL
 
 AC_PREFIX_DEFAULT([/usr])
 
+dnl multiple personality support (x86 & x86_64: multilib)
+AC_MSG_CHECKING([for multiple personalities])
+AC_ARG_ENABLE([schizo],
+	[AC_HELP_STRING([--enable-schizo],[Support multiple personalities])],
+	[],[enable_schizo="yes"])
+SB_SCHIZO_SETTINGS="no"
+if test "x$enable_schizo" = "xyes" ; then
+	case $host_alias in
+		x86_64*linux*) SB_SCHIZO_SETTINGS="x86_64:-m64 x86:-m32";;
+	esac
+fi
+if test "$SB_SCHIZO_SETTINGS" != "no" ; then
+	AC_DEFINE_UNQUOTED([SB_SCHIZO], ["$SB_SCHIZO_SETTINGS"], [Enable multiple personalities support])
+fi
+AC_SUBST(SB_SCHIZO_SETTINGS)
+AM_CONDITIONAL([SB_SCHIZO], test "$SB_SCHIZO_SETTINGS" != "no")
+AC_MSG_RESULT($SB_SCHIZO_SETTINGS)
+
 dnl this test fills up the stack and then triggers a segfault ...
 dnl but it's hard to wrap things without a stack, so let's ignore
 dnl this test for now ...

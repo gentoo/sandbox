@@ -37,7 +37,7 @@ libsandbox_la_SOURCES = \
 	canonicalize.c
 
 libsandbox.c: libsandbox.map sb_nr.h
-trace.c: trace.h sb_nr.h $(TRACE_FILES)
+trace.c: trace_syscalls.h sb_nr.h $(TRACE_FILES)
 wrappers.c: symbols.h
 
 TRACE_FILES = $(wildcard $(srcdir)/trace/*.[ch] $(srcdir)/trace/*/*.[ch])
@@ -62,10 +62,25 @@ SB_NR_FILE = $(srcdir)/sb_nr.h.in
 sb_nr.h: symbols.h $(SB_NR_FILE)
 	$(EGREP) -h '^\#define SB_' $^ > $@
 
-trace.h: $(GEN_TRACE_SCRIPT)
-	$(COMPILE) -E -dD $(top_srcdir)/headers.h | $(SB_AWK) $(GEN_TRACE_SCRIPT) > $@
+TRACE_MAKE_HEADER = \
+	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
+		$(COMPILE) -E -include $(top_srcdir)/headers.h - $$f | \
+		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
+trace_syscalls.h: $(GEN_TRACE_SCRIPT)
+if SB_SCHIZO
+	for pers in $(SB_SCHIZO_SETTINGS) ; do \
+		t=_$${pers%:*}; \
+		f=$${pers#*:}; \
+		header=trace_syscalls$${t}.h; \
+		$(TRACE_MAKE_HEADER) || exit $$?; \
+	done
+	touch $@
+else
+	t= f= header=$@; \
+	$(TRACE_MAKE_HEADER)
+endif
 
 EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES)
 
-CLEANFILES = libsandbox.map sb_nr.h symbols.h trace.h
+CLEANFILES = libsandbox.map sb_nr.h symbols.h trace_syscalls*.h
 DISTCLEANFILES = $(CLEANFILES)

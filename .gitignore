@@ -38,7 +38,7 @@ Makefile.in
 /libsandbox/libsandbox.map
 /libsandbox/sb_nr.h
 /libsandbox/symbols.h
-/libsandbox/trace.h
+/libsandbox/trace_syscalls*.h
 
 /src/sandbox
 /src/sandbox.sh

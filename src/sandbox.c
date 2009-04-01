@@ -227,6 +227,10 @@ int main(int argc, char **argv)
 #else
 					"next is OK! :D\n"
 #endif
+#ifndef SB_SCHIZO
+# define SB_SCHIZO "no"
+#endif
+				" schizo:  " SB_SCHIZO "\n"
 				"\nconfigured with these options:\n"
 				SANDBOX_CONFIGURE_OPTS
 			);

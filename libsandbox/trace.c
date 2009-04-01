@@ -40,8 +40,8 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 			goto try_again;
 		}
 
-		SB_EERROR("ISE:trace_loop ", "ptrace(%s): %s\n",
-			srequest, strerror(errno));
+		SB_EERROR("ISE:_do_ptrace ", "ptrace(%s, ..., %p, %p): %s\n",
+			srequest, addr, data, strerror(errno));
 		sb_abort();
 	}
 	return ret;
@@ -68,6 +68,10 @@ static char *do_peekstr(unsigned long lptr)
 		char x[sizeof(long)];
 	} s;
 
+	/* if someone does open(NULL), don't shit a brick over it */
+	if (lptr < sizeof(long))
+		return NULL;
+
 	l = 0;
 	len = 1024;
 	ret = xmalloc(len);
@@ -88,9 +92,41 @@ static char *do_peekstr(unsigned long lptr)
 	}
 }
 
+static const char *strcld_chld(int cld)
+{
+	switch (cld) {
+#define C(c) case CLD_##c: return "CLD"#c;
+	C(CONTINUED)
+	C(DUMPED)
+	C(EXITED)
+	C(KILLED)
+	C(TRAPPED)
+	C(STOPPED)
+#undef C
+	default: return "CLD???";
+	}
+}
+/* strsignal() translates the string when i want C define */
+static const char *strsig(int sig)
+{
+	switch (sig) {
+#define S(s) case SIG##s: return "SIG"#s;
+	S(CHLD)
+	S(CONT)
+	S(KILL)
+	S(TRAP)
+	S(STOP)
+#undef S
+	default: return "SIG???";
+	}
+}
+
 static void trace_child_signal(int signo, siginfo_t *info, void *context)
 {
-	SB_DEBUG("got sig %i: code:%i status:%i", signo, info->si_code, info->si_status);
+	SB_DEBUG("got sig %s(%i): code:%s(%i) status:%s(%i)",
+		strsig(signo), signo,
+		strcld_chld(info->si_code), info->si_code,
+		strsig(info->si_status), info->si_status);
 
 	switch (info->si_code) {
 		case CLD_KILLED:
@@ -117,68 +153,66 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 		signo, info->si_code, info->si_status);
 }
 
-static const struct {
-	const int nr;
-	const char *name;
-} syscalls[] = {
-#define S(s) { SYS_##s, #s },
-#include "trace.h"
-#undef S
-};
-static const char *sysname(int nr)
+static const struct syscall_entry *lookup_syscall_in_tbl(const struct syscall_entry *tbl, int nr)
 {
-	size_t i;
-	for (i = 0; i < ARRAY_SIZE(syscalls); ++i)
-		if (syscalls[i].nr == nr)
-			return syscalls[i].name;
-	return "unk";
+	while (tbl->name)
+		if (tbl->nr == nr)
+			return tbl;
+		else
+			++tbl;
+	return NULL;
+}
+static const struct syscall_entry *lookup_syscall(int nr)
+{
+	return lookup_syscall_in_tbl(trace_check_personality(), nr);
 }
 
-static bool _trace_check_syscall_C(void *vregs, int sb_nr, const char *func, int ibase)
+static bool _trace_check_syscall_C(void *regs, int sb_nr, const char *func, int ibase)
 {
-	char *path = do_peekstr(trace_arg(vregs, ibase));
+	char *path = do_peekstr(trace_arg(regs, ibase));
 	__SB_DEBUG("(\"%s\")", path);
 	bool ret = _SB_SAFE(sb_nr, func, path);
 	free(path);
 	return ret;
 }
-static bool trace_check_syscall_C(void *vregs, int sb_nr, const char *func)
+static bool trace_check_syscall_C(void *regs, int sb_nr, const char *func)
 {
-	return _trace_check_syscall_C(vregs, sb_nr, func, 1);
+	return _trace_check_syscall_C(regs, sb_nr, func, 1);
 }
 
-static bool __trace_check_syscall_DCF(void *vregs, int sb_nr, const char *func, int ibase, int flags)
+static bool __trace_check_syscall_DCF(void *regs, int sb_nr, const char *func, int ibase, int flags)
 {
-	int dirfd = trace_arg(vregs, ibase);
-	char *path = do_peekstr(trace_arg(vregs, ibase + 1));
+	int dirfd = trace_arg(regs, ibase);
+	char *path = do_peekstr(trace_arg(regs, ibase + 1));
 	__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
 	bool ret = _SB_SAFE_AT(sb_nr, func, dirfd, path, flags);
 	free(path);
 	return ret;
 }
-static bool _trace_check_syscall_DCF(void *vregs, int sb_nr, const char *func, int ibase)
+static bool _trace_check_syscall_DCF(void *regs, int sb_nr, const char *func, int ibase)
 {
-	int flags = trace_arg(vregs, ibase + 2);
-	return __trace_check_syscall_DCF(vregs, sb_nr, func, ibase, flags);
+	int flags = trace_arg(regs, ibase + 2);
+	return __trace_check_syscall_DCF(regs, sb_nr, func, ibase, flags);
 }
-static bool trace_check_syscall_DCF(void *vregs, int sb_nr, const char *func)
+static bool trace_check_syscall_DCF(void *regs, int sb_nr, const char *func)
 {
-	return _trace_check_syscall_DCF(vregs, sb_nr, func, 1);
-}
-
-static bool _trace_check_syscall_DC(void *vregs, int sb_nr, const char *func, int ibase)
-{
-	return __trace_check_syscall_DCF(vregs, sb_nr, func, ibase, 0);
-}
-static bool trace_check_syscall_DC(void *vregs, int sb_nr, const char *func)
-{
-	return _trace_check_syscall_DC(vregs, sb_nr, func, 1);
+	return _trace_check_syscall_DCF(regs, sb_nr, func, 1);
 }
 
-static bool trace_check_syscall(int nr, void *vregs)
+static bool _trace_check_syscall_DC(void *regs, int sb_nr, const char *func, int ibase)
 {
-	struct user_regs_struct *regs = vregs;
+	return __trace_check_syscall_DCF(regs, sb_nr, func, ibase, 0);
+}
+static bool trace_check_syscall_DC(void *regs, int sb_nr, const char *func)
+{
+	return _trace_check_syscall_DC(regs, sb_nr, func, 1);
+}
+
+static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
+{
 	bool ret = true;
+	int nr;
+	const char *name;
 
 	/* These funcs aren't syscalls and so there are no checks:
 	 *  - fopen
@@ -192,67 +226,72 @@ static bool trace_check_syscall(int nr, void *vregs)
 	 * Can't use switch() statement here as we auto define missing
 	 * SYS_xxx to SB_NR_UNDEF in the build system
 	 */
-	if (nr == SB_NR_UNDEF)
+	if (!se)
 		goto done;
-	else if (nr == SYS_chmod)     return  trace_check_syscall_C  (vregs, SB_NR_CHMOD, "chmod");
-	else if (nr == SYS_chown)     return  trace_check_syscall_C  (vregs, SB_NR_CHOWN, "chown");
-	else if (nr == SYS_creat)     return  trace_check_syscall_C  (vregs, SB_NR_CREAT, "creat");
-	else if (nr == SYS_fchmodat)  return  trace_check_syscall_DCF(vregs, SB_NR_FCHMODAT, "fchmodat");
-	else if (nr == SYS_fchownat)  return  trace_check_syscall_DCF(vregs, SB_NR_FCHOWNAT, "fchownat");
-	else if (nr == SYS_futimesat) return  trace_check_syscall_DC (vregs, SB_NR_FUTIMESAT, "futimesat");
-	else if (nr == SYS_lchown)    return  trace_check_syscall_C  (vregs, SB_NR_LCHOWN, "lchown");
-	else if (nr == SYS_link)      return _trace_check_syscall_C  (vregs, SB_NR_LINK, "link", 2);
-	else if (nr == SYS_linkat)    return _trace_check_syscall_DCF(vregs, SB_NR_LINKAT, "linkat", 3);
-	else if (nr == SYS_mkdir)     return  trace_check_syscall_C  (vregs, SB_NR_MKDIR, "mkdir");
-	else if (nr == SYS_mkdirat)   return  trace_check_syscall_DC (vregs, SB_NR_MKDIRAT, "mkdirat");
-	else if (nr == SYS_mknod)     return  trace_check_syscall_C  (vregs, SB_NR_MKNOD, "mknod");
-	else if (nr == SYS_mknodat)   return  trace_check_syscall_DC (vregs, SB_NR_MKNODAT, "mknodat");
-	else if (nr == SYS_rename)    return  trace_check_syscall_C  (vregs, SB_NR_RENAME, "rename") &&
-	                                     _trace_check_syscall_C  (vregs, SB_NR_RENAME, "rename", 2);
-	else if (nr == SYS_renameat)  return  trace_check_syscall_DC (vregs, SB_NR_RENAMEAT, "renameat") &&
-	                                     _trace_check_syscall_DC (vregs, SB_NR_RENAMEAT, "renameat", 3);
-	else if (nr == SYS_rmdir)     return  trace_check_syscall_C  (vregs, SB_NR_RMDIR, "rmdir");
-	else if (nr == SYS_symlink)   return _trace_check_syscall_C  (vregs, SB_NR_SYMLINK, "symlink", 2);
-	else if (nr == SYS_symlinkat) return _trace_check_syscall_DC (vregs, SB_NR_SYMLINKAT, "symlinkat", 2);
-	else if (nr == SYS_truncate)  return  trace_check_syscall_C  (vregs, SB_NR_TRUNCATE, "truncate");
-	else if (nr == SYS_truncate64)return  trace_check_syscall_C  (vregs, SB_NR_TRUNCATE64, "truncate64");
-	else if (nr == SYS_unlink)    return  trace_check_syscall_C  (vregs, SB_NR_UNLINK, "unlink");
-	else if (nr == SYS_unlinkat)  return  trace_check_syscall_DCF(vregs, SB_NR_UNLINKAT, "unlinkat");
-	else if (nr == SYS_utime)     return  trace_check_syscall_C  (vregs, SB_NR_UTIME, "utime");
-	else if (nr == SYS_utimes)    return  trace_check_syscall_C  (vregs, SB_NR_UTIMES, "utimes");
-	else if (nr == SYS_utimensat) return  trace_check_syscall_DCF(vregs, SB_NR_UTIMENSAT, "utimensat");
 
-	else if (nr == SYS_access) {
+	nr = se->sys;
+	name = se->name;
+	/* Hmm, add these functions to the syscall table and avoid this if() ? */
+	if (nr == SB_NR_UNDEF)          goto done;
+	else if (nr == SB_NR_CHMOD)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_CHOWN)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_CREAT)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DCF(regs, nr, name);
+	else if (nr == SB_NR_FCHOWNAT)  return  trace_check_syscall_DCF(regs, nr, name);
+	else if (nr == SB_NR_FUTIMESAT) return  trace_check_syscall_DC (regs, nr, name);
+	else if (nr == SB_NR_LCHOWN)    return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_LINK)      return _trace_check_syscall_C  (regs, nr, name, 2);
+	else if (nr == SB_NR_LINKAT)    return _trace_check_syscall_DCF(regs, nr, name, 3);
+	else if (nr == SB_NR_MKDIR)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_MKDIRAT)   return  trace_check_syscall_DC (regs, nr, name);
+	else if (nr == SB_NR_MKNOD)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_MKNODAT)   return  trace_check_syscall_DC (regs, nr, name);
+	else if (nr == SB_NR_RENAME)    return  trace_check_syscall_C  (regs, nr, name) &&
+	                                       _trace_check_syscall_C  (regs, nr, name, 2);
+	else if (nr == SB_NR_RENAMEAT)  return  trace_check_syscall_DC (regs, nr, name) &&
+	                                       _trace_check_syscall_DC (regs, nr, name, 3);
+	else if (nr == SB_NR_RMDIR)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_SYMLINK)   return _trace_check_syscall_C  (regs, nr, name, 2);
+	else if (nr == SB_NR_SYMLINKAT) return _trace_check_syscall_DC (regs, nr, name, 2);
+	else if (nr == SB_NR_TRUNCATE)  return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_TRUNCATE64)return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_UNLINK)    return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(regs, nr, name);
+	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (regs, nr, name);
+	else if (nr == SB_NR_UTIMENSAT) return  trace_check_syscall_DCF(regs, nr, name);
+
+	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
 		__SB_DEBUG("(\"%s\", %x)", path, flags);
-		ret = _SB_SAFE_ACCESS(SB_NR_ACCESS, "access", path, flags);
+		ret = _SB_SAFE_ACCESS(nr, name, path, flags);
 		free(path);
 		return ret;
 
-	} else if (nr == SYS_faccessat) {
+	} else if (nr == SB_NR_FACCESSAT) {
 		int dirfd = trace_arg(regs, 1);
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
 		__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
-		ret = _SB_SAFE_ACCESS_AT(SB_NR_FACCESSAT, "faccessat", dirfd, path, flags);
+		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, flags);
 		free(path);
 		return ret;
 
-	} else if (nr == SYS_open) {
+	} else if (nr == SB_NR_OPEN) {
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
 		__SB_DEBUG("(\"%s\", %x)", path, flags);
-		ret = _SB_SAFE_OPEN_INT(SB_NR_OPEN, "open", path, flags);
+		ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
 		free(path);
 		return ret;
 
-	} else if (nr == SYS_openat) {
+	} else if (nr == SB_NR_OPENAT) {
 		int dirfd = trace_arg(regs, 1);
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
 		__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
-		ret = _SB_SAFE_OPEN_INT_AT(SB_NR_OPENAT, "openat", dirfd, path, flags);
+		ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
 		free(path);
 		return ret;
 	}
@@ -268,22 +307,34 @@ static void trace_loop(void)
 	bool before_syscall;
 	long ret;
 	int nr, exec_state;
+	const struct syscall_entry *se, *tbl_at_fork;
 
 	exec_state = 0;
 	before_syscall = true;
+	tbl_at_fork = NULL;
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
 		nr = trace_sysnum();
+
 		if (!exec_state) {
-			if (!before_syscall || nr != SYS_execve)
+			if (!tbl_at_fork)
+				tbl_at_fork = trace_check_personality();
+			se = lookup_syscall_in_tbl(tbl_at_fork, nr);
+			if (!before_syscall || !se || se->sys != SB_NR_EXECVE) {
+				if (before_syscall)
+					_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
+				else
+					__SB_DEBUG("(...) = ...\n");
 				goto loop_again;
+			}
 			++exec_state;
 		}
 
+		se = lookup_syscall(nr);
 		ret = do_ptrace(PTRACE_GETREGS, NULL, &regs);
 		if (before_syscall) {
-			_SB_DEBUG("%s:%i", sysname(nr), nr);
-			if (!trace_check_syscall(nr, &regs)) {
+			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
+			if (!trace_check_syscall(se, &regs)) {
 				do_ptrace(PTRACE_KILL, NULL, NULL);
 				exit(1);
 			}

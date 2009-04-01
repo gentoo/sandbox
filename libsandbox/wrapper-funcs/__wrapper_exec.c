@@ -64,6 +64,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
+	/* We only support tracing of host personality atm */
 	trace_main(filename, argv);
 
  done:
