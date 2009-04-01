@@ -30,15 +30,19 @@ static volatile bool child_stopped;
 static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data)
 {
 	long ret;
-	errno = 0;
  try_again:
+	errno = 0;
 	ret = ptrace(request, trace_pid, addr, data);
-	if (ret == -1 || (request == PTRACE_PEEKUSER && errno)) {
+	if (ret == -1) {
 		/* Child hasn't gotten to the next marker yet */
 		if (errno == ESRCH) {
 			sched_yield();
 			goto try_again;
-		}
+		} else if (!errno)
+			if (request == PTRACE_PEEKDATA ||
+			    request == PTRACE_PEEKTEXT ||
+			    request == PTRACE_PEEKUSER)
+				return ret;
 
 		SB_EERROR("ISE:_do_ptrace ", "ptrace(%s, ..., %p, %p): %s\n",
 			srequest, addr, data, strerror(errno));
@@ -373,6 +377,9 @@ void trace_main(const char *filename, char *const argv[])
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 	sa.sa_sigaction = trace_child_signal;
 	sigaction(SIGCHLD, &sa, &old_sa);
+
+	if (is_env_on(ENV_SANDBOX_DEBUG))
+		SB_EINFO("trace_main", " tracing: %s\n", filename);
 
 	trace_pid = fork();
 	if (trace_pid == -1) {
