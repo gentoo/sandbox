@@ -381,6 +381,34 @@ void sb_abort(void)
 	abort();
 }
 
+int sb_copy_file_to_fd(const char *file, int ofd)
+{
+	int ifd = sb_open(file, O_RDONLY, 0);
+	if (ifd == -1)
+		return -1;
+
+	size_t pagesz = getpagesize();
+	char *buf = xmalloc(pagesz);
+	while (1) {
+		size_t len = sb_read(ifd, buf, pagesz);
+		if (len == -1)
+			goto error;
+		else if (!len)
+			break;
+		size_t i;
+		for (i = 0; i < len; ++i)
+			if (!buf[i])
+				buf[i] = ' ';
+		SB_WRITE(ofd, buf, len, error);
+	}
+	sb_close(ifd);
+	free(buf);
+
+	return 0;
+ error:
+	return -1;
+}
+
 #define _SB_WRITE_STR(str) SB_WRITE(logfd, str, strlen(str), error)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
@@ -437,26 +465,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 
 	_SB_WRITE_STR("\nC: ");
 	const char *cmdline = sb_get_cmdline(trace_pid);
-	int cmdlinefd = sb_open(cmdline, O_RDONLY, 0);
-	if (cmdlinefd != -1) {
-		size_t pagesz = getpagesize();
-		char *buf = xmalloc(pagesz);
-		while (1) {
-			size_t len = sb_read(cmdlinefd, buf, pagesz);
-			if (len == -1) {
-				SB_EERROR("ISE:write_logfile ", "cmdlinefd read error\n");
-				break;
-			} else if (!len)
-				break;
-			size_t i;
-			for (i = 0; i < len; ++i)
-				if (!buf[i])
-					buf[i] = ' ';
-			SB_WRITE(logfd, buf, len, error);
-		}
-		sb_close(cmdlinefd);
-		free(buf);
-	} else {
+	if (sb_copy_file_to_fd(cmdline, logfd)) {
 		_SB_WRITE_STR("unable to read ");
 		_SB_WRITE_STR(cmdline);
 	}
@@ -916,6 +925,9 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	SB_EERROR("ISE ", "%s(%s): %s\n"
 		"\tabs_path: %s\n" "\tres_path: %s\n",
 		func, file, strerror(errno), absolute_path, resolved_path);
+	const char *cmdline = sb_get_cmdline(trace_pid);
+	sb_copy_file_to_fd(cmdline, STDERR_FILENO);
+	sb_printf("\n%s\n", cmdline);
 	sb_abort();
 }
 
