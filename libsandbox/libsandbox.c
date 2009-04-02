@@ -277,8 +277,10 @@ char *egetcwd(char *buf, size_t size)
 		char proc[20];
 		sprintf(proc, "/proc/%i/cwd", trace_pid);
 		ssize_t ret = readlink(proc, buf, size);
-		if (ret == -1)
+		if (ret == -1) {
+			errno = ESRCH;
 			return NULL;
+		}
 		buf[ret] = '\0';
 		return buf;
 	}
@@ -905,6 +907,10 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		free(resolved_path);
 		return 2;
 	}
+
+	/* Process went away while we were tracing it ... #264478 */
+	if (trace_pid && errno == ESRCH)
+		return 2;
 
 	/* If we get here, something bad happened */
 	SB_EERROR("ISE ", "%s(%s): %s\n"
