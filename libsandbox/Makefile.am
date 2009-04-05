@@ -30,6 +30,7 @@ libsandbox_la_SOURCES = \
 	eqawarn.c    \
 	libsandbox.h \
 	libsandbox.c \
+	lock.c       \
 	memory.c     \
 	trace.c      \
 	wrappers.h   \

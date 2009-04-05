@@ -58,7 +58,6 @@ typedef struct {
 #define MAX_DYN_PREFIXES 4 /* the first 4 are dynamic */
 } sbcontext_t;
 
-static sbcontext_t sbcontext;
 static char *cached_env_vars[MAX_DYN_PREFIXES];
 bool sandbox_on = true;
 static bool sb_init = false;
@@ -73,10 +72,11 @@ static void init_env_entries(char ***, int *, const char *, const char *, int);
 /*
  * Initialize the shabang
  */
-
+#if 0
 __attribute__((destructor))
 void libsb_fini(void)
 {
+	/* let the kernel reap our resources -- it's faster anyways */
 	int x;
 
 	sb_init = false;
@@ -92,11 +92,12 @@ void libsb_fini(void)
 		clean_env_entries(&(sbcontext.prefixes[x]),
 				&(sbcontext.num_prefixes[x]));
 }
+#endif
 
 __attribute__((constructor))
 void libsb_init(void)
 {
-	int old_errno = errno;
+	save_errno();
 
 #ifdef SB_MEM_DEBUG
 	mtrace();
@@ -109,7 +110,7 @@ void libsb_init(void)
 
 //	sb_init = true;
 
-	errno = old_errno;
+	restore_errno();
 }
 
 static const char *sb_get_fd_dir(void)
@@ -954,13 +955,10 @@ bool is_sandbox_on(void)
 	return result;
 }
 
-/* Need to protect the global sbcontext structure */
-static pthread_mutex_t sb_syscall_lock = PTHREAD_MUTEX_INITIALIZER;
-
 bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	int result;
-//	static sbcontext_t sbcontext;
+	static sbcontext_t sbcontext;
 	char at_file_buf[SB_PATH_MAX];
 
 	if (file == NULL || file[0] == '\0') {
@@ -1002,7 +1000,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		file = at_file_buf;
 	}
 
-	pthread_mutex_lock(&sb_syscall_lock);
+	/* Need to protect the global sbcontext structure */
+	sb_lock();
 
 	if (!sb_init) {
 		init_context(&sbcontext);
@@ -1044,7 +1043,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 
 	result = check_syscall(&sbcontext, sb_nr, func, file, flags);
 
-	pthread_mutex_unlock(&sb_syscall_lock);
+	sb_unlock();
 
 	if (0 == result) {
 		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))

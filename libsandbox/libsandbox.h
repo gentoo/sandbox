@@ -59,6 +59,9 @@ extern char sandbox_lib[SB_PATH_MAX];
 extern bool sandbox_on;
 extern pid_t trace_pid;
 
+extern void sb_lock(void);
+extern void sb_unlock(void);
+
 void trace_main(const char *filename, char *const argv[]);
 
 __attribute__((__format__(__printf__, 1, 2))) void sb_eqawarn(const char *format, ...);
