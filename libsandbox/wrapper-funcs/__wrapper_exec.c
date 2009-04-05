@@ -182,17 +182,36 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	save_errno();
 
 #ifndef EXEC_NO_FILE
+	const char *check_path = path;
+	char *mem1 = NULL, *mem2 = NULL;
 # ifndef EXEC_NO_PATH
 	/* Some exec funcs always operate on full paths, while others
 	 * will search $PATH if the specified name lacks a slash.
 	 */
-	if (strchr(path, '/'))
-# endif
-	{
-		if (!SB_SAFE(path))
-			return result;
+	char *envpath = getenv("PATH");
+	if (!strchr(check_path, '/') && envpath) {
+		size_t len_path = strlen(check_path);
+		char *p, *pp;
+		check_path = NULL;
+		pp = envpath = mem1 = xstrdup(envpath);
+		p = strtok_r(envpath, ":", &pp);
+		while (p) {
+			mem2 = xrealloc(mem2, strlen(p) + 1 + len_path + 1);
+			sprintf(mem2, "%s/%s", p, path);
+			if (access(mem2, R_OK) == 0) {
+				check_path = mem2;
+				break;
+			}
+			p = strtok_r(NULL, ":", &pp);
+		}
+	}
 
-		sb_check_exec(path, argv);
+# endif
+	if (check_path) {
+		if (!SB_SAFE(check_path))
+			goto done;
+
+		sb_check_exec(check_path, argv);
 	}
 #endif
 
@@ -217,6 +236,11 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	--recursive;
 #endif
 
+#ifndef EXEC_NO_FILE
+ done:
+	free(mem1);
+	free(mem2);
+#endif
 	return result;
 }
 
