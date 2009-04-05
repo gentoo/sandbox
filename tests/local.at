@@ -6,7 +6,7 @@ m4_defun([SB_CHECK],[dnl
 AT_SETUP([SB_SECTION/$1])
 AT_XFAIL_IF([(
 	]SB_SECTION[-0 >/dev/null ; test $? -eq 77 && exit 0
-	if expr match ]SB_SECTION[ .*_static >/dev/null ; then
+	if expr ]SB_SECTION[ : .*_static >/dev/null ; then
 		trace-0 ; test $? -eq 77 && exit 0
 	fi
 	exit 1
