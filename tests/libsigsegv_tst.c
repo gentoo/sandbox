@@ -9,7 +9,7 @@
 
 #include "tests.h"
 
-#define WRITE(msg) write(1, msg, sizeof(msg) - 1)
+#define WRITE(msg) ({ ssize_t w = write(1, msg, sizeof(msg) - 1); w; })
 
 #ifdef HAVE_SIGSEGV_H
 #include <sigsegv.h>
