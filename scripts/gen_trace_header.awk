@@ -18,7 +18,7 @@ function out(name, val)
 }
 
 {
-	# found:     SB_func = #
+	# found:     SB_func = <something>
 	# not found: SB_func = SYS_func
 	if ($1 !~ /^SB_/)
 		next;
@@ -26,14 +26,18 @@ function out(name, val)
 		next;
 
 	sub(/^SB_/, "", $1);
+	name = $1
+	# accept everything after the "=" in case it's either
+	# a straight number or an expression (a syscall base)
+	sub(/^[^=]*= /, "");
 
 	for (i = 1; i <= COUNT; ++i)
-		if (SYMBOLS[i] == $1) {
+		if (SYMBOLS[i] == name) {
 			SYMBOLS[i] = "";
 			break;
 		}
 
-	out($1, $3);
+	out(name, $0);
 }
 
 END {
