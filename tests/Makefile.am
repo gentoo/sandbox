@@ -33,8 +33,10 @@ check_PROGRAMS = \
 	mknod-0 \
 	mknodat-0 \
 	open-0 \
+	open_static-0 \
 	open64-0 \
 	openat-0 \
+	openat_static-0 \
 	openat64-0 \
 	opendir-0 \
 	rename-0 \
@@ -48,6 +50,7 @@ check_PROGRAMS = \
 	utime-0 \
 	utimensat-0 \
 	utimes-0 \
+	vfork-0 \
 	\
 	getcwd-gnulib_tst \
 	libsigsegv_tst \
@@ -55,7 +58,10 @@ check_PROGRAMS = \
 
 dist_check_SCRIPTS = \
 	$(wildcard *-?.sh) \
-	script-0
+	script-0 \
+	trace-0
+
+AM_LDFLAGS = `expr match $@ .*_static- >/dev/null && echo -all-static`
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la

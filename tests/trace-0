@@ -1,0 +1,9 @@
+#!/bin/sh
+# make sure trace support exists
+if grep -q trace_child_signal "$abs_top_builddir"/libsandbox/.libs/libsandbox.so ; then
+	# see comment at top of script-0 -- same issue applies here because
+	# the ld.so isn't around to load the correct sandbox lib for us
+	exec script-0
+else
+	exit 77
+fi
