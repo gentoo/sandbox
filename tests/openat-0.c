@@ -1,10 +1,10 @@
 #define CONFIG HAVE_OPENAT
 #define FUNC openat
 #define SFUNC "openat"
-#define FUNC_STR "%i, \"%s\", %o"
-#define FUNC_IMP dirfd, file, flags
-#define ARG_CNT 3
-#define ARG_USE "<dirfd> <file> <flags>"
+#define FUNC_STR "%i, \"%s\", 0x%x, %o"
+#define FUNC_IMP dirfd, file, flags, mode
+#define ARG_CNT 4
+#define ARG_USE "<dirfd> <file> <flags> <mode>"
 
 #define process_args() \
 	s = argv[i++]; \
@@ -14,6 +14,9 @@
 	char *file = s; \
 	\
 	s = argv[i++]; \
-	int flags = at_get_flags(s);
+	int flags = f_get_flags(s); \
+	\
+	s = argv[i++]; \
+	mode_t mode = sscanf_mode_t(s);
 
 #include "test-skel-0.c"
