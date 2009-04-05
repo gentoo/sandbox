@@ -5,7 +5,6 @@
  */
 
 #include "headers.h"
-#include "sbutil.h"
 #include "libsandbox.h"
 #include "wrappers.h"
 #include "sb_nr.h"
@@ -125,6 +124,13 @@ static const char *strsig(int sig)
 	}
 }
 
+static void trace_exit(int status)
+{
+	/* if we were vfork-ed, clear trace_pid and exit */
+	trace_pid = 0;
+	_exit(status);
+}
+
 static void trace_child_signal(int signo, siginfo_t *info, void *context)
 {
 	SB_DEBUG("got sig %s(%i): code:%s(%i) status:%s(%i)",
@@ -134,11 +140,11 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 
 	switch (info->si_code) {
 		case CLD_KILLED:
-			exit(128 + info->si_status);
+			trace_exit(128 + info->si_status);
 
 		case CLD_EXITED:
 			__SB_DEBUG(" = %i\n", info->si_status);
-			exit(info->si_status);
+			trace_exit(info->si_status);
 
 		case CLD_TRAPPED:
 			switch (info->si_status) {
@@ -380,6 +386,11 @@ void trace_main(const char *filename, char *const argv[])
 
 	if (is_env_on(ENV_SANDBOX_DEBUG))
 		SB_EINFO("trace_main", " tracing: %s\n", filename);
+
+	if (trace_pid) {
+		SB_EERROR("ISE:trace_main ", "trace code assumes multiple threads are not forking\n");
+		sb_abort();
+	}
 
 	trace_pid = fork();
 	if (trace_pid == -1) {

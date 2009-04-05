@@ -70,4 +70,6 @@ char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);
 int canonicalize(const char *, char *);
 
+#include "sbutil.h"
+
 #endif /* __LIBSANDBOX_H__ */
