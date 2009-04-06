@@ -114,11 +114,13 @@ static const char *strsig(int sig)
 {
 	switch (sig) {
 #define S(s) case SIG##s: return "SIG"#s;
+	S(ABRT)
 	S(CHLD)
 	S(CONT)
 	S(KILL)
-	S(TRAP)
+	S(SEGV)
 	S(STOP)
+	S(TRAP)
 #undef S
 	default: return "SIG???";
 	}
@@ -159,8 +161,11 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 			/* fall through */
 	}
 
-	SB_EERROR("ISE:trace_child_signal ", "child signal %i, code %i, status %i\n",
-		signo, info->si_code, info->si_status);
+	SB_EERROR("ISE:trace_child_signal ", "child (%i) signal %s(%i), code %s(%i), status %s(%i)\n",
+		trace_pid,
+		strsig(signo), signo,
+		strcld_chld(info->si_code), info->si_code,
+		strsig(info->si_status), info->si_status);
 }
 
 static const struct syscall_entry *lookup_syscall_in_tbl(const struct syscall_entry *tbl, int nr)
