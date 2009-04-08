@@ -4,6 +4,7 @@
 [ "${at_xfail}" = "yes" ] && exit 77 # see script-0
 
 addwrite $PWD
+mkdir foo && cd foo || exit 1
 getcwd-gnulib_tst
 case $? in
 	0|1|2) exit 0;; # test may exit with these values

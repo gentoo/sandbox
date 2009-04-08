@@ -163,7 +163,7 @@ int canonicalize(const char *path, char *resolved_path)
 		 * an absolute path
 		 */
 
-		if (ENAMETOOLONG == errno)
+		if (errno_is_too_long())
 			return -1;
 
 		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
@@ -172,7 +172,7 @@ int canonicalize(const char *path, char *resolved_path)
 		snprintf(resolved_path + len, SB_PATH_MAX - len, "/%s", path);
 
 		if (NULL == erealpath(resolved_path, resolved_path)) {
-			if (errno == ENAMETOOLONG) {
+			if (errno_is_too_long()) {
 				/* The resolved path is too long for the buffer to hold */
 				return -1;
 			} else {
@@ -916,7 +916,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	/* The path is too long to be canonicalized, so just warn and let the
 	 * function handle it (see bugs #21766 #94630 #101728 #227947)
 	 */
-	if (ENAMETOOLONG == errno) {
+	if (errno_is_too_long()) {
 		free(absolute_path);
 		free(resolved_path);
 		return 2;
@@ -983,7 +983,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
 		if (ret == -1) {
 			/* see comments at end of check_syscall() */
-			if (errno == ENAMETOOLONG) {
+			if (errno_is_too_long()) {
 				restore_errno();
 				return true;
 			}
