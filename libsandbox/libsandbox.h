@@ -10,9 +10,6 @@
 #ifndef __LIBSANDBOX_H__
 #define __LIBSANDBOX_H__
 
-/* glibc sometimes redefines this crap on us */
-#undef strdup
-
 /* Macros to check if a function should be executed */
 #define __SB_SAFE(test) \
 	(!is_sandbox_on() || (test))
@@ -74,5 +71,11 @@ char *egetcwd(char *, size_t);
 int canonicalize(const char *, char *);
 
 #include "sbutil.h"
+
+/* glibc sometimes redefines this crap on us */
+#undef strdup
+/* our helper xstrdup will be calling glibc strdup, so blah */
+#undef xstrdup
+#define xstrdup strdup
 
 #endif /* __LIBSANDBOX_H__ */

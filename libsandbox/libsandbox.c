@@ -549,7 +549,7 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 
 	/* num_delimiters might be 0, and we need 2 entries at least */
 	pfx_array = xmalloc(((num_delimiters * 2) + 2) * sizeof(char *));
-	buffer = strdup(prefixes_env);
+	buffer = xstrdup(prefixes_env);
 	buffer_ptr = buffer;
 
 #ifdef HAVE_STRTOK_R
@@ -760,7 +760,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			if (1 == retval) { /* Does have write access on path */
 				char *dname, *dname_buf, *rpath;
 
-				dname_buf = strdup(abs_path);
+				dname_buf = xstrdup(abs_path);
 				dname = dirname(dname_buf);
 				/* Get symlink resolved path */
 				rpath = resolve_path(dname, 1);
@@ -803,7 +803,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		 * exist.  All the functions filtered thus far fall into that
 		 * behavior category, so no need to check the syscall.
 		 */
-		char *dname_buf = strdup(resolv_path);
+		char *dname_buf = xstrdup(resolv_path);
 		int aret = sb_unwrapped_access(dirname(dname_buf), F_OK);
 		free(dname_buf);
 		if (aret) {
@@ -1033,7 +1033,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 			if (sb_env) {
 				init_env_entries(&(sbcontext.prefixes[i]),
 					&(sbcontext.num_prefixes[i]), sb_env_names[i], sb_env, 1);
-				cached_env_vars[i] = strdup(sb_env);
+				cached_env_vars[i] = xstrdup(sb_env);
 			} else
 				cached_env_vars[i] = NULL;
 		}
