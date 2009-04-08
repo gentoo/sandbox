@@ -60,7 +60,7 @@ SB_V_0 = $(SB_V_)
 libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 	$(SB_V)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
 
-symbols.h: $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(GEN_HEADER_SCRIPT)
+symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
 	$(SB_V)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = $(srcdir)/sb_nr.h.in
