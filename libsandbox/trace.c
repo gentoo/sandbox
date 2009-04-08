@@ -316,9 +316,16 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
+/* Some arches (like hppa) don't implement PTRACE_GETREGS ...
+ * what a bunch of asshats.
+ */
+#ifndef trace_get_regs
+# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs);
+#endif
+
 static void trace_loop(void)
 {
-	struct user_regs_struct regs;
+	trace_regs regs;
 	bool before_syscall;
 	long ret;
 	int nr, exec_state;
@@ -337,7 +344,7 @@ static void trace_loop(void)
 			se = lookup_syscall_in_tbl(tbl_at_fork, nr);
 			if (!before_syscall || !se || se->sys != SB_NR_EXECVE) {
 				if (before_syscall)
-					_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
+					_SB_DEBUG(">%s:%i", se ? se->name : "IDK", nr);
 				else
 					__SB_DEBUG("(...) = ...\n");
 				goto loop_again;
@@ -346,7 +353,7 @@ static void trace_loop(void)
 		}
 
 		se = lookup_syscall(nr);
-		ret = do_ptrace(PTRACE_GETREGS, NULL, &regs);
+		ret = trace_get_regs(&regs);
 		if (before_syscall) {
 			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {

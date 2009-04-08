@@ -97,6 +97,8 @@ AC_CHECK_HEADERS_ONCE([ \
 	sys/types.h \
 	sys/user.h \
 	sys/wait.h \
+	asm/ptrace.h \
+	linux/ptrace.h \
 ])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -105,9 +107,30 @@ AC_C_CONST
 AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
+AC_CHECK_DECLS_ONCE([environ])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
-AC_CHECK_DECLS_ONCE([environ])
+
+AC_CHECK_TYPES([struct user_regs_struct, struct pt_regs],,,[$ac_includes_default
+#ifdef HAVE_SYS_PTRACE_H
+# include <sys/ptrace.h>
+#endif
+#ifdef HAVE_SYS_USER_H
+# include <sys/user.h>
+#endif
+#ifdef __ia64__ /* what a pos */
+# define ia64_fpreg FU_ia64_fpreg
+# define pt_all_user_regs FU_pt_all_user_regs
+#endif
+#ifdef HAVE_LINUX_PTRACE_H
+# include <linux/ptrace.h>
+#endif
+#ifdef HAVE_ASM_PTRACE_H
+# include <asm/ptrace.h>
+#endif
+#undef FU_ia64_fpreg
+#undef FU_pt_all_user_regs
+])
 
 dnl Checks for library functions.
 AC_FUNC_CHOWN

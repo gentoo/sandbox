@@ -63,6 +63,14 @@ typedef __sighandler_t sighandler_t;
 # endif
 #endif
 
+#if defined(HAVE_STRUCT_PT_REGS)
+typedef struct pt_regs trace_regs;
+#elif defined(HAVE_STRUCT_USER_REGS_STRUCT)
+typedef struct user_regs_struct trace_regs;
+#else
+# error "unable to find struct for tracing regs"
+#endif
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #endif

@@ -43,13 +43,13 @@ static int trace_sysnum(void)
 
 static long trace_raw_ret(void *vregs)
 {
-	struct user_regs_struct *regs = vregs;
+	trace_regs *regs = vregs;
 	return pers_is_32() ? (int)regs->rax : regs->rax;
 }
 
 static unsigned long trace_arg(void *vregs, int num)
 {
-	struct user_regs_struct *regs = vregs;
+	trace_regs *regs = vregs;
 	if (pers_is_32())
 		switch (num) {
 			case 1: return regs->rbx;
@@ -75,7 +75,7 @@ static unsigned long trace_arg(void *vregs, int num)
 #ifdef DEBUG
 static void trace_dump_regs(void *vregs)
 {
-	struct user_regs_struct *regs = vregs;
+	trace_regs *regs = vregs;
 	sb_printf("{ ");
 #define D(r) sb_printf(#r":%lu ", regs->r)
 	D(rax);

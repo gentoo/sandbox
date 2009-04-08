@@ -118,6 +118,19 @@
 # include <sys/wait.h>
 #endif
 
+#ifdef __ia64__ /* what a pos */
+# define ia64_fpreg FU_ia64_fpreg
+# define pt_all_user_regs FU_pt_all_user_regs
+#endif
+#ifdef HAVE_ASM_PTRACE_H
+# include <asm/ptrace.h>
+#endif
+#ifdef HAVE_LINUX_PTRACE_H
+# include <linux/ptrace.h>
+#endif
+#undef FU_ia64_fpreg
+#undef FU_pt_all_user_regs
+
 #include "localdecls.h"
 
 #endif
