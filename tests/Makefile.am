@@ -41,6 +41,7 @@ check_PROGRAMS = \
 	opendir-0 \
 	rename-0 \
 	renameat-0 \
+	signal_static-0 \
 	symlink-0 \
 	symlinkat-0 \
 	truncate-0 \

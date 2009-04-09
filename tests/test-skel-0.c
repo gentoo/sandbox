@@ -9,8 +9,6 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
-#define PAIR(x) { #x, x },
-
 int at_get_fd(const char *str_dirfd)
 {
 	if (!strcmp(str_dirfd, "AT_FDCWD"))
@@ -84,33 +82,6 @@ dev_t sscanf_dev_t(const char *str_dev)
 	int dev;
 	sscanf(str_dev, "%i", &dev);
 	return (dev_t)dev;
-}
-
-int lookup_errno(const char *str_errno)
-{
-	struct {
-		const char *name;
-		int val;
-	} const tbl[] = {
-		PAIR(EACCES)
-		PAIR(EBADF)
-		PAIR(EEXIST)
-		PAIR(EFAULT)
-		PAIR(EINVAL)
-		PAIR(EISDIR)
-		PAIR(ELOOP)
-		PAIR(ENAMETOOLONG)
-		PAIR(ENODEV)
-		PAIR(ENOENT)
-		PAIR(ENOTDIR)
-		PAIR(EPERM)
-		PAIR(ETXTBSY)
-	};
-	int i;
-	for (i = 0; i < ARRAY_SIZE(tbl); ++i)
-		if (!strcmp(str_errno, tbl[i].name))
-			return tbl[i].val;
-	return 0;
 }
 
 int main(int argc, char *argv[])
