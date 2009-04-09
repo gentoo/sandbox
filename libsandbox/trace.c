@@ -26,6 +26,13 @@ pid_t trace_pid;
 
 static volatile bool child_stopped;
 
+static void trace_exit(int status)
+{
+	/* if we were vfork-ed, clear trace_pid and exit */
+	trace_pid = 0;
+	_exit(status);
+}
+
 static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data)
 {
 	long ret;
@@ -33,8 +40,12 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 	errno = 0;
 	ret = ptrace(request, trace_pid, addr, data);
 	if (ret == -1) {
-		/* Child hasn't gotten to the next marker yet */
+		/* Child hasn't gotten to the next marker yet ? */
 		if (errno == ESRCH) {
+			int status;
+			if (waitpid(trace_pid, &status, 0) == -1)
+				/* nah, it's dead ... should we whine though ? */
+				trace_exit(0);
 			sched_yield();
 			goto try_again;
 		} else if (!errno)
@@ -117,6 +128,7 @@ static const char *strsig(int sig)
 	S(ABRT)
 	S(CHLD)
 	S(CONT)
+	S(HUP)
 	S(KILL)
 	S(SEGV)
 	S(STOP)
@@ -124,13 +136,6 @@ static const char *strsig(int sig)
 #undef S
 	default: return "SIG???";
 	}
-}
-
-static void trace_exit(int status)
-{
-	/* if we were vfork-ed, clear trace_pid and exit */
-	trace_pid = 0;
-	_exit(status);
 }
 
 static void trace_child_signal(int signo, siginfo_t *info, void *context)
@@ -158,7 +163,14 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 				case SIGCONT:
 					return;
 			}
-			/* fall through */
+
+			/* For whatever signal the child caught, let's ignore it and
+			 * continue on.  If it aborted, segfaulted, whatever, that's
+			 * its problem, not ours, so don't whine about it.  We just
+			 * have to be sure to bubble it back up.  #265072
+			 */
+			do_ptrace(PTRACE_CONT, NULL, (void *)(long)info->si_status);
+			return;
 	}
 
 	SB_EERROR("ISE:trace_child_signal ", "child (%i) signal %s(%i), code %s(%i), status %s(%i)\n",
