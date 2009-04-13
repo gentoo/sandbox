@@ -8,6 +8,10 @@ dnl we want to strip out quote chars and normalize whitespace
 sb_configure_opts=$(eval echo ${ac_configure_args})
 AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts}"], [Arguments given to ./configure])
 
+AC_MSG_CHECKING([environment state])
+env 1>&AS_MESSAGE_LOG_FD
+AC_MSG_RESULT([ok])
+
 dnl Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -16,6 +20,7 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
+AC_PROG_EGREP
 AC_CHECK_PROGS([READELF], [readelf eu-readelf], [false])
 AM_MISSING_PROG([AUTOM4TE], [autom4te])
 
@@ -33,7 +38,7 @@ AC_PREFIX_DEFAULT([/usr])
 dnl multiple personality support (x86 & x86_64: multilib)
 AC_MSG_CHECKING([for multiple personalities])
 AC_ARG_ENABLE([schizo],
-	[AC_HELP_STRING([--enable-schizo],[Support multiple personalities])],
+	[AS_HELP_STRING([--enable-schizo],[Support multiple personalities])],
 	[],[enable_schizo="yes"])
 SB_SCHIZO_SETTINGS="no"
 if test "x$enable_schizo" = "xyes" ; then
@@ -111,26 +116,10 @@ AC_CHECK_DECLS_ONCE([environ])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
 
-AC_CHECK_TYPES([struct user_regs_struct, struct pt_regs],,,[$ac_includes_default
-#ifdef HAVE_SYS_PTRACE_H
-# include <sys/ptrace.h>
-#endif
-#ifdef HAVE_SYS_USER_H
-# include <sys/user.h>
-#endif
-#ifdef __ia64__ /* what a pos */
-# define ia64_fpreg FU_ia64_fpreg
-# define pt_all_user_regs FU_pt_all_user_regs
-#endif
-#ifdef HAVE_LINUX_PTRACE_H
-# include <linux/ptrace.h>
-#endif
-#ifdef HAVE_ASM_PTRACE_H
-# include <asm/ptrace.h>
-#endif
-#undef FU_ia64_fpreg
-#undef FU_pt_all_user_regs
-])
+save_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="-I$srcdir $CPPFLAGS"
+AC_CHECK_TYPES([struct user_regs_struct, struct pt_regs],,,[#include "headers.h"])
+CPPFLAGS=$save_CPPFLAGS
 
 dnl Checks for library functions.
 AC_FUNC_CHOWN
@@ -192,10 +181,15 @@ AM_CONDITIONAL(HAVE_LIBSIGSEGV, $HAVE_LIBSIGSEGV)
 
 dnl Check for gcc atomic primitives
 AC_MSG_CHECKING([for __sync_lock_test_and_set])
+sltas=no
 AC_TRY_LINK([],
 	[int i; __sync_lock_test_and_set(&i, 1); return i;],
-	[AC_DEFINE([HAVE___SYNC_LOCK_TEST_AND_SET], [1], [GCC provides __sync_lock_test_and_set])]
+	[sltas=yes]
 )
+if test "$sltas" = yes ; then
+	AC_DEFINE([HAVE___SYNC_LOCK_TEST_AND_SET], [1], [GCC provides __sync_lock_test_and_set])
+fi
+AC_MSG_RESULT($sltas)
 
 dnl Check if gcc provides va_copy or __va_copy (for librcutil)
 AC_MSG_CHECKING([for va_copy])
@@ -264,14 +258,14 @@ AC_CHECK_LIB([$DL_LIB], [dlvsym],
 dnl when using libc5, (f)trucate's offset argument type is size_t with
 dnl libc5, but it's off_t with libc6 (glibc2).
 AC_MSG_CHECKING([truncate argument type])
-TRUNC_ARG_TYPE=`echo '#include <unistd.h>' | $CC -E - | $EGREP -q 'truncate.*size_t'`
-if test "$TRUNC_ARG_TYPE"x != x ; then
-  AC_MSG_RESULT([size_t])
-  AC_DEFINE([TRUNCATE_T], [size_t], [truncate arg type])
-else
-  AC_MSG_RESULT([off_t])
-  AC_DEFINE([TRUNCATE_T], [off_t], [truncate arg type])
-fi
+AC_EGREP_HEADER([truncate.*size_t], [unistd.h],
+	[dnl
+		AC_MSG_RESULT([size_t])
+		AC_DEFINE([TRUNCATE_T], [size_t], [truncate arg type])
+	],[dnl
+		AC_MSG_RESULT([off_t])
+		AC_DEFINE([TRUNCATE_T], [off_t], [truncate arg type])
+])
 
 dnl Check if libc provides RTLD_NEXT
 AC_MSG_CHECKING([for RTLD_NEXT])
@@ -300,7 +294,7 @@ try_link() {
 		echo "try_link: trying: ${try_libc_path} $1"
 		eval ${try_libc_path} $1
 		ret=$?
-		cat libctest.log 1>&AS_MESSAGE_LOG_FD
+		cat libctest.log
 		if test ${ret} -eq 0 ; then
 			echo "try_link: SUCCESS"
 		else
@@ -410,6 +404,7 @@ AC_SUBST([LDFLAG_VER])
 AC_CONFIG_TESTDIR([tests])
 
 AC_CONFIG_FILES([
+	src/sandbox.sh
 	Makefile
 	scripts/Makefile
 	etc/Makefile
@@ -417,10 +412,8 @@ AC_CONFIG_FILES([
 	libsbutil/Makefile
 	libsandbox/Makefile
 	src/Makefile
-	src/sandbox.sh
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4
-])
-AC_CONFIG_COMMANDS([config-perms], [chmod +x src/sandbox.sh])
+],[chmod +x src/sandbox.sh])
 AC_OUTPUT

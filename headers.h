@@ -7,7 +7,9 @@
 #ifndef __SB_HEADERS_H__
 #define __SB_HEADERS_H__
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
@@ -131,6 +133,8 @@
 #undef FU_ia64_fpreg
 #undef FU_pt_all_user_regs
 
-#include "localdecls.h"
+#ifdef HAVE_CONFIG_H
+# include "localdecls.h"
+#endif
 
 #endif
