@@ -27,6 +27,7 @@ check_PROGRAMS = \
 	linkat-0 \
 	lutimes-0 \
 	mkdir-0 \
+	mkdir_static-0 \
 	mkdirat-0 \
 	mkfifo-0 \
 	mkfifoat-0 \
