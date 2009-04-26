@@ -107,6 +107,7 @@ static int setup_access_var(const char *access_var)
 {
 	rc_dynbuf_t *env_data;
   	int count = 0;
+	char confd_path[SB_PATH_MAX];
 	char *config;
 	char **confd_files = NULL;
 	bool use_confd = true;
@@ -136,7 +137,7 @@ static int setup_access_var(const char *access_var)
 
 	/* Now scan the files in sandbox.d/ if the access variable was not
 	 * alreay set. */
-	confd_files = rc_ls_dir(SANDBOX_CONFD_DIR, false, true);
+	confd_files = rc_ls_dir(get_sandbox_confd(confd_path), false, true);
 	if (NULL != confd_files) {
 		while (NULL != confd_files[count]) {
 			config = rc_get_cnf_entry(confd_files[count], access_var, ":");

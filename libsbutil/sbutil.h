@@ -81,6 +81,7 @@ extern const char env_sandbox_testing[];
 #define SB_EERROR(_hilight, _args...) sb_efunc(COLOR_RED, _hilight, _args)
 
 char *get_sandbox_conf(void);
+char *get_sandbox_confd(char *path);
 void get_sandbox_lib(char *path);
 void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path);

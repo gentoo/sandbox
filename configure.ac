@@ -408,6 +408,7 @@ AC_CONFIG_FILES([
 	Makefile
 	scripts/Makefile
 	etc/Makefile
+	etc/sandbox.d/Makefile
 	data/Makefile
 	libsbutil/Makefile
 	libsandbox/Makefile
