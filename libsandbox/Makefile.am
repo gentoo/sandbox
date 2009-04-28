@@ -53,19 +53,15 @@ GEN_HEADER_SCRIPT = $(SCRIPT_DIR)/gen_symbol_header.awk
 GEN_TRACE_SCRIPT = $(SCRIPT_DIR)/gen_trace_header.awk
 SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -v srcdir="$(srcdir)" -f
 
-SB_V   = $(SB_V_$(V))
-SB_V_  = @echo " GEN" $@;
-SB_V_0 = $(SB_V_)
-
 libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
-	$(SB_V)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
+	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
 
 symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
-	$(SB_V)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
+	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = $(srcdir)/sb_nr.h.in
 sb_nr.h: symbols.h $(SB_NR_FILE)
-	$(SB_V)$(EGREP) -h '^\#define SB_' $^ > $@
+	$(AM_V_GEN)$(EGREP) -h '^\#define SB_' $^ > $@
 
 TRACE_MAKE_HEADER = \
 	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
@@ -73,7 +69,7 @@ TRACE_MAKE_HEADER = \
 		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
 trace_syscalls.h: $(GEN_TRACE_SCRIPT)
 if SB_SCHIZO
-	$(SB_V)for pers in $(SB_SCHIZO_SETTINGS) ; do \
+	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
 		t=_$${pers%:*}; \
 		f=$${pers#*:}; \
 		header=trace_syscalls$${t}.h; \
@@ -81,7 +77,7 @@ if SB_SCHIZO
 	done
 	@touch $@
 else
-	$(SB_V)t= f= header=$@; $(TRACE_MAKE_HEADER)
+	$(AM_V_GEN)t= f= header=$@; $(TRACE_MAKE_HEADER)
 endif
 
 EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES)
