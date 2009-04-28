@@ -1,5 +1,5 @@
 # ===========================================================================
-#        http://autoconf-archive.cryp.to/ax_check_linker_flags.html
+#         http://autoconf-archive.cryp.to/ax_check_linker_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -16,15 +16,11 @@
 #
 #   NOTE: Based on AX_CHECK_COMPILER_FLAGS.
 #
-# LAST MODIFICATION
+# LICENSE
 #
-#   2009-02-01
-#
-# COPYLEFT
-#
-#   Copyfight (c) 2009 Mike Frysinger <vapier@gentoo.org>
-#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
-#   Copyright (c) 2008 Matteo Frigo
+#   Copyright (c) 2009 Mike Frysinger <vapier@gentoo.org>
+#   Copyright (c) 2009 Steven G. Johnson <stevenj@alum.mit.edu>
+#   Copyright (c) 2009 Matteo Frigo
 #
 #   This program is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -48,9 +44,9 @@
 #   all other use of the material that constitutes the Autoconf Macro.
 #
 #   This special exception to the GPL applies to versions of the Autoconf
-#   Macro released by the Autoconf Macro Archive. When you make and
-#   distribute a modified version of the Autoconf Macro, you may extend this
-#   special exception to the GPL to apply to your modified version as well.
+#   Macro released by the Autoconf Archive. When you make and distribute a
+#   modified version of the Autoconf Macro, you may extend this special
+#   exception to the GPL to apply to your modified version as well.
 
 AC_DEFUN([AX_CHECK_LINKER_FLAGS],
 [AC_MSG_CHECKING([whether the linker accepts $1])
