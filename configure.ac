@@ -232,28 +232,11 @@ if echo " $LDFLAGS " | $EGREP ' -static ' >/dev/null 2>&1; then
 fi
 
 dnl Some libc's like those on bsd have dlopen() in libc, and not libdl
-AC_CHECK_LIB([dl], [dlopen],
-  [have_libdl="yes"],
-  [have_libdl="no"]
-)
-if test x"$have_libdl" = xyes ; then
-  LIBDL="-ldl"
-  AC_SUBST([LIBDL])
-  DL_LIB="dl"
-else
-  DL_LIB="c"
-  AC_CHECK_LIB([c], [dlopen],
-    [],
-    [AC_MSG_ERROR([Unable to determine library providing dlopen])]
-  )
-fi
+AC_SEARCH_LIBS([dlopen], [dl])
 
 dnl uClibc doesn't currently provide dlvsym() so lets
 dnl verify the toolchain supports it
-AC_CHECK_LIB([$DL_LIB], [dlvsym],
-  [AC_DEFINE([HAVE_DLVSYM], [1], [libdl supports dlvsym])],
-  [AC_DEFINE([HAVE_DLVSYM], [0], [libdl does not support dlvsym])]
-)
+AC_CHECK_FUNCS([dlvsym])
 
 dnl when using libc5, (f)trucate's offset argument type is size_t with
 dnl libc5, but it's off_t with libc6 (glibc2).
