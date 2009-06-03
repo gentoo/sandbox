@@ -37,6 +37,9 @@ libsandbox_la_SOURCES = \
 	wrappers.c   \
 	canonicalize.c
 
+install-exec-hook:
+	rm -f $(DESTDIR)$(libdir)/libsandbox.la
+
 libsandbox.c: libsandbox.map sb_nr.h
 trace.c: trace_syscalls.h sb_nr.h $(TRACE_FILES)
 wrappers.c: symbols.h
