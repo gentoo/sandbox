@@ -114,7 +114,7 @@ static char *do_peekstr(unsigned long lptr)
 static const char *strcld_chld(int cld)
 {
 	switch (cld) {
-#define C(c) case CLD_##c: return "CLD"#c;
+#define C(c) case CLD_##c: return "CLD_"#c;
 	C(CONTINUED)
 	C(DUMPED)
 	C(EXITED)
@@ -122,7 +122,7 @@ static const char *strcld_chld(int cld)
 	C(TRAPPED)
 	C(STOPPED)
 #undef C
-	default: return "CLD???";
+	default: return "CLD_???";
 	}
 }
 /* strsignal() translates the string when i want C define */
@@ -131,12 +131,16 @@ static const char *strsig(int sig)
 	switch (sig) {
 #define S(s) case SIG##s: return "SIG"#s;
 	S(ABRT)
+	S(ALRM)
 	S(CHLD)
 	S(CONT)
 	S(HUP)
+	S(INT)
 	S(KILL)
+	S(QUIT)
 	S(SEGV)
 	S(STOP)
+	S(TERM)
 	S(TRAP)
 #undef S
 	default: return "SIG???";
@@ -151,6 +155,7 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 		strsig(info->si_status), info->si_status);
 
 	switch (info->si_code) {
+		case CLD_DUMPED:
 		case CLD_KILLED:
 			trace_exit(128 + info->si_status);
 
