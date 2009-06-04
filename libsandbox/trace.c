@@ -28,8 +28,6 @@ pid_t trace_pid;
 #define _SB_DEBUG(fmt, args...)  do { if (SBDEBUG) SB_EWARN("TRACE ", "(pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
 #define SB_DEBUG(fmt, args...)   _SB_DEBUG(fmt "\n", ## args)
 
-static volatile bool child_stopped;
-
 static void trace_exit(int status)
 {
 	/* if we were vfork-ed, clear trace_pid and exit */
@@ -168,7 +166,6 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 				case SIGSTOP:
 					kill(trace_pid, SIGCONT);
 				case SIGTRAP:
-					child_stopped = true;
 				case SIGCHLD:
 				case SIGCONT:
 					return;
@@ -396,6 +393,7 @@ static void trace_loop(void)
 	tbl_at_fork = NULL;
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
+		waitpid(trace_pid, NULL, 0);
 		nr = trace_sysnum();
 
 		if (!exec_state) {
@@ -410,6 +408,10 @@ static void trace_loop(void)
 				goto loop_again;
 			}
 			++exec_state;
+		} else if (exec_state == 1) {
+			/* Don't bother poking exec return */
+			++exec_state;
+			goto loop_again;
 		}
 
 		se = lookup_syscall(nr);
@@ -454,7 +456,6 @@ void trace_main(const char *filename, char *const argv[])
 {
 	struct sigaction sa, old_sa;
 
-	child_stopped = false;
 	sa.sa_flags = SA_RESTART | SA_SIGINFO;
 	sa.sa_sigaction = trace_child_signal;
 	sigaction(SIGCHLD, &sa, &old_sa);
@@ -474,8 +475,7 @@ void trace_main(const char *filename, char *const argv[])
 		sb_abort();
 	} else if (trace_pid) {
 		SB_DEBUG("parent waiting for child (pid=%i) to signal", trace_pid);
-		while (!child_stopped)
-			sched_yield();
+		waitpid(trace_pid, NULL, 0);
 #ifdef PTRACE_O_TRACESYSGOOD
 		/* Not all kernel versions support this, so ignore return */
 		ptrace(PTRACE_SETOPTIONS, trace_pid, NULL, (void *)PTRACE_O_TRACESYSGOOD);
