@@ -7,7 +7,7 @@
 
 #define process_args() \
 	s = argv[i++]; \
-	char *file = s; \
+	const char *file = f_get_file(s); \
 	\
 	s = argv[i++]; \
 	int flags = f_get_flags(s); \

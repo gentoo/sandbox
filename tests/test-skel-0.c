@@ -9,25 +9,6 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
-int at_get_fd(const char *str_dirfd)
-{
-	if (!strcmp(str_dirfd, "AT_FDCWD"))
-		return AT_FDCWD;
-	else
-		return atoi(str_dirfd);
-}
-
-int at_get_flags(const char *str_flags)
-{
-	if (!strcmp(str_flags, "AT_SYMLINK_NOFOLLOW"))
-		return AT_SYMLINK_NOFOLLOW;
-	else {
-		int flags = 0;
-		sscanf(str_flags, "%i", &flags);
-		return flags;
-	}
-}
-
 int f_get_flags(const char *str_flags)
 {
 	const char *delim = "|";
@@ -61,6 +42,42 @@ int f_get_flags(const char *str_flags)
 		tok = strtok(NULL, delim);
 	}
 	return ret;
+}
+
+const char *f_get_file(const char *str_file)
+{
+	if (!strcmp(str_file, "NULL"))
+		return NULL;
+	else
+		return str_file;
+}
+
+int at_get_flags(const char *str_flags)
+{
+	if (!strcmp(str_flags, "AT_SYMLINK_NOFOLLOW"))
+		return AT_SYMLINK_NOFOLLOW;
+	else {
+		int flags = 0;
+		sscanf(str_flags, "%i", &flags);
+		return flags;
+	}
+}
+
+int at_get_fd(const char *str_dirfd)
+{
+	char *colon;
+	if (!strcmp(str_dirfd, "AT_FDCWD"))
+		return AT_FDCWD;
+	else if ((colon = strchr(str_dirfd, ':')) == NULL)
+		return atoi(str_dirfd);
+	else {
+		/* work some magic ... expected format:
+		 * <path>:<flags>
+		 */
+		char *str_flags = strdup(str_dirfd);
+		str_flags[colon - str_dirfd] = '\0';
+		return open(colon + 1, f_get_flags(str_flags));
+	}
 }
 
 mode_t sscanf_mode_t(const char *str_mode)
