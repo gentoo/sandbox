@@ -87,6 +87,10 @@ erealpath(const char *name, char *resolved)
 			goto error;
 		}
 
+		/* This stat() business uses relative paths atm */
+		if (trace_pid)
+			goto no_recover;
+
 		/* Can we actually access the working dir (sane perms) ?
 		 * If not, try a little harder to consume this path in
 		 * case it has symlinks out into a better world ...
@@ -134,6 +138,7 @@ erealpath(const char *name, char *resolved)
 			} while (p);
 		}
 
+ no_recover:
 		dest = strchr(rpath, '\0');
 	} else {
  recover_full:
