@@ -64,5 +64,5 @@ int lookup_signal(const char *str_signal)
 		PAIR(SIGUSR2)
 		{ }
 	};
-	return lookup_val(tbl, str_signal);
+	return atoi(str_signal) ? : lookup_val(tbl, str_signal);
 }
