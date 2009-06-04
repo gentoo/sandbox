@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([sandbox], [2.0], [sandbox@gentoo.org])
+AC_INIT([sandbox], [2.1], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE([1.11 dist-lzma no-dist-gzip silent-rules])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
