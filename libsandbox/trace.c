@@ -476,7 +476,7 @@ void trace_main(const char *filename, char *const argv[])
 	} else if (trace_pid) {
 		SB_DEBUG("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
-#ifdef PTRACE_O_TRACESYSGOOD
+#if defined(PTRACE_SETOPTIONS) && defined(PTRACE_O_TRACESYSGOOD)
 		/* Not all kernel versions support this, so ignore return */
 		ptrace(PTRACE_SETOPTIONS, trace_pid, NULL, (void *)PTRACE_O_TRACESYSGOOD);
 #endif
