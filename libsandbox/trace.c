@@ -15,6 +15,10 @@ pid_t trace_pid;
 
 #ifndef SB_NO_TRACE
 
+#ifdef HAVE_OPEN64
+# define sb_openat_pre_check sb_openat64_pre_check
+#endif
+
 #ifdef DEBUG
 # define SBDEBUG 1
 #else
@@ -43,9 +47,10 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 		/* Child hasn't gotten to the next marker yet ? */
 		if (errno == ESRCH) {
 			int status;
-			if (waitpid(trace_pid, &status, 0) == -1)
+			if (waitpid(trace_pid, &status, 0) == -1) {
 				/* nah, it's dead ... should we whine though ? */
 				trace_exit(0);
+			}
 			sched_yield();
 			goto try_again;
 		} else if (!errno)
@@ -194,49 +199,73 @@ static const struct syscall_entry *lookup_syscall(int nr)
 	return lookup_syscall_in_tbl(trace_check_personality(), nr);
 }
 
-static bool _trace_check_syscall_C(void *regs, int sb_nr, const char *func, int ibase)
+struct syscall_state {
+	void *regs;
+	int nr;
+	const char *func;
+	bool (*pre_check)(const char *func, const char *pathname, int dirfd);
+};
+
+static bool _trace_check_syscall_C(struct syscall_state *state, int ibase)
 {
-	char *path = do_peekstr(trace_arg(regs, ibase));
+	char *path = do_peekstr(trace_arg(state->regs, ibase));
 	__SB_DEBUG("(\"%s\")", path);
-	bool ret = _SB_SAFE(sb_nr, func, path);
+	bool pre_ret, ret;
+	if (state->pre_check)
+		pre_ret = state->pre_check(state->func, path, AT_FDCWD);
+	else
+		pre_ret = true;
+	if (pre_ret)
+		ret = _SB_SAFE(state->nr, state->func, path);
+	else
+		ret = true;
 	free(path);
 	return ret;
 }
-static bool trace_check_syscall_C(void *regs, int sb_nr, const char *func)
+static bool trace_check_syscall_C(struct syscall_state *state)
 {
-	return _trace_check_syscall_C(regs, sb_nr, func, 1);
+	return _trace_check_syscall_C(state, 1);
 }
 
-static bool __trace_check_syscall_DCF(void *regs, int sb_nr, const char *func, int ibase, int flags)
+static bool __trace_check_syscall_DCF(struct syscall_state *state, int ibase, int flags)
 {
-	int dirfd = trace_arg(regs, ibase);
-	char *path = do_peekstr(trace_arg(regs, ibase + 1));
+	int dirfd = trace_arg(state->regs, ibase);
+	char *path = do_peekstr(trace_arg(state->regs, ibase + 1));
 	__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
-	bool ret = _SB_SAFE_AT(sb_nr, func, dirfd, path, flags);
+	bool pre_ret, ret;
+	if (state->pre_check)
+		pre_ret = state->pre_check(state->func, path, dirfd);
+	else
+		pre_ret = true;
+	if (pre_ret)
+		ret = _SB_SAFE_AT(state->nr, state->func, dirfd, path, flags);
+	else
+		ret = true;
 	free(path);
 	return ret;
 }
-static bool _trace_check_syscall_DCF(void *regs, int sb_nr, const char *func, int ibase)
+static bool _trace_check_syscall_DCF(struct syscall_state *state, int ibase)
 {
-	int flags = trace_arg(regs, ibase + 2);
-	return __trace_check_syscall_DCF(regs, sb_nr, func, ibase, flags);
+	int flags = trace_arg(state->regs, ibase + 2);
+	return __trace_check_syscall_DCF(state, ibase, flags);
 }
-static bool trace_check_syscall_DCF(void *regs, int sb_nr, const char *func)
+static bool trace_check_syscall_DCF(struct syscall_state *state)
 {
-	return _trace_check_syscall_DCF(regs, sb_nr, func, 1);
+	return _trace_check_syscall_DCF(state, 1);
 }
 
-static bool _trace_check_syscall_DC(void *regs, int sb_nr, const char *func, int ibase)
+static bool _trace_check_syscall_DC(struct syscall_state *state, int ibase)
 {
-	return __trace_check_syscall_DCF(regs, sb_nr, func, ibase, 0);
+	return __trace_check_syscall_DCF(state, ibase, 0);
 }
-static bool trace_check_syscall_DC(void *regs, int sb_nr, const char *func)
+static bool trace_check_syscall_DC(struct syscall_state *state)
 {
-	return _trace_check_syscall_DC(regs, sb_nr, func, 1);
+	return _trace_check_syscall_DC(state, 1);
 }
 
 static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 {
+	struct syscall_state state;
 	bool ret = true;
 	int nr;
 	const char *name;
@@ -256,37 +285,45 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	if (!se)
 		goto done;
 
-	nr = se->sys;
-	name = se->name;
+	state.regs = regs;
+	state.nr = nr = se->sys;
+	state.func = name = se->name;
+	if (nr == SB_NR_UNDEF)          goto done;
+	else if (nr == SB_NR_MKDIR)     state.pre_check = sb_mkdirat_pre_check;
+	else if (nr == SB_NR_MKDIRAT)   state.pre_check = sb_mkdirat_pre_check;
+	else if (nr == SB_NR_UNLINK)    state.pre_check = sb_unlinkat_pre_check;
+	else if (nr == SB_NR_UNLINKAT)  state.pre_check = sb_unlinkat_pre_check;
+	else                            state.pre_check = NULL;
+
 	/* Hmm, add these functions to the syscall table and avoid this if() ? */
 	if (nr == SB_NR_UNDEF)          goto done;
-	else if (nr == SB_NR_CHMOD)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_CHOWN)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_CREAT)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DCF(regs, nr, name);
-	else if (nr == SB_NR_FCHOWNAT)  return  trace_check_syscall_DCF(regs, nr, name);
-	else if (nr == SB_NR_FUTIMESAT) return  trace_check_syscall_DC (regs, nr, name);
-	else if (nr == SB_NR_LCHOWN)    return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_LINK)      return _trace_check_syscall_C  (regs, nr, name, 2);
-	else if (nr == SB_NR_LINKAT)    return _trace_check_syscall_DCF(regs, nr, name, 3);
-	else if (nr == SB_NR_MKDIR)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_MKDIRAT)   return  trace_check_syscall_DC (regs, nr, name);
-	else if (nr == SB_NR_MKNOD)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_MKNODAT)   return  trace_check_syscall_DC (regs, nr, name);
-	else if (nr == SB_NR_RENAME)    return  trace_check_syscall_C  (regs, nr, name) &&
-	                                       _trace_check_syscall_C  (regs, nr, name, 2);
-	else if (nr == SB_NR_RENAMEAT)  return  trace_check_syscall_DC (regs, nr, name) &&
-	                                       _trace_check_syscall_DC (regs, nr, name, 3);
-	else if (nr == SB_NR_RMDIR)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_SYMLINK)   return _trace_check_syscall_C  (regs, nr, name, 2);
-	else if (nr == SB_NR_SYMLINKAT) return _trace_check_syscall_DC (regs, nr, name, 2);
-	else if (nr == SB_NR_TRUNCATE)  return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_TRUNCATE64)return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_UNLINK)    return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(regs, nr, name);
-	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (regs, nr, name);
-	else if (nr == SB_NR_UTIMENSAT) return  trace_check_syscall_DCF(regs, nr, name);
+	else if (nr == SB_NR_CHMOD)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_CHOWN)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_CREAT)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DCF(&state);
+	else if (nr == SB_NR_FCHOWNAT)  return  trace_check_syscall_DCF(&state);
+	else if (nr == SB_NR_FUTIMESAT) return  trace_check_syscall_DC (&state);
+	else if (nr == SB_NR_LCHOWN)    return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_LINK)      return _trace_check_syscall_C  (&state, 2);
+	else if (nr == SB_NR_LINKAT)    return _trace_check_syscall_DCF(&state, 3);
+	else if (nr == SB_NR_MKDIR)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_MKDIRAT)   return  trace_check_syscall_DC (&state);
+	else if (nr == SB_NR_MKNOD)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_MKNODAT)   return  trace_check_syscall_DC (&state);
+	else if (nr == SB_NR_RENAME)    return  trace_check_syscall_C  (&state) &&
+	                                       _trace_check_syscall_C  (&state, 2);
+	else if (nr == SB_NR_RENAMEAT)  return  trace_check_syscall_DC (&state) &&
+	                                       _trace_check_syscall_DC (&state, 3);
+	else if (nr == SB_NR_RMDIR)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_SYMLINK)   return _trace_check_syscall_C  (&state, 2);
+	else if (nr == SB_NR_SYMLINKAT) return _trace_check_syscall_DC (&state, 2);
+	else if (nr == SB_NR_TRUNCATE)  return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_TRUNCATE64)return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_UNLINK)    return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(&state);
+	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (&state);
+	else if (nr == SB_NR_UTIMENSAT) return  trace_check_syscall_DCF(&state);
 
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
@@ -309,7 +346,10 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
 		__SB_DEBUG("(\"%s\", %x)", path, flags);
-		ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
+		if (sb_openat_pre_check(name, path, AT_FDCWD, flags))
+			ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
+		else
+			ret = 1;
 		free(path);
 		return ret;
 
@@ -318,7 +358,10 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
 		__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
-		ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
+		if (sb_openat_pre_check(name, path, dirfd, flags))
+			ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
+		else
+			ret = 1;
 		free(path);
 		return ret;
 	}
@@ -369,6 +412,8 @@ static void trace_loop(void)
 		if (before_syscall) {
 			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
+				if (is_env_on(ENV_SANDBOX_DEBUG))
+					SB_EINFO("trace_loop", " destroying\n");
 				do_ptrace(PTRACE_KILL, NULL, NULL);
 				exit(1);
 			}

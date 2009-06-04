@@ -109,8 +109,10 @@ END {
 			# that we know what the name is in libsandbox.c ...
 			# Also do this for non-versioned libc's ...
 			if (sym_full_names[x] ~ /@@/ || !symbol_array[2]) {
+				sym_is_default = 1;
 				sym_real_name = sym_index "_DEFAULT";
 			} else {
+				sym_is_default = 0;
 				sym_real_name = sym_full_names[x];
 				gsub(/@|\./, "_", sym_real_name);
 			}
@@ -134,6 +136,9 @@ END {
 			printf("#define SB_NR_%s %i\n", toupper(sym_index), i);
 			printf("#define WRAPPER_NR SB_NR_%s\n", toupper(sym_index));
 			printf("#include \"wrapper-funcs/%s.c\"\n", sym_index);
+			pre_check = "wrapper-funcs/" sym_index "_pre_check.c"
+			if (sym_is_default && system("test -e " srcdir "/" pre_check) == 0)
+				printf("#include \"%s\"\n", pre_check);
 			printf("#undef STRING_NAME\n");
 			printf("#undef EXTERN_NAME\n");
 			printf("#undef WRAPPER_NAME\n");

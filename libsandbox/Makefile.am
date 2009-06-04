@@ -51,7 +51,7 @@ SYMBOLS_WRAPPERS = $(wildcard $(srcdir)/wrapper-funcs/*.[ch])
 GEN_VERSION_MAP_SCRIPT = $(SCRIPT_DIR)/gen_symbol_version_map.awk
 GEN_HEADER_SCRIPT = $(SCRIPT_DIR)/gen_symbol_header.awk
 GEN_TRACE_SCRIPT = $(SCRIPT_DIR)/gen_trace_header.awk
-SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -f
+SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -v srcdir="$(srcdir)" -f
 
 SB_V   = $(SB_V_$(V))
 SB_V_  = @echo " GEN" $@;
