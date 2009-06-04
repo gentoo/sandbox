@@ -962,10 +962,18 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	static sbcontext_t sbcontext;
 	char at_file_buf[SB_PATH_MAX];
 
+	/* Some funcs operate on a fd directly and so filename is NULL, but
+	 * the rest should get rejected as "file/directory does not exist".
+	 */
 	if (file == NULL || file[0] == '\0') {
-		/* The file/directory does not exist */
-		errno = ENOENT;
-		return false;
+		if (file == NULL && dirfd != AT_FDCWD &&
+			(sb_nr == SB_NR_UTIMENSAT))
+		{
+			/* let it slide */
+		} else {
+			errno = ENOENT;
+			return false;
+		}
 	}
 
 	save_errno();
@@ -977,8 +985,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	 * Since maintaining fd state based on open's is real messy, we'll
 	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
 	 */
-	if (dirfd != AT_FDCWD && file[0] != '/') {
-		size_t at_len = sizeof(at_file_buf) - 1 - 1 - strlen(file);
+	if (dirfd != AT_FDCWD && (!file || file[0] != '/')) {
+		size_t at_len = sizeof(at_file_buf) - 1 - 1 - (file ? strlen(file) : 0);
 		sprintf(at_file_buf, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
 		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
 		if (ret == -1) {
@@ -997,7 +1005,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		}
 		at_file_buf[ret] = '/';
 		at_file_buf[ret + 1] = '\0';
-		strcat(at_file_buf, file);
+		if (file)
+			strcat(at_file_buf, file);
 		file = at_file_buf;
 	}
 

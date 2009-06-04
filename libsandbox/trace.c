@@ -328,7 +328,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(&state);
 	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (&state);
-	else if (nr == SB_NR_UTIMENSAT) return  trace_check_syscall_DCF(&state);
+	else if (nr == SB_NR_UTIMENSAT) return _trace_check_syscall_DCF(&state, 2);
 
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
@@ -418,7 +418,8 @@ static void trace_loop(void)
 			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
 				if (is_env_on(ENV_SANDBOX_DEBUG))
-					SB_EINFO("trace_loop", " destroying\n");
+					SB_EINFO("trace_loop", " destroying after %s\n",
+						se->name);
 				do_ptrace(PTRACE_KILL, NULL, NULL);
 				exit(1);
 			}
