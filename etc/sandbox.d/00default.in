@@ -14,7 +14,7 @@ SANDBOX_READ="/"
 # Finally add current directory if interactive
 SANDBOX_WRITE="${SANDBOX_WORKDIR}"
 # Needed for configure tests
-SANDBOX_WRITE="/usr/tmp/conftest:/usr/lib/conftest:/usr/lib32/conftest:/usr/lib64/conftest:/usr/tmp/cf:/usr/lib/cf:/usr/lib32/cf:/usr/lib64/cf"
+SANDBOX_WRITE="@prefix@/tmp/conftest:@prefix@/lib/conftest:@prefix@/lib32/conftest:@prefix@/lib64/conftest:@prefix@/tmp/cf:@prefix@/lib/cf:@prefix@/lib32/cf:@prefix@/lib64/cf"
 
 # Usually writes in /home should not cause violations
 SANDBOX_PREDICT="${HOME}"

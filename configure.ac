@@ -404,15 +404,16 @@ AC_SUBST([LDFLAG_VER])
 AC_CONFIG_TESTDIR([tests])
 
 AC_CONFIG_FILES([
-	src/sandbox.sh
 	Makefile
-	scripts/Makefile
-	etc/Makefile
-	etc/sandbox.d/Makefile
 	data/Makefile
-	libsbutil/Makefile
+	etc/Makefile
+	etc/sandbox.d/00default
+	etc/sandbox.d/Makefile
 	libsandbox/Makefile
+	libsbutil/Makefile
+	scripts/Makefile
 	src/Makefile
+	src/sandbox.sh
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4
