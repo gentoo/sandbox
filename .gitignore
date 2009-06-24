@@ -8,6 +8,10 @@ a.out
 Makefile
 Makefile.in
 
+f
+f2
+
+*.save
 *.patch
 *.rej
 *.orig
@@ -18,6 +22,7 @@ core
 
 /aclocal.m4
 /autom4te.cache/
+/build/
 /compile
 /config.cache
 /config.guess
@@ -42,6 +47,8 @@ core
 /m4/lt~obsolete.m4
 
 /ChangeLog
+
+/etc/sandbox.d/00default
 
 /libsandbox/libsandbox.map
 /libsandbox/sb_nr.h
