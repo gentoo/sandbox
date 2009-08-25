@@ -5,7 +5,7 @@ trace-0 ; test $? -eq 77 && exit 77
 
 # the exact binary we run doesnt matter, it just needs to be
 # static so that the trace code works
-output=$(vfork-0 openat_static-0 openat_static-0 openat_static-0 2>&1)
+output=$(vfork-0 sb_true_static sb_true_static sb_true_static 2>&1 || echo fail)
 echo "$output"
 exec test -z "$output"
 

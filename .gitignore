@@ -64,6 +64,8 @@ core
 /tests/atlocal
 /tests/get-group
 /tests/get-user
+/tests/sb_true
+/tests/sb_true_static
 /tests/package.m4
 /tests/testsuite
 /tests/testsuite.dir/

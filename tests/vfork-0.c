@@ -2,7 +2,6 @@
 
 int main(int argc, char *argv[])
 {
-	int ret = 0;
 	size_t i;
 
 	if (argc == 1) {
@@ -27,14 +26,17 @@ int main(int argc, char *argv[])
 				errp("vfork() failed");
 
 			case 0:
-				_exit(execvp(new_argv[0], new_argv));
+				execvp(new_argv[0], new_argv);
+				errp("execvp() failed");
 
 			default: {
 				int status;
 				if (wait(&status) == -1)
-					ret |= 1;
-				else if (!WIFEXITED(status) || WEXITSTATUS(status))
-					ret |= 1;
+					errp("wait() failed");
+				else if (!WIFEXITED(status))
+					err("child did not exit properly");
+				else if (WEXITSTATUS(status))
+					err("child exited with %i", WEXITSTATUS(status));
 			}
 		}
 	}

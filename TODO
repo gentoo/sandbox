@@ -24,3 +24,6 @@ threaded apps conflict with shared state:
  - sandbox_on
  - trace_pid
  - etc...
+
+doesnt seem to work quite right:
+	echo $(./vfork-0 ./mkdir_static-0 2>&1)

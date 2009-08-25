@@ -10,6 +10,8 @@ AM_CPPFLAGS = -I$(top_srcdir)
 check_PROGRAMS = \
 	get-group \
 	get-user \
+	sb_true \
+	sb_true_static \
 	\
 	access-0 \
 	chmod-0 \
