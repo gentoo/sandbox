@@ -14,9 +14,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-void
-rc_log_domain (const char *new_domain);
-
 /* Using errno to try and create a debug system that will 'trace' from the
  * point the initial error occured, is highly messy and needs strict errno
  * accounting.  So we rather implement our own private errno system.

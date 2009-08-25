@@ -13,15 +13,7 @@
 
 volatile static int debug_errno = 0;
 
-static char log_domain_default[] = "rcscripts";
-static char *log_domain = log_domain_default;
-
-void
-rc_log_domain (const char *new_domain)
-{
-  if (check_str (new_domain))
-    log_domain = (char *)new_domain;
-}
+#define log_domain "sandbox"
 
 void
 rc_errno_set (int rc_errno)
