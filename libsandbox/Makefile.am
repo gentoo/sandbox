@@ -3,13 +3,11 @@ AUTOMAKE_OPTIONS = foreign
 lib_LTLIBRARIES = libsandbox.la
 
 AM_CPPFLAGS = \
-	$(SANDBOX_DEFINES) \
-	-DPIC -fPIC
-
-INCLUDES = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/libsbutil \
-	-I$(top_srcdir)/libsbutil/include
+	-I$(top_srcdir)/libsbutil/include \
+	$(SANDBOX_DEFINES) \
+	-DPIC -fPIC
 
 libsandbox_la_CFLAGS = $(CFLAG_EXCEPTIONS)
 # Could use the following to libsandbox_la_LIBADD, but then libtool links it

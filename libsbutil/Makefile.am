@@ -1,12 +1,11 @@
 AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = \
+	-I$(top_srcdir) \
+	-I$(srcdir)/include \
 	$(SANDBOX_DEFINES) \
 	-DPIC -fPIC
 
-INCLUDES = \
-	-I$(top_srcdir) \
-	-I$(srcdir)/include
 LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
 noinst_LTLIBRARIES = libsbutil.la

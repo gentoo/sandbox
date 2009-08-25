@@ -3,13 +3,11 @@ AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = sandbox
 
 AM_CPPFLAGS = \
-	$(SANDBOX_DEFINES) \
-	-DPIC -fPIC
-
-INCLUDES = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/libsbutil \
-	-I$(top_srcdir)/libsbutil/include
+	-I$(top_srcdir)/libsbutil/include \
+	$(SANDBOX_DEFINES) \
+	-DPIC -fPIC
 
 sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la $(LIBDL)
 sandbox_SOURCES = \
