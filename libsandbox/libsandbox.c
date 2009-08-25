@@ -345,9 +345,11 @@ char *egetcwd(char *buf, size_t size)
 
 static int sb_copy_file_to_fd(const char *file, int ofd)
 {
+	int ret = -1;
+
 	int ifd = sb_open(file, O_RDONLY, 0);
 	if (ifd == -1)
-		return -1;
+		return ret;
 
 	size_t pagesz = getpagesize();
 	char *buf = xmalloc(pagesz);
@@ -361,14 +363,15 @@ static int sb_copy_file_to_fd(const char *file, int ofd)
 		for (i = 0; i < len; ++i)
 			if (!buf[i])
 				buf[i] = ' ';
-		SB_WRITE(ofd, buf, len, error);
+		if (sb_write(ofd, buf, len) != len)
+			goto error;
 	}
+
+	ret = 0;
+ error:
 	sb_close(ifd);
 	free(buf);
-
-	return 0;
- error:
-	return -1;
+	return ret;
 }
 
 void sb_dump_backtrace(void)
@@ -414,7 +417,12 @@ void sb_abort(void)
 	abort();
 }
 
-#define _SB_WRITE_STR(str) SB_WRITE(logfd, str, strlen(str), error)
+#define _SB_WRITE_STR(str) \
+	do { \
+		size_t _len = strlen(str); \
+		if (sb_write(logfd, str, _len) != _len) \
+			goto error; \
+	} while (0)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
 {

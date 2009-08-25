@@ -106,15 +106,6 @@ __attribute__((__format__(__printf__, 3, 4))) void sb_efunc(const char *color, c
 #define sb_fprintf(fp, ...) sb_fdprintf(fileno(fp), __VA_ARGS__)
 #define sb_vfprintf(fp, ...) sb_vfdprintf(fileno(fp), __VA_ARGS__)
 
-/* Macro for sb_read() to goto an label on error */
-#define SB_WRITE(_fd, _buf, _count, _error) \
-	do { \
-		size_t _n; \
-		_n = sb_write(_fd, _buf, _count); \
-		if (-1 == _n) \
-			goto _error; \
-	} while (0)
-
 /* Memory functions */
 void *__xcalloc(size_t nmemb, size_t size, const char *file, const char *func, size_t line);
 void *__xmalloc(size_t size, const char *file, const char *func, size_t line);
