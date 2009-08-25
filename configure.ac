@@ -327,8 +327,8 @@ echo "int main(void) { return 0; }" > libctest.c
 $CC $CFLAGS $CPPFLAGS $LDFLAGS -o libctest libctest.c
 LIBC_VERSION=$(
 	$READELF -d libctest | \
-	$EGREP NEEDED.*libc\\.so | \
-	$AWK '{print $NF}' | sed -e ['s:\[::' -e 's:\]::']
+	$EGREP 'NEEDED.* \@<:@libc\.so' | \
+	$AWK '{print $NF}' | [sed -e 's:\[::' -e 's:\]::']
 )
 rm -f libctest*
 if test "$LIBC_VERSION"x = x ; then
