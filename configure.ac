@@ -404,7 +404,9 @@ AC_SUBST([LDFLAG_VER])
 
 AC_CONFIG_TESTDIR([tests])
 
+dnl sandbox.sh needs to be first for the chmod
 AC_CONFIG_FILES([
+	src/sandbox.sh
 	Makefile
 	data/Makefile
 	etc/Makefile
@@ -414,7 +416,6 @@ AC_CONFIG_FILES([
 	libsbutil/Makefile
 	scripts/Makefile
 	src/Makefile
-	src/sandbox.sh
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4
