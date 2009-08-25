@@ -6,8 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include \
-	$(SANDBOX_DEFINES) \
-	-DPIC -fPIC
+	$(SANDBOX_DEFINES)
 
 sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la $(LIBDL)
 sandbox_SOURCES = \

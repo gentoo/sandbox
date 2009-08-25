@@ -6,8 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include \
-	$(SANDBOX_DEFINES) \
-	-DPIC -fPIC
+	$(SANDBOX_DEFINES)
 
 libsandbox_la_CFLAGS = $(CFLAG_EXCEPTIONS)
 # Could use the following to libsandbox_la_LIBADD, but then libtool links it

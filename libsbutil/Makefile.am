@@ -3,8 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
 	-I$(top_srcdir) \
 	-I$(srcdir)/include \
-	$(SANDBOX_DEFINES) \
-	-DPIC -fPIC
+	$(SANDBOX_DEFINES)
 
 LOCAL_INCLUDES = $(top_srcdir)/localdecls.h
 
