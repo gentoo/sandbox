@@ -27,6 +27,7 @@ check_PROGRAMS = \
 	lchown-0 \
 	link-0 \
 	linkat-0 \
+	linkat_static-0 \
 	lutimes-0 \
 	mkdir-0 \
 	mkdir_static-0 \
@@ -53,6 +54,7 @@ check_PROGRAMS = \
 	unlinkat-0 \
 	utime-0 \
 	utimensat-0 \
+	utimensat_static-0 \
 	utimes-0 \
 	vfork-0 \
 	\

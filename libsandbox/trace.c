@@ -327,7 +327,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(&state);
 	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (&state);
-	else if (nr == SB_NR_UTIMENSAT) return _trace_check_syscall_DCF(&state, 2);
+	else if (nr == SB_NR_UTIMENSAT) return _trace_check_syscall_DCF(&state, 1);
 
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
