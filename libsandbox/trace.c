@@ -9,15 +9,8 @@
 #include "wrappers.h"
 #include "sb_nr.h"
 
-#include "trace/os.c"
-
-pid_t trace_pid;
-
-#ifndef SB_NO_TRACE
-
-#ifdef HAVE_OPEN64
-# define sb_openat_pre_check sb_openat64_pre_check
-#endif
+static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data);
+#define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
 
 #ifdef DEBUG
 # define SBDEBUG 1
@@ -27,6 +20,16 @@ pid_t trace_pid;
 #define __SB_DEBUG(fmt, args...) do { if (SBDEBUG) sb_printf(fmt, ## args); } while (0)
 #define _SB_DEBUG(fmt, args...)  do { if (SBDEBUG) SB_EWARN("TRACE ", "(pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
 #define SB_DEBUG(fmt, args...)   _SB_DEBUG(fmt "\n", ## args)
+
+#include "trace/os.c"
+
+pid_t trace_pid;
+
+#ifndef SB_NO_TRACE
+
+#ifdef HAVE_OPEN64
+# define sb_openat_pre_check sb_openat64_pre_check
+#endif
 
 static void trace_exit(int status)
 {
@@ -63,7 +66,6 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 	}
 	return ret;
 }
-#define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
 
 static long do_peekuser(long offset)
 {
@@ -373,11 +375,17 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
-/* Some arches (like hppa) don't implement PTRACE_GETREGS ...
- * what a bunch of asshats.
+/* Some arches (like hppa) don't implement PTRACE_GETREGS, while others (like
+ * sparc) swap the meaning of "addr" and "data.  What a bunch of asshats.
  */
 #ifndef trace_get_regs
-# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs);
+# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs)
+#endif
+/* Some arches (like sparc) don't implement PTRACE_PEEK* ...
+ * more asshats !
+ */
+#ifndef trace_sysnum_regs
+# define trace_sysnum_regs(regs) trace_sysnum()
 #endif
 
 static void trace_loop(void)
@@ -394,7 +402,7 @@ static void trace_loop(void)
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
 		waitpid(trace_pid, NULL, 0);
-		nr = trace_sysnum();
+		nr = trace_sysnum_regs(&regs);
 
 		if (!exec_state) {
 			if (!tbl_at_fork)
@@ -404,7 +412,7 @@ static void trace_loop(void)
 				if (before_syscall)
 					_SB_DEBUG(">%s:%i", se ? se->name : "IDK", nr);
 				else
-					__SB_DEBUG("(...) = ...\n");
+					__SB_DEBUG("(...pre-exec...) = ...\n");
 				goto loop_again;
 			}
 			++exec_state;

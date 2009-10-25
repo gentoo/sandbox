@@ -4,6 +4,7 @@ struct syscall_entry {
 };
 
 static int trace_sysnum(void);
+static int trace_sysnum_regs(void *vregs);
 static long trace_raw_ret(void *vregs);
 static unsigned long trace_arg(void *vregs, int num);
 

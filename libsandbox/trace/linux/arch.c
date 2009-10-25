@@ -9,6 +9,8 @@
 # include "hppa.c"
 #elif defined(__i386__)
 # include "i386.c"
+#elif defined(__sparc__)
+# include "sparc.c"
 #elif defined(__x86_64__)
 # include "x86_64.c"
 #else
