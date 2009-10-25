@@ -220,6 +220,21 @@ static char *resolve_path(const char *path, int follow_link)
 		else
 			ret = realpath(path, filtered_path);
 
+		/* Maybe we failed because of funky anonymous fd symlinks.
+		 * You can see this by doing something like:
+		 *		$ echo | ls -l /proc/self/fd/
+		 *		.......	0 -> pipe:[9422999]
+		 * So any syntax like this we should allow as there isn't any
+		 * actual file paths for us to check against. #288863
+		 * Don't look for any particular string as these are dynamic
+		 * according to the kernel.  You can see pipe:, socket:, etc...
+		 */
+		if (!ret && !strncmp(filtered_path, "/proc/", 6)) {
+			char *base = strrchr(filtered_path, '/');
+			if (base && strchr(base, ':'))
+				ret = filtered_path;
+		}
+
 		if (!ret) {
 			char tmp_str1[SB_PATH_MAX];
 			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
