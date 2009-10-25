@@ -147,14 +147,15 @@ int main(int argc, char *argv[])
 		printf(
 			"%s%s%s: " SFUNC "(" FUNC_STR ") = "
 			"%s%li (wanted %li)%s; "
-			"%serrno = %i [%s] (wanted %i [%s])%s\n",
+			"%serrno = %s:%i [%s] (wanted %s:%i [%s])%s\n",
 			COLOR(passed), passed ? "PASS" : "FAIL", color_normal,
 			FUNC_IMP,
 			(passed ? "" : COLOR(passed_ret)),
 			actual_ret, want_ret, color_normal,
 			(!passed && want_errno) ? COLOR(passed_errno) : "",
-			actual_errno, strerror(actual_errno),
-			want_errno, strerror(want_errno), color_normal);
+			rev_lookup_errno(actual_errno), actual_errno, strerror(actual_errno),
+			rev_lookup_errno(want_errno), want_errno, strerror(want_errno),
+			color_normal);
 
 		if (!passed) ++test_ret;
 	}

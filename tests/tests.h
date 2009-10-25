@@ -21,48 +21,56 @@ int lookup_val(const value_pair *tbl, const char *name)
 	err("unable to locate '%s'", name);
 }
 
-int lookup_errno(const char *str_errno)
+const char *lookup_str(const value_pair *tbl, int val)
 {
-	const value_pair tbl[] = {
-		PAIR(EACCES)
-		PAIR(EBADF)
-		PAIR(EEXIST)
-		PAIR(EFAULT)
-		PAIR(EINVAL)
-		PAIR(EISDIR)
-		PAIR(ELOOP)
-		PAIR(ENAMETOOLONG)
-		PAIR(ENODEV)
-		PAIR(ENOENT)
-		PAIR(ENOTDIR)
-		PAIR(EPERM)
-		PAIR(ETXTBSY)
-		{ }
-	};
-	return lookup_val(tbl, str_errno);
+	size_t i;
+	for (i = 0; tbl[i].name; ++i)
+		if (tbl[i].val == val)
+			return tbl[i].name;
+	err("unable to locate '%i'", val);
 }
 
-int lookup_signal(const char *str_signal)
-{
-	const value_pair tbl[] = {
-		{ "SIGEXIT", 0 },
-		PAIR(SIGABRT)
-		PAIR(SIGALRM)
-		PAIR(SIGCHLD)
-		PAIR(SIGCONT)
-		PAIR(SIGHUP)
-		PAIR(SIGILL)
-		PAIR(SIGINT)
-		PAIR(SIGKILL)
-		PAIR(SIGPIPE)
-		PAIR(SIGQUIT)
-		PAIR(SIGSEGV)
-		PAIR(SIGSTOP)
-		PAIR(SIGTRAP)
-		PAIR(SIGTERM)
-		PAIR(SIGUSR1)
-		PAIR(SIGUSR2)
-		{ }
-	};
-	return atoi(str_signal) ? : lookup_val(tbl, str_signal);
-}
+#define make_lookups(section) \
+int lookup_##section(const char *str) { return atoi(str) ? : lookup_val(tbl_##section, str); } \
+const char *rev_lookup_##section(int val) { return lookup_str(tbl_##section, val); }
+
+const value_pair tbl_errno[] = {
+	{ "Success", 0 },
+	PAIR(EACCES)
+	PAIR(EBADF)
+	PAIR(EEXIST)
+	PAIR(EFAULT)
+	PAIR(EINVAL)
+	PAIR(EISDIR)
+	PAIR(ELOOP)
+	PAIR(ENAMETOOLONG)
+	PAIR(ENODEV)
+	PAIR(ENOENT)
+	PAIR(ENOTDIR)
+	PAIR(EPERM)
+	PAIR(ETXTBSY)
+	{ }
+};
+make_lookups(errno)
+
+const value_pair tbl_signal[] = {
+	{ "SIGEXIT", 0 },
+	PAIR(SIGABRT)
+	PAIR(SIGALRM)
+	PAIR(SIGCHLD)
+	PAIR(SIGCONT)
+	PAIR(SIGHUP)
+	PAIR(SIGILL)
+	PAIR(SIGINT)
+	PAIR(SIGKILL)
+	PAIR(SIGPIPE)
+	PAIR(SIGQUIT)
+	PAIR(SIGSEGV)
+	PAIR(SIGSTOP)
+	PAIR(SIGTRAP)
+	PAIR(SIGTERM)
+	PAIR(SIGUSR1)
+	PAIR(SIGUSR2)
+	{ }
+};
+make_lookups(signal)
