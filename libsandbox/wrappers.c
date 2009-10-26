@@ -34,7 +34,7 @@ static void load_libc_handle(void)
 	}
 }
 
-static void *get_dlsym(const char *symname, const char *symver)
+void *get_dlsym(const char *symname, const char *symver)
 {
 	void *symaddr;
 

@@ -15,6 +15,26 @@
 #include "libsandbox.h"
 #include "sbutil.h"
 
+/* Well screw me sideways, someone decided to override mmap() #290249
+ * We probably don't need to include the exact sym version ...
+ */
+static void *(*_sb_mmap)(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+static void *sb_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+	if (!_sb_mmap)
+		_sb_mmap = get_dlsym("mmap", NULL);
+	return _sb_mmap(addr, length, prot, flags, fd, offset);
+}
+#define mmap sb_mmap
+static int (*_sb_munmap)(void *addr, size_t length);
+static int sb_munmap(void *addr, size_t length)
+{
+	if (!_sb_munmap)
+		_sb_munmap = get_dlsym("munmap", NULL);
+	return _sb_munmap(addr, length);
+}
+#define munmap sb_munmap
+
 #define SB_MALLOC_TO_MMAP(ptr) ((void*)(((size_t*)ptr) - 1))
 #define SB_MMAP_TO_MALLOC(ptr) ((void*)(((size_t*)ptr) + 1))
 #define SB_MALLOC_TO_SIZE(ptr) (*((size_t*)SB_MALLOC_TO_MMAP(ptr)))
