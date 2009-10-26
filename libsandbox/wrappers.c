@@ -19,33 +19,33 @@
 # define USE_RTLD_NEXT
 #endif
 
-static void *libc_handle = NULL;
+static void *libc_handle;
+
+static void load_libc_handle(void)
+{
+	save_errno();	/* #260765 */
+	libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
+	restore_errno();
+
+	if (!libc_handle) {
+		fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
+			dlerror());
+		exit(EXIT_FAILURE);
+	}
+}
 
 static void *get_dlsym(const char *symname, const char *symver)
 {
-	void *symaddr = NULL;
+	void *symaddr;
 
-#if defined(USE_RTLD_NEXT)
-	libc_handle = RTLD_NEXT;
+	if (!libc_handle) {
+#ifdef USE_RTLD_NEXT
+		libc_handle = RTLD_NEXT;
+ try_again: ;
+#else
+		load_libc_handle();
 #endif
-
-	/* Checking for -1UL is significant on hardened!
-	 * USE_RTLD_NEXT returns it as a sign of being unusable.
-	 * However using !x or NULL checks does NOT pick it up!
-	 * That is also why we need to save/restore errno #260765.
-	 */
-#define INVALID_LIBC_HANDLE(x) (!x || NULL == x || (void *)-1UL == x)
-	if (INVALID_LIBC_HANDLE(libc_handle)) {
-		save_errno();
-		libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-		restore_errno();
-		if (INVALID_LIBC_HANDLE(libc_handle)) {
-			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
-				dlerror());
-			exit(EXIT_FAILURE);
-		}
 	}
-#undef INVALID_LIBC_HANDLE
 
 	if (NULL == symver)
 		symaddr = dlsym(libc_handle, symname);
@@ -53,6 +53,18 @@ static void *get_dlsym(const char *symname, const char *symver)
 		symaddr = dlvsym(libc_handle, symname, symver);
 
 	if (!symaddr) {
+#ifdef USE_RTLD_NEXT
+		/* Maybe RTLD_NEXT is broken for some screwed up reason as
+		 * can be seen with some specific glibc/kernel versions.
+		 * Recover dynamically so that we can be deployed easily
+		 * via binpkgs and upgrades #202765 #206678
+		 */
+		if (libc_handle == RTLD_NEXT) {
+			load_libc_handle();
+			goto try_again;
+		}
+#endif
+
 		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
 			symname, dlerror());
 		exit(EXIT_FAILURE);
