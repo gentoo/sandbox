@@ -131,7 +131,7 @@ static void stop(int signum)
 {
 	if (0 == stop_called) {
 		stop_called = 1;
-		sb_warn("caught signal %d in pid %d\n", signum, getpid());
+		sb_warn("caught signal %d in pid %d", signum, getpid());
 	} else
 		sb_warn("signal already caught and busy still cleaning up!");
 }
@@ -316,9 +316,9 @@ int main(int argc, char **argv)
 	do { \
 		sighandler_t _old = signal(sig, act); \
 		if (_old == SIG_ERR) \
-			sb_pwarn("unable to bind signal %s\n", #sig); \
-		else if (_old != SIG_DFL) \
-			sb_warn("signal %s already had a handler ...\n", #sig); \
+			sb_pwarn("unable to bind signal %s", #sig); \
+		else if (_old != SIG_DFL && _old != SIG_IGN) \
+			sb_warn("signal %s already had a handler ...", #sig); \
 	} while (0)
 	wsignal(SIGINT, &stop);
 	wsignal(SIGQUIT, &stop);
