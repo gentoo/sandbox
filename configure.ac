@@ -419,5 +419,8 @@ AC_CONFIG_FILES([
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4
-],[chmod +x src/sandbox.sh])
+],[dnl
+chmod +x src/sandbox.sh
+sed -i 's:\<lzma -9 :lzma :' Makefile #290765
+])
 AC_OUTPUT
