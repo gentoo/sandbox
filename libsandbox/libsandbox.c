@@ -637,6 +637,7 @@ static bool symlink_func(int sb_nr, int flags, const char *abs_path)
 	if (!(sb_nr == SB_NR_UNLINK   ||
 	      sb_nr == SB_NR_UNLINKAT ||
 	      sb_nr == SB_NR_LCHOWN   ||
+	      sb_nr == SB_NR_REMOVE   ||
 	      sb_nr == SB_NR_RENAME   ||
 	      sb_nr == SB_NR_SYMLINK))
 	{
@@ -736,6 +737,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_MKNOD       ||
 	    sb_nr == SB_NR_MKNODAT     ||
 	    sb_nr == SB_NR_OPEN_WR     ||
+	    sb_nr == SB_NR_REMOVE      ||
 	    sb_nr == SB_NR_RENAME      ||
 	    sb_nr == SB_NR_RENAMEAT    ||
 	    sb_nr == SB_NR_RMDIR       ||

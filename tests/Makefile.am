@@ -43,6 +43,7 @@ check_PROGRAMS = \
 	openat_static-0 \
 	openat64-0 \
 	opendir-0 \
+	remove-0 \
 	rename-0 \
 	renameat-0 \
 	signal_static-0 \

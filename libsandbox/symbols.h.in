@@ -31,6 +31,7 @@ mkfifo
 mkfifoat
 access
 faccessat
+remove
 rename
 renameat
 rmdir
