@@ -100,7 +100,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 	addread()    { export SANDBOX_READ=${SANDBOX_READ}:$1 ; }
 	addwrite()   { export SANDBOX_WRITE=${SANDBOX_WRITE}:$1 ; }
 	sandboxon()  { export SANDBOX_ON="1" ; }
-	sandboxoff() { export SANDBOX_OFF="0" ; }
+	sandboxoff() { export SANDBOX_ON="0" ; }
 
 	[[ -z ${CCACHE_DIR} ]] && [[ -w /root/.ccache ]] && export CCACHE_DIR=/root/.ccache
 	for var in CCACHE_DIR DISTCC_DIR ; do
