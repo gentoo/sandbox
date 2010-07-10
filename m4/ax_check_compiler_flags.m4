@@ -1,5 +1,5 @@
 # ===========================================================================
-#        http://autoconf-archive.cryp.to/ax_check_compiler_flags.html
+#  http://www.gnu.org/software/autoconf-archive/ax_check_compiler_flags.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -45,6 +45,8 @@
 #   Macro released by the Autoconf Archive. When you make and distribute a
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
+
+#serial 9
 
 AC_DEFUN([AX_CHECK_COMPILER_FLAGS],
 [AC_PREREQ(2.59) dnl for _AC_LANG_PREFIX
