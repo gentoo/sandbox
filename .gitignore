@@ -47,6 +47,7 @@ core
 /m4/lt~obsolete.m4
 
 /ChangeLog
+/sandbox-*.tar*
 
 /etc/sandbox.d/00default
 

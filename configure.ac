@@ -1,6 +1,6 @@
 AC_PREREQ([2.61])
 AC_INIT([sandbox], [2.3], [sandbox@gentoo.org])
-AM_INIT_AUTOMAKE([1.11 dist-lzma no-dist-gzip silent-rules -Wall])
+AM_INIT_AUTOMAKE([1.11 dist-xz no-dist-gzip silent-rules -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -421,6 +421,5 @@ AC_CONFIG_FILES([
 	tests/package.m4
 ],[dnl
 chmod +x src/sandbox.sh
-sed -i 's:\<lzma -9 :lzma :' Makefile #290765
 ])
 AC_OUTPUT
