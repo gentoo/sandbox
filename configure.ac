@@ -304,14 +304,14 @@ try_link() {
 		exit ${ret}
 	) 1>&AS_MESSAGE_LOG_FD
 }
-LIBC_PATH=$(
-if try_link -Wl,--verbose ; then
-	$AWK '/attempt to open/ { if (($4 ~ /\/libc\.so/) && ($5 == "succeeded")) LIBC = $4; }; END {print LIBC}' libctest.log
-elif try_link -Wl,-m ; then
-	set -- `$EGREP -o '/[[^ ]]*/libc.so' libctest.log`
-	echo $1
-fi
-)
+LIBC_PATH=$(AS_IF(
+	dnl GNU linker (bfd & gold)
+	[try_link -Wl,--verbose],
+		[$AWK '/ttempt to open/ { if (($(NF-1) ~ /\/libc\.so/) && ($NF == "succeeded")) LIBC = $(NF-1); }; END {print LIBC}' libctest.log],
+	dnl Solaris linker
+	[try_link -Wl,-m],
+		[set -- `$EGREP -o '/[[^ ]]*/libc.so' libctest.log`; echo $1]
+))
 rm -f libctest*
 if test x"$LIBC_PATH" = x || ! test -r "$LIBC_PATH" ; then
   AC_MSG_ERROR([Unable to determine LIBC PATH ($LIBC_PATH)])
