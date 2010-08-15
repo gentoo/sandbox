@@ -1,3 +1,6 @@
+#define SB_NO_TRACE_ARCH
+#if 0 /* XXX: broken sometimes #293632 */
+
 /* Indexes into the pt_regs.u_reg[] array -- UREG_XX from kernel are all off
  * by 1 and use Ix instead of Ox.  These work for both 32 and 64 bit Linux.
  */
@@ -27,3 +30,5 @@ static unsigned long trace_arg(void *vregs, int num)
 	else
 		return -1;
 }
+
+#endif
