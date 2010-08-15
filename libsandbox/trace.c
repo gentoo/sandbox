@@ -168,7 +168,6 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 				case SIGSTOP:
 					kill(trace_pid, SIGCONT);
 				case SIGTRAP:
-				case SIGCHLD:
 				case SIGCONT:
 					return;
 			}

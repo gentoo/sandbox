@@ -61,14 +61,16 @@ check_PROGRAMS = \
 	\
 	getcwd-gnulib_tst \
 	libsigsegv_tst \
-	sb_printf_tst
+	sb_printf_tst \
+	sigsuspend-zsh_tst \
+	sigsuspend-zsh_static_tst
 
 dist_check_SCRIPTS = \
 	$(wildcard *-?.sh) \
 	script-0 \
 	trace-0
 
-AM_LDFLAGS = `expr $@ : .*_static- >/dev/null && echo -all-static`
+AM_LDFLAGS = `expr $@ : .*_static >/dev/null && echo -all-static`
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
