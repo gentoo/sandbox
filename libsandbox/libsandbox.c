@@ -155,6 +155,12 @@ int canonicalize(const char *path, char *resolved_path)
 		return 0;
 	}
 
+	/* We can't handle resolving a buffer inline (erealpath),
+	 * so demand separate read and write strings.
+	 */
+	if (path == resolved_path)
+		sb_abort();
+
 	retval = erealpath(path, resolved_path);
 
 	if ((NULL == retval) && (path[0] != '/')) {
@@ -168,10 +174,13 @@ int canonicalize(const char *path, char *resolved_path)
 
 		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
 			return -1;
+		char *copy = xstrdup(resolved_path);
 		size_t len = strlen(resolved_path);
 		snprintf(resolved_path + len, SB_PATH_MAX - len, "/%s", path);
 
-		if (NULL == erealpath(resolved_path, resolved_path)) {
+		char *ret = erealpath(resolved_path, resolved_path);
+		free(copy);
+		if (ret == NULL) {
 			if (errno_is_too_long()) {
 				/* The resolved path is too long for the buffer to hold */
 				return -1;

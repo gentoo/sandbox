@@ -76,8 +76,14 @@ erealpath(const char *name, char *resolved)
 
 	if (resolved == NULL) {
 		rpath = xmalloc(path_max);
-	} else
+	} else {
+		/* We can't handle resolving a buffer inline, so demand
+		 * separate read and write strings.
+		 */
+		if (name == resolved)
+			sb_abort();
 		rpath = resolved;
+	}
 	rpath_limit = rpath + path_max;
 
 	recover = NULL;
