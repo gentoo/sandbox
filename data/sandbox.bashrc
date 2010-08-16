@@ -67,7 +67,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 	sbs_pdir=${sbs_pdir}/portage/
 
 	if [[ ${PWD:0:${#sbs_pdir}} == "${sbs_pdir}" ]] ; then
-		sbs_bdir=$(echo ${PWD:${#sbs_pdir}} | cut -d/ -f1)
+		sbs_bdir=$(echo ${PWD:${#sbs_pdir}} | cut -d/ -f1,2)
 		sbs_tmpenvfile=${sbs_pdir}${sbs_bdir}/temp/environment
 		if [[ -e ${sbs_tmpenvfile} ]] ; then
 			echo "Found environment at ${sbs_tmpenvfile}"
