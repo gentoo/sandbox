@@ -648,6 +648,7 @@ static bool symlink_func(int sb_nr, int flags, const char *abs_path)
 	      sb_nr == SB_NR_LCHOWN   ||
 	      sb_nr == SB_NR_REMOVE   ||
 	      sb_nr == SB_NR_RENAME   ||
+	      sb_nr == SB_NR_RMDIR    ||
 	      sb_nr == SB_NR_SYMLINK))
 	{
 		/* These funcs sometimes operate on symlinks */
