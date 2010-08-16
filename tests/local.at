@@ -1,4 +1,15 @@
-m4_defun([SB_RUN],[env SANDBOX_BEEP=0 SANDBOX_LOG="$PWD/sandbox.log" sandbox.sh set -x \;])
+dnl Start with write access to parent dir to force tests to declare
+dnl explicit deny paths when they want to test that behavior.  That
+dnl way we get same result when run under an implicit write path like
+dnl any of the tempdirs.
+m4_defun([SB_RUN],[\
+	env \
+		SANDBOX_BEEP=0 \
+		SANDBOX_LOG="$PWD/sandbox.log" \
+		sandbox.sh \
+			set -x \; \
+			addwrite "${PWD%/*}" \;\
+])
 
 m4_defun([AT_SB_CHECK],[AT_CHECK([SB_RUN $1],[$2],[$3],[$4],[$5],[$6])])
 
