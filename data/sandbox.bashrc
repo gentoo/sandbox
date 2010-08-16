@@ -49,44 +49,44 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 		einfo " addpredict <path>:  allow fake access to <path>"
 		echo
 		)
-	fi
 
-	# do ebuild environment loading ... detect if we're in portage
-	# build area or not ... uNF uNF uNF
-	#sbs_pdir=$(portageq envvar PORTAGE_TMPDIR)/portage/ #portageq takes too long imo
-	if [[ -z ${PORTAGE_TMPDIR} ]] ; then
-		sbs_gpdir=$( source /etc/make.globals && echo $PORTAGE_TMPDIR 2> /dev/null)
-		sbs_cpdir=$( source /etc/make.conf && echo $PORTAGE_TMPDIR 2> /dev/null)
-		[[ -z ${sbs_cpdir} ]] \
-			&& sbs_pdir=${sbs_gpdir} \
-			|| sbs_pdir=${sbs_cpdir}
-	else
-		sbs_pdir=${PORTAGE_TMPDIR}
-	fi
-	[[ -z ${sbs_pdir} ]] && sbs_pdir=/var/tmp
-	sbs_pdir=${sbs_pdir}/portage/
-
-	if [[ ${PWD:0:${#sbs_pdir}} == "${sbs_pdir}" ]] ; then
-		sbs_bdir=$(echo ${PWD:${#sbs_pdir}} | cut -d/ -f1,2)
-		sbs_tmpenvfile=${sbs_pdir}${sbs_bdir}/temp/environment
-		if [[ -e ${sbs_tmpenvfile} ]] ; then
-			echo "Found environment at ${sbs_tmpenvfile}"
-			printf " * Would you like to enter the portage environment ? "
-			read env
-			sbs_PREPWD=${PWD}
-			if [[ ${env} == "y" ]] ; then
-				# First try to source variables and export them ...
-				eval $(sed -e '/^[[:alnum:]_-]*=/s:^:export :' \
-				           -e '/^[[:alnum:]_-]* ()/Q' "${sbs_tmpenvfile}") 2>/dev/null
-				# Then grab everything (including functions)
-				source "${sbs_tmpenvfile}" 2> /dev/null
-				export SANDBOX_WRITE=${SANDBOX_WRITE}:${sbs_pdir}${sbs_bdir}:${sbs_pdir}/homedir
-			fi
-			PWD=${sbs_PREPWD}
+		# do ebuild environment loading ... detect if we're in portage
+		# build area or not ... uNF uNF uNF
+		#sbs_pdir=$(portageq envvar PORTAGE_TMPDIR)/portage/ #portageq takes too long imo
+		if [[ -z ${PORTAGE_TMPDIR} ]] ; then
+			sbs_gpdir=$( source /etc/make.globals && echo $PORTAGE_TMPDIR 2> /dev/null)
+			sbs_cpdir=$( source /etc/make.conf && echo $PORTAGE_TMPDIR 2> /dev/null)
+			[[ -z ${sbs_cpdir} ]] \
+				&& sbs_pdir=${sbs_gpdir} \
+				|| sbs_pdir=${sbs_cpdir}
+		else
+			sbs_pdir=${PORTAGE_TMPDIR}
 		fi
-	fi
+		[[ -z ${sbs_pdir} ]] && sbs_pdir=/var/tmp
+		sbs_pdir=${sbs_pdir}/portage/
 
-	unset sbs_gpdir sbs_cpdir sbs_pdir sbs_bdir sbs_tmpenvfile sbs_PREPWD env
+		if [[ ${PWD:0:${#sbs_pdir}} == "${sbs_pdir}" ]] ; then
+			sbs_bdir=$(echo ${PWD:${#sbs_pdir}} | cut -d/ -f1,2)
+			sbs_tmpenvfile=${sbs_pdir}${sbs_bdir}/temp/environment
+			if [[ -e ${sbs_tmpenvfile} ]] ; then
+				echo "Found environment at ${sbs_tmpenvfile}"
+				printf " * Would you like to enter the portage environment ? "
+				read env
+				sbs_PREPWD=${PWD}
+				if [[ ${env} == "y" ]] ; then
+					# First try to source variables and export them ...
+					eval $(sed -e '/^[[:alnum:]_-]*=/s:^:export :' \
+					           -e '/^[[:alnum:]_-]* ()/Q' "${sbs_tmpenvfile}") 2>/dev/null
+					# Then grab everything (including functions)
+					source "${sbs_tmpenvfile}" 2> /dev/null
+					export SANDBOX_WRITE=${SANDBOX_WRITE}:${sbs_pdir}${sbs_bdir}:${sbs_pdir}/homedir
+				fi
+				PWD=${sbs_PREPWD}
+			fi
+		fi
+
+		unset sbs_gpdir sbs_cpdir sbs_pdir sbs_bdir sbs_tmpenvfile sbs_PREPWD env
+	fi
 
 	cd "${PWD}"
 	if [[ ${NOCOLOR} != "true" && ${NOCOLOR} != "yes" && ${NOCOLOR} != "1" ]] ; then
