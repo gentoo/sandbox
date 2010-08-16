@@ -1,4 +1,4 @@
-AT_FILES = $(wildcard *.at)
+AT_FILES = $(wildcard $(srcdir)/*.at)
 TESTSUITE = $(srcdir)/testsuite
 DISTCLEANFILES = atconfig
 EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
@@ -66,7 +66,7 @@ check_PROGRAMS = \
 	sigsuspend-zsh_static_tst
 
 dist_check_SCRIPTS = \
-	$(wildcard *-?.sh) \
+	$(wildcard $(srcdir)/*-?.sh) \
 	script-0 \
 	trace-0
 
