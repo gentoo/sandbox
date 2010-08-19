@@ -1,2 +1,3 @@
 confddir = $(sysconfdir)/sandbox.d
-dist_confd_DATA = 00default.in
+confd_DATA = 00default
+EXTRA_DIST = 00default.in
