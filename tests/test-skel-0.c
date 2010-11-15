@@ -75,9 +75,9 @@ int at_get_fd(const char *str_dirfd)
 		/* work some magic ... expected format:
 		 * <path>:<flags>
 		 */
-		char *str_flags = strdup(str_dirfd);
-		str_flags[colon - str_dirfd] = '\0';
-		return open(colon + 1, f_get_flags(str_flags));
+		char *str_path = strdup(str_dirfd);
+		str_path[colon - str_dirfd] = '\0';
+		return open(str_path, f_get_flags(colon + 1));
 	}
 }
 
