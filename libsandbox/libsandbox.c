@@ -136,6 +136,54 @@ static const char *sb_get_cmdline(pid_t pid)
 	return path;
 }
 
+/* resolve_dirfd_path - get the path relative to a dirfd
+ *
+ * return value:
+ * -1 - error!
+ *  0 - path is in @resolved_path
+ *  1 - path is in @path (no resolution necessary)
+ *  2 - errno issues -- ignore this path
+ */
+int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path)
+{
+	/* The *at style functions have the following semantics:
+	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
+	 *	- file is absolute: dirfd is ignored
+	 *	- otherwise: file is relative to dirfd
+	 * Since maintaining fd state based on open's is real messy, we'll
+	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
+	 */
+	if (dirfd == AT_FDCWD || !path || path[0] == '/')
+		return 1;
+
+	save_errno();
+
+	size_t at_len = sizeof(resolved_path) - 1 - 1 - (path ? strlen(path) : 0);
+	sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
+	ssize_t ret = readlink(resolved_path, resolved_path, at_len);
+	if (ret == -1) {
+		/* see comments at end of check_syscall() */
+		if (errno_is_too_long()) {
+			restore_errno();
+			return 2;
+		}
+		if (is_env_on(ENV_SANDBOX_DEBUG))
+			SB_EINFO("AT_FD LOOKUP", "  fail: %s: %s\n",
+				resolved_path, strerror(errno));
+		/* If the fd isn't found, some guys (glibc) expect errno */
+		if (errno == ENOENT)
+			errno = EBADF;
+		return -1;
+	}
+	resolved_path[ret] = '/';
+	resolved_path[ret + 1] = '\0';
+	if (path)
+		strcat(resolved_path, path);
+
+	restore_errno();
+	return 0;
+}
+
 int canonicalize(const char *path, char *resolved_path)
 {
 	int old_errno = errno;
@@ -1011,39 +1059,13 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		}
 	}
 
-	save_errno();
-
-	/* The *at style functions have the following semantics:
-	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
-	 *	- file is absolute: dirfd is ignored
-	 *	- otherwise: file is relative to dirfd
-	 * Since maintaining fd state based on open's is real messy, we'll
-	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
-	 */
-	if (dirfd != AT_FDCWD && (!file || file[0] != '/')) {
-		size_t at_len = sizeof(at_file_buf) - 1 - 1 - (file ? strlen(file) : 0);
-		sprintf(at_file_buf, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
-		ssize_t ret = readlink(at_file_buf, at_file_buf, at_len);
-		if (ret == -1) {
-			/* see comments at end of check_syscall() */
-			if (errno_is_too_long()) {
-				restore_errno();
-				return true;
-			}
-			if (is_env_on(ENV_SANDBOX_DEBUG))
-				SB_EINFO("AT_FD LOOKUP", "  fail: %s: %s\n",
-					at_file_buf, strerror(errno));
-			/* If the fd isn't found, some guys (glibc) expect errno */
-			if (errno == ENOENT)
-				errno = EBADF;
-			return false;
-		}
-		at_file_buf[ret] = '/';
-		at_file_buf[ret + 1] = '\0';
-		if (file)
-			strcat(at_file_buf, file);
-		file = at_file_buf;
+	switch (resolve_dirfd_path(dirfd, file, at_file_buf)) {
+		case -1: return false;
+		case 0: file = at_file_buf; break;
+		case 2: return true;
 	}
+
+	save_errno();
 
 	/* Need to protect the global sbcontext structure */
 	sb_lock();
