@@ -9,14 +9,37 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
-int f_get_flags(const char *str_flags)
+struct flags {
+	const char *name;
+	int val;
+};
+
+static int _get_flags(const char *str_flags, const struct flags flags[], size_t num_flags)
 {
 	const char *delim = "|";
 	char *tok = strtok(strdup(str_flags), delim);
-	struct {
-		const char *name;
-		int val;
-	} const flags[] = {
+	int ret = 0;
+	size_t i;
+	while (tok) {
+		for (i = 0; i < num_flags; ++i)
+			if (!strcmp(tok, flags[i].name)) {
+				ret |= flags[i].val;
+				break;
+			}
+		if (i == num_flags) {
+			int a;
+			sscanf(tok, "%i", &a);
+			ret |= a;
+		}
+		tok = strtok(NULL, delim);
+	}
+	return ret;
+}
+#define _get_flags(s, f) _get_flags(s, f, ARRAY_SIZE(f))
+
+int f_get_flags(const char *str_flags)
+{
+	const struct flags flags[] = {
 		PAIR(O_APPEND)
 		PAIR(O_CREAT)
 		PAIR(O_DIRECTORY)
@@ -28,21 +51,7 @@ int f_get_flags(const char *str_flags)
 		PAIR(O_TRUNC)
 		PAIR(O_WRONLY)
 	};
-	int i, ret = 0;
-	while (tok) {
-		for (i = 0; i < ARRAY_SIZE(flags); ++i)
-			if (!strcmp(tok, flags[i].name)) {
-				ret |= flags[i].val;
-				break;
-			}
-		if (i == ARRAY_SIZE(flags)) {
-			int a;
-			sscanf(tok, "%i", &a);
-			ret |= a;
-		}
-		tok = strtok(NULL, delim);
-	}
-	return ret;
+	return _get_flags(str_flags, flags);
 }
 
 const char *f_get_file(const char *str_file)
@@ -55,13 +64,13 @@ const char *f_get_file(const char *str_file)
 
 int at_get_flags(const char *str_flags)
 {
-	if (!strcmp(str_flags, "AT_SYMLINK_NOFOLLOW"))
-		return AT_SYMLINK_NOFOLLOW;
-	else {
-		int flags = 0;
-		sscanf(str_flags, "%i", &flags);
-		return flags;
-	}
+	const struct flags flags[] = {
+		PAIR(AT_SYMLINK_NOFOLLOW)
+		PAIR(AT_REMOVEDIR)
+		PAIR(AT_SYMLINK_FOLLOW)
+		PAIR(AT_EACCESS)
+	};
+	return _get_flags(str_flags, flags);
 }
 
 int at_get_fd(const char *str_dirfd)
