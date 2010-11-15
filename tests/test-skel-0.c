@@ -19,6 +19,7 @@ int f_get_flags(const char *str_flags)
 	} const flags[] = {
 		PAIR(O_APPEND)
 		PAIR(O_CREAT)
+		PAIR(O_DIRECTORY)
 		PAIR(O_EXCL)
 		PAIR(O_NOCTTY)
 		PAIR(O_NOFOLLOW)
