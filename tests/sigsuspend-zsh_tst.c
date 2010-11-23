@@ -41,6 +41,11 @@ int main()
 		/* Have parent enable all signals and wait for SIGCHLD */
 		sigemptyset(&set);
 		sigsuspend(&set);
-		return child == SIGCHLD ? 0 : 1;
+		if (child == SIGCHLD)
+			return 0;
+
+		printf("signal %s (%i) is not SIGCHLD (%i)\n",
+			strsignal(child), child, SIGCHLD);
+		return 1;
 	}
 }
