@@ -222,11 +222,11 @@ int canonicalize(const char *path, char *resolved_path)
 
 		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
 			return -1;
-		char *copy = xstrdup(resolved_path);
 		size_t len = strlen(resolved_path);
 		snprintf(resolved_path + len, SB_PATH_MAX - len, "/%s", path);
 
-		char *ret = erealpath(resolved_path, resolved_path);
+		char *copy = xstrdup(resolved_path);
+		char *ret = erealpath(copy, resolved_path);
 		free(copy);
 		if (ret == NULL) {
 			if (errno_is_too_long()) {
