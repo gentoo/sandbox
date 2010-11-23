@@ -17,7 +17,7 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 
 	/* Expand the dirfd path first */
 	char dirfd_path[SB_PATH_MAX];
-	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path)) {
+	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path, sizeof(dirfd_path))) {
 		case -1:
 			if (is_env_on(ENV_SANDBOX_DEBUG))
 				SB_EINFO("EARLY FAIL", "  %s(%s) @ resolve_dirfd_path: %s\n",

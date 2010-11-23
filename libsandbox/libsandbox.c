@@ -144,7 +144,8 @@ static const char *sb_get_cmdline(pid_t pid)
  *  1 - path is in @path (no resolution necessary)
  *  2 - errno issues -- ignore this path
  */
-int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path)
+int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
+                       size_t resolved_path_len)
 {
 	/* The *at style functions have the following semantics:
 	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
@@ -158,7 +159,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path)
 
 	save_errno();
 
-	size_t at_len = sizeof(resolved_path) - 1 - 1 - (path ? strlen(path) : 0);
+	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
 	sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
 	ssize_t ret = readlink(resolved_path, resolved_path, at_len);
 	if (ret == -1) {
@@ -1059,7 +1060,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		}
 	}
 
-	switch (resolve_dirfd_path(dirfd, file, at_file_buf)) {
+	switch (resolve_dirfd_path(dirfd, file, at_file_buf, sizeof(at_file_buf))) {
 		case -1: return false;
 		case 0: file = at_file_buf; break;
 		case 2: return true;

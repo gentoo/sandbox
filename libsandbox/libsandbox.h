@@ -71,7 +71,7 @@ __attribute__((noreturn)) void sb_abort(void);
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);
 int canonicalize(const char *, char *);
-int resolve_dirfd_path(int, const char *, char *);
+int resolve_dirfd_path(int, const char *, char *, size_t);
 /* most linux systems use ENAMETOOLONG, but some (ia64) use ERANGE, as do some BSDs */
 #define errno_is_too_long() (errno == ENAMETOOLONG || errno == ERANGE)
 
