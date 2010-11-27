@@ -12,13 +12,25 @@ typedef struct {
 } value_pair;
 #define PAIR(x) { #x, x },
 
-int lookup_val(const value_pair *tbl, const char *name)
+int _lookup_val(const value_pair *tbl, const char *name, bool *found)
 {
 	size_t i;
+
+	*found = true;
 	for (i = 0; tbl[i].name; ++i)
 		if (!strcmp(name, tbl[i].name))
 			return tbl[i].val;
-	err("unable to locate '%s'", name);
+
+	*found = false;
+	return 0;
+}
+int lookup_val(const value_pair *tbl, const char *name)
+{
+	bool found;
+	int ret = _lookup_val(tbl, name, &found);
+	if (!found)
+		err("unable to locate '%s'", name);
+	return ret;
 }
 
 const char *lookup_str(const value_pair *tbl, int val)

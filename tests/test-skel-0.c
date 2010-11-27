@@ -9,24 +9,15 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
-struct flags {
-	const char *name;
-	int val;
-};
-
-static int _get_flags(const char *str_flags, const struct flags flags[], size_t num_flags)
+static int _get_flags(const char *str_flags, const value_pair flags[])
 {
 	const char *delim = "|";
 	char *tok = strtok(strdup(str_flags), delim);
 	int ret = 0;
-	size_t i;
 	while (tok) {
-		for (i = 0; i < num_flags; ++i)
-			if (!strcmp(tok, flags[i].name)) {
-				ret |= flags[i].val;
-				break;
-			}
-		if (i == num_flags) {
+		bool found;
+		ret |= _lookup_val(flags, tok, &found);
+		if (!found) {
 			int a;
 			sscanf(tok, "%i", &a);
 			ret |= a;
@@ -35,11 +26,10 @@ static int _get_flags(const char *str_flags, const struct flags flags[], size_t 
 	}
 	return ret;
 }
-#define _get_flags(s, f) _get_flags(s, f, ARRAY_SIZE(f))
 
 int f_get_flags(const char *str_flags)
 {
-	const struct flags flags[] = {
+	const value_pair flags[] = {
 		PAIR(O_APPEND)
 		PAIR(O_CREAT)
 		PAIR(O_DIRECTORY)
@@ -50,6 +40,7 @@ int f_get_flags(const char *str_flags)
 		PAIR(O_RDWR)
 		PAIR(O_TRUNC)
 		PAIR(O_WRONLY)
+		{ }
 	};
 	return _get_flags(str_flags, flags);
 }
@@ -64,11 +55,12 @@ const char *f_get_file(const char *str_file)
 
 int at_get_flags(const char *str_flags)
 {
-	const struct flags flags[] = {
+	const value_pair flags[] = {
 		PAIR(AT_SYMLINK_NOFOLLOW)
 		PAIR(AT_REMOVEDIR)
 		PAIR(AT_SYMLINK_FOLLOW)
 		PAIR(AT_EACCESS)
+		{ }
 	};
 	return _get_flags(str_flags, flags);
 }
