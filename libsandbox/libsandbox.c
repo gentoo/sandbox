@@ -154,7 +154,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 	 * Since maintaining fd state based on open's is real messy, we'll
 	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
 	 */
-	if (dirfd == AT_FDCWD || !path || path[0] == '/')
+	if (dirfd == AT_FDCWD || (path && path[0] == '/'))
 		return 1;
 
 	save_errno();
