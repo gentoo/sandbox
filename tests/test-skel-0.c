@@ -73,23 +73,6 @@ int at_get_flags(const char *str_flags)
 	return _get_flags(str_flags, flags);
 }
 
-int at_get_fd(const char *str_dirfd)
-{
-	char *colon;
-	if (!strcmp(str_dirfd, "AT_FDCWD"))
-		return AT_FDCWD;
-	else if ((colon = strchr(str_dirfd, ':')) == NULL)
-		return atoi(str_dirfd);
-	else {
-		/* work some magic ... expected format:
-		 * <path>:<flags>
-		 */
-		char *str_path = strdup(str_dirfd);
-		str_path[colon - str_dirfd] = '\0';
-		return open(str_path, f_get_flags(colon + 1));
-	}
-}
-
 mode_t sscanf_mode_t(const char *str_mode)
 {
 	/* some systems (like Linux) have a 32bit mode_t.  Others
@@ -97,6 +80,8 @@ mode_t sscanf_mode_t(const char *str_mode)
 	 * sscanf() into it otherwise we might smash the stack.
 	 */
 	int mode;
+	if (!str_mode)
+		return 0;
 	sscanf(str_mode, "%i", &mode);
 	return (mode_t)mode;
 }
@@ -109,6 +94,28 @@ dev_t sscanf_dev_t(const char *str_dev)
 	int dev;
 	sscanf(str_dev, "%i", &dev);
 	return (dev_t)dev;
+}
+
+int at_get_fd(const char *str_dirfd)
+{
+	/* work some magic ... expected format:
+	 *	- AT_FDCWD
+	 *	- number
+	 *	- path[:<flags>[:<mode>]]
+	 */
+	if (!strcmp(str_dirfd, "AT_FDCWD"))
+		return AT_FDCWD;
+
+	char *str = strdup(str_dirfd);
+	char *str_path, *str_flags, *str_mode;
+
+	str_path = strtok(str, ":");
+	str_flags = strtok(NULL, ":");
+	if (str_flags == NULL)
+		return atoi(str_dirfd);
+	str_mode = strtok(NULL, ":");
+
+	return open(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
 }
 
 int main(int argc, char *argv[])
