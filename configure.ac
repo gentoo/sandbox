@@ -6,8 +6,14 @@ AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl we want to strip out quote chars and normalize whitespace
-sb_configure_opts=$(eval echo ${ac_configure_args})
-AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts}"], [Arguments given to ./configure])
+sb_configure_opts=
+for a in ${ac_configure_args} ; do
+	case ${a} in
+		\'*\') a=${a#\'}; a=${a%\'};;
+	esac
+	AS_VAR_APPEND([sb_configure_opts], " $a")
+done
+AC_DEFINE_UNQUOTED([SANDBOX_CONFIGURE_OPTS], ["${sb_configure_opts# }"], [Arguments given to ./configure])
 
 AC_MSG_CHECKING([environment state])
 env 1>&AS_MESSAGE_LOG_FD
