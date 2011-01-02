@@ -1051,9 +1051,12 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	 */
 	if (file == NULL || file[0] == '\0') {
 		if (file == NULL && dirfd != AT_FDCWD &&
-			(sb_nr == SB_NR_UTIMENSAT))
+			(sb_nr == SB_NR_UTIMENSAT || sb_nr == SB_NR_FUTIMESAT))
 		{
-			/* let it slide */
+			/* let it slide -- the func is magic and changes behavior
+			 * from "file relative to dirfd" to "dirfd is actually file
+			 * fd" whenever file is NULL.
+			 */
 		} else {
 			errno = ENOENT;
 			return false;
