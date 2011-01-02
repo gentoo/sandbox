@@ -9,6 +9,13 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
+static bool _strtoul(const char *sul, unsigned long *ul)
+{
+	char *e;
+	*ul = strtoul(sul, &e, 0);
+	return (*e == '\0');
+}
+
 static int _get_flags(const char *str_flags, const value_pair flags[])
 {
 	const char *delim = "|";
@@ -42,6 +49,8 @@ int f_get_flags(const char *str_flags)
 		PAIR(O_WRONLY)
 		{ }
 	};
+	if (!str_flags)
+		return O_CREAT | O_RDWR;
 	return _get_flags(str_flags, flags);
 }
 
@@ -72,8 +81,9 @@ mode_t sscanf_mode_t(const char *str_mode)
 	 * sscanf() into it otherwise we might smash the stack.
 	 */
 	int mode;
+	/* Default to full access.  */
 	if (!str_mode)
-		return 0;
+		return 0777;
 	sscanf(str_mode, "%i", &mode);
 	return (mode_t)mode;
 }
@@ -103,8 +113,11 @@ int at_get_fd(const char *str_dirfd)
 
 	str_path = strtok(str, ":");
 	str_flags = strtok(NULL, ":");
-	if (str_flags == NULL)
-		return atoi(str_dirfd);
+	if (str_flags == NULL) {
+		unsigned long dirfd;
+		if (_strtoul(str_dirfd, &dirfd))
+			return dirfd;
+	}
 	str_mode = strtok(NULL, ":");
 
 	return open(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
