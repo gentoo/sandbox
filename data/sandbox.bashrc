@@ -54,15 +54,16 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 		# build area or not ... uNF uNF uNF
 		#sbs_pdir=$(portageq envvar PORTAGE_TMPDIR)/portage/ #portageq takes too long imo
 		if [[ -z ${PORTAGE_TMPDIR} ]] ; then
-			sbs_gpdir=$( source /etc/make.globals && echo $PORTAGE_TMPDIR 2> /dev/null)
-			sbs_cpdir=$( source /etc/make.conf && echo $PORTAGE_TMPDIR 2> /dev/null)
-			[[ -z ${sbs_cpdir} ]] \
-				&& sbs_pdir=${sbs_gpdir} \
-				|| sbs_pdir=${sbs_cpdir}
+			sbs_pdir=$(
+				for f in /etc/{,portage/}make.globals /etc/{,portage/}make.conf ; do
+					[[ -e ${f} ]] && source ${f}
+				done
+				echo $PORTAGE_TMPDIR
+			)
 		else
 			sbs_pdir=${PORTAGE_TMPDIR}
 		fi
-		[[ -z ${sbs_pdir} ]] && sbs_pdir=/var/tmp
+		: ${sbs_pdir:=/var/tmp}
 		sbs_pdir=${sbs_pdir}/portage/
 
 		if [[ ${PWD:0:${#sbs_pdir}} == "${sbs_pdir}" ]] ; then
@@ -85,7 +86,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 			fi
 		fi
 
-		unset sbs_gpdir sbs_cpdir sbs_pdir sbs_bdir sbs_tmpenvfile sbs_PREPWD env
+		unset sbs_pdir sbs_bdir sbs_tmpenvfile sbs_PREPWD env
 	fi
 
 	cd "${PWD}"
