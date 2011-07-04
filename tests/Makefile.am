@@ -91,6 +91,10 @@ clean-local:
 		$(SHELL) '$(TESTSUITE)' --clean
 
 AUTOTEST = $(AUTOM4TE) --language=autotest
-$(TESTSUITE): $(AT_FILES)
+$(TESTSUITE): $(AT_FILES) testsuite.list.at
 	$(AUTOTEST) -I '$(srcdir)' -o $@.tmp $@.at
 	mv $@.tmp $@
+
+testsuite.list.at: $(AT_FILES)
+	$(GREP) -l '^SB_CHECK' $(AT_FILES) | \
+		$(SED) -e 's:^[.]/:sb_inc([:' -e 's:[.]at$$:]):' > $@
