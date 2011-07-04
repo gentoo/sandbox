@@ -29,6 +29,7 @@ check_PROGRAMS = \
 	linkat-0 \
 	linkat_static-0 \
 	lutimes-0 \
+	mkdtemp-0 \
 	mkdir-0 \
 	mkdir_static-0 \
 	mkdirat-0 \
@@ -36,6 +37,14 @@ check_PROGRAMS = \
 	mkfifoat-0 \
 	mknod-0 \
 	mknodat-0 \
+	mkostemp-0 \
+	mkostemp64-0 \
+	mkostemps-0 \
+	mkostemps64-0 \
+	mkstemp-0 \
+	mkstemp64-0 \
+	mkstemps-0 \
+	mkstemps64-0 \
 	open-0 \
 	open_static-0 \
 	open64-0 \
@@ -96,5 +105,5 @@ $(TESTSUITE): $(AT_FILES) testsuite.list.at
 	mv $@.tmp $@
 
 testsuite.list.at: $(AT_FILES)
-	$(GREP) -l '^SB_CHECK' $(AT_FILES) | \
+	$(GREP) -l '^SB_CHECK' $(AT_FILES) | LC_ALL=C sort | \
 		$(SED) -e 's:^[.]/:sb_inc([:' -e 's:[.]at$$:]):' > $@

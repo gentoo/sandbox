@@ -48,6 +48,15 @@ __openat64_2
 creat64
 fopen64
 truncate64
+mkdtemp
+mkostemp
+mkostemp64
+mkostemps
+mkostemps64
+mkstemp
+mkstemp64
+mkstemps
+mkstemps64
 #execl
 #execle
 #execlp

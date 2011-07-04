@@ -791,10 +791,19 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_LUTIMES     ||
 	    sb_nr == SB_NR_MKDIR       ||
 	    sb_nr == SB_NR_MKDIRAT     ||
+	    sb_nr == SB_NR_MKDTEMP     ||
 	    sb_nr == SB_NR_MKFIFO      ||
 	    sb_nr == SB_NR_MKFIFOAT    ||
 	    sb_nr == SB_NR_MKNOD       ||
 	    sb_nr == SB_NR_MKNODAT     ||
+	    sb_nr == SB_NR_MKOSTEMP    ||
+	    sb_nr == SB_NR_MKOSTEMP64  ||
+	    sb_nr == SB_NR_MKOSTEMPS   ||
+	    sb_nr == SB_NR_MKOSTEMPS64 ||
+	    sb_nr == SB_NR_MKSTEMP     ||
+	    sb_nr == SB_NR_MKSTEMP64   ||
+	    sb_nr == SB_NR_MKSTEMPS    ||
+	    sb_nr == SB_NR_MKSTEMPS64  ||
 	    sb_nr == SB_NR_OPEN_WR     ||
 	    sb_nr == SB_NR_REMOVE      ||
 	    sb_nr == SB_NR_RENAME      ||

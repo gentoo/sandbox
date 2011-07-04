@@ -146,8 +146,17 @@ AC_CHECK_FUNCS_ONCE([ \
 	memset \
 	mkdir \
 	mkdirat \
+	mkdtemp \
 	mkfifoat \
 	mknodat \
+	mkostemp \
+	mkostemp64 \
+	mkostemps \
+	mkostemps64 \
+	mkstemp \
+	mkstemp64 \
+	mkstemps \
+	mkstemps64 \
 	open64 \
 	openat \
 	openat64 \

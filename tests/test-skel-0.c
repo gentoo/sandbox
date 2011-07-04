@@ -171,7 +171,9 @@ int main(int argc, char *argv[])
 			"%s%li (wanted %li)%s; "
 			"%serrno = %s:%i [%s] (wanted %s:%i [%s])%s\n",
 			COLOR(passed), passed ? "PASS" : "FAIL", color_normal,
+#if ARG_CNT
 			FUNC_IMP,
+#endif
 			(passed ? "" : COLOR(passed_ret)),
 			actual_ret, want_ret, color_normal,
 			(!passed && want_errno) ? COLOR(passed_errno) : "",
