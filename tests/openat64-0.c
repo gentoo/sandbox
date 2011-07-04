@@ -1,7 +1,7 @@
 #define CONFIG HAVE_OPENAT64
 #define FUNC openat64
 #define SFUNC "openat64"
-#define FUNC_STR "%i, \"%s\", 0x%x, %o"
+#define FUNC_STR "%i, \"%s\", %#x, %o"
 #define FUNC_IMP dirfd, file, flags, mode
 #define ARG_CNT 4
 #define ARG_USE "<dirfd> <file> <flags> <mode>"

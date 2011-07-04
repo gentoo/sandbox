@@ -1,6 +1,6 @@
 #define FUNC open
 #define SFUNC "open"
-#define FUNC_STR "\"%s\", 0x%x, %o"
+#define FUNC_STR "\"%s\", %#x, %o"
 #define FUNC_IMP file, flags, mode
 #define ARG_CNT 3
 #define ARG_USE "<file> <flags> <mode>"
