@@ -51,7 +51,7 @@ const value_pair tbl_errno[] = {
 	PAIR(EACCES)
 	PAIR(EAGAIN)
 	PAIR(EBADF)
-	PAIR(EBADFD)
+/*	PAIR(EBADFD) POSIX only has EBADF */
 	PAIR(EBUSY)
 	PAIR(ECANCELED)
 	PAIR(ECHILD)
