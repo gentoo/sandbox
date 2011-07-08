@@ -1167,7 +1167,7 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 	const char *ext_func;
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
 	     /* The strspn accept args are known non-writable modifiers */
-	     (strlen(++mode) == strspn(mode, "xbtmce"))))
+	     (strlen(mode+1) == strspn(mode+1, "xbtmce"))))
 		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
 	else
 		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
