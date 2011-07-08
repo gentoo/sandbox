@@ -990,7 +990,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto error;
 	}
 
-	if (debug_log_path && debug) {
+	if (debug && debug_log_path) {
 		bool worked = write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
 		if (!worked && errno)
 			goto error;
