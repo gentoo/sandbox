@@ -27,6 +27,10 @@ pid_t trace_pid;
 
 #ifndef SB_NO_TRACE
 
+#ifndef HAVE_TRACE_REGS
+# error "unable to find struct for tracing regs"
+#endif
+
 #ifdef HAVE_OPEN64
 # define sb_openat_pre_check sb_openat64_pre_check
 #endif
