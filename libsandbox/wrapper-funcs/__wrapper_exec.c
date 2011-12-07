@@ -33,7 +33,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 		return;
 	if (stat(filename, &st))
 		goto out_fd;
-	if (st.st_size < EI_NIDENT)
+	if (st.st_size < sizeof(Elf64_Ehdr))
 		goto out_fd;
 	elf = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (elf == MAP_FAILED)
@@ -65,7 +65,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
-	do_trace = true;
+	do_trace = trace_possible(filename, argv, elf);
 	/* Now that we're done with stuff, clean up before forking */
 
  done:

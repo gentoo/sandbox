@@ -1,3 +1,13 @@
+#undef _trace_possible
+#define _trace_possible _trace_possible
+static bool _trace_possible(const void *data)
+{
+	/* i386 can only trace i386 :( */
+	const Elf64_Ehdr *ehdr = data;
+	return (ehdr->e_ident[EI_CLASS] == ELFCLASS32) &&
+		(ehdr->e_machine == EM_386);
+}
+
 #define trace_reg_sysnum orig_eax
 #define trace_reg_ret eax
 

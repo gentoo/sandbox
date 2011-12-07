@@ -46,7 +46,7 @@ AC_ARG_ENABLE([schizo],
 SB_SCHIZO_SETTINGS="no"
 if test "x$enable_schizo" = "xyes" ; then
 	case $host_alias in
-		x86_64*linux*) SB_SCHIZO_SETTINGS="x86_64:-m64 x86:-m32";;
+		x86_64*linux*) SB_SCHIZO_SETTINGS="x86_64:-m64 x86:-m32 x32:-mx32";;
 	esac
 fi
 if test "$SB_SCHIZO_SETTINGS" != "no" ; then

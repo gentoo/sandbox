@@ -11,6 +11,7 @@
 
 static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data);
 #define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
+#define _trace_possible(data) true
 
 #ifdef DEBUG
 # define SBDEBUG 1
@@ -485,6 +486,16 @@ void trace_main(const char *filename, char *const argv[])
 
 #else
 
+#undef _trace_possible
+#define _trace_possible(data) false
+
+void trace_main(const char *filename, char *const argv[])
+{
+	/* trace_possible() triggers a warning for us */
+}
+
+#endif
+
 static char *flatten_args(char *const argv[])
 {
 	char *ret;
@@ -512,11 +523,13 @@ static char *flatten_args(char *const argv[])
 	return ret;
 }
 
-void trace_main(const char *filename, char *const argv[])
+bool trace_possible(const char *filename, char *const argv[], const void *data)
 {
-	char *args = flatten_args(argv);
-	sb_eqawarn("Static ELF: %s: %s\n", filename, args);
-	free(args);
-}
+	if (_trace_possible(data))
+		return true;
 
-#endif
+	char *args = flatten_args(argv);
+	sb_eqawarn("Unable to trace static ELF: %s: %s\n", filename, args);
+	free(args);
+	return false;
+}
