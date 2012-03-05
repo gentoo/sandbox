@@ -18,6 +18,7 @@
 static int print_debug = 0;
 #define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
 #define dputs(str) do { if (print_debug) puts(str); } while (0)
+int (*sbio_open)(const char *, int, mode_t) = (void *)open;
 
 volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;

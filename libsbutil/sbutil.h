@@ -91,7 +91,7 @@ bool is_env_on (const char *);
 bool is_env_off (const char *);
 
 /* libsandbox need to use a wrapper for open */
-void sb_set_open(void *new_open);
+attribute_hidden extern int (*sbio_open)(const char *, int, mode_t);
 /* Convenience functions to reliably open, read and write to a file */
 int sb_open(const char *path, int flags, mode_t mode);
 size_t sb_read(int fd, void *buf, size_t count);

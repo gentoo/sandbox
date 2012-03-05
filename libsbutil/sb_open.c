@@ -10,17 +10,6 @@
 #include "headers.h"
 #include "sbutil.h"
 
-static int (*sbio_open)(const char *, int, mode_t) = (void *)open;
-
-
-void sb_set_open(void *new_open)
-{
-	if (!check_ptr(new_open))
-		return;
-
-	sbio_open = new_open;
-}
-
 /* General purpose function to _reliably_ open a file
  *
  * Returns the file descriptor or -1 on error (and errno set)

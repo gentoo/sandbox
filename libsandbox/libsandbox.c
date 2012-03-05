@@ -61,6 +61,7 @@ typedef struct {
 static char *cached_env_vars[MAX_DYN_PREFIXES];
 bool sandbox_on = true;
 static bool sb_init = false;
+int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
 
 static char *resolve_path(const char *, int);
 static int check_prefixes(char **, int, const char *);
@@ -68,50 +69,15 @@ static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 
-
-/*
- * Initialize the shabang
- */
-#if 0
-__attribute__((destructor))
-void libsb_fini(void)
-{
-	/* let the kernel reap our resources -- it's faster anyways */
-	int x;
-
-	sb_init = false;
-
-	for (x = 0; x < MAX_DYN_PREFIXES; ++x) {
-		if (NULL != cached_env_vars[x]) {
-			free(cached_env_vars[x]);
-			cached_env_vars[x] = NULL;
-		}
-	}
-
-	for (x = 0; x < MAX_DYN_PREFIXES; ++x)
-		clean_env_entries(&(sbcontext.prefixes[x]),
-				&(sbcontext.num_prefixes[x]));
-}
-#endif
-
+#ifdef SB_MEM_DEBUG
 __attribute__((constructor))
 void libsb_init(void)
 {
 	save_errno();
-
-#ifdef SB_MEM_DEBUG
 	mtrace();
-#endif
-
-	sb_set_open(sb_unwrapped_open);
-
-	/* Get the path and name to this library */
-	get_sandbox_lib(sandbox_lib);
-
-//	sb_init = true;
-
 	restore_errno();
 }
+#endif
 
 static const char *sb_get_fd_dir(void)
 {
@@ -1084,6 +1050,9 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	sb_lock();
 
 	if (!sb_init) {
+		/* Get the path and name to this library */
+		get_sandbox_lib(sandbox_lib);
+
 		init_context(&sbcontext);
 		sb_init = true;
 	}
