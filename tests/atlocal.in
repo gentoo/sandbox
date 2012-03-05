@@ -13,3 +13,7 @@ export at_xfail
 # portage likes to do `addpredict /` ... we dont need/want
 # that garbage messing up our env
 export SANDBOX_PREDICT=${SANDBOX_PREDICT%:/}
+
+if [ "${AUTOTEST_PATH}" = "tests" ] ; then
+	AUTOTEST_PATH="src:tests"
+fi
