@@ -76,6 +76,11 @@ static long do_peekuser(long offset)
 	return do_ptrace(PTRACE_PEEKUSER, (void *)offset, NULL);
 }
 
+static long do_pokeuser(long offset, long val)
+{
+	return do_ptrace(PTRACE_POKEUSER, (void *)offset, (void *)val);
+}
+
 static long do_peekdata(long offset)
 {
 	return do_ptrace(PTRACE_PEEKDATA, (void *)offset, NULL);
@@ -384,6 +389,9 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 #ifndef trace_get_regs
 # define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs)
 #endif
+#ifndef trace_set_regs
+# define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS, NULL, regs)
+#endif
 /* Some arches (like sparc) don't implement PTRACE_PEEK* ...
  * more asshats !
  */
@@ -394,13 +402,14 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 static void trace_loop(void)
 {
 	trace_regs regs;
-	bool before_syscall;
+	bool before_syscall, fake_syscall_ret;
 	long ret;
 	int nr, exec_state;
 	const struct syscall_entry *se, *tbl_at_fork;
 
 	exec_state = 0;
 	before_syscall = true;
+	fake_syscall_ret = false;
 	tbl_at_fork = NULL;
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
@@ -431,14 +440,21 @@ static void trace_loop(void)
 			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
 				if (is_env_on(ENV_SANDBOX_DEBUG))
-					SB_EINFO("trace_loop", " destroying after %s\n",
+					SB_EINFO("trace_loop", " forcing EPERM after %s\n",
 						se->name);
-				do_ptrace(PTRACE_KILL, NULL, NULL);
-				exit(1);
+				trace_set_sysnum(&regs, -1);
+				fake_syscall_ret = true;
 			}
 		} else {
 			int err;
-			ret = trace_result(&regs, &err);
+
+			if (unlikely(fake_syscall_ret)) {
+				ret = -1;
+				err = EPERM;
+				trace_set_ret(&regs, err);
+				fake_syscall_ret = false;
+			} else
+				ret = trace_result(&regs, &err);
 
 			__SB_DEBUG(" = %li", ret);
 			if (err) {
@@ -480,7 +496,7 @@ void trace_main(const char *filename, char *const argv[])
 	}
 
 	trace_pid = fork();
-	if (trace_pid == -1) {
+	if (unlikely(trace_pid == -1)) {
 		SB_EERROR("ISE:trace_main ", "vfork() failed: %s\n",
 			strerror(errno));
 		sb_abort();

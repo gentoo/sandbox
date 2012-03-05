@@ -1,4 +1,5 @@
 static long do_peekuser(long offset);
+static long do_pokeuser(long offset, long val);
 
 static int trace_errno(long err)
 {

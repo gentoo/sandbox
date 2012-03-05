@@ -20,4 +20,18 @@
 #ifdef SB_NO_TRACE_ARCH
 # warning "trace: sorry, no support for your architecture"
 # define SB_NO_TRACE
+#else
+# ifdef trace_sysnum_puser
+
+static int trace_sysnum(void)
+{
+	return do_peekuser(trace_sysnum_puser);
+}
+
+static void trace_set_sysnum(void *vregs, long nr)
+{
+	do_pokeuser(trace_sysnum_puser, nr);
+}
+
+# endif
 #endif

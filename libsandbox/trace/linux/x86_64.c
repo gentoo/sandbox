@@ -47,6 +47,16 @@ static long trace_raw_ret(void *vregs)
 	return pers_is_32() ? (int)regs->rax : regs->rax;
 }
 
+static void trace_set_sysnum(void *vregs, long nr)
+{
+	do_pokeuser(8 * ORIG_RAX, nr);
+}
+
+static void trace_set_ret(void *vregs, int err)
+{
+	do_pokeuser(8 * RAX, -err);
+}
+
 static unsigned long trace_arg(void *vregs, int num)
 {
 	trace_regs *regs = vregs;

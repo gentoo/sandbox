@@ -1,12 +1,14 @@
-static int trace_sysnum(void)
-{
-	return do_peekuser(20 * 4); /* PT_GR20 */
-}
+#define trace_sysnum_puser (20 * 4)	/* PT_GR20 */
 
 static long trace_raw_ret(void *vregs)
 {
 	trace_regs *regs = vregs;
 	return regs->gr[28];
+}
+
+static void trace_set_ret(void *vregs, int err)
+{
+	do_pokeuser(28 * 4 /* PT_GR28 */, -err);
 }
 
 static unsigned long trace_arg(void *vregs, int num)
