@@ -113,4 +113,7 @@ typedef struct user_regs_struct trace_regs;
 
 #define attribute_hidden __attribute__((visibility("hidden")))
 
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 #endif
