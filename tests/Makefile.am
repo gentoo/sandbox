@@ -62,6 +62,7 @@ check_PROGRAMS = \
 	truncate-0 \
 	truncate64-0 \
 	unlink-0 \
+	unlink_static-0 \
 	unlinkat-0 \
 	utime-0 \
 	utimensat-0 \
