@@ -119,5 +119,7 @@ typedef struct user_regs_struct trace_regs;
 
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
+#define __noreturn __attribute__((noreturn))
+#define __printf(x, y) __attribute__((__format__(__printf__, x, y)))
 
 #endif
