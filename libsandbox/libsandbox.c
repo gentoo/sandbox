@@ -386,7 +386,7 @@ static int sb_copy_file_to_fd(const char *file, int ofd)
 {
 	int ret = -1;
 
-	int ifd = sb_open(file, O_RDONLY, 0);
+	int ifd = sb_open(file, O_RDONLY|O_CLOEXEC, 0);
 	if (ifd == -1)
 		return ret;
 
@@ -480,7 +480,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	}
 
 	logfd = sb_open(logfile,
-		O_APPEND | O_WRONLY | O_CREAT,
+		O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC,
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (logfd == -1) {
 		SB_EERROR("ISE:write_logfile ", "unable to append logfile\n");

@@ -49,6 +49,10 @@
 # define MAP_ANONYMOUS MAP_ANON
 #endif
 
+#ifndef O_CLOEXEC
+# define O_CLOEXEC 0
+#endif
+
 #if !HAVE_DECL_ENVIRON
 extern char **environ;
 #endif
