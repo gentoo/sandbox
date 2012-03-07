@@ -468,6 +468,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	struct stat log_stat;
 	int stat_ret;
 	int logfd;
+	bool ret = false;
 
 	stat_ret = lstat(logfile, &log_stat);
 	/* Do not care about failure */
@@ -523,10 +524,12 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	}
 	_SB_WRITE_STR("\n");
 
-	return true;
+	ret = true;
 
  error:
-	return false;
+	sb_close(logfd);
+
+	return ret;
 }
 
 static void init_context(sbcontext_t *context)
