@@ -17,3 +17,5 @@ export SANDBOX_PREDICT=${SANDBOX_PREDICT%:/}
 if [ "${AUTOTEST_PATH}" = "tests" ] ; then
 	AUTOTEST_PATH="src:tests"
 fi
+
+export SANDBOX_VERBOSE=0
