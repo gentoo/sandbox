@@ -188,7 +188,6 @@ static int setup_cfg_vars(struct sandbox_info_t *sandbox_info)
 {
 	setup_cfg_var(ENV_SANDBOX_VERBOSE);
 	setup_cfg_var(ENV_SANDBOX_DEBUG);
-	setup_cfg_var(ENV_SANDBOX_BEEP);
 	setup_cfg_var(ENV_NOCOLOR);
 
 	if (-1 == setup_access_var(ENV_SANDBOX_DENY))

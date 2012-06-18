@@ -85,8 +85,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 
 static void print_sandbox_log(char *sandbox_log)
 {
-	int sandbox_log_file, beep_count;
-	char *beep_count_env;
+	int sandbox_log_file;
 	size_t len;
 	char buffer[1024];
 
@@ -114,18 +113,6 @@ static void print_sandbox_log(char *sandbox_log)
 	sb_close(sandbox_log_file);
 
 	SB_EERROR("--------------------------------------------------------------------------------", "\n");
-
-	beep_count_env = getenv(ENV_SANDBOX_BEEP);
-	if (beep_count_env)
-		beep_count = atoi(beep_count_env);
-	else
-		beep_count = DEFAULT_BEEP_COUNT;
-
-	while (beep_count--) {
-		fputc('\a', stderr);
-		if (beep_count)
-			sleep(1);
-	}
 }
 
 static void stop(int signum)

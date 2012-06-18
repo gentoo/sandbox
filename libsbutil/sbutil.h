@@ -57,7 +57,6 @@ extern const char env_sandbox_testing[];
 #define ENV_SANDBOX_PREDICT    "SANDBOX_PREDICT"
 
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
-#define ENV_SANDBOX_BEEP       "SANDBOX_BEEP"
 
 #define ENV_SANDBOX_PID        "SANDBOX_PID"
 #define ENV_SANDBOX_ABORT      "SANDBOX_ABORT"
@@ -65,8 +64,6 @@ extern const char env_sandbox_testing[];
 
 #define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
 #define SANDBOX_ACTIVE         "armedandready"
-
-#define DEFAULT_BEEP_COUNT     3
 
 #define SB_BUF_LEN             2048
 

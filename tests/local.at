@@ -5,7 +5,6 @@ dnl any of the tempdirs.  Same goes for predict access, but this is
 dnl due to the default PM test env having that predict.
 m4_defun([SB_RUN],[\
 	env \
-		SANDBOX_BEEP=0 \
 		SANDBOX_LOG="$PWD/sandbox.log" \
 		sandbox.sh \
 			addpredict / \; \
