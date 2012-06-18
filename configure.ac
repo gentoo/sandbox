@@ -368,10 +368,10 @@ AC_SUBST([CFLAG_EXCEPTIONS])
 
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 AX_CFLAGS_WARN_ALL
-AC_DEFUN([SB_CHECK_CFLAG],[AX_CHECK_COMPILER_FLAGS([$1],[CFLAGS="$CFLAGS $1"])])
+AC_DEFUN([SB_CHECK_CFLAG],[AX_CHECK_COMPILE_FLAG([$1],[CFLAGS="$CFLAGS $1"])])
 SB_CHECK_CFLAG([-fdata-sections])
 SB_CHECK_CFLAG([-ffunction-sections])
-AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINKER_FLAGS([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])
+AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINK_FLAG([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])
 SB_CHECK_LDFLAG([--as-needed])
 SB_CHECK_LDFLAG([--gc-sections])
 case $host_os in
@@ -382,7 +382,7 @@ esac
 AC_DEFUN([SB_CHECK_LDFLAG_VER],[dnl
 if test "x${LDFLAG_VER}" = "x" ; then
 	echo '{};' > conftest.map
-	AX_CHECK_LINKER_FLAGS([-Wl,$1,conftest.map],[LDFLAG_VER="-Wl,$1"])
+	AX_CHECK_LINK_FLAG([-Wl,$1,conftest.map],[LDFLAG_VER="-Wl,$1"])
 	rm -f conftest.map
 fi])
 LDFLAG_VER=
