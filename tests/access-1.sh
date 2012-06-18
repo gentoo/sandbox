@@ -3,6 +3,5 @@
 
 addwrite $PWD
 
-export SANDBOX_LOG=$PWD/sb.log
 access-0 -1 rwx / || exit 1
-test ! -e sb.log
+test ! -e sandbox.log

@@ -340,8 +340,9 @@ int main(int argc, char **argv)
 	} else
 		dputs(sandbox_footer);
 
-	if (sandbox_log_presence && shell_exit == 0)
-		shell_exit = 1;
+	if (!is_env_on(ENV_SANDBOX_TESTING))
+		if (sandbox_log_presence && shell_exit == 0)
+			shell_exit = 1;
 	return shell_exit;
 
 oom_error:

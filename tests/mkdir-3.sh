@@ -9,8 +9,6 @@ addwrite $PWD
 chmod -R a+rwx base 2>/dev/null
 rm -rf base
 
-export SANDBOX_LOG=$PWD/sb.log
-
 set -e
 
 mkdir -p base/d

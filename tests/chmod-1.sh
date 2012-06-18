@@ -3,7 +3,7 @@
 
 addwrite $PWD
 
-rm -rf deny link sb.log
+rm -rf deny link
 (
 set -e
 mkdir deny
@@ -16,6 +16,5 @@ chmod-0 0 link 0666 || exit 1
 
 # this *should* trigger a sandbox violation
 adddeny $PWD/deny
-export SANDBOX_LOG=$PWD/sb.log
 chmod-0 -1 link 0666 || exit 1
-test -s sb.log
+test -s sandbox.log

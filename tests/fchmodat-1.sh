@@ -16,6 +16,5 @@ fchmodat-0 0 AT_FDCWD link 0666 0 || exit 1
 
 # this *should* trigger a sandbox violation
 adddeny $PWD/deny
-export SANDBOX_LOG=$PWD/sb.log
 fchmodat-0 -1 AT_FDCWD link 0666 0 || exit 1
-test -s sb.log
+test -s sandbox.log
