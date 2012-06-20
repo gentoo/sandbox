@@ -1,16 +1,10 @@
 try out tracing on *BSD and Solaris
 
-add tests for tracing static binaries
-
 trace static children of static children
-
-inject errors into trace when violation occurs rather than kill the child
 
 cache results of filesystem checks
 
 review erealpath vs realpath usage
-
-add tests to make sure errno is saved/restored properly
 
 wrappers for execl{,l,p} ... unfortunately, we'll probably have to basically
 reimplement the functions (building up argv[] and then call the execv* ver)
@@ -24,6 +18,10 @@ threaded apps conflict with shared state:
  - sandbox_on
  - trace_pid
  - etc...
+
+handle multiple processing writing to log simultaneously
+ - could move log to a fifo that the main sandbox process would consume
+ - not that big of a deal as log generally only gets written with failures
 
 doesnt seem to work quite right:
 	echo $(./vfork-0 ./mkdir_static-0 2>&1)
