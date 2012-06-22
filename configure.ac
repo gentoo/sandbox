@@ -65,46 +65,46 @@ AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS_ONCE([ \
-	dirent.h \
-	dlfcn.h \
-	elf.h \
-	errno.h \
-	execinfo.h \
-	fcntl.h \
-	grp.h \
-	libgen.h \
-	limits.h \
-	memory.h \
-	pthread.h \
-	pwd.h \
-	siginfo.h \
-	signal.h \
-	sigsegv.h \
-	stdarg.h \
-	stdbool.h \
-	stddef.h \
-	stdio.h \
-	stdlib.h \
-	string.h \
-	strings.h \
-	syscall.h \
-	unistd.h \
-	utime.h \
-	sys/file.h \
-	sys/mman.h \
-	sys/param.h \
-	sys/ptrace.h \
-	sys/reg.h \
-	sys/stat.h \
-	sys/syscall.h \
-	sys/time.h \
-	sys/types.h \
-	sys/user.h \
-	sys/wait.h \
-	asm/ptrace.h \
-	linux/ptrace.h \
-])
+AC_CHECK_HEADERS_ONCE(m4_flatten([
+	dirent.h
+	dlfcn.h
+	elf.h
+	errno.h
+	execinfo.h
+	fcntl.h
+	grp.h
+	libgen.h
+	limits.h
+	memory.h
+	pthread.h
+	pwd.h
+	siginfo.h
+	signal.h
+	sigsegv.h
+	stdarg.h
+	stdbool.h
+	stddef.h
+	stdio.h
+	stdlib.h
+	string.h
+	strings.h
+	syscall.h
+	unistd.h
+	utime.h
+	sys/file.h
+	sys/mman.h
+	sys/param.h
+	sys/ptrace.h
+	sys/reg.h
+	sys/stat.h
+	sys/syscall.h
+	sys/time.h
+	sys/types.h
+	sys/user.h
+	sys/wait.h
+	asm/ptrace.h
+	linux/ptrace.h
+]))
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl Do this after all headers have been checked.
@@ -128,61 +128,61 @@ AC_FUNC_LSTAT
 AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
-AC_CHECK_FUNCS_ONCE([ \
-	backtrace \
-	creat64 \
-	faccessat \
-	fchmodat \
-	fchownat \
-	fopen64 \
-	ftruncate \
-	futimesat \
-	getcwd \
-	lchown \
-	linkat \
-	lutimes \
-	memmove \
-	memcpy \
-	memset \
-	mkdir \
-	mkdirat \
-	mkdtemp \
-	mkfifoat \
-	mknodat \
-	mkostemp \
-	mkostemp64 \
-	mkostemps \
-	mkostemps64 \
-	mkstemp \
-	mkstemp64 \
-	mkstemps \
-	mkstemps64 \
-	open64 \
-	openat \
-	openat64 \
-	pathconf \
-	ptrace \
-	realpath \
-	remove \
-	renameat \
-	rmdir \
-	setenv \
-	strcasecmp \
-	strchr \
-	strdup \
-	strerror \
-	strndup \
-	strrchr \
-	strspn \
-	strstr \
-	strtok_r \
-	symlinkat \
-	truncate64 \
-	unlinkat \
-	utime \
-	utimensat \
-	utimes \
-])
+AC_CHECK_FUNCS_ONCE(m4_flatten([
+	backtrace
+	creat64
+	faccessat
+	fchmodat
+	fchownat
+	fopen64
+	ftruncate
+	futimesat
+	getcwd
+	lchown
+	linkat
+	lutimes
+	memmove
+	memcpy
+	memset
+	mkdir
+	mkdirat
+	mkdtemp
+	mkfifoat
+	mknodat
+	mkostemp
+	mkostemp64
+	mkostemps
+	mkostemps64
+	mkstemp
+	mkstemp64
+	mkstemps
+	mkstemps64
+	open64
+	openat
+	openat64
+	pathconf
+	ptrace
+	realpath
+	remove
+	renameat
+	rmdir
+	setenv
+	strcasecmp
+	strchr
+	strdup
+	strerror
+	strndup
+	strrchr
+	strspn
+	strstr
+	strtok_r
+	symlinkat
+	truncate64
+	unlinkat
+	utime
+	utimensat
+	utimes
+]))
 AC_CHECK_LIB([sigsegv], [stackoverflow_install_handler],
 	[HAVE_LIBSIGSEGV=true],
 	[HAVE_LIBSIGSEGV=false])
