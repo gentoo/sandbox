@@ -19,9 +19,8 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 	char dirfd_path[SB_PATH_MAX];
 	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path, sizeof(dirfd_path))) {
 		case -1:
-			if (is_env_on(ENV_SANDBOX_DEBUG))
-				SB_EINFO("EARLY FAIL", "  %s(%s) @ resolve_dirfd_path: %s\n",
-					func, pathname, strerror(errno));
+			sb_debug_dyn("EARLY FAIL: %s(%s) @ resolve_dirfd_path: %s\n",
+				func, pathname, strerror(errno));
 			return false;
 		case 0:
 			pathname = dirfd_path;
@@ -31,9 +30,8 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 	/* Doesn't exist -> skip permission checks */
 	struct stat st;
 	if (-1 == stat(pathname, &st)) {
-		if (is_env_on(ENV_SANDBOX_DEBUG))
-			SB_EINFO("EARLY FAIL", "  %s(%s): %s\n",
-				func, pathname, strerror(errno));
+		sb_debug_dyn("EARLY FAIL: %s(%s): %s\n",
+			func, pathname, strerror(errno));
 		return false;
 	}
 

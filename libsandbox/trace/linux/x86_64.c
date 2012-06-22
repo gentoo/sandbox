@@ -18,7 +18,7 @@ static bool pers_is_32(void)
 	switch (do_peekuser(8 * CS)) {
 		case 0x23: return true;
 		case 0x33: return false;
-		default:   sb_abort();
+		default:   sb_ebort("unknown x86_64 personality");
 	}
 }
 

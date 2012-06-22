@@ -42,8 +42,7 @@
 #define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
 #define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"
 
-extern const char env_sandbox_testing[];
-#define ENV_SANDBOX_TESTING    env_sandbox_testing
+#define ENV_SANDBOX_TESTING    "__SANDBOX_TESTING"
 
 #define ENV_SANDBOX_LIB        "SANDBOX_LIB"
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
@@ -67,15 +66,11 @@ extern const char env_sandbox_testing[];
 
 #define SB_BUF_LEN             2048
 
-#define COLOR_NORMAL           "\033[0m"
-#define COLOR_GREEN            "\033[32;01m"
-#define COLOR_YELLOW           "\033[33;01m"
-#define COLOR_RED              "\033[31;01m"
-
-/* Gentoo style e* printing macro's */
-#define SB_EINFO(_hilight, _args...) sb_efunc(COLOR_GREEN, _hilight, _args)
-#define SB_EWARN(_hilight, _args...) sb_efunc(COLOR_YELLOW, _hilight, _args)
-#define SB_EERROR(_hilight, _args...) sb_efunc(COLOR_RED, _hilight, _args)
+extern const char *colors[];
+#define COLOR_NORMAL           colors[0]
+#define COLOR_GREEN            colors[1]
+#define COLOR_YELLOW           colors[2]
+#define COLOR_RED              colors[3]
 
 char *get_sandbox_conf(void);
 char *get_sandbox_confd(char *path);
@@ -87,19 +82,41 @@ int get_tmp_dir(char *path);
 bool is_env_on (const char *);
 bool is_env_off (const char *);
 
+/* proc helpers */
+extern const char sb_fd_dir[];
+#define sb_get_fd_dir() sb_fd_dir
+const char *sb_get_cmdline(pid_t pid);
+
 /* libsandbox need to use a wrapper for open */
 attribute_hidden extern int (*sbio_open)(const char *, int, mode_t);
+attribute_hidden extern FILE *(*sbio_popen)(const char *, const char *);
+extern const char sbio_fallback_path[];
 /* Convenience functions to reliably open, read and write to a file */
 int sb_open(const char *path, int flags, mode_t mode);
 size_t sb_read(int fd, void *buf, size_t count);
 size_t sb_write(int fd, const void *buf, size_t count);
 int sb_close(int fd);
+int sb_copy_file_to_fd(const char *file, int ofd);
 
 /* Reliable output */
 __printf(1, 2) void sb_printf(const char *format, ...);
 __printf(2, 3) void sb_fdprintf(int fd, const char *format, ...);
 __printf(2, 0) void sb_vfdprintf(int fd, const char *format, va_list args);
 __printf(3, 4) void sb_efunc(const char *color, const char *hilight, const char *format, ...);
+__printf(1, 2) void sb_einfo(const char *format, ...);
+__printf(1, 2) void sb_ewarn(const char *format, ...);
+__printf(1, 2) void sb_eerror(const char *format, ...);
+__printf(1, 2) void sb_eqawarn(const char *format, ...);
+__printf(1, 2) void sb_debug_dyn(const char *format, ...);
+__printf(4, 5) void __sb_ebort(const char *file, const char *func, size_t line_num, const char *format, ...) __noreturn;
+#define sb_ebort(format, ...) __sb_ebort(__FILE__, __func__, __LINE__, format, ## __VA_ARGS__)
+void sb_dump_backtrace(void);
+void __sb_dump_backtrace(void);
+#define sb_assert(cond) \
+	do { \
+		if (!(cond)) \
+			sb_ebort("assertion failure !(%s)\n", #cond); \
+	} while (0)
 #define sb_fprintf(fp, ...) sb_fdprintf(fileno(fp), __VA_ARGS__)
 #define sb_vfprintf(fp, ...) sb_vfdprintf(fileno(fp), __VA_ARGS__)
 

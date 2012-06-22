@@ -20,11 +20,15 @@ libsbutil_la_SOURCES =                        \
 	get_tmp_dir.c                         \
 	is_env_on.c                           \
 	is_env_off.c                          \
+	sb_backtrace.c                        \
+	sb_efuncs.c                           \
 	sb_open.c                             \
 	sb_read.c                             \
 	sb_write.c                            \
+	sb_write_fd.c                         \
 	sb_close.c                            \
 	sb_printf.c                           \
+	sb_proc.c                             \
 	sb_memory.c                           \
 	include/rcscripts/rcutil.h            \
 	include/rcscripts/util/str_list.h     \

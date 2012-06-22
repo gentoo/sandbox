@@ -54,11 +54,9 @@ void free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
-	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr))) {
-		SB_EERROR("sandbox memory corruption", " free(%p): %s\n",
+	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr)))
+		sb_ebort("sandbox memory corruption with free(%p): %s\n",
 			ptr, strerror(errno));
-		sb_dump_backtrace();
-	}
 }
 
 /* Hrm, implement a zalloc() ? */

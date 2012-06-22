@@ -8,6 +8,10 @@
 		_T(sb_printf, fmt, ## args); \
 	} while (0)
 
+int (*sbio_open)(const char *, int, mode_t) = (void *)open;
+FILE *(*sbio_popen)(const char *, const char *) = popen;
+const char sbio_fallback_path[] = "/dev/stderr";
+
 int main(int argc, char *argv[])
 {
 	/* sandbox outputs to stderr, so unify it */

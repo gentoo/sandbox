@@ -15,9 +15,8 @@ bool sb_unlinkat_pre_check(const char *func, const char *pathname, int dirfd)
 	/* Expand the dirfd path first */
 	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path, sizeof(dirfd_path))) {
 		case -1:
-			if (is_env_on(ENV_SANDBOX_DEBUG))
-				SB_EINFO("EARLY FAIL", "  %s(%s) @ resolve_dirfd_path: %s\n",
-					func, pathname, strerror(errno));
+			sb_debug_dyn("EARLY FAIL: %s(%s) @ resolve_dirfd_path: %s\n",
+				func, pathname, strerror(errno));
 			return false;
 		case 0:
 			pathname = dirfd_path;
@@ -28,9 +27,8 @@ bool sb_unlinkat_pre_check(const char *func, const char *pathname, int dirfd)
 	if (-1 == canonicalize(pathname, canonic))
 		/* see comments in check_syscall() */
 		if (ENAMETOOLONG != errno) {
-			if (is_env_on(ENV_SANDBOX_DEBUG))
-				SB_EINFO("EARLY FAIL", "  %s(%s) @ canonicalize: %s\n",
-					func, pathname, strerror(errno));
+			sb_debug_dyn("EARLY FAIL: %s(%s) @ canonicalize: %s\n",
+				func, pathname, strerror(errno));
 			return false;
 		}
 
@@ -40,9 +38,8 @@ bool sb_unlinkat_pre_check(const char *func, const char *pathname, int dirfd)
 	    0 == strcmp(canonic, "/dev/zero"))
 	{
 		errno = EACCES;
-		if (is_env_on(ENV_SANDBOX_DEBUG))
-			SB_EINFO("EARLY FAIL", "  %s(%s): %s\n",
-				func, pathname, strerror(errno));
+		sb_debug_dyn("EARLY FAIL: %s(%s): %s\n",
+			func, pathname, strerror(errno));
 		return false;
 	}
 

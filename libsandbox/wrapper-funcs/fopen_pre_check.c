@@ -13,9 +13,8 @@ bool sb_fopen_pre_check(const char *func, const char *pathname, const char *mode
 		/* If we're trying to read, fail normally if file does not stat */
 		struct stat st;
 		if (-1 == stat(pathname, &st)) {
-			if (is_env_on(ENV_SANDBOX_DEBUG))
-				SB_EINFO("EARLY FAIL", "  %s(%s): %s\n",
-					func, pathname, strerror(errno));
+			sb_debug_dyn("EARLY FAIL: %s(%s): %s\n",
+				func, pathname, strerror(errno));
 			return false;
 		}
 

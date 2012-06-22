@@ -63,10 +63,6 @@ extern void sb_unlock(void);
 
 void trace_main(const char *filename, char *const argv[]);
 
-__printf(1, 2) void sb_eqawarn(const char *format, ...);
-void sb_dump_backtrace(void);
-__noreturn void sb_abort(void);
-
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);
 char *egetcwd(char *, size_t);

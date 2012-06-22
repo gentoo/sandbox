@@ -19,14 +19,14 @@ static int print_debug = 0;
 #define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
 #define dputs(str) do { if (print_debug) puts(str); } while (0)
 int (*sbio_open)(const char *, int, mode_t) = (void *)open;
+FILE *(*sbio_popen)(const char *, const char *) = popen;
 
 volatile static int stop_called = 0;
 volatile static pid_t child_pid = 0;
 
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 static const char sandbox_footer[] = "--------------------------------------------------------------------------------";
-
-const char env_sandbox_testing[] = "__SANDBOX_TESTING";
+const char sbio_fallback_path[] = "/dev/stderr";
 
 static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
@@ -87,7 +87,7 @@ static void print_sandbox_log(char *sandbox_log)
 {
 	int sandbox_log_file;
 	size_t len;
-	char buffer[1024];
+	char buffer[8192];
 
 	sandbox_log_file = sb_open(sandbox_log, O_RDONLY, 0);
 	if (-1 == sandbox_log_file) {
@@ -95,8 +95,8 @@ static void print_sandbox_log(char *sandbox_log)
 		return;
 	}
 
-	SB_EERROR("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------", "\n");
-	SB_EERROR("LOG FILE", " \"%s\"\n\n", sandbox_log);
+	sb_eerror("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------\n");
+	sb_eerror("LOG FILE: \"%s\"\n", sandbox_log);
 
 	while (1) {
 		len = sb_read(sandbox_log_file, buffer, sizeof(buffer));
@@ -105,14 +105,11 @@ static void print_sandbox_log(char *sandbox_log)
 			break;
 		} else if (!len)
 			break;
-		if (sb_write(STDERR_FILENO, buffer, len) != len) {
-			sb_pwarn("sb_write(logfile) failed");
-			break;
-		}
+		sb_eerror("\n%s", buffer);
 	}
 	sb_close(sandbox_log_file);
 
-	SB_EERROR("--------------------------------------------------------------------------------", "\n");
+	sb_eerror("--------------------------------------------------------------------------------\n");
 }
 
 static void stop(int signum)

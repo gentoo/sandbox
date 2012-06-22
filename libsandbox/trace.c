@@ -17,9 +17,9 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 #else
 # define SBDEBUG 0
 #endif
-#define __SB_DEBUG(fmt, args...) do { if (SBDEBUG) sb_printf(fmt, ## args); } while (0)
-#define _SB_DEBUG(fmt, args...)  do { if (SBDEBUG) SB_EWARN("TRACE ", "(pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
-#define SB_DEBUG(fmt, args...)   _SB_DEBUG(fmt "\n", ## args)
+#define __sb_debug(fmt, args...) do { if (SBDEBUG) sb_printf(fmt, ## args); } while (0)
+#define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
+#define sb_debug(fmt, args...)   _sb_debug(fmt "\n", ## args)
 
 #include "trace/os.c"
 
@@ -64,9 +64,8 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 			    request == PTRACE_PEEKUSER)
 				return ret;
 
-		SB_EERROR("ISE:_do_ptrace ", "ptrace(%s, ..., %p, %p): %s\n",
+		sb_ebort("ISE:_do_ptrace: ptrace(%s, ..., %p, %p): %s\n",
 			srequest, addr, data, strerror(errno));
-		sb_abort();
 	}
 	return ret;
 }
@@ -158,7 +157,7 @@ static const char *strsig(int sig)
 
 static void trace_child_signal(int signo, siginfo_t *info, void *context)
 {
-	SB_DEBUG("got sig %s(%i): code:%s(%i) status:%s(%i)",
+	sb_debug("got sig %s(%i): code:%s(%i) status:%s(%i)",
 		strsig(signo), signo,
 		strcld_chld(info->si_code), info->si_code,
 		strsig(info->si_status), info->si_status);
@@ -169,7 +168,7 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 			trace_exit(128 + info->si_status);
 
 		case CLD_EXITED:
-			__SB_DEBUG(" = %i\n", info->si_status);
+			__sb_debug(" = %i\n", info->si_status);
 			trace_exit(info->si_status);
 
 		case CLD_TRAPPED:
@@ -190,7 +189,7 @@ static void trace_child_signal(int signo, siginfo_t *info, void *context)
 			return;
 	}
 
-	SB_EERROR("ISE:trace_child_signal ", "child (%i) signal %s(%i), code %s(%i), status %s(%i)\n",
+	sb_eerror("ISE:trace_child_signal: child (%i) signal %s(%i), code %s(%i), status %s(%i)\n",
 		trace_pid,
 		strsig(signo), signo,
 		strcld_chld(info->si_code), info->si_code,
@@ -221,7 +220,7 @@ struct syscall_state {
 static bool _trace_check_syscall_C(struct syscall_state *state, int ibase)
 {
 	char *path = do_peekstr(trace_arg(state->regs, ibase));
-	__SB_DEBUG("(\"%s\")", path);
+	__sb_debug("(\"%s\")", path);
 	bool pre_ret, ret;
 	if (state->pre_check)
 		pre_ret = state->pre_check(state->func, path, AT_FDCWD);
@@ -243,7 +242,7 @@ static bool __trace_check_syscall_DCF(struct syscall_state *state, int ibase, in
 {
 	int dirfd = trace_arg(state->regs, ibase);
 	char *path = do_peekstr(trace_arg(state->regs, ibase + 1));
-	__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
+	__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
 	bool pre_ret, ret;
 	if (state->pre_check)
 		pre_ret = state->pre_check(state->func, path, dirfd);
@@ -340,7 +339,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
-		__SB_DEBUG("(\"%s\", %x)", path, flags);
+		__sb_debug("(\"%s\", %x)", path, flags);
 		ret = _SB_SAFE_ACCESS(nr, name, path, flags);
 		free(path);
 		return ret;
@@ -349,7 +348,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		int dirfd = trace_arg(regs, 1);
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
-		__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
+		__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
 		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, flags);
 		free(path);
 		return ret;
@@ -357,7 +356,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	} else if (nr == SB_NR_OPEN) {
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
-		__SB_DEBUG("(\"%s\", %x)", path, flags);
+		__sb_debug("(\"%s\", %x)", path, flags);
 		if (sb_openat_pre_check(name, path, AT_FDCWD, flags))
 			ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
 		else
@@ -369,7 +368,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		int dirfd = trace_arg(regs, 1);
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
-		__SB_DEBUG("(%i, \"%s\", %x)", dirfd, path, flags);
+		__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
 		if (sb_openat_pre_check(name, path, dirfd, flags))
 			ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
 		else
@@ -379,7 +378,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	}
 
  done:
-	__SB_DEBUG("(...)");
+	__sb_debug("(...)");
 	return ret;
 }
 
@@ -422,9 +421,9 @@ static void trace_loop(void)
 			se = lookup_syscall_in_tbl(tbl_at_fork, nr);
 			if (!before_syscall || !se || se->sys != SB_NR_EXECVE) {
 				if (before_syscall)
-					_SB_DEBUG(">%s:%i", se ? se->name : "IDK", nr);
+					_sb_debug(">%s:%i", se ? se->name : "IDK", nr);
 				else
-					__SB_DEBUG("(...pre-exec...) = ...\n");
+					__sb_debug("(...pre-exec...) = ...\n");
 				goto loop_again;
 			}
 			++exec_state;
@@ -437,11 +436,9 @@ static void trace_loop(void)
 		se = lookup_syscall(nr);
 		ret = trace_get_regs(&regs);
 		if (before_syscall) {
-			_SB_DEBUG("%s:%i", se ? se->name : "IDK", nr);
+			_sb_debug("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
-				if (is_env_on(ENV_SANDBOX_DEBUG))
-					SB_EINFO("trace_loop", " forcing EPERM after %s\n",
-						se->name);
+				sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
 				trace_set_sysnum(&regs, -1);
 				fake_syscall_ret = true;
 			}
@@ -456,9 +453,9 @@ static void trace_loop(void)
 			} else
 				ret = trace_result(&regs, &err);
 
-			__SB_DEBUG(" = %li", ret);
+			__sb_debug(" = %li", ret);
 			if (err) {
-				__SB_DEBUG(" (errno: %i: %s)", err, strerror(err));
+				__sb_debug(" (errno: %i: %s)", err, strerror(err));
 
 				/* If the exec() failed for whatever reason, kill the
 				 * child and have the parent resume like normal
@@ -469,7 +466,7 @@ static void trace_loop(void)
 					return;
 				}
 			}
-			__SB_DEBUG("\n");
+			__sb_debug("\n");
 
 			exec_state = 2;
 		}
@@ -487,21 +484,16 @@ void trace_main(const char *filename, char *const argv[])
 	sa.sa_sigaction = trace_child_signal;
 	sigaction(SIGCHLD, &sa, &old_sa);
 
-	if (is_env_on(ENV_SANDBOX_DEBUG))
-		SB_EINFO("trace_main", " tracing: %s\n", filename);
+	sb_debug_dyn("trace_main: tracing: %s\n", filename);
 
-	if (trace_pid) {
-		SB_EERROR("ISE:trace_main ", "trace code assumes multiple threads are not forking\n");
-		sb_abort();
-	}
+	if (trace_pid)
+		sb_ebort("ISE: trace code assumes multiple threads are not forking\n");
 
 	trace_pid = fork();
 	if (unlikely(trace_pid == -1)) {
-		SB_EERROR("ISE:trace_main ", "vfork() failed: %s\n",
-			strerror(errno));
-		sb_abort();
+		sb_ebort("ISE: vfork() failed: %s\n", strerror(errno));
 	} else if (trace_pid) {
-		SB_DEBUG("parent waiting for child (pid=%i) to signal", trace_pid);
+		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
 #if defined(PTRACE_SETOPTIONS) && defined(PTRACE_O_TRACESYSGOOD)
 		/* Not all kernel versions support this, so ignore return */
@@ -511,7 +503,7 @@ void trace_main(const char *filename, char *const argv[])
 		return;
 	}
 
-	SB_DEBUG("child setting up ...");
+	sb_debug("child setting up ...");
 	sigaction(SIGCHLD, &old_sa, NULL);
 	do_ptrace(PTRACE_TRACEME, NULL, NULL);
 	kill(getpid(), SIGSTOP);

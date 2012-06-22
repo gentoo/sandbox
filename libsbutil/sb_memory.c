@@ -1,5 +1,5 @@
 /*
- * debug.c
+ * sb_memory.c
  *
  * Simle debugging/logging macro's and functions.
  *
@@ -16,11 +16,8 @@ __xcalloc(size_t nmemb, size_t size, const char *file, const char *func, size_t 
 {
 	void *ret = calloc(nmemb, size);
 
-	if (ret == NULL) {
-		SB_EERROR("calloc()", " %s:%s():%zu: calloc(%zu, %zu) failed: %s\n",
-			file, func, line, nmemb, size, strerror(errno));
-		abort();
-	}
+	if (ret == NULL)
+		__sb_ebort(file, func, line, "calloc(%zu, %zu)\n", nmemb, size);
 
 	return ret;
 }
@@ -30,11 +27,8 @@ __xmalloc(size_t size, const char *file, const char *func, size_t line)
 {
 	void *ret = malloc(size);
 
-	if (ret == NULL) {
-		SB_EERROR("malloc()", " %s:%s():%zu: malloc(%zu) failed: %s\n",
-			file, func, line, size, strerror(errno));
-		abort();
-	}
+	if (ret == NULL)
+		__sb_ebort(file, func, line, "malloc(%zu)\n", size);
 
 	return ret;
 }
@@ -50,11 +44,8 @@ __xrealloc(void *ptr, size_t size, const char *file, const char *func, size_t li
 {
 	void *ret = realloc(ptr, size);
 
-	if (ret == NULL) {
-		SB_EERROR("realloc()", " %s:%s():%zu: realloc(%p, %zu) failed: %s\n",
-			file, func, line, ptr, size, strerror(errno));
-		abort();
-	}
+	if (ret == NULL)
+		__sb_ebort(file, func, line, "realloc(%p, %zu)\n", ptr, size);
 
 	return ret;
 }
@@ -64,11 +55,8 @@ __xstrdup(const char *str, const char *file, const char *func, size_t line)
 {
 	char *ret = strdup(str);
 
-	if (ret == NULL) {
-		SB_EERROR("strdup()", " %s:%s():%zu: strdup(%p) failed: %s\n",
-			file, func, line, str, strerror(errno));
-		abort();
-	}
+	if (ret == NULL)
+		__sb_ebort(file, func, line, "strdup(%p)\n", str);
 
 	return ret;
 }
@@ -94,11 +82,8 @@ __xstrndup(const char *str, size_t size, const char *file, const char *func, siz
 {
 	char *ret = strndup(str, size);
 
-	if (ret == NULL) {
-		SB_EERROR("strndup()", " %s:%s():%zu: strndup(%p, %zu) failed: %s\n",
-			file, func, line, str, size, strerror(errno));
-		abort();
-	}
+	if (ret == NULL)
+		__sb_ebort(file, func, line, "strndup(%p, %zu)\n", str, size);
 
 	return ret;
 }

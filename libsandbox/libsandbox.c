@@ -59,15 +59,20 @@ typedef struct {
 } sbcontext_t;
 
 static char *cached_env_vars[MAX_DYN_PREFIXES];
+static char log_path[SB_PATH_MAX];
+static char debug_log_path[SB_PATH_MAX];
 bool sandbox_on = true;
 static bool sb_init = false;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
+FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 
 static char *resolve_path(const char *, int);
 static int check_prefixes(char **, int, const char *);
 static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
+
+const char sbio_fallback_path[] = "/dev/tty";
 
 #ifdef SB_MEM_DEBUG
 __attribute__((constructor))
@@ -78,29 +83,6 @@ void libsb_init(void)
 	restore_errno();
 }
 #endif
-
-static const char *sb_get_fd_dir(void)
-{
-#if defined(SANDBOX_PROC_SELF_FD)
-	return "/proc/self/fd";
-#elif defined(SANDBOX_DEV_FD)
-	return "/dev/fd";
-#else
-# error "how do i access a proc's fd/ tree ?"
-#endif
-}
-
-static const char *sb_get_cmdline(pid_t pid)
-{
-#if !defined(SANDBOX_PROC_1_CMDLINE) && !defined(SANDBOX_PROC_SELF_CMDLINE) && !defined(SANDBOX_PROC_dd_CMDLINE)
-# error "how do i access a proc's cmdline ?"
-#endif
-	static char path[256];
-	if (!pid)
-		pid = getpid();
-	sprintf(path, "/proc/%i/cmdline", pid);
-	return path;
-}
 
 /* resolve_dirfd_path - get the path relative to a dirfd
  *
@@ -134,9 +116,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 			restore_errno();
 			return 2;
 		}
-		if (is_env_on(ENV_SANDBOX_DEBUG))
-			SB_EINFO("AT_FD LOOKUP", "  fail: %s: %s\n",
-				resolved_path, strerror(errno));
+		sb_debug_dyn("AT_FD LOOKUP fail: %s: %s\n", resolved_path, strerror(errno));
 		/* If the fd isn't found, some guys (glibc) expect errno */
 		if (errno == ENOENT)
 			errno = EBADF;
@@ -173,8 +153,7 @@ int canonicalize(const char *path, char *resolved_path)
 	/* We can't handle resolving a buffer inline (erealpath),
 	 * so demand separate read and write strings.
 	 */
-	if (path == resolved_path)
-		sb_abort();
+	sb_assert(path != resolved_path);
 
 	retval = erealpath(path, resolved_path);
 
@@ -382,78 +361,12 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
-static int sb_copy_file_to_fd(const char *file, int ofd)
+void __sb_dump_backtrace(void)
 {
-	int ret = -1;
-
-	int ifd = sb_open(file, O_RDONLY|O_CLOEXEC, 0);
-	if (ifd == -1)
-		return ret;
-
-	size_t pagesz = getpagesize();
-	char *buf = xmalloc(pagesz);
-	while (1) {
-		size_t len = sb_read(ifd, buf, pagesz);
-		if (len == -1)
-			goto error;
-		else if (!len)
-			break;
-		size_t i;
-		for (i = 0; i < len; ++i)
-			if (!buf[i])
-				buf[i] = ' ';
-		if (sb_write(ofd, buf, len) != len)
-			goto error;
-	}
-
-	ret = 0;
- error:
-	sb_close(ifd);
-	free(buf);
-	return ret;
-}
-
-void sb_dump_backtrace(void)
-{
-#ifdef HAVE_BACKTRACE
-	void *funcs[10];
-	int num_funcs;
-	num_funcs = backtrace(funcs, ARRAY_SIZE(funcs));
-	backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
-#endif
 	const char *cmdline = sb_get_cmdline(trace_pid);
 	sb_printf("%s: ", cmdline);
 	sb_copy_file_to_fd(cmdline, STDERR_FILENO);
 	sb_printf("\n\n");
-}
-
-__attribute__((noreturn))
-void sb_abort(void)
-{
-	sb_dump_backtrace();
-
-#ifndef NDEBUG
-	if (is_env_on("SANDBOX_GDB")) {
-		SB_EINFO("\nattempting to autolaunch gdb", " please wait ...\n\n");
-		pid_t crashed_pid = getpid();
-		switch (fork()) {
-			case -1: break;
-			case 0: {
-				char pid[10];
-				snprintf(pid, sizeof(pid), "%i", crashed_pid);
-				unsetenv(ENV_LD_PRELOAD);
-				/*sb_unwrapped_*/execlp("gdb", "gdb", "--quiet", "--pid", pid, "-ex", "bt full", NULL);
-				break;
-			}
-			default: {
-				int status;
-				wait(&status);
-			}
-		}
-	}
-#endif
-
-	abort();
 }
 
 #define _SB_WRITE_STR(str) \
@@ -473,18 +386,16 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	stat_ret = lstat(logfile, &log_stat);
 	/* Do not care about failure */
 	errno = 0;
-	if ((0 == stat_ret) &&
-	    (0 == S_ISREG(log_stat.st_mode))) {
-		SB_EERROR("SECURITY BREACH", "  '%s' %s\n", logfile,
+	if (stat_ret == 0 && S_ISREG(log_stat.st_mode) == 0)
+		sb_ebort("SECURITY BREACH: '%s' %s\n", logfile,
 			"already exists and is not a regular file!");
-		sb_abort();
-	}
 
 	logfd = sb_open(logfile,
 		O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC,
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (logfd == -1) {
-		SB_EERROR("ISE:write_logfile ", "unable to append logfile\n");
+		sb_eerror("ISE:%s: unable to append logfile: %s\n",
+			__func__, logfile);
 		goto error;
 	}
 
@@ -920,7 +831,6 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 {
 	char *absolute_path = NULL;
 	char *resolved_path = NULL;
-	char *log_path, *debug_log_path;
 	int old_errno = errno;
 	int result;
 	bool access, debug, verbose;
@@ -931,21 +841,21 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		goto error;
 
 	verbose = is_env_on(ENV_SANDBOX_VERBOSE);
-	log_path = getenv(ENV_SANDBOX_LOG);
 	debug = is_env_on(ENV_SANDBOX_DEBUG);
-	if (debug)
-		debug_log_path = getenv(ENV_SANDBOX_DEBUG_LOG);
 
 	result = check_access(sbcontext, sb_nr, func, flags, absolute_path, resolved_path);
 
 	if (verbose) {
 		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
 		if (!result && sbcontext->show_access_violation)
-			SB_EERROR("ACCESS DENIED",   "  %s:%*s%s\n", func, sym_len, "", absolute_path);
+			sb_eerror("%sACCESS DENIED%s:  %s:%*s%s\n",
+				COLOR_RED, COLOR_NORMAL, func, sym_len, "", absolute_path);
 		else if (debug && sbcontext->show_access_violation)
-			SB_EINFO("ACCESS ALLOWED",   "  %s:%*s%s\n", func, sym_len, "", absolute_path);
+			sb_einfo("%sACCESS ALLOWED%s:  %s:%*s%s\n",
+				COLOR_GREEN, COLOR_NORMAL, func, sym_len, "", absolute_path);
 		else if (debug && !sbcontext->show_access_violation)
-			SB_EWARN("ACCESS PREDICTED", "  %s:%*s%s\n", func, sym_len, "", absolute_path);
+			sb_ewarn("%sACCESS PREDICTED%s:  %s:%*s%s\n",
+				COLOR_YELLOW, COLOR_NORMAL, func, sym_len, "", absolute_path);
 	}
 
 	if ((0 == result) && sbcontext->show_access_violation)
@@ -953,13 +863,13 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	else
 		access = true;
 
-	if (log_path && !access) {
+	if (!access) {
 		bool worked = write_logfile(log_path, func, file, absolute_path, resolved_path, access);
 		if (!worked && errno)
 			goto error;
 	}
 
-	if (debug && debug_log_path) {
+	if (debug) {
 		bool worked = write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
 		if (!worked && errno)
 			goto error;
@@ -989,10 +899,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		return 2;
 
 	/* If we get here, something bad happened */
-	SB_EERROR("ISE ", "%s(%s): %s\n"
-		"\tabs_path: %s\n" "\tres_path: %s\n",
-		func, file, strerror(errno), absolute_path, resolved_path);
-	sb_abort();
+	sb_ebort("ISE:\n\tabs_path: %s\n\tres_path: %s\n",
+		absolute_path, resolved_path);
 }
 
 bool is_sandbox_on(void)
@@ -1055,6 +963,9 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	if (!sb_init) {
 		/* Get the path and name to this library */
 		get_sandbox_lib(sandbox_lib);
+
+		get_sandbox_log(log_path);
+		get_sandbox_debug_log(debug_log_path);
 
 		init_context(&sbcontext);
 		sb_init = true;
