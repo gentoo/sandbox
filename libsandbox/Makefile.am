@@ -83,7 +83,7 @@ else
 	$(AM_V_GEN)t= f= header=$@; $(TRACE_MAKE_HEADER)
 endif
 
-EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES)
+EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES) headers.h
 
 CLEANFILES = libsandbox.map sb_nr.h symbols.h trace_syscalls*.h
 DISTCLEANFILES = $(CLEANFILES)

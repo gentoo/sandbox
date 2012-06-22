@@ -10,14 +10,7 @@
  *  as some of the InstallWatch code was used.
  */
 
-#define open   xxx_open
-#define open64 xxx_open64
-
 #include "headers.h"
-
-#undef open
-#undef open64
-
 #include "sbutil.h"
 #include "libsandbox.h"
 #include "wrappers.h"

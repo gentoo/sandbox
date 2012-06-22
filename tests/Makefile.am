@@ -5,7 +5,7 @@ EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
 	test-skel-0.c \
 	tests.h
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) $(SANDBOX_DEFINES)
 
 check_PROGRAMS = \
 	get-group \

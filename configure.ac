@@ -19,11 +19,14 @@ AC_MSG_CHECKING([environment state])
 env 1>&AS_MESSAGE_LOG_FD
 AC_MSG_RESULT([ok])
 
-dnl Checks for programs.
+dnl Check for compiler and features first.
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_ISC_POSIX
 AC_USE_SYSTEM_EXTENSIONS
+
+dnl Checks for programs.
+AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
@@ -371,6 +374,7 @@ AC_SUBST([CFLAG_EXCEPTIONS])
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 AX_CFLAGS_WARN_ALL
 AC_DEFUN([SB_CHECK_CFLAG],[AX_CHECK_COMPILE_FLAG([$1],[CFLAGS="$CFLAGS $1"])])
+SB_CHECK_CFLAG([-Winvalid-pch])
 SB_CHECK_CFLAG([-fdata-sections])
 SB_CHECK_CFLAG([-ffunction-sections])
 AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINK_FLAG([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])

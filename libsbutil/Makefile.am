@@ -44,3 +44,4 @@ libsbutil_la_SOURCES =                        \
 	src/dynbuf.c                          \
 	$(LOCAL_INCLUDES)
 
+EXTRA_DIST = headers.h
