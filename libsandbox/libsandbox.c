@@ -10,17 +10,10 @@
  *  as some of the InstallWatch code was used.
  */
 
-/* Uncomment below to enable memory debugging. */
-/* #define SB_MEM_DEBUG 1 */
-
 #define open   xxx_open
 #define open64 xxx_open64
 
 #include "headers.h"
-
-#ifdef SB_MEM_DEBUG
-# include <mcheck.h>
-#endif
 
 #undef open
 #undef open64
@@ -73,16 +66,6 @@ static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 
 const char sbio_fallback_path[] = "/dev/tty";
-
-#ifdef SB_MEM_DEBUG
-__attribute__((constructor))
-void libsb_init(void)
-{
-	save_errno();
-	mtrace();
-	restore_errno();
-}
-#endif
 
 /* resolve_dirfd_path - get the path relative to a dirfd
  *
