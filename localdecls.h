@@ -68,6 +68,17 @@ typedef __sighandler_t sighandler_t;
 #endif
 
 #define HAVE_TRACE_REGS
+#if defined(HAVE_STRUCT_PT_REGS) && defined(HAVE_STRUCT_USER_REGS_STRUCT)
+/*
+ * Some systems have broken kernel headers who declare struct pt_regs as
+ * smaller than what the kernel actually operates on.  If we have both
+ * reg structs available, pick the one that is larger in the hopes that
+ * we won't randomly clobber memory.
+ */
+# if SIZEOF_STRUCT_PT_REGS < SIZEOF_STRUCT_USER_REGS_STRUCT
+#  undef HAVE_STRUCT_PT_REGS
+# endif
+#endif
 #if defined(HAVE_STRUCT_PT_REGS)
 typedef struct pt_regs trace_regs;
 #elif defined(HAVE_STRUCT_USER_REGS_STRUCT)
