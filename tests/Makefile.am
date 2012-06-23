@@ -72,6 +72,8 @@ check_PROGRAMS = \
 	\
 	getcwd-gnulib_tst \
 	libsigsegv_tst \
+	pipe-fork_tst \
+	pipe-fork_static_tst \
 	sb_printf_tst \
 	sigsuspend-zsh_tst \
 	sigsuspend-zsh_static_tst

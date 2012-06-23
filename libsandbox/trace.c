@@ -504,8 +504,9 @@ void trace_main(const char *filename, char *const argv[])
 		/* Not all kernel versions support this, so ignore return */
 		ptrace(PTRACE_SETOPTIONS, trace_pid, NULL, (void *)PTRACE_O_TRACESYSGOOD);
 #endif
+		sb_close_all_fds();
 		trace_loop();
-		return;
+		sb_ebort("ISE: child should have quit, as should we\n");
 	}
 
 	sb_debug("child setting up ...");

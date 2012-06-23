@@ -3,7 +3,7 @@
  *
  * IO functions.
  *
- * Copyright 1999-2008 Gentoo Foundation
+ * Copyright 1999-2012 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
@@ -28,4 +28,28 @@ int sb_close(int fd)
 		errno = 0;
 
 	return res;
+}
+
+/* Quickly close all the open fds (good for daemonization) */
+void sb_close_all_fds(void)
+{
+	DIR *dirp;
+	struct dirent *de;
+	int dfd, fd;
+	const char *fd_dir = sb_get_fd_dir();
+
+	dirp = opendir(fd_dir);
+	if (!dirp)
+		sb_ebort("could not process %s\n", fd_dir);
+	dfd = dirfd(dirp);
+
+	while ((de = readdir(dirp)) != NULL) {
+		if (de->d_name[0] == '.')
+			continue;
+		fd = atoi(de->d_name);
+		if (fd != dfd)
+			close(fd);
+	}
+
+	closedir(dirp);
 }
