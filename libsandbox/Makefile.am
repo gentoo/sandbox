@@ -70,7 +70,7 @@ TRACE_MAKE_HEADER = \
 	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
 		$(COMPILE) -E -include $(top_srcdir)/headers.h - $$f | \
 		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
-trace_syscalls.h: $(GEN_TRACE_SCRIPT)
+trace_syscalls.h: $(GEN_TRACE_SCRIPT) Makefile
 if SB_SCHIZO
 	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
 		t=_$${pers%:*}; \
