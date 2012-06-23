@@ -36,6 +36,10 @@ libsandbox_la_SOURCES = \
 
 install-exec-hook:
 	rm -f $(DESTDIR)$(libdir)/libsandbox.la
+# Since we removed the .la file, libtool uninstall doesn't work,
+# so we have to manually uninstall libsandbox.so ourselves.
+uninstall-hook:
+	rm -f $(DESTDIR)$(libdir)/libsandbox.so
 
 libsandbox.c: libsandbox.map sb_nr.h
 trace.c: trace_syscalls.h sb_nr.h $(TRACE_FILES)
