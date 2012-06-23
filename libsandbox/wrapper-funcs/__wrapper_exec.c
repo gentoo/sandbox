@@ -26,8 +26,9 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	int fd;
 	unsigned char *elf;
 	struct stat st;
+	bool do_trace = false;
 
-	fd = open(filename, O_RDONLY);
+	fd = open(filename, O_RDONLY|O_CLOEXEC);
 	if (fd == -1)
 		return;
 	if (stat(filename, &st))
@@ -64,8 +65,8 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	else
 		PARSE_ELF(64);
 
-	/* We only support tracing of host personality atm */
-	trace_main(filename, argv);
+	do_trace = true;
+	/* Now that we're done with stuff, clean up before forking */
 
  done:
 
@@ -73,6 +74,9 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	munmap(elf, st.st_size);
  out_fd:
 	close(fd);
+
+	if (do_trace)
+		trace_main(filename, argv);
 }
 
 static char **_sb_check_envp(char **envp, bool is_environ)
