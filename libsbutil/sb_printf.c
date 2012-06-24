@@ -15,19 +15,23 @@
  *	p - pointer
  *
  * The following modifiers are supported:
- *	z - size_t
- *	* - width is an argument
+ *	z  - size_t
+ *	l  - long
+ *	ll - long long
+ *	*  - width is an argument
+ *	#  - for %x, we always do this, so it's kind of ignored
  *
- * Copyright 1999-2008 Gentoo Foundation
+ * Copyright 1999-2012 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
 #include "headers.h"
 #include "sbutil.h"
 
-#define MOD_STAR   (1 << 0)
-#define MOD_SIZE_T (1 << 1)
-#define MOD_LONG_T (1 << 2)
+#define MOD_STAR         (1 << 0)
+#define MOD_SIZE_T       (1 << 1)
+#define MOD_LONG_T       (1 << 2)
+#define MOD_LONG_LONG_T  (1 << 3)
 
 void sb_vfdprintf(int fd, const char *format, va_list args)
 {
@@ -47,7 +51,7 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 
 		char buf[50];
 		size_t idx;
-		unsigned int u, x;
+		unsigned long long int u, x;
 		char hex_base;
 		size_t padding = 0;
 
@@ -67,9 +71,12 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 				break;
 			case 'l':
 				++conv;
-				if (modifiers & MOD_LONG_T)
-					goto inv_modifier;
-				modifiers |= MOD_LONG_T;
+				if (modifiers & MOD_LONG_T) {
+					if (modifiers & MOD_LONG_LONG_T)
+						goto inv_modifier;
+					modifiers = (modifiers & ~MOD_LONG_T) | MOD_LONG_LONG_T;
+				} else
+					modifiers |= MOD_LONG_T;
 				goto eat_more;
 			case 'z':
 				++conv;
@@ -83,6 +90,10 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 					goto inv_modifier;
 				modifiers |= MOD_STAR;
 				padding = va_arg(args, int);
+				goto eat_more;
+			case '#':
+				/* ignore */
+				++conv;
 				goto eat_more;
 
 			case 'c': {
@@ -103,11 +114,13 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 
 			case 'd':
 			case 'i': {
-				long i;
+				long long i;
 				if (modifiers & MOD_SIZE_T)
 					i = va_arg(args, ssize_t);
 				else if (modifiers & MOD_LONG_T)
 					i = va_arg(args, long);
+				else if (modifiers & MOD_LONG_LONG_T)
+					i = va_arg(args, long long);
 				else
 					i = va_arg(args, int);
 				u = i;
@@ -125,7 +138,14 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
 				break;
 			}
 			case 'u': {
-				u = va_arg(args, unsigned int);
+				if (modifiers & MOD_SIZE_T)
+					u = va_arg(args, size_t);
+				else if (modifiers & MOD_LONG_T)
+					u = va_arg(args, unsigned long);
+				else if (modifiers & MOD_LONG_LONG_T)
+					u = va_arg(args, unsigned long long);
+				else
+					u = va_arg(args, unsigned int);
 				goto out_uint;
 				break;
 			}
@@ -139,6 +159,10 @@ void sb_vfdprintf(int fd, const char *format, va_list args)
  out_hex:
 				if (modifiers & MOD_SIZE_T)
 					x = va_arg(args, size_t);
+				else if (modifiers & MOD_LONG_T)
+					x = va_arg(args, unsigned long);
+				else if (modifiers & MOD_LONG_LONG_T)
+					x = va_arg(args, unsigned long long);
 				else
 					x = va_arg(args, unsigned int);
  out_ptr:

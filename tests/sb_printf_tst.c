@@ -20,9 +20,15 @@ int main(int argc, char *argv[])
 
 	T("%i", argc);
 	T("%i", -argc);
+	T("%li", (long)argc);
+	T("%li", (long)-argc);
 	T("%d", 123);
 	T("%d", -123);
+	T("%lld", (long long)123);
+	T("%lld", (long long)-123);
 	T("%u", 1000);
+	T("%lu", (unsigned long)1234);
+	T("%llu", (unsigned long long)5679);
 	T("%zi", (ssize_t)argc);
 	T("%zi", (ssize_t)-argc);
 	T("%zd", (ssize_t)123);
@@ -31,6 +37,14 @@ int main(int argc, char *argv[])
 
 	T("%x", argc);
 	T("%x", 0xabcdef);
+	T("%#x", argc);
+	T("%#x", 0xabcdef);
+	T("%lx", (unsigned long)argc);
+	T("%lx", (unsigned long)0xabcdef);
+	T("%llx", (unsigned long long)argc);
+	T("%llx", (unsigned long long)0xabcdef);
+	T("%zx", (size_t)argc);
+	T("%zx", (size_t)0xabcdef);
 	T("%X", argc);
 	T("%X", 0xabcdef);
 

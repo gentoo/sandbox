@@ -16,7 +16,7 @@ sb_printf_tst | ${AWK} 'BEGIN { ret = 0 }
 	# not so easy -- we format sandbox printf() the way we like
 
 	# %x -- we prefix output with 0x
-	if ($1 ~ /%[[xX]]/)
+	if ($1 ~ /%[[luz#]]*[[xX]]/)
 		gsub(/\<0x/, "")
 
 	# %p -- we zero pad the output
