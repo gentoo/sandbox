@@ -90,6 +90,8 @@ if HAVE_LIBSIGSEGV
 libsigsegv_tst_LDADD = -lsigsegv
 endif
 
+TESTSUITEFLAGS = --jobs=`getconf _NPROCESSORS_ONLN || echo 1`
+
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='src:tests' $(TESTSUITEFLAGS)
 
