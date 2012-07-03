@@ -32,6 +32,9 @@
 #ifdef HAVE_GRP_H
 # include <grp.h>
 #endif
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 #ifdef HAVE_LIBGEN_H
 # include <libgen.h>
 #endif
@@ -61,6 +64,9 @@
 #endif
 #ifdef HAVE_STDDEF_H
 # include <stddef.h>
+#endif
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
 #endif
 #ifdef HAVE_STDIO_H
 # include <stdio.h>

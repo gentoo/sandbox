@@ -76,6 +76,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	execinfo.h
 	fcntl.h
 	grp.h
+	inttypes.h
 	libgen.h
 	limits.h
 	memory.h
@@ -87,6 +88,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	stdarg.h
 	stdbool.h
 	stddef.h
+	stdint.h
 	stdio.h
 	stdlib.h
 	string.h
