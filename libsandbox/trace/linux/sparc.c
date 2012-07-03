@@ -10,11 +10,11 @@
 static int trace_sysnum_regs(void *vregs)
 {
 	trace_regs *regs = vregs;
-	do_ptrace(PTRACE_GETREGS, regs, NULL);
 	return regs->u_regs[U_REG_G1] ? : SB_SYS_EXECVE;
 }
-#define trace_sysnum_regs(regs) trace_sysnum_regs(regs)
-#define trace_get_regs(regs) (0)
+
+#undef trace_get_regs
+#define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, regs, NULL)
 
 static long trace_raw_ret(void *vregs)
 {

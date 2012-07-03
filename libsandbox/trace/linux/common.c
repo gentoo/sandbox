@@ -1,5 +1,9 @@
-static long do_peekuser(long offset);
-static long do_pokeuser(long offset, long val);
+/*
+ * Some arches (like hppa) don't implement PTRACE_GETREGS, while others (like
+ * sparc) swap the meaning of "addr" and "data.  What a bunch of asshats.
+ */
+#define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs)
+#define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS, NULL, regs)
 
 static int trace_errno(long err)
 {

@@ -13,54 +13,49 @@ static const struct syscall_entry syscall_table_64[] = {
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
 
-static bool pers_is_32(void)
+static bool pers_is_32(trace_regs *regs)
 {
-	switch (do_peekuser(8 * CS)) {
+	switch (regs->cs) {
 		case 0x23: return true;
 		case 0x33: return false;
 		default:   sb_ebort("unknown x86_64 personality");
 	}
 }
 
-static const struct syscall_entry *trace_check_personality(void)
+static const struct syscall_entry *trace_check_personality(void *vregs)
 {
-	return pers_is_32() ? syscall_table_32 : syscall_table_64;
+	trace_regs *regs = vregs;
+	return pers_is_32(regs) ? syscall_table_32 : syscall_table_64;
 }
 
 #else
 
-static bool pers_is_32(void)
+static bool pers_is_32(trace_regs *regs)
 {
 	return false;
 }
 
 #endif
 
-static int trace_sysnum(void)
-{
-	return do_peekuser(8 * ORIG_RAX);
-}
+#define trace_reg_sysnum orig_rax
 
 static long trace_raw_ret(void *vregs)
 {
 	trace_regs *regs = vregs;
-	return pers_is_32() ? (int)regs->rax : regs->rax;
-}
-
-static void trace_set_sysnum(void *vregs, long nr)
-{
-	do_pokeuser(8 * ORIG_RAX, nr);
+	return pers_is_32(regs) ? (int)regs->rax : regs->rax;
 }
 
 static void trace_set_ret(void *vregs, int err)
 {
-	do_pokeuser(8 * RAX, -err);
+	trace_regs *regs = vregs;
+	regs->rax = -err;
+	trace_set_regs(regs);
 }
 
 static unsigned long trace_arg(void *vregs, int num)
 {
 	trace_regs *regs = vregs;
-	if (pers_is_32())
+	if (pers_is_32(regs))
 		switch (num) {
 			case 1: return regs->rbx;
 			case 2: return regs->rcx;

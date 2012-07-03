@@ -70,16 +70,6 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 	return ret;
 }
 
-static long do_peekuser(long offset)
-{
-	return do_ptrace(PTRACE_PEEKUSER, (void *)offset, NULL);
-}
-
-static long do_pokeuser(long offset, long val)
-{
-	return do_ptrace(PTRACE_POKEUSER, (void *)offset, (void *)val);
-}
-
 static long do_peekdata(long offset)
 {
 	return do_ptrace(PTRACE_PEEKDATA, (void *)offset, NULL);
@@ -204,10 +194,6 @@ static const struct syscall_entry *lookup_syscall_in_tbl(const struct syscall_en
 		else
 			++tbl;
 	return NULL;
-}
-static const struct syscall_entry *lookup_syscall(int nr)
-{
-	return lookup_syscall_in_tbl(trace_check_personality(), nr);
 }
 
 struct syscall_state {
@@ -382,42 +368,27 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
-/* Some arches (like hppa) don't implement PTRACE_GETREGS, while others (like
- * sparc) swap the meaning of "addr" and "data.  What a bunch of asshats.
- */
-#ifndef trace_get_regs
-# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, NULL, regs)
-#endif
-#ifndef trace_set_regs
-# define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS, NULL, regs)
-#endif
-/* Some arches (like sparc) don't implement PTRACE_PEEK* ...
- * more asshats !
- */
-#ifndef trace_sysnum_regs
-# define trace_sysnum_regs(regs) trace_sysnum()
-#endif
-
 static void trace_loop(void)
 {
 	trace_regs regs;
 	bool before_syscall, fake_syscall_ret;
 	long ret;
 	int nr, exec_state;
-	const struct syscall_entry *se, *tbl_at_fork;
+	const struct syscall_entry *se, *tbl_at_fork, *tbl_after_fork;
 
 	exec_state = 0;
 	before_syscall = true;
 	fake_syscall_ret = false;
-	tbl_at_fork = NULL;
+	tbl_at_fork = tbl_after_fork = NULL;
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
 		waitpid(trace_pid, NULL, 0);
-		nr = trace_sysnum_regs(&regs);
+		ret = trace_get_regs(&regs);
+		nr = trace_get_sysnum(&regs);
 
 		if (!exec_state) {
 			if (!tbl_at_fork)
-				tbl_at_fork = trace_check_personality();
+				tbl_at_fork = trace_check_personality(&regs);
 			se = lookup_syscall_in_tbl(tbl_at_fork, nr);
 			if (!before_syscall || !se || se->sys != SB_NR_EXECVE) {
 				if (before_syscall)
@@ -433,7 +404,9 @@ static void trace_loop(void)
 			goto loop_again;
 		}
 
-		se = lookup_syscall(nr);
+		if (!tbl_after_fork)
+			tbl_after_fork = trace_check_personality(&regs);
+		se = lookup_syscall_in_tbl(tbl_after_fork, nr);
 		ret = trace_get_regs(&regs);
 		if (before_syscall) {
 			_sb_debug("%s:%i", se ? se->name : "IDK", nr);

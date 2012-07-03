@@ -1,15 +1,5 @@
-#define trace_sysnum_puser (4 * ORIG_EAX)
-
-static long trace_raw_ret(void *vregs)
-{
-	trace_regs *regs = vregs;
-	return regs->eax;
-}
-
-static void trace_set_ret(void *vregs, int err)
-{
-	do_pokeuser(EAX, -err);
-}
+#define trace_reg_sysnum orig_eax
+#define trace_reg_ret eax
 
 static unsigned long trace_arg(void *vregs, int num)
 {

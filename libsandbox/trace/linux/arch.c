@@ -21,17 +21,33 @@
 # warning "trace: sorry, no support for your architecture"
 # define SB_NO_TRACE
 #else
-# ifdef trace_sysnum_puser
 
-static int trace_sysnum(void)
+# ifdef trace_reg_sysnum
+static int trace_get_sysnum(void *vregs)
 {
-	return do_peekuser(trace_sysnum_puser);
+	trace_regs *regs = vregs;
+	return regs->trace_reg_sysnum;
 }
-
 static void trace_set_sysnum(void *vregs, long nr)
 {
-	do_pokeuser(trace_sysnum_puser, nr);
+	trace_regs *regs = vregs;
+	regs->trace_reg_sysnum = nr;
+	trace_set_regs(regs);
 }
-
 # endif
+
+# ifdef trace_reg_ret
+static long trace_raw_ret(void *vregs)
+{
+	trace_regs *regs = vregs;
+	return regs->trace_reg_ret;
+}
+static void trace_set_ret(void *vregs, int err)
+{
+	trace_regs *regs = vregs;
+	regs->trace_reg_ret = -err;
+	trace_set_regs(regs);
+}
+# endif
+
 #endif

@@ -1,15 +1,5 @@
-#define trace_sysnum_puser (20 * 4)	/* PT_GR20 */
-
-static long trace_raw_ret(void *vregs)
-{
-	trace_regs *regs = vregs;
-	return regs->gr[28];
-}
-
-static void trace_set_ret(void *vregs, int err)
-{
-	do_pokeuser(28 * 4 /* PT_GR28 */, -err);
-}
+#define trace_reg_sysnum (20 * 4)	/* PT_GR20 */
+#define trace_reg_ret (28 * 4)	/* PT_GR28 */
 
 static unsigned long trace_arg(void *vregs, int num)
 {
@@ -25,12 +15,32 @@ static unsigned long trace_arg(void *vregs, int num)
 	}
 }
 
+static long do_peekuser(long offset)
+{
+	return do_ptrace(PTRACE_PEEKUSER, (void *)offset, NULL);
+}
+
+static long do_pokeuser(long offset, long val)
+{
+	return do_ptrace(PTRACE_POKEUSER, (void *)offset, (void *)val);
+}
+
+#undef trace_get_regs
 static long trace_get_regs(void *vregs)
 {
 	trace_regs *regs = vregs;
 	size_t i;
-	for (i = 21; i < 29; ++i)
+	for (i = 20; i < 29; ++i)
 		regs->gr[i] = do_peekuser(i * 4);
 	return 0;
 }
-#define trace_get_regs trace_get_regs
+
+#undef trace_set_regs
+static long trace_set_regs(void *vregs)
+{
+	trace_regs *regs = vregs;
+	size_t i;
+	for (i = 20; i < 29; ++i)
+		do_pokeuser(i * 4, regs->gr[i]);
+	return 0;
+}
