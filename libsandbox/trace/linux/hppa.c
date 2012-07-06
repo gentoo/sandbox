@@ -1,5 +1,5 @@
-#define trace_reg_sysnum (20 * 4)	/* PT_GR20 */
-#define trace_reg_ret (28 * 4)	/* PT_GR28 */
+#define trace_reg_sysnum gr[20]
+#define trace_reg_ret gr[28]
 
 static unsigned long trace_arg(void *vregs, int num)
 {
