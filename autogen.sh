@@ -10,7 +10,7 @@ find m4/*.m4 '!' -name 'ax_*.m4' -delete 2>/dev/null || :
 # not everyone has sys-devel/autoconf-archive installed
 has() { [[ " ${*:2} " == *" $1 "* ]] ; }
 import_ax() {
-	local macro content m4 lm4s
+	local macro content m4 lm4s=()
 	content=$(sed -e '/^[[:space:]]*#/d' -e 's:\<dnl\>.*::' "$@")
 	for macro in $(echo "${content}" | grep -o '\<AX[A-Z_]*\>' | sort -u) ; do
 		if m4=$(grep -rl "\[${macro}\]" /usr/share/aclocal/) ; then
