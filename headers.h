@@ -122,6 +122,9 @@
 #ifdef HAVE_SYS_USER_H
 # include <sys/user.h>
 #endif
+#ifdef HAVE_SYS_UIO_H
+# include <sys/uio.h>
+#endif
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif

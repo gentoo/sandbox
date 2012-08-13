@@ -105,6 +105,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	sys/syscall.h
 	sys/time.h
 	sys/types.h
+	sys/uio.h
 	sys/user.h
 	sys/wait.h
 	asm/ptrace.h
@@ -168,6 +169,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	openat
 	openat64
 	pathconf
+	process_vm_readv
 	ptrace
 	realpath
 	remove

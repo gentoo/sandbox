@@ -90,6 +90,32 @@ static char *do_peekstr(unsigned long lptr)
 	if (lptr < sizeof(long))
 		return NULL;
 
+#ifdef HAVE_PROCESS_VM_READV
+	struct iovec liov, riov;
+
+	/* We can't cross remote page boundaries when using this :( */
+	l = 0x1000;
+	riov.iov_base = (void *)lptr;
+	len = lptr % l;
+	if (!len)
+		len = l;
+	liov.iov_base = ret = xmalloc(len);
+	riov.iov_len = liov.iov_len = len;
+
+	while (1) {
+		process_vm_readv(trace_pid, &liov, 1, &riov, 1, 0);
+
+		for (i = 0; i < liov.iov_len; ++i)
+			if (!((char *)liov.iov_base)[i])
+				return ret;
+		riov.iov_base += l;
+		riov.iov_len = liov.iov_len = l;
+		len += l;
+		ret = xrealloc(ret, len);
+		liov.iov_base = ret + len - l;
+	}
+#endif
+
 	l = 0;
 	len = 1024;
 	ret = xmalloc(len);
