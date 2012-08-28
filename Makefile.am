@@ -11,9 +11,9 @@ SUBDIRS = \
 	src        \
 	tests
 
+noinst_LTLIBRARIES =
+
 SANDBOX_PCH = headers.h.gch libsandbox/headers.h.gch libsbutil/headers.h.gch
-BUILT_SOURCES = $(SANDBOX_PCH)
-noinst_LTLIBRARIES = libpch.la
 nodist_libpch_la_SOURCES = $(SANDBOX_PCH)
 GCH_CP = ( \
 	src=`dirname $@`/.libs/`basename $@`.o; \
@@ -30,10 +30,23 @@ $(builddir)/libsandbox/headers.h.gch: headers.h
 $(builddir)/headers.h.gch: headers.h
 	$(AM_V_GEN)$(COMPILE) -c -o $@.o $< && $(GCH_CP)
 
-libsbutil: libsbutil/headers.h.gch
-libsandbox: libsbutil libsandbox/headers.h.gch
-src: libsbutil headers.h.gch
-tests: src headers.h.gch
+if SB_BUILD_PCH
+BUILT_SOURCES = $(SANDBOX_PCH)
+noinst_LTLIBRARIES += libpch.la
+
+LIBSBUTIL_PCH = libsbutil/headers.h.gch
+LIBSANDBOX_PCH = libsandbox/headers.h.gch
+TOP_PCH = headers.h.gch
+
+# Make sure we build the subdirs before the top so they don't
+# try to use the top level headers.h.pch.
+$(TOP_PCH): $(LIBSBUTIL_PCH) $(LIBSANDBOX_PCH)
+endif
+
+libsbutil: $(LIBSBUTIL_PCH)
+libsandbox: libsbutil $(LIBSANDBOX_PCH)
+src: libsbutil $(TOP_PCH)
+tests: src $(TOP_PCH)
 
 EXTRA_DIST = headers.h localdecls.h ChangeLog.0
 

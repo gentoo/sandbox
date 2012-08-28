@@ -1,6 +1,6 @@
 AC_PREREQ([2.61])
 AC_INIT([sandbox], [2.7], [sandbox@gentoo.org])
-AM_INIT_AUTOMAKE([1.11.6 dist-xz no-dist-gzip silent-rules -Wall])
+AM_INIT_AUTOMAKE([1.11.1 dist-xz no-dist-gzip silent-rules -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -26,7 +26,7 @@ AC_ISC_POSIX
 AC_USE_SYSTEM_EXTENSIONS
 
 dnl Checks for programs.
-AM_PROG_AR
+#AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
@@ -37,6 +37,14 @@ AM_MISSING_PROG([AUTOM4TE], [autom4te])
 LT_INIT([disable-static])
 
 AC_PREFIX_DEFAULT([/usr])
+
+dnl allow pch to be controlled
+AC_MSG_CHECKING([whether to use pre-compiled sandbox headers])
+AC_ARG_ENABLE([pch],
+	[AS_HELP_STRING([--disable-pch],[Disable pre-compiled headers])],
+	[],[enable_pch="yes"])
+AM_CONDITIONAL([SB_BUILD_PCH], test "$enable_pch" = "yes")
+AC_MSG_RESULT($enable_pch)
 
 dnl multiple personality support (x86 & x86_64: multilib)
 AC_MSG_CHECKING([for multiple personalities])
