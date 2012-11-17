@@ -5,6 +5,6 @@ Type=Application
 Comment=launch a sandboxed shell ... useful for debugging ebuilds
 Exec=sandbox
 TryExec=sandbox
-Icon=sandbox.svg
+Icon=sandbox
 Categories=Development;
 Terminal=true
