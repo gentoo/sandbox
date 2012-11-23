@@ -44,8 +44,11 @@ const char *colors[] = {
 __attribute__((constructor))
 static void sbio_init(void)
 {
-	if (is_env_on(ENV_NOCOLOR))
-		memset(colors, 0, sizeof(colors));
+	if (is_env_on(ENV_NOCOLOR)) {
+		size_t i;
+		for (i = 0; i < ARRAY_SIZE(colors); ++i)
+			colors[i] = "";
+	}
 }
 
 static bool try_portage_helpers = false;
