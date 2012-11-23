@@ -19,3 +19,6 @@ if [ "${AUTOTEST_PATH}" = "tests" ] ; then
 fi
 
 export SANDBOX_VERBOSE=0
+
+# If the terminal has this flag set, the tests get all messed up.
+stty -tostop 2>/dev/null
