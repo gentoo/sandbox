@@ -26,7 +26,7 @@ static void sbio_init(void)
 	}
 }
 
-static bool try_portage_helpers = false;
+static bool try_portage_helpers = true;
 
 /*
  * First try to use the helper programs from portage so that it can sanely
@@ -39,17 +39,20 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 {
 	char shellcode[128];
 	FILE *fp;
-	sighandler_t oldsig;
+	struct sigaction sa, old_sa;
 	bool is_pipe = false;
+	va_list retry_args;
 
 	if (try_portage_helpers) {
 		/* If popen() fails, then writes to it will trigger SIGPIPE */
-		/* XXX: convert this to sigaction */
-		oldsig = signal(SIGPIPE, SIG_IGN);
+		sa.sa_flags = SA_RESTART;
+		sa.sa_handler = SIG_IGN;
+		sigaction(SIGCHLD, &sa, &old_sa);
 
 		sprintf(shellcode, "xargs %s 2>/dev/null", prog);
 		fp = sbio_popen(shellcode, "we");
 		is_pipe = true;
+		va_copy(retry_args, args);
 	} else
 		fp = NULL;
 
@@ -68,13 +71,20 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 
 	if (is_pipe) {
 		int status = pclose(fp);
-		if (WEXITSTATUS(status))
+		if (WEXITSTATUS(status)) {
+			args = retry_args;
 			goto do_tty;
+		}
 	} else if (fp != stderr)
 		fclose(fp);
 
-	if (try_portage_helpers)
-		signal(SIGPIPE, oldsig);
+	if (try_portage_helpers) {
+		sigaction(SIGCHLD, &old_sa, NULL);
+		va_end(retry_args);
+		if (!is_pipe)
+			/* If we failed once, we'll fail again */
+			try_portage_helpers = false;
+	}
 }
 
 void sb_einfo(const char *format, ...)
