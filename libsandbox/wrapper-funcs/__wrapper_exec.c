@@ -31,7 +31,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	fd = open(filename, O_RDONLY|O_CLOEXEC);
 	if (fd == -1)
 		return;
-	if (stat(filename, &st))
+	if (fstat(fd, &st))
 		goto out_fd;
 	if (st.st_size < sizeof(Elf64_Ehdr))
 		goto out_fd;
@@ -47,6 +47,17 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	      elf[EI_CLASS] != ELFCLASS64))
 		goto out_mmap;
 
+	/* If we are non-root but attempt to execute a set*id program,
+	 * our LD_PRELOAD trick won't work.  So skip the static check.
+	 * This might break some apps, but it shouldn't, and is better
+	 * than doing nothing since it might mean `mount` or `umount`
+	 * won't get caught if/when they modify things. #442172
+	 *
+	 * Only other option is to code a set*id sandbox helper that
+	 * gains root just to preload libsandbox.so.  That unfortunately
+	 * could easily open up people to root vulns.
+	 */
+	if (getuid() == 0 || !(st.st_mode & (S_ISUID | S_ISGID))) {
 #define PARSE_ELF(n) \
 ({ \
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
@@ -60,10 +71,12 @@ static void sb_check_exec(const char *filename, char *const argv[])
 		if (phdr[p].p_type == PT_INTERP) \
 			goto done; \
 })
-	if (elf[EI_CLASS] == ELFCLASS32)
-		PARSE_ELF(32);
-	else
-		PARSE_ELF(64);
+		if (elf[EI_CLASS] == ELFCLASS32)
+			PARSE_ELF(32);
+		else
+			PARSE_ELF(64);
+#undef PARSE_ELF
+	}
 
 	do_trace = trace_possible(filename, argv, elf);
 	/* Now that we're done with stuff, clean up before forking */
