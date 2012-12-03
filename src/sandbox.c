@@ -61,7 +61,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	get_sandbox_rc(sandbox_info->sandbox_rc);
 
 	/* Generate sandbox log full path */
-	get_sandbox_log(sandbox_info->sandbox_log);
+	get_sandbox_log(sandbox_info->sandbox_log, sandbox_info->tmp_dir);
 	if (rc_file_exists(sandbox_info->sandbox_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_log)) {
 			sb_pwarn("could not unlink old log file: %s",
@@ -71,7 +71,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	}
 
 	/* Generate sandbox debug log full path */
-	get_sandbox_debug_log(sandbox_info->sandbox_debug_log);
+	get_sandbox_debug_log(sandbox_info->sandbox_debug_log, sandbox_info->tmp_dir);
 	if (rc_file_exists(sandbox_info->sandbox_debug_log)) {
 		if (-1 == unlink(sandbox_info->sandbox_debug_log)) {
 			sb_pwarn("could not unlink old debug log file: %s",

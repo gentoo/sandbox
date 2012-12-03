@@ -13,7 +13,7 @@
 #include "headers.h"
 #include "sbutil.h"
 
-static void _get_sb_log(char *path, const char *env, const char *prefix)
+static void _get_sb_log(char *path, const char *tmpdir, const char *env, const char *prefix)
 {
 	char *sandbox_log_env = NULL;
 
@@ -32,8 +32,15 @@ static void _get_sb_log(char *path, const char *env, const char *prefix)
 		    (NULL != strchr(sandbox_log_env, '/')))
 		    sandbox_log_env = NULL;
 
+		/* If running as a user w/out write access to /var/log, don't
+		 * shit ourselves.
+		 */
+		const char *sb_log_dir = SANDBOX_LOG_LOCATION;
+		if (tmpdir && access(sb_log_dir, W_OK))
+			sb_log_dir = tmpdir;
+
 		snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
-			SANDBOX_LOG_LOCATION, prefix,
+			sb_log_dir, prefix,
 			(sandbox_log_env == NULL ? "" : sandbox_log_env),
 			(sandbox_log_env == NULL ? "" : "-"),
 			getpid(), LOG_FILE_EXT);
@@ -42,12 +49,12 @@ static void _get_sb_log(char *path, const char *env, const char *prefix)
 	restore_errno();
 }
 
-void get_sandbox_log(char *path)
+void get_sandbox_log(char *path, const char *tmpdir)
 {
-	_get_sb_log(path, ENV_SANDBOX_LOG, LOG_FILE_PREFIX);
+	_get_sb_log(path, tmpdir, ENV_SANDBOX_LOG, LOG_FILE_PREFIX);
 }
 
-void get_sandbox_debug_log(char *path)
+void get_sandbox_debug_log(char *path, const char *tmpdir)
 {
-	_get_sb_log(path, ENV_SANDBOX_DEBUG_LOG, DEBUG_LOG_FILE_PREFIX);
+	_get_sb_log(path, tmpdir, ENV_SANDBOX_DEBUG_LOG, DEBUG_LOG_FILE_PREFIX);
 }

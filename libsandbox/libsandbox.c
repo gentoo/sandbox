@@ -940,8 +940,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		/* Get the path and name to this library */
 		get_sandbox_lib(sandbox_lib);
 
-		get_sandbox_log(log_path);
-		get_sandbox_debug_log(debug_log_path);
+		get_sandbox_log(log_path, NULL);
+		get_sandbox_debug_log(debug_log_path, NULL);
 
 		init_context(&sbcontext);
 		sb_init = true;
