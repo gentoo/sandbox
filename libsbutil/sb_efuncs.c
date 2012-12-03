@@ -153,26 +153,7 @@ void __sb_ebort(const char *file, const char *func, size_t line_num, const char 
 
 	sb_dump_backtrace();
 
-#ifndef NDEBUG
-	if (is_env_on("SANDBOX_GDB")) {
-		sb_einfo("attempting to autolaunch gdb; please wait ...\n\n");
-		pid_t crashed_pid = getpid();
-		switch (fork()) {
-			case -1: break;
-			case 0: {
-				char pid[10];
-				snprintf(pid, sizeof(pid), "%i", crashed_pid);
-				unsetenv(ENV_LD_PRELOAD);
-				/*sb_unwrapped_*/execlp("gdb", "gdb", "--quiet", "--pid", pid, "-ex", "bt full", NULL);
-				break;
-			}
-			default: {
-				int status;
-				wait(&status);
-			}
-		}
-	}
-#endif
+	sb_maybe_gdb();
 
 	abort();
 }

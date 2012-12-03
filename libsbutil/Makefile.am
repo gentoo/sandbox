@@ -22,6 +22,7 @@ libsbutil_la_SOURCES =                        \
 	is_env_off.c                          \
 	sb_backtrace.c                        \
 	sb_efuncs.c                           \
+	sb_gdb.c                              \
 	sb_open.c                             \
 	sb_read.c                             \
 	sb_write.c                            \

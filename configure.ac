@@ -146,6 +146,8 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS_ONCE(m4_flatten([
 	backtrace
+	clone
+	__clone2
 	creat64
 	faccessat
 	fchmodat

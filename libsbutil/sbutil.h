@@ -112,6 +112,11 @@ __printf(4, 5) void __sb_ebort(const char *file, const char *func, size_t line_n
 #define sb_ebort(format, ...) __sb_ebort(__FILE__, __func__, __LINE__, format, ## __VA_ARGS__)
 void sb_dump_backtrace(void);
 void __sb_dump_backtrace(void);
+void sb_gdb(void);
+void sb_maybe_gdb(void);
+#ifdef NDEBUG
+#define sb_maybe_gdb()
+#endif
 #define sb_assert(cond) \
 	do { \
 		if (!(cond)) \
