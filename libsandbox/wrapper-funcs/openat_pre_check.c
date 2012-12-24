@@ -29,7 +29,7 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 
 	/* Doesn't exist -> skip permission checks */
 	struct stat st;
-	if (-1 == stat(pathname, &st)) {
+	if (((flags & O_NOFOLLOW) ? lstat(pathname, &st) : stat(pathname, &st)) == -1) {
 		sb_debug_dyn("EARLY FAIL: %s(%s): %s\n",
 			func, pathname, strerror(errno));
 		return false;
