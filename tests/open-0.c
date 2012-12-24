@@ -3,7 +3,7 @@
 #define FUNC_STR "\"%s\", %#x, %o"
 #define FUNC_IMP file, flags, mode
 #define ARG_CNT 3
-#define ARG_USE "<file> <flags> <mode>"
+#define ARG_USE "<file> <fflags> <mode>"
 
 #define process_args() \
 	s = argv[i++]; \

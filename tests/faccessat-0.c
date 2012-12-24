@@ -4,7 +4,7 @@
 #define FUNC_STR "%i, \"%s\", %x, %x"
 #define FUNC_IMP dirfd, file, mode, flags
 #define ARG_CNT 4
-#define ARG_USE "<dirfd> <file> <mode> <flags>"
+#define ARG_USE "<dirfd> <file> <acc_mode> <atflags>"
 
 #define process_args() \
 	s = argv[i++]; \
@@ -14,8 +14,7 @@
 	const char *file = f_get_file(s); \
 	\
 	s = argv[i++]; \
-	int mode = 0; \
-	sscanf(s, "%i", &mode); \
+	int mode = access_mode(s); \
 	\
 	s = argv[i++]; \
 	int flags = at_get_flags(s);

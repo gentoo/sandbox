@@ -4,7 +4,7 @@
 #define FUNC_STR "\"%s\", %llu"
 #define FUNC_IMP path, (unsigned long long)length
 #define ARG_CNT 2
-#define ARG_USE "<oldpath> <newpath>"
+#define ARG_USE "<path> <length>"
 
 #define process_args() \
 	s = argv[i++]; \

@@ -4,7 +4,7 @@
 #define FUNC_STR "%i, \"%s\", %p, %x"
 #define FUNC_IMP dirfd, file, times, flags
 #define ARG_CNT 4
-#define ARG_USE "<dirfd> <file> <times:=NULL> <flags>"
+#define ARG_USE "<dirfd> <file> <times> <atflags>"
 
 #define process_args() \
 	s = argv[i++]; \

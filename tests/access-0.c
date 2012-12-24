@@ -3,17 +3,13 @@
 #define FUNC_STR "\"%s\", %x"
 #define FUNC_IMP file, mode
 #define ARG_CNT 2
-#define ARG_USE "<file> <mode>"
+#define ARG_USE "<file> <acc_mode>"
 
 #define process_args() \
 	s = argv[i++]; \
 	const char *file = f_get_file(s); \
 	\
 	s = argv[i++]; \
-	int mode = 0; \
-	if (strchr(s, 'r')) mode |= R_OK; \
-	if (strchr(s, 'w')) mode |= W_OK; \
-	if (strchr(s, 'x')) mode |= X_OK; \
-	if (strchr(s, 'f')) mode  = F_OK;
+	int mode = access_mode(s);
 
 #include "test-skel-0.c"

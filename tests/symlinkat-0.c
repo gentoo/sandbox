@@ -4,7 +4,7 @@
 #define FUNC_STR "\"%s\", %i, \"%s\""
 #define FUNC_IMP oldpath, newdirfd, newpath
 #define ARG_CNT 3
-#define ARG_USE "<oldpath> <newdirfd> <newpath>"
+#define ARG_USE "<path>(old) <dirfd>(new) <path>(new)"
 
 #define process_args() \
 	s = argv[i++]; \

@@ -9,6 +9,9 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
+#define V_TIMESPEC "NULL"
+#define V_STRMODE "<r|w|a>[+bcemx] (see `man 3 fopen`)"
+
 static bool _strtoul(const char *sul, unsigned long *ul)
 {
 	char *e;
@@ -34,6 +37,7 @@ static int _get_flags(const char *str_flags, const value_pair flags[])
 	return ret;
 }
 
+#define V_FFLAGS "O_XXX flags (see `man 2 open`)"
 int f_get_flags(const char *str_flags)
 {
 	const value_pair flags[] = {
@@ -54,6 +58,7 @@ int f_get_flags(const char *str_flags)
 	return _get_flags(str_flags, flags);
 }
 
+#define V_FILE "NULL | path"
 const char *f_get_file(const char *str_file)
 {
 	if (!strcmp(str_file, "NULL"))
@@ -62,6 +67,7 @@ const char *f_get_file(const char *str_file)
 		return str_file;
 }
 
+#define V_ATFLAGS "0 | AT_SYMLINK_NOFOLLOW | AT_REMOVEDIR | AT_SYMLINK_FOLLOW | AT_EACCESS"
 int at_get_flags(const char *str_flags)
 {
 	const value_pair flags[] = {
@@ -74,6 +80,7 @@ int at_get_flags(const char *str_flags)
 	return _get_flags(str_flags, flags);
 }
 
+#define V_MODE_T "0x# (for hex) | 0# (for octal) | # (for decimal)"
 mode_t sscanf_mode_t(const char *str_mode)
 {
 	/* some systems (like Linux) have a 32bit mode_t.  Others
@@ -88,6 +95,7 @@ mode_t sscanf_mode_t(const char *str_mode)
 	return (mode_t)mode;
 }
 
+#define V_DEV_T V_MODE_T
 dev_t sscanf_dev_t(const char *str_dev)
 {
 	/* Similar issue with dev_t as mode_t.  Can't assume that
@@ -98,6 +106,7 @@ dev_t sscanf_dev_t(const char *str_dev)
 	return (dev_t)dev;
 }
 
+#define V_DIRFD "AT_FDCWD | fd # | path[:<flags>[:<mode>]]"
 int at_get_fd(const char *str_dirfd)
 {
 	/* work some magic ... expected format:
@@ -123,16 +132,46 @@ int at_get_fd(const char *str_dirfd)
 	return open(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
 }
 
+#define V_ACCESS_MODE "r | w | x | f"
+int access_mode(const char *s)
+{
+	int ret = 0;
+	if (strchr(s, 'r')) ret |= R_OK;
+	if (strchr(s, 'w')) ret |= W_OK;
+	if (strchr(s, 'x')) ret |= X_OK;
+	if (strchr(s, 'f')) ret  = F_OK;
+	return ret;
+}
+
 int main(int argc, char *argv[])
 {
 #if CONFIG
 	int i, test_ret;
 
 	if ((argc - 1) % (ARG_CNT + 1) || argc == 1) {
+#define _ARG_USE "<ret> " ARG_USE
 		printf(
 			"usage: " SFUNC " <tests>\n"
-			"test: < <ret> " ARG_USE " >\n"
+			"test: < " _ARG_USE " >\n"
+			"\n"
 		);
+		const char *vusage[] = {
+			"<ret>", "#[,<errno>]; # is a decimal and errno can be symbolic",
+			"<dirfd>", V_DIRFD,
+			"<file>", V_FILE,
+			"<times>", V_TIMESPEC,
+			"<atflags>", V_ATFLAGS,
+			"<fflags>", V_FFLAGS,
+			"<mode>", V_MODE_T,
+			"<strmode>", V_STRMODE,
+			"<acc_mode>", V_ACCESS_MODE,
+			"<dev>", V_DEV_T,
+			"<uid>", "# (decimal)",
+			"<gid>", "# (decimal)",
+		};
+		for (i = 0; i < ARRAY_SIZE(vusage); i += 2)
+			if (strstr(_ARG_USE, vusage[i]))
+				printf("%-10s := %s\n", vusage[i], vusage[i + 1]);
 		exit(1);
 	}
 
