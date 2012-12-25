@@ -821,7 +821,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 
 	result = check_access(sbcontext, sb_nr, func, flags, absolute_path, resolved_path);
 
-	if (verbose) {
+	if (unlikely(verbose)) {
 		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
 		if (!result && sbcontext->show_access_violation)
 			sb_eerror("%sACCESS DENIED%s:  %s:%*s%s\n",
@@ -839,22 +839,20 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	else
 		access = true;
 
-	if (!access) {
+	if (unlikely(!access)) {
 		bool worked = write_logfile(log_path, func, file, absolute_path, resolved_path, access);
 		if (!worked && errno)
 			goto error;
 	}
 
-	if (debug) {
+	if (unlikely(debug)) {
 		bool worked = write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
 		if (!worked && errno)
 			goto error;
 	}
 
-	if (NULL != absolute_path)
-		free(absolute_path);
-	if (NULL != resolved_path)
-		free(resolved_path);
+	free(absolute_path);
+	free(resolved_path);
 
 	errno = old_errno;
 
