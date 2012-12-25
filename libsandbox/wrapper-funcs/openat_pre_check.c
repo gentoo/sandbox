@@ -1,7 +1,7 @@
 /*
  * open*() pre-check.
  *
- * Copyright 1999-2009 Gentoo Foundation
+ * Copyright 1999-2012 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
@@ -15,17 +15,10 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 
 	save_errno();
 
-	/* Expand the dirfd path first */
+	/* Check incoming args against common *at issues */
 	char dirfd_path[SB_PATH_MAX];
-	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path, sizeof(dirfd_path))) {
-		case -1:
-			sb_debug_dyn("EARLY FAIL: %s(%s) @ resolve_dirfd_path: %s\n",
-				func, pathname, strerror(errno));
-			return false;
-		case 0:
-			pathname = dirfd_path;
-			break;
-	}
+	if (!sb_common_at_pre_check(func, &pathname, dirfd, dirfd_path, sizeof(dirfd_path)))
+		return false;
 
 	/* Doesn't exist -> skip permission checks */
 	struct stat st;

@@ -20,3 +20,5 @@
 #if SB_NR_UNLINK != SB_NR_UNDEF && SB_NR_UNLINKAT == SB_NR_UNDEF
 # include "unlinkat_pre_check.c"
 #endif
+
+#include "__pre_at_check.c"

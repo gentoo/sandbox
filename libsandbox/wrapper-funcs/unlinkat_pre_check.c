@@ -1,27 +1,20 @@
 /*
  * unlink*() pre-check.
  *
- * Copyright 1999-2009 Gentoo Foundation
+ * Copyright 1999-2012 Gentoo Foundation
  * Licensed under the GPL-2
  */
 
 bool sb_unlinkat_pre_check(const char *func, const char *pathname, int dirfd)
 {
 	char canonic[SB_PATH_MAX];
-	char dirfd_path[SB_PATH_MAX];
 
 	save_errno();
 
-	/* Expand the dirfd path first */
-	switch (resolve_dirfd_path(dirfd, pathname, dirfd_path, sizeof(dirfd_path))) {
-		case -1:
-			sb_debug_dyn("EARLY FAIL: %s(%s) @ resolve_dirfd_path: %s\n",
-				func, pathname, strerror(errno));
-			return false;
-		case 0:
-			pathname = dirfd_path;
-			break;
-	}
+	/* Check incoming args against common *at issues */
+	char dirfd_path[SB_PATH_MAX];
+	if (!sb_common_at_pre_check(func, &pathname, dirfd, dirfd_path, sizeof(dirfd_path)))
+		return false;
 
 	/* Then break down any relative/symlink paths */
 	if (-1 == canonicalize(pathname, canonic))
