@@ -318,9 +318,9 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 
 	/* Now add the rest */
 	env_ptr = environ;
+	size_t vlen = strlen(ENV_LD_PRELOAD);
 	while (NULL != *env_ptr) {
-		if ((1 == have_ld_preload) &&
-		    (strstr(*env_ptr, LD_PRELOAD_EQ) == *env_ptr))
+		if ((1 == have_ld_preload) && is_env_var(*env_ptr, ENV_LD_PRELOAD, vlen))
 			/* If LD_PRELOAD was set, and this is it in the original
 			 * environment, replace it with our new copy */
 			/* XXX: The following works as it just add whatever as

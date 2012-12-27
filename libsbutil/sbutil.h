@@ -19,7 +19,6 @@
 #define SANDBOX_CONF_FILE      ETCDIR "/sandbox.conf"
 #define SANDBOX_CONFD_DIR      ETCDIR "/sandbox.d"
 
-#define LD_PRELOAD_EQ          "LD_PRELOAD="
 #define LIB_NAME               "libsandbox.so"
 #define BASHRC_NAME            "sandbox.bashrc"
 #define TMPDIR                 "/tmp"
@@ -79,8 +78,12 @@ void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path, const char *tmpdir);
 void get_sandbox_debug_log(char *path, const char *tmpdir);
 int get_tmp_dir(char *path);
-bool is_env_on (const char *);
-bool is_env_off (const char *);
+bool is_env_on(const char *);
+bool is_env_off(const char *);
+static inline bool is_env_var(const char *env, const char *var, size_t vlen)
+{
+	return !strncmp(env, var, vlen) && env[vlen] == '=';
+}
 
 /* proc helpers */
 extern const char sb_fd_dir[];

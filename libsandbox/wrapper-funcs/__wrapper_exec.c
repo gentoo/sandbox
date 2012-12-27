@@ -98,11 +98,11 @@ static char **_sb_check_envp(char **envp, bool is_environ)
 	char *entry;
 	char *ld_preload = NULL;
 	char *old_ld_preload = NULL;
-	size_t count, ld_preload_eq_len;
+	size_t count, ld_preload_len;
 
-	ld_preload_eq_len = strlen(LD_PRELOAD_EQ);
+	ld_preload_len = strlen(ENV_LD_PRELOAD);
 	str_list_for_each_item(envp, entry, count) {
-		if (strncmp(entry, LD_PRELOAD_EQ, ld_preload_eq_len))
+		if (!is_env_var(entry, ENV_LD_PRELOAD, ld_preload_len))
 			continue;
 
 		/* Check if we do not have to do anything */
@@ -122,18 +122,18 @@ static char **_sb_check_envp(char **envp, bool is_environ)
 	/* Ok, we need to create our own envp, as we need to add LD_PRELOAD,
 	 * and we should not touch the user's envp.  First we add LD_PRELOAD,
 	 * and just all the rest. */
-	count = ld_preload_eq_len + (strlen(sandbox_lib) + 1) +
-		(old_ld_preload ? strlen(old_ld_preload) - ld_preload_eq_len + 1 : 0);
+	count = ld_preload_len + 1 + strlen(sandbox_lib) + 1 +
+		(old_ld_preload ? strlen(old_ld_preload) - ld_preload_len : 0);
 	ld_preload = xmalloc(count * sizeof(char));
-	snprintf(ld_preload, count, "%s%s%s%s", LD_PRELOAD_EQ, sandbox_lib,
+	snprintf(ld_preload, count, "%s=%s%s%s", ENV_LD_PRELOAD, sandbox_lib,
 		 (old_ld_preload) ? " " : "",
-		 (old_ld_preload) ? old_ld_preload + ld_preload_eq_len : "");
+		 (old_ld_preload) ? old_ld_preload + ld_preload_len + 1 : "");
 
 	if (!is_environ) {
 		str_list_add_item(my_env, ld_preload, error);
 
 		str_list_for_each_item(envp, entry, count) {
-			if (strncmp(entry, LD_PRELOAD_EQ, ld_preload_eq_len)) {
+			if (!is_env_var(entry, ENV_LD_PRELOAD, ld_preload_len)) {
 				str_list_add_item(my_env, entry, error);
 				continue;
 			}
