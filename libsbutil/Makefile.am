@@ -18,8 +18,7 @@ libsbutil_la_SOURCES =                        \
 	get_sandbox_rc.c                      \
 	get_sandbox_log.c                     \
 	get_tmp_dir.c                         \
-	is_env_on.c                           \
-	is_env_off.c                          \
+	environment.c                         \
 	sb_backtrace.c                        \
 	sb_efuncs.c                           \
 	sb_gdb.c                              \
