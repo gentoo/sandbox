@@ -30,7 +30,6 @@
 
 #define ENV_LD_PRELOAD         "LD_PRELOAD"
 
-#define ENV_EBUILD             "EBUILD"
 #define ENV_TMPDIR             "TMPDIR"
 #define ENV_PORTAGE_TMPDIR     "PORTAGE_TMPDIR"
 
@@ -56,14 +55,8 @@
 
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
 
-#define ENV_SANDBOX_PID        "SANDBOX_PID"
-#define ENV_SANDBOX_ABORT      "SANDBOX_ABORT"
-#define ENV_SANDBOX_INTRACTV   "SANDBOX_INTRACTV"
-
 #define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
 #define SANDBOX_ACTIVE         "armedandready"
-
-#define SB_BUF_LEN             2048
 
 extern const char *colors[];
 #define COLOR_NORMAL           colors[0]

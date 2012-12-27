@@ -234,7 +234,7 @@ static void sb_setenv(char ***envp, const char *name, const char *val)
 
 /* We setup the environment child side only to prevent issues with
  * setting LD_PRELOAD parent side */
-char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
+char **setup_environ(struct sandbox_info_t *sandbox_info)
 {
 	int have_ld_preload = 0;
 
@@ -250,14 +250,12 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	/* Unset these, as its easier than replacing when setting up our
 	 * new environment below */
 	unsetenv(ENV_SANDBOX_ON);
-	unsetenv(ENV_SANDBOX_PID);
 	unsetenv(ENV_SANDBOX_LIB);
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
 	unsetenv(ENV_SANDBOX_WORKDIR);
 	unsetenv(ENV_SANDBOX_ACTIVE);
-	unsetenv(ENV_SANDBOX_INTRACTV);
 	unsetenv(ENV_BASH_ENV);
 
 	orig_ld_preload_envvar = getenv(ENV_LD_PRELOAD);
@@ -284,15 +282,11 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	/* First add our new variables to the beginning - this is due to some
 	 * weirdness that I cannot remember */
 	sb_setenv(&new_environ, ENV_SANDBOX_ON, "1");
-	sb_setenv(&new_environ, ENV_SANDBOX_PID, sb_pid);
 	sb_setenv(&new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
 	sb_setenv(&new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
 	sb_setenv(&new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
 	sb_setenv(&new_environ, ENV_SANDBOX_DEBUG_LOG,
 			sandbox_info->sandbox_debug_log);
-	/* Is this an interactive session? */
-	if (interactive)
-		sb_setenv(&new_environ, ENV_SANDBOX_INTRACTV, "1");
 	/* Just set the these if not already set so that is_env_on() work */
 	if (!getenv(ENV_SANDBOX_VERBOSE))
 		sb_setenv(&new_environ, ENV_SANDBOX_VERBOSE, "1");

@@ -983,9 +983,6 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	sb_unlock();
 
 	if (0 == result) {
-		if ((NULL != getenv(ENV_SANDBOX_PID)) && (is_env_on(ENV_SANDBOX_ABORT)))
-			kill(atoi(getenv(ENV_SANDBOX_PID)), SIGUSR1);
-
 		/* FIXME: Should probably audit errno, and enable some other
 		 *        error to be returned (EINVAL for invalid mode for
 		 *        fopen() and co, ETOOLONG, etc). */

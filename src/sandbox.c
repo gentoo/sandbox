@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 
 	/* Setup the child environment stuff.
 	 * XXX:  We free this in spawn_shell(). */
-	sandbox_environ = setup_environ(&sandbox_info, print_debug);
+	sandbox_environ = setup_environ(&sandbox_info);
 	if (NULL == sandbox_environ)
 		goto oom_error;
 

@@ -23,7 +23,7 @@ struct sandbox_info_t {
 	char *home_dir;
 };
 
-extern char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive);
+extern char **setup_environ(struct sandbox_info_t *sandbox_info);
 
 #define sb_warn(fmt, args...)  fprintf(stderr, "%s:%s  " fmt "\n", "sandbox", __func__, ## args)
 #define sb_pwarn(fmt, args...) sb_warn(fmt ": %s\n", ## args, strerror(errno))
