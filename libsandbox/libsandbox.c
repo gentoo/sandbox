@@ -50,6 +50,7 @@ static char debug_log_path[SB_PATH_MAX];
 static char message_path[SB_PATH_MAX];
 bool sandbox_on = true;
 static bool sb_init = false;
+static bool sb_env_init = false;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
 FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 
@@ -61,6 +62,29 @@ static void init_env_entries(char ***, int *, const char *, const char *, int);
 
 const char *sbio_message_path;
 const char sbio_fallback_path[] = "/dev/tty";
+
+/* We need to initialize these vars before main().  This is to handle programs
+ * (like `env`) that will clear the environment before making any syscalls
+ * other than execve().  At that point, trying to get the settings is too late.
+ * However, we might still need to init the env vars in the syscall wrapper for
+ * programs that have their own constructors.  #404013
+ */
+__attribute__((constructor))
+void libsb_init(void)
+{
+	if (sb_env_init)
+		/* Ah, we already saw a syscall */
+		return;
+	sb_env_init = true;
+
+	/* Get the path and name to this library */
+	get_sandbox_lib(sandbox_lib);
+
+	get_sandbox_log(log_path, NULL);
+	get_sandbox_debug_log(debug_log_path, NULL);
+	get_sandbox_message_path(message_path);
+	sbio_message_path = message_path;
+}
 
 /* resolve_dirfd_path - get the path relative to a dirfd
  *
@@ -937,14 +961,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	sb_lock();
 
 	if (!sb_init) {
-		/* Get the path and name to this library */
-		get_sandbox_lib(sandbox_lib);
-
-		get_sandbox_log(log_path, NULL);
-		get_sandbox_debug_log(debug_log_path, NULL);
-		get_sandbox_message_path(message_path);
-		sbio_message_path = message_path;
-
+		libsb_init();
 		init_context(&sbcontext);
 		sb_init = true;
 	}

@@ -25,3 +25,5 @@ handle multiple processing writing to log simultaneously
 
 doesnt seem to work quite right:
 	echo $(./vfork-0 ./mkdir_static-0 2>&1)
+
+handle env var modification inside of traced apps
