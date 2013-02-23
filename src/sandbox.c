@@ -131,7 +131,7 @@ static void print_sandbox_log(char *sandbox_log)
 static void stop(int signum)
 {
 	if (0 == stop_called) {
-		stop_called = 1;
+		stop_called = signum;
 		sb_warn("caught signal %d in pid %d", signum, getpid());
 	} else
 		sb_warn("signal already caught and busy still cleaning up!");
@@ -140,7 +140,7 @@ static void stop(int signum)
 static void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
 {
 	if (0 == stop_called) {
-		stop_called = 1;
+		stop_called = signum;
 		sb_warn("caught signal %d in pid %d", signum, getpid());
 
 		/* FIXME: This is really bad form, as we should kill the whole process
@@ -183,12 +183,11 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 		sb_pwarn("failed to waitpid for child");
 		return 1;
 	} else if (status != 0) {
-		if (WIFSIGNALED(status)) {
+		if (WIFSIGNALED(status))
 			psignal(WTERMSIG(status), "Sandboxed process killed by signal");
-			return 128 + WTERMSIG(status);
-		} else if (debug)
+		else if (debug)
 			sb_warn("process returned with failed exit status %d!", WEXITSTATUS(status));
-		return WEXITSTATUS(status) ? : 1;
+		return status;
 	}
 
 	return 0;
@@ -196,8 +195,6 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 
 int main(int argc, char **argv)
 {
-	struct sigaction act_new;
-
 	int sandbox_log_presence = 0;
 
 	struct sandbox_info_t sandbox_info;
@@ -308,26 +305,39 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* set up the required signal handlers ... but allow SIGHUP to be
-	 * ignored in case people are running `nohup ...` #217898
-	 */
-	if (signal(SIGHUP, &stop) == SIG_IGN)
-		signal(SIGHUP, SIG_IGN);
-#define wsignal(sig, act) \
+	/* Set up the required signal handlers */
+	int sigs[] = { SIGHUP, SIGINT, SIGQUIT, SIGTERM, SIGUSR1, };
+	struct sigaction act_new, act_old[ARRAY_SIZE(sigs)];
+	size_t si = 0;
+
+#define wsigaction() \
 	do { \
-		sighandler_t _old = signal(sig, act); \
-		if (_old == SIG_ERR) \
-			sb_pwarn("unable to bind signal %s", #sig); \
-		else if (_old != SIG_DFL && _old != SIG_IGN) \
-			sb_warn("signal %s already had a handler ...", #sig); \
+		if (sigaction(sigs[si], &act_new, &act_old[si])) \
+			sb_pwarn("unable to bind signal %i", sigs[si]); \
+		else if (act_old[si].sa_handler != SIG_DFL && \
+		         act_old[si].sa_handler != SIG_IGN) \
+			sb_warn("signal %i already had a handler ...", sigs[si]); \
+		++si; \
 	} while (0)
-	wsignal(SIGINT, &stop);
-	wsignal(SIGQUIT, &stop);
-	wsignal(SIGTERM, &stop);
+
+	sigemptyset(&act_new.sa_mask);
+	act_new.sa_sigaction = NULL;
+	act_new.sa_handler = stop;
+	act_new.sa_flags = SA_RESTART;
+	wsigaction();
+	wsigaction();
+	wsigaction();
+	wsigaction();
+
+	sigemptyset(&act_new.sa_mask);
+	act_new.sa_handler = NULL;
 	act_new.sa_sigaction = usr1_handler;
-	sigemptyset (&act_new.sa_mask);
 	act_new.sa_flags = SA_SIGINFO | SA_RESTART;
-	sigaction (SIGUSR1, &act_new, NULL);
+	wsigaction();
+
+	/* Allow SIGHUP to be ignored in case people are running `nohup ...` #217898 */
+	if (act_old[0].sa_handler == SIG_IGN)
+		sigaction(SIGHUP, &act_old[0], NULL);
 
 	/* STARTING PROTECTED ENVIRONMENT */
 	dputs("The protected environment has been started.");
@@ -352,6 +362,20 @@ int main(int argc, char **argv)
 		print_sandbox_log(sandbox_info.sandbox_log);
 	} else
 		dputs(sandbox_footer);
+
+	/* Do the right thing and pass the signal back up.  See:
+	 * http://www.cons.org/cracauer/sigint.html
+	 */
+	if (stop_called != SIGUSR1 && WIFSIGNALED(shell_exit)) {
+		int signum = WTERMSIG(shell_exit);
+		for (si = 0; si < ARRAY_SIZE(sigs); ++si)
+			sigaction(sigs[si], &act_old[si], NULL);
+		kill(getpid(), signum);
+		return 128 + signum;
+	} else if (WIFEXITED(shell_exit))
+		shell_exit = WEXITSTATUS(shell_exit);
+	else
+		shell_exit = 1; /* ??? */
 
 	if (!is_env_on(ENV_SANDBOX_TESTING))
 		if (sandbox_log_presence && shell_exit == 0)
