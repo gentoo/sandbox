@@ -11,6 +11,7 @@
 int (*sbio_open)(const char *, int, mode_t) = (void *)open;
 FILE *(*sbio_popen)(const char *, const char *) = popen;
 const char sbio_fallback_path[] = "/dev/stderr";
+const char *sbio_message_path = sbio_fallback_path;
 
 int main(int argc, char *argv[])
 {

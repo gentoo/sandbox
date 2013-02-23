@@ -254,6 +254,7 @@ char **setup_environ(struct sandbox_info_t *sandbox_info)
 	unsetenv(ENV_SANDBOX_BASHRC);
 	unsetenv(ENV_SANDBOX_LOG);
 	unsetenv(ENV_SANDBOX_DEBUG_LOG);
+	unsetenv(ENV_SANDBOX_MESSAGE_PATH);
 	unsetenv(ENV_SANDBOX_WORKDIR);
 	unsetenv(ENV_SANDBOX_ACTIVE);
 	unsetenv(ENV_BASH_ENV);
@@ -285,8 +286,8 @@ char **setup_environ(struct sandbox_info_t *sandbox_info)
 	sb_setenv(&new_environ, ENV_SANDBOX_LIB, sandbox_info->sandbox_lib);
 	sb_setenv(&new_environ, ENV_SANDBOX_BASHRC, sandbox_info->sandbox_rc);
 	sb_setenv(&new_environ, ENV_SANDBOX_LOG, sandbox_info->sandbox_log);
-	sb_setenv(&new_environ, ENV_SANDBOX_DEBUG_LOG,
-			sandbox_info->sandbox_debug_log);
+	sb_setenv(&new_environ, ENV_SANDBOX_DEBUG_LOG, sandbox_info->sandbox_debug_log);
+	sb_setenv(&new_environ, ENV_SANDBOX_MESSAGE_PATH, sandbox_info->sandbox_message_path);
 	/* Just set the these if not already set so that is_env_on() work */
 	if (!getenv(ENV_SANDBOX_VERBOSE))
 		sb_setenv(&new_environ, ENV_SANDBOX_VERBOSE, "1");

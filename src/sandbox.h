@@ -16,6 +16,7 @@
 struct sandbox_info_t {
 	char sandbox_log[SB_PATH_MAX];
 	char sandbox_debug_log[SB_PATH_MAX];
+	char sandbox_message_path[SB_PATH_MAX];
 	char sandbox_lib[SB_PATH_MAX];
 	char sandbox_rc[SB_PATH_MAX];
 	char work_dir[SB_PATH_MAX];

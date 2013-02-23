@@ -58,3 +58,8 @@ void get_sandbox_debug_log(char *path, const char *tmpdir)
 {
 	_get_sb_log(path, tmpdir, ENV_SANDBOX_DEBUG_LOG, DEBUG_LOG_FILE_PREFIX);
 }
+
+void get_sandbox_message_path(char *path)
+{
+	_get_sb_log(path, NULL, ENV_SANDBOX_MESSAGE_PATH, DEBUG_LOG_FILE_PREFIX);
+}

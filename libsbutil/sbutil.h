@@ -46,6 +46,7 @@
 #define ENV_SANDBOX_BASHRC     "SANDBOX_BASHRC"
 #define ENV_SANDBOX_LOG        "SANDBOX_LOG"
 #define ENV_SANDBOX_DEBUG_LOG  "SANDBOX_DEBUG_LOG"
+#define ENV_SANDBOX_MESSAGE_PATH   "SANDBOX_MESSAGE_PATH"
 #define ENV_SANDBOX_WORKDIR    "SANDBOX_WORKDIR"
 
 #define ENV_SANDBOX_DENY       "SANDBOX_DENY"
@@ -70,6 +71,7 @@ void get_sandbox_lib(char *path);
 void get_sandbox_rc(char *path);
 void get_sandbox_log(char *path, const char *tmpdir);
 void get_sandbox_debug_log(char *path, const char *tmpdir);
+void get_sandbox_message_path(char *path);
 int get_tmp_dir(char *path);
 bool is_env_on(const char *);
 bool is_env_off(const char *);
@@ -86,6 +88,7 @@ const char *sb_get_cmdline(pid_t pid);
 /* libsandbox need to use a wrapper for open */
 attribute_hidden extern int (*sbio_open)(const char *, int, mode_t);
 attribute_hidden extern FILE *(*sbio_popen)(const char *, const char *);
+extern const char *sbio_message_path;
 extern const char sbio_fallback_path[];
 /* Convenience functions to reliably open, read and write to a file */
 int sb_open(const char *path, int flags, mode_t mode);

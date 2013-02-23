@@ -26,6 +26,7 @@ volatile static pid_t child_pid = 0;
 
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 static const char sandbox_footer[] = "--------------------------------------------------------------------------------";
+const char *sbio_message_path;
 const char sbio_fallback_path[] = "/dev/stderr";
 
 static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
@@ -77,6 +78,18 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 			sb_pwarn("could not unlink old debug log file: %s",
 			         sandbox_info->sandbox_debug_log);
 			return -1;
+		}
+	}
+
+	/* Generate sandbox message path -- this process's stderr */
+	char path[SB_PATH_MAX];
+	sprintf(path, "%s/2", sb_get_fd_dir());
+	if (realpath(path, sandbox_info->sandbox_message_path) == NULL) {
+		sb_pwarn("could not read stderr path: %s", path);
+		if (realpath(sbio_fallback_path, sandbox_info->sandbox_message_path)) {
+			sb_pwarn("could not read stderr path: %s", sbio_fallback_path);
+			/* fuck it */
+			strcpy(sandbox_info->sandbox_message_path, sbio_fallback_path);
 		}
 	}
 

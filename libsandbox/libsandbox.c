@@ -47,6 +47,7 @@ typedef struct {
 static char *cached_env_vars[MAX_DYN_PREFIXES];
 static char log_path[SB_PATH_MAX];
 static char debug_log_path[SB_PATH_MAX];
+static char message_path[SB_PATH_MAX];
 bool sandbox_on = true;
 static bool sb_init = false;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
@@ -58,6 +59,7 @@ static void clean_env_entries(char ***, int *);
 static void init_context(sbcontext_t *);
 static void init_env_entries(char ***, int *, const char *, const char *, int);
 
+const char *sbio_message_path;
 const char sbio_fallback_path[] = "/dev/tty";
 
 /* resolve_dirfd_path - get the path relative to a dirfd
@@ -940,6 +942,8 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 
 		get_sandbox_log(log_path, NULL);
 		get_sandbox_debug_log(debug_log_path, NULL);
+		get_sandbox_message_path(message_path);
+		sbio_message_path = message_path;
 
 		init_context(&sbcontext);
 		sb_init = true;
