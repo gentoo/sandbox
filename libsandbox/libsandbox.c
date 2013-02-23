@@ -28,7 +28,8 @@
 char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
-	bool show_access_violation;
+	bool show_access_violation, on, active, testing, verbose, debug;
+	char *ld_library_path;
 	char **prefixes[5];
 	int num_prefixes[5];
 #define             deny_prefixes     prefixes[0]
@@ -43,6 +44,7 @@ typedef struct {
 #define num_write_denied_prefixes num_prefixes[4]
 #define MAX_DYN_PREFIXES 4 /* the first 4 are dynamic */
 } sbcontext_t;
+static sbcontext_t sbcontext;
 
 static char *cached_env_vars[MAX_DYN_PREFIXES];
 static char log_path[SB_PATH_MAX];
@@ -57,8 +59,7 @@ FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 static char *resolve_path(const char *, int);
 static int check_prefixes(char **, int, const char *);
 static void clean_env_entries(char ***, int *);
-static void init_context(sbcontext_t *);
-static void init_env_entries(char ***, int *, const char *, const char *, int);
+static void sb_process_env_settings(void);
 
 const char *sbio_message_path;
 const char sbio_fallback_path[] = "/dev/tty";
@@ -84,6 +85,20 @@ void libsb_init(void)
 	get_sandbox_debug_log(debug_log_path, NULL);
 	get_sandbox_message_path(message_path);
 	sbio_message_path = message_path;
+
+	memset(&sbcontext, 0x00, sizeof(sbcontext));
+	sbcontext.show_access_violation = true;
+
+	sb_process_env_settings();
+	is_sandbox_on();
+	sbcontext.verbose = is_env_on(ENV_SANDBOX_VERBOSE);
+	sbcontext.debug = is_env_on(ENV_SANDBOX_DEBUG);
+	sbcontext.testing = is_env_on(ENV_SANDBOX_TESTING);
+	if (sbcontext.testing) {
+		const char *ldpath = getenv("LD_LIBRARY_PATH");
+		if (ldpath)
+			sbcontext.ld_library_path = xstrdup(ldpath);
+	}
 }
 
 /* resolve_dirfd_path - get the path relative to a dirfd
@@ -445,12 +460,6 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	return ret;
 }
 
-static void init_context(sbcontext_t *context)
-{
-	memset(context, 0x00, sizeof(*context));
-	context->show_access_violation = true;
-}
-
 static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 {
 	if (*prefixes_array == NULL)
@@ -553,6 +562,43 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 done:
 	errno = old_errno;
 	return;
+}
+
+static void sb_process_env_settings(void)
+{
+	static const char * const sb_env_names[4] = {
+		ENV_SANDBOX_DENY,
+		ENV_SANDBOX_READ,
+		ENV_SANDBOX_WRITE,
+		ENV_SANDBOX_PREDICT,
+	};
+
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(sb_env_names); ++i) {
+		char *sb_env = getenv(sb_env_names[i]);
+
+		/* Allow the vars to change values, but not be unset.
+		 * See sb_check_envp() for more details. */
+		if (!sb_env)
+			continue;
+
+		if (/*(!sb_env && cached_env_vars[i]) || -- see above */
+		    !cached_env_vars[i] ||
+		    strcmp(cached_env_vars[i], sb_env) != 0)
+		{
+			clean_env_entries(&sbcontext.prefixes[i], &sbcontext.num_prefixes[i]);
+
+			if (cached_env_vars[i])
+				free(cached_env_vars[i]);
+
+			if (sb_env) {
+				init_env_entries(&sbcontext.prefixes[i], &sbcontext.num_prefixes[i],
+					sb_env_names[i], sb_env, 1);
+				cached_env_vars[i] = xstrdup(sb_env);
+			} else
+				cached_env_vars[i] = NULL;
+		}
+	}
 }
 
 static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
@@ -835,15 +881,19 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	char *resolved_path = NULL;
 	int old_errno = errno;
 	int result;
-	bool access, debug, verbose;
+	bool access, debug, verbose, set;
 
 	absolute_path = resolve_path(file, 0);
 	resolved_path = resolve_path(file, 1);
 	if (!absolute_path || !resolved_path)
 		goto error;
 
-	verbose = is_env_on(ENV_SANDBOX_VERBOSE);
-	debug = is_env_on(ENV_SANDBOX_DEBUG);
+	verbose = is_env_set_on(ENV_SANDBOX_VERBOSE, &set);
+	if (set)
+		sbcontext->verbose = verbose;
+	debug = is_env_set_on(ENV_SANDBOX_DEBUG, &set);
+	if (set)
+		sbcontext->debug = debug;
 
 	result = check_access(sbcontext, sb_nr, func, flags, absolute_path, resolved_path);
 
@@ -905,7 +955,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 
 bool is_sandbox_on(void)
 {
-	bool result;
+	bool result = false;
 	save_errno();
 
 	/* $SANDBOX_ACTIVE is an env variable that should ONLY
@@ -914,14 +964,24 @@ bool is_sandbox_on(void)
 	 * in some cases when run in parallel with another sandbox,
 	 * but not even in the sandbox shell.
 	 */
-	char *sb_env_active = getenv(ENV_SANDBOX_ACTIVE);
-	if (sandbox_on &&
-	    sb_env_active &&
-	    is_env_on(ENV_SANDBOX_ON) &&
-	    (0 == strcmp(sb_env_active, SANDBOX_ACTIVE)))
-		result = true;
-	else
-		result = false;
+	if (sandbox_on) {
+		if (!sbcontext.active) {
+			/* Once you go active, you never go back */
+			char *sb_env_active = getenv(ENV_SANDBOX_ACTIVE);
+			sbcontext.active = (sb_env_active && !strcmp(sb_env_active, SANDBOX_ACTIVE));
+		}
+
+		if (sbcontext.active) {
+			bool on, set;
+			on = is_env_set_on(ENV_SANDBOX_ON, &set);
+			if (set)
+				sbcontext.on = on;
+
+			if (sbcontext.on)
+				result = true;
+		}
+	}
+
 	restore_errno();
 	return result;
 }
@@ -929,7 +989,6 @@ bool is_sandbox_on(void)
 bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	int result;
-	static sbcontext_t sbcontext;
 	char at_file_buf[SB_PATH_MAX];
 
 	/* Some funcs operate on a fd directly and so filename is NULL, but
@@ -962,39 +1021,10 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 
 	if (!sb_init) {
 		libsb_init();
-		init_context(&sbcontext);
 		sb_init = true;
 	}
 
-	char *sb_env_names[4] = {
-		ENV_SANDBOX_DENY,
-		ENV_SANDBOX_READ,
-		ENV_SANDBOX_WRITE,
-		ENV_SANDBOX_PREDICT,
-	};
-
-	size_t i;
-	for (i = 0; i < ARRAY_SIZE(sb_env_names); ++i) {
-		char *sb_env = getenv(sb_env_names[i]);
-
-		if ((!sb_env && cached_env_vars[i]) ||
-		    !cached_env_vars[i] ||
-		    strcmp(cached_env_vars[i], sb_env) != 0)
-		{
-			clean_env_entries(&(sbcontext.prefixes[i]),
-				&(sbcontext.num_prefixes[i]));
-
-			if (cached_env_vars[i])
-				free(cached_env_vars[i]);
-
-			if (sb_env) {
-				init_env_entries(&(sbcontext.prefixes[i]),
-					&(sbcontext.num_prefixes[i]), sb_env_names[i], sb_env, 1);
-				cached_env_vars[i] = xstrdup(sb_env);
-			} else
-				cached_env_vars[i] = NULL;
-		}
-	}
+	sb_process_env_settings();
 
 	/* Might have been reset in check_access() */
 	sbcontext.show_access_violation = true;
@@ -1047,4 +1077,154 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 	else
 		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
 	return before_syscall(dirfd, sb_nr, ext_func, file, 0);
+}
+
+typedef struct {
+	const char *name;
+	size_t len;
+	char *value;
+} env_pair;
+#define ENV_PAIR(x, n, v) [x] = { .name = n, .len = sizeof(n) - 1, .value = v, }
+
+#define str_list_add_item_env(_string_list, _var, _item, _error) \
+	do { \
+		char *str = xmalloc(strlen(_var) + strlen(_item) + 2); \
+		sprintf(str, "%s=%s", _var, _item); \
+		str_list_add_item(_string_list, str, _error); \
+	} while (0)
+/* We need to make sure we pass along sandbox env vars.  If we don't, programs
+ * (like scons) will inadvertently disable us.  While we allow modification
+ * (e.g. export SANDBOX_WRITE=""), we disallow clearing (e.g. unset SANDBOX_WRITE).
+ * The former is clear in the user's intention, but the latter is indicative
+ * of a bad program.
+ *
+ * XXX: Might be much nicer if we could serialize these vars behind the back of
+ *      the program.  Might be hard to handle LD_PRELOAD though ...
+ */
+char **sb_check_envp(char **envp, size_t *mod_cnt)
+{
+	char **my_env;
+	char *entry;
+	size_t count, i;
+	env_pair vars[] = {
+		/* Indices matter -- see init below */
+		ENV_PAIR( 0, ENV_LD_PRELOAD, sandbox_lib),
+		ENV_PAIR( 1, ENV_SANDBOX_LOG, log_path),
+		ENV_PAIR( 2, ENV_SANDBOX_DEBUG_LOG, debug_log_path),
+		ENV_PAIR( 3, ENV_SANDBOX_MESSAGE_PATH, message_path),
+		ENV_PAIR( 4, ENV_SANDBOX_DENY, cached_env_vars[0]),
+		ENV_PAIR( 5, ENV_SANDBOX_READ, cached_env_vars[1]),
+		ENV_PAIR( 6, ENV_SANDBOX_WRITE, cached_env_vars[2]),
+		ENV_PAIR( 7, ENV_SANDBOX_PREDICT, cached_env_vars[3]),
+		ENV_PAIR( 8, ENV_SANDBOX_ON, NULL),
+		ENV_PAIR( 9, ENV_SANDBOX_ACTIVE, NULL),
+		ENV_PAIR(10, ENV_SANDBOX_VERBOSE, NULL),
+		ENV_PAIR(11, ENV_SANDBOX_DEBUG, NULL),
+		ENV_PAIR(12, "LD_LIBRARY_PATH", NULL),
+		ENV_PAIR(13, ENV_SANDBOX_TESTING, NULL),
+	};
+	size_t num_vars = ARRAY_SIZE(vars);
+	char *found_vars[num_vars];
+	size_t found_var_cnt;
+
+	/* First figure out how many vars are already in the env */
+	found_var_cnt = 0;
+	memset(found_vars, 0, sizeof(found_vars));
+
+	str_list_for_each_item(envp, entry, count) {
+		for (i = 0; i < num_vars; ++i) {
+			if (found_vars[i])
+				continue;
+			if (unlikely(!is_env_var(entry, vars[i].name, vars[i].len)))
+				continue;
+			found_vars[i] = entry;
+			++found_var_cnt;
+		}
+	}
+
+	/* Now specially handle merging of LD_PRELOAD */
+	char *ld_preload;
+	bool merge_ld_preload = found_vars[0] && !strstr(found_vars[0], sandbox_lib);
+	if (unlikely(merge_ld_preload)) {
+		/* Ok, there's an existing LD_PRELOAD value that we need to merge
+		 * with.  Handle this specially. */
+		size_t ld_preload_len = strlen(ENV_LD_PRELOAD);
+		count = ld_preload_len + 1 + strlen(sandbox_lib) + 1 +
+			strlen(found_vars[0] + ld_preload_len + 1);
+		ld_preload = xmalloc(count * sizeof(char));
+		sprintf(ld_preload, "%s=%s %s", ENV_LD_PRELOAD, sandbox_lib,
+			found_vars[0] + ld_preload_len + 1);
+		goto mod_env;
+	}
+
+	/* If we found everything, there's nothing to do! */
+	if (num_vars == found_var_cnt)
+		/* Use the user's envp */
+		return envp;
+
+	/* Ok, we need to create our own envp, as we need to restore stuff
+	 * and we should not touch the user's envp.  First we add our vars,
+	 * and just all the rest. */
+ mod_env:
+	/* Indices matter -- see vars[] setup above */
+	if (sbcontext.on)
+		vars[8].value = "1";
+	if (sbcontext.active)
+		vars[9].value = SANDBOX_ACTIVE;
+	if (sbcontext.verbose)
+		vars[10].value = "1";
+	if (sbcontext.debug)
+		vars[11].value = "1";
+	if (sbcontext.testing) {
+		vars[12].value = sbcontext.ld_library_path;
+		vars[13].value = "1";
+	}
+
+	my_env = NULL;
+	if (mod_cnt) {
+		/* Count directly due to variability with LD_PRELOAD and the value
+		 * logic below.  Getting out of sync can mean memory corruption. */
+		*mod_cnt = 0;
+		if (unlikely(merge_ld_preload)) {
+			str_list_add_item(my_env, ld_preload, error);
+			(*mod_cnt)++;
+		}
+		for (i = 0; i < num_vars; ++i) {
+			if (found_vars[i] || !vars[i].value)
+				continue;
+			str_list_add_item_env(my_env, vars[i].name, vars[i].value, error);
+			(*mod_cnt)++;
+		}
+
+		str_list_for_each_item(envp, entry, count) {
+			if (unlikely(merge_ld_preload && is_env_var(entry, vars[0].name, vars[0].len)))
+				continue;
+			str_list_add_item(my_env, entry, error);
+		}
+	} else {
+		if (unlikely(merge_ld_preload))
+			putenv(ld_preload);
+		for (i = 0; i < num_vars; ++i) {
+			if (found_vars[i] || !vars[i].value)
+				continue;
+			setenv(vars[i].name, vars[i].value, 1);
+		}
+	}
+
+ error:
+	return my_env;
+}
+
+void sb_cleanup_envp(char **envp, size_t mod_cnt)
+{
+	/* We assume all the stuffed vars are at the start */
+	size_t i;
+	for (i = 0; i < mod_cnt; ++i)
+		free(envp[i]);
+
+	/* We do not use str_list_free(), as we did not allocate the
+	 * entries except for LD_PRELOAD.  All the other entries are
+	 * pointers to existing envp memory.
+	 */
+	free(envp);
 }

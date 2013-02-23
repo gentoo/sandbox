@@ -18,7 +18,7 @@ chmod a-rx ..
 ln -s / root
 
 # this should trigger a sb violation
-unset SANDBOX_PREDICT
+SANDBOX_PREDICT=""
 (mkdir-0 -1 root/aksdfjasdfjaskdfjasdfla 0777)
 
 chmod a+rx ..

@@ -92,79 +92,6 @@ static void sb_check_exec(const char *filename, char *const argv[])
 		trace_main(filename, argv);
 }
 
-static char **_sb_check_envp(char **envp, bool is_environ)
-{
-	char **my_env = NULL;
-	char *entry;
-	char *ld_preload = NULL;
-	char *old_ld_preload = NULL;
-	size_t count, ld_preload_len;
-
-	ld_preload_len = strlen(ENV_LD_PRELOAD);
-	str_list_for_each_item(envp, entry, count) {
-		if (!is_env_var(entry, ENV_LD_PRELOAD, ld_preload_len))
-			continue;
-
-		/* Check if we do not have to do anything */
-		if (NULL != strstr(entry, sandbox_lib)) {
-			/* Use the user's envp */
-			return envp;
-		} else {
-			/* No need to continue (assuming the env is sane and does not
-			 * include multiple entries for same var); we have to modify
-			 * LD_PRELOAD to include our sandbox overrides
-			 */
-			old_ld_preload = entry;
-			break;
-		}
-	}
-
-	/* Ok, we need to create our own envp, as we need to add LD_PRELOAD,
-	 * and we should not touch the user's envp.  First we add LD_PRELOAD,
-	 * and just all the rest. */
-	count = ld_preload_len + 1 + strlen(sandbox_lib) + 1 +
-		(old_ld_preload ? strlen(old_ld_preload) - ld_preload_len : 0);
-	ld_preload = xmalloc(count * sizeof(char));
-	snprintf(ld_preload, count, "%s=%s%s%s", ENV_LD_PRELOAD, sandbox_lib,
-		 (old_ld_preload) ? " " : "",
-		 (old_ld_preload) ? old_ld_preload + ld_preload_len + 1 : "");
-
-	if (!is_environ) {
-		str_list_add_item(my_env, ld_preload, error);
-
-		str_list_for_each_item(envp, entry, count) {
-			if (!is_env_var(entry, ENV_LD_PRELOAD, ld_preload_len)) {
-				str_list_add_item(my_env, entry, error);
-				continue;
-			}
-		}
-	} else
-		putenv(ld_preload);
-
- error:
-	return my_env;
-}
-static char **sb_check_envp(char **envp)
-{
-	return _sb_check_envp(envp, false);
-}
-static void sb_check_environ(void)
-{
-	_sb_check_envp(environ, true);
-}
-
-static void sb_cleanup_envp(char **envp)
-{
-	/* We assume the LD_PRELOAD is the first entry */
-	free(envp[0]);
-
-	/* We do not use str_list_free(), as we did not allocate the
-	 * entries except for LD_PRELOAD.  All the other entries are
-	 * pointers to existing envp memory.
-	 */
-	free(envp);
-}
-
 #endif
 
 attribute_hidden
@@ -180,10 +107,6 @@ WRAPPER_RET_TYPE SB_HIDDEN_FUNC(WRAPPER_NAME)(WRAPPER_ARGS_PROTO_FULL)
 WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	WRAPPER_RET_TYPE result = WRAPPER_RET_DEFAULT;
-
-#ifdef EXEC_MY_ENV
-	char **my_env = (char **)envp;
-#endif
 
 	/* The C library may implement some exec funcs by calling other
 	 * exec funcs.  So we might get a little sandbox recursion going
@@ -233,9 +156,10 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 #endif
 
 #ifdef EXEC_MY_ENV
-	my_env = sb_check_envp(my_env);
+	size_t mod_cnt;
+	char **my_env = sb_check_envp((char **)envp, &mod_cnt);
 #else
-	sb_check_environ();
+	sb_check_envp(environ, NULL);
 #endif
 
 	restore_errno();
@@ -246,7 +170,7 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 
 #ifdef EXEC_MY_ENV
 	if (my_env != envp)
-		sb_cleanup_envp(my_env);
+		sb_cleanup_envp(my_env, mod_cnt);
 #endif
 
 #ifdef EXEC_RECUR_CHECK

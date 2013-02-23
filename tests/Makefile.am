@@ -79,7 +79,7 @@ check_PROGRAMS = \
 	sigsuspend-zsh_static_tst
 
 dist_check_SCRIPTS = \
-	$(wildcard $(srcdir)/*-?.sh) \
+	$(wildcard $(srcdir)/*-[0-9]*.sh) \
 	script-0 \
 	trace-0
 

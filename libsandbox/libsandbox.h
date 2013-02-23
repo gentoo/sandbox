@@ -56,6 +56,8 @@ void *get_dlsym(const char *symname, const char *symver);
 
 extern char sandbox_lib[SB_PATH_MAX];
 extern bool sandbox_on;
+char **sb_check_envp(char **envp, size_t *mod_cnt);
+void sb_cleanup_envp(char **envp, size_t mod_cnt);
 extern pid_t trace_pid;
 
 extern void sb_lock(void);
