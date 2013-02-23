@@ -10,15 +10,17 @@
 #include "headers.h"
 #include "sbutil.h"
 
-static bool env_is_in(const char *env, const char *values[])
+static bool env_is_in(const char *env, const char *values[], bool *set)
 {
 	size_t i = 0;
 	const char *val;
 
 	if (unlikely(!env))
-		return false;
+		return (*set = false);
+
 	val = getenv(env);
-	if (unlikely(!val))
+	*set = (val != NULL);
+	if (unlikely(!*set))
 		return false;
 
 	while (values[i])
@@ -28,18 +30,28 @@ static bool env_is_in(const char *env, const char *values[])
 	return false;
 }
 
-bool is_env_on(const char *env)
+bool is_env_set_on(const char *env, bool *set)
 {
 	static const char *values[] = {
 		"1", "true", "yes", NULL,
 	};
-	return env_is_in(env, values);
+	return env_is_in(env, values, set);
+}
+bool is_env_on(const char *env)
+{
+	bool set;
+	return is_env_set_on(env, &set);
 }
 
-bool is_env_off(const char *env)
+bool is_env_set_off(const char *env, bool *set)
 {
 	static const char *values[] = {
 		"0", "false", "no", NULL,
 	};
-	return env_is_in(env, values);
+	return env_is_in(env, values, set);
+}
+bool is_env_off(const char *env)
+{
+	bool set;
+	return is_env_set_off(env, &set);
 }

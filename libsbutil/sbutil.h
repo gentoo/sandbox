@@ -75,6 +75,8 @@ void get_sandbox_message_path(char *path);
 int get_tmp_dir(char *path);
 bool is_env_on(const char *);
 bool is_env_off(const char *);
+bool is_env_set_on(const char *, bool *);
+bool is_env_set_off(const char *, bool *);
 static inline bool is_env_var(const char *env, const char *var, size_t vlen)
 {
 	return !strncmp(env, var, vlen) && env[vlen] == '=';
