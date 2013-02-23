@@ -103,7 +103,12 @@ static char *do_peekstr(unsigned long lptr)
 	riov.iov_len = liov.iov_len = len;
 
 	while (1) {
-		process_vm_readv(trace_pid, &liov, 1, &riov, 1, 0);
+		if (process_vm_readv(trace_pid, &liov, 1, &riov, 1, 0) == -1) {
+			if (errno == ENOSYS)
+				break;
+			sb_ebort("ISE:do_peekstr: process_vm_readv() hates us: %s\n",
+				strerror(errno));
+		}
 
 		for (i = 0; i < liov.iov_len; ++i)
 			if (!((char *)liov.iov_base)[i])
