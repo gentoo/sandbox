@@ -82,15 +82,18 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 	}
 
 	/* Generate sandbox message path -- this process's stderr */
-	char path[SB_PATH_MAX];
-	sprintf(path, "%s/2", sb_get_fd_dir());
-	if (realpath(path, sandbox_info->sandbox_message_path) == NULL) {
-		sb_pwarn("could not read stderr path: %s", path);
+	const char *fdpath = sb_get_fd_dir();
+	if (realpath(fdpath, sandbox_info->sandbox_message_path) == NULL) {
+		sb_pwarn("could not read fd path: %s", fdpath);
 		if (realpath(sbio_fallback_path, sandbox_info->sandbox_message_path)) {
 			sb_pwarn("could not read stderr path: %s", sbio_fallback_path);
 			/* fuck it */
 			strcpy(sandbox_info->sandbox_message_path, sbio_fallback_path);
 		}
+	} else {
+		/* Do not resolve the target of stderr because it could be something
+		 * that doesn't exist on the fs.  Like a pipe (`tee` and such). */
+		strcat(sandbox_info->sandbox_message_path, "/2");
 	}
 
 	return 0;
