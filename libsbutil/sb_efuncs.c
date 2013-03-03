@@ -43,7 +43,7 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 	else
 		fd = -1;
 	if (fd == -1)
-		sbio_open(sbio_fallback_path, O_WRONLY|O_CLOEXEC, 0);
+		fd = sbio_open(sbio_fallback_path, O_WRONLY|O_CLOEXEC, 0);
 	fp = fd == -1 ? NULL : fdopen(fd, "ae");
 	if (!fp)
 		fp = stderr;
