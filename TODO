@@ -27,3 +27,16 @@ doesnt seem to work quite right:
 	echo $(./vfork-0 ./mkdir_static-0 2>&1)
 
 handle env var modification inside of traced apps
+
+messaging still needs a little work.  consider:
+ - user is running as root
+ - user does `emerge foo`
+ - emerge's stderr is connected to root's tty
+ - FEATURES=userpriv is enabled so portage drops root
+ - sandbox starts up and sets message path to its stderr
+ - that path is owned by root only
+ - attempts to open it by path fail with permission denied
+really only way around this would be to have sandbox set up
+a named pipe in $T and set the message path to that.  then
+it would poll that for data and take care of writing it to
+its open stderr.
