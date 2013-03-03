@@ -21,17 +21,13 @@ static void _get_sb_log(char *path, const char *tmpdir, const char *env, const c
 
 	sandbox_log_env = getenv(env);
 
-	if (sandbox_log_env && is_env_on(ENV_SANDBOX_TESTING)) {
-		/* When testing, just use what the env says to */
+	if (sandbox_log_env) {
+		/* If the env is viable, roll with it.  We aren't really
+		 * about people breaking the security of the sandbox by
+		 * exporting SANDBOX_LOG=/dev/null.
+		 */
 		strncpy(path, sandbox_log_env, SB_PATH_MAX);
 	} else {
-		/* THIS CHUNK BREAK THINGS BY DOING THIS:
-		 * SANDBOX_LOG=/tmp/sandbox-app-admin/superadduser-1.0.7-11063.log
-		 */
-		if ((NULL != sandbox_log_env) &&
-		    (NULL != strchr(sandbox_log_env, '/')))
-		    sandbox_log_env = NULL;
-
 		/* If running as a user w/out write access to /var/log, don't
 		 * shit ourselves.
 		 */
