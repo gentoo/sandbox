@@ -5,7 +5,7 @@
 ret=0
 
 out=$(env -i env)
-for var in LOG DEBUG_LOG MESSAGE_PATH DENY READ WRITE PREDICT ON ACTIVE ; do
+for var in LOG DEBUG_LOG MESSAGE_P@TH DENY READ WRITE PREDICT ON ACTIVE ; do
 	var="SANDBOX_${var}"
 	oval=$(env | grep "^${var}=" | sed 's:^[^=]*=::')
 
