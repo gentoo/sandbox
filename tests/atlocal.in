@@ -21,4 +21,7 @@ fi
 export SANDBOX_VERBOSE=0
 
 # If the terminal has this flag set, the tests get all messed up.
-stty -tostop 2>/dev/null
+stty -tostop 2>/dev/null || :
+
+# This script must finish with ($? == 0) else the autotest runner gets upset.
+:
