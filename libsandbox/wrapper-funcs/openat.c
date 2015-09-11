@@ -24,7 +24,7 @@
 
 #define WRAPPER_SAFE_POST_EXPAND \
 	int mode = 0; \
-	if (flags & O_CREAT) { \
+	if (flags & (O_CREAT | O_TMPFILE)) { \
 		va_list ap; \
 		va_start(ap, flags); \
 		mode = va_arg(ap, int); \
