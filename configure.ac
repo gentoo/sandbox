@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([sandbox], [2.7], [sandbox@gentoo.org])
+AC_INIT([sandbox], [2.8], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE([1.12 dist-xz no-dist-gzip silent-rules -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
 AC_CONFIG_HEADER([config.h])
