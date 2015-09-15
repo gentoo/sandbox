@@ -119,11 +119,12 @@ static char *do_peekstr(unsigned long lptr)
 		ret = xrealloc(ret, len);
 		liov.iov_base = ret + len - l;
 	}
+#else
+	len = 1024;
+	ret = xmalloc(len);
 #endif
 
 	l = 0;
-	len = 1024;
-	ret = xmalloc(len);
 	while (1) {
 		a = lptr & (sizeof(long) - 1);
 		lptr -= a;
