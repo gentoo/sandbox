@@ -6,6 +6,7 @@ a.out
 *.o
 .deps
 .libs
+.dirstamp
 Makefile
 Makefile.in
 
