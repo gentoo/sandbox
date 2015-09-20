@@ -306,7 +306,16 @@ static char *resolve_path(const char *path, int follow_link)
 char *egetcwd(char *buf, size_t size)
 {
 	struct stat st;
-	char *tmpbuf, *oldbuf = buf;
+	char *tmpbuf;
+
+	/* We can't let the C lib allocate memory for us since we have our
+	 * own local routines to handle things.
+	 */
+	bool allocated = (buf == NULL);
+	if (allocated) {
+		size = SB_PATH_MAX;
+		buf = xmalloc(size);
+	}
 
 	/* If tracing a child, our cwd may not be the same as the child's */
 	if (trace_pid) {
@@ -354,9 +363,9 @@ char *egetcwd(char *buf, size_t size)
 		  	errno = ENAMETOOLONG;
 
 		if (errno && errno != EACCES) {
-		  	/* If getcwd() allocated the buffer, free it. */
-			if (NULL == oldbuf)
-				free(tmpbuf);
+			/* If getcwd() allocated the buffer, free it. */
+			if (allocated)
+				free(buf);
 
 			/* Not sure if we should quit here, but I guess if
 			 * lstat() fails, getcwd could have messed up. Not
@@ -368,6 +377,9 @@ char *egetcwd(char *buf, size_t size)
 
 		restore_errno();
 	} else if (errno != 0) {
+		/* If getcwd() allocated the buffer, free it. */
+		if (allocated)
+			free(buf);
 
 		/* Make sure we do not return garbage if the current libc or
 		 * kernel's getcwd() is buggy.
