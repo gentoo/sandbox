@@ -104,10 +104,23 @@ static char *do_peekstr(unsigned long lptr)
 
 	while (1) {
 		if (process_vm_readv(trace_pid, &liov, 1, &riov, 1, 0) == -1) {
-			if (errno == ENOSYS)
+			int e = errno;
+			if (e == ENOSYS)
 				break;
+			sb_eqawarn("process_vm_readv(%i, %p{%p, %zu}, 1, %p{%p, %zu}, 1, 0) failed: %s\n",
+				trace_pid,
+				&liov, liov.iov_base, liov.iov_len,
+				&riov, riov.iov_base, riov.iov_len,
+				strerror(e));
+			if (e == EFAULT) {
+				/* This sometimes happens, but it's not clear why.
+				 * Throw some extended debugging info before falling
+				 * back to the ptrace code. #560396
+				 */
+				break;
+			}
 			sb_ebort("ISE:do_peekstr: process_vm_readv() hates us: %s\n",
-				strerror(errno));
+				strerror(e));
 		}
 
 		for (i = 0; i < liov.iov_len; ++i)
