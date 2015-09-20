@@ -11,6 +11,12 @@
 #include "headers.h"
 #include "sbutil.h"
 
+/* Make sure the C library doesn't rewrite calls to funcs libsandbox provides. */
+#undef calloc
+#undef malloc
+#undef realloc
+#undef strdup
+
 void *
 __xcalloc(size_t nmemb, size_t size, const char *file, const char *func, size_t line)
 {
