@@ -102,6 +102,10 @@ typedef struct user_regs_struct trace_regs;
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
+#define ALIGN_DOWN(base, size)     ((base) & -(size))
+#define ALIGN_UP(base, size)       ALIGN_DOWN((base) + (size) - 1, (size))
+#define PTR_ALIGN_DOWN(base, size) ((__typeof__(base))ALIGN_DOWN((uintptr_t)(base), (size)))
+#define PTR_ALIGN_UP(base, size)   ((__typeof__(base))ALIGN_UP((uintptr_t)(base), (size)))
 
 /* If the system is old and does not support *at funcs, then define
  * it ourself.  Shouldn't matter based on how we use it.

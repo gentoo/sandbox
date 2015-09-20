@@ -59,6 +59,11 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 			}
 			sched_yield();
 			goto try_again;
+		} else if (errno == EIO || errno == EFAULT) {
+			/* This comes up when the child itself tries to use a bad pointer.
+			 * That's not something the sandbox should abort on. #560396
+			 */
+			return ret;
 		} else if (!errno)
 			if (request == PTRACE_PEEKDATA ||
 			    request == PTRACE_PEEKTEXT ||
@@ -140,7 +145,16 @@ static char *do_peekstr(unsigned long lptr)
 	while (1) {
 		a = lptr & (sizeof(long) - 1);
 		lptr -= a;
+		errno = 0;
 		s.val = do_peekdata(lptr);
+		if (unlikely(errno)) {
+			if (errno == EIO || errno == EFAULT) {
+				ret[0] = '\0';
+				return ret;
+			}
+			sb_ebort("ISE:do_peekstr:do_peekdata(%#lx) failed: %s\n",
+				lptr, strerror(errno));
+		}
 		for (i = a; i < sizeof(long); ++i) {
 			ret[l++] = s.x[i];
 			if (!s.x[i])

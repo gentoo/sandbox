@@ -76,7 +76,8 @@ check_PROGRAMS = \
 	pipe-fork_static_tst \
 	sb_printf_tst \
 	sigsuspend-zsh_tst \
-	sigsuspend-zsh_static_tst
+	sigsuspend-zsh_static_tst \
+	trace-memory_static_tst
 
 dist_check_SCRIPTS = \
 	$(wildcard $(srcdir)/*-[0-9]*.sh) \
