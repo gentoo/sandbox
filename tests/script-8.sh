@@ -10,4 +10,4 @@ sigsuspend-zsh_static_tst
 s=$?
 echo "ret = $s"
 
-exit $(( d + s ))
+exit $(( d | s ))
