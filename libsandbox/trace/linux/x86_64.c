@@ -4,21 +4,27 @@
 #ifdef SB_SCHIZO
 
 static const struct syscall_entry syscall_table_32[] = {
+#ifdef SB_SCHIZO_x86
 #define S(s) { SB_SYS_x86_##s, SB_NR_##s, #s },
 #include "trace_syscalls_x86.h"
 #undef S
+#endif
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
 static const struct syscall_entry syscall_table_64[] = {
+#ifdef SB_SCHIZO_x86_64
 #define S(s) { SB_SYS_x86_64_##s, SB_NR_##s, #s },
 #include "trace_syscalls_x86_64.h"
 #undef S
+#endif
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
 static const struct syscall_entry syscall_table_x32[] = {
+#ifdef SB_SCHIZO_x32
 #define S(s) { SB_SYS_x32_##s, SB_NR_##s, #s },
 #include "trace_syscalls_x32.h"
 #undef S
+#endif
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
 

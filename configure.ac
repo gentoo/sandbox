@@ -50,19 +50,45 @@ dnl multiple personality support (x86 & x86_64: multilib)
 AC_MSG_CHECKING([for multiple personalities])
 AC_ARG_ENABLE([schizo],
 	[AS_HELP_STRING([--enable-schizo],[Support multiple personalities])],
-	[],[enable_schizo="yes"])
-SB_SCHIZO_SETTINGS="no"
-if test "x$enable_schizo" = "xyes" ; then
-	case $host_alias in
-		x86_64*linux*) SB_SCHIZO_SETTINGS="x86_64:-m64 x86:-m32 x32:-mx32";;
+	[],[enable_schizo="auto"])
+AC_MSG_RESULT([$enable_schizo])
+SB_SCHIZO_SETTINGS=
+AC_DEFUN([SB_CHECK_SCHIZO],[dnl
+		AC_MSG_CHECKING([checking for $1/$2 compiler support])
+		ac_save_CFLAGS=$CFLAGS
+		CFLAGS="$CFLAGS $2"
+		AC_TRY_COMPILE([
+			#include <stdio.h>
+		], [
+			return 0
+		], [
+			enable_schizo=yes
+			AS_VAR_APPEND([SB_SCHIZO_SETTINGS], " $1:$2")
+			AS_VAR_APPEND([SB_SCHIZO_HEADERS], " trace_syscalls_$1.h")
+			AC_MSG_RESULT([yes])
+			AC_DEFINE_UNQUOTED([SB_SCHIZO_$1], 1, [Support for $1/$2 is available])
+		], [
+			AC_MSG_RESULT([no])
+		])
+		CFLAGS=$ac_save_CFLAGS
+])
+if test "x$enable_schizo" != "xno" ; then
+	enable_schizo=no
+	case $host in
+	i686*linux|x86_64*linux*)
+		SB_CHECK_SCHIZO([x86_64], [-m64])
+		SB_CHECK_SCHIZO([x86], [-m32])
+		SB_CHECK_SCHIZO([x32], [-mx32])
+		;;
 	esac
-fi
-if test "$SB_SCHIZO_SETTINGS" != "no" ; then
-	AC_DEFINE_UNQUOTED([SB_SCHIZO], ["$SB_SCHIZO_SETTINGS"], [Enable multiple personalities support])
+	SB_SCHIZO_SETTINGS=${SB_SCHIZO_SETTINGS# }
+	if test "x$enable_schizo" != "xno" ; then
+		AC_DEFINE_UNQUOTED([SB_SCHIZO], ["$SB_SCHIZO_SETTINGS"], [Enable multiple personalities support])
+	fi
 fi
 AC_SUBST(SB_SCHIZO_SETTINGS)
+AC_SUBST(SB_SCHIZO_HEADERS)
 AM_CONDITIONAL([SB_SCHIZO], test "$SB_SCHIZO_SETTINGS" != "no")
-AC_MSG_RESULT($SB_SCHIZO_SETTINGS)
 
 dnl this test fills up the stack and then triggers a segfault ...
 dnl but it's hard to wrap things without a stack, so let's ignore

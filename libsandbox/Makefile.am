@@ -70,18 +70,23 @@ TRACE_MAKE_HEADER = \
 	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
 		$(COMPILE) -E -P -include $(top_srcdir)/headers.h - $$f | \
 		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
-trace_syscalls.h: $(GEN_TRACE_SCRIPT) Makefile
+trace_syscalls.h: $(GEN_TRACE_SCRIPT) $(SB_SCHIZO_HEADERS)
 if SB_SCHIZO
-	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
-		t=_$${pers%:*}; \
-		f=$${pers#*:}; \
-		header=trace_syscalls$${t}.h; \
-		$(TRACE_MAKE_HEADER) || exit $$?; \
-	done
-	@touch $@
+	$(AM_V_GEN)touch $@
 else
 	$(AM_V_GEN)t= f= header=$@; $(TRACE_MAKE_HEADER)
 endif
+
+$(SB_SCHIZO_HEADERS): $(GEN_TRACE_SCRIPT)
+	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
+		t=_$${pers%:*}; \
+		f=$${pers#*:}; \
+		header="trace_syscalls$${t}.h"; \
+		if [ "$$header" = "$@" ]; then \
+			$(TRACE_MAKE_HEADER) || exit $$?; \
+			break; \
+		fi; \
+	done
 
 EXTRA_DIST = $(SYMBOLS_FILE) $(SYMBOLS_WRAPPERS) $(SB_NR_FILE) $(TRACE_FILES) headers.h
 
