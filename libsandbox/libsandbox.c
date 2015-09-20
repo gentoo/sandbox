@@ -240,7 +240,12 @@ static char *resolve_path(const char *path, int follow_link)
 		else
 			ret = realpath(path, filtered_path);
 
-		/* Maybe we failed because of funky anonymous fd symlinks.
+		/* Handle broken symlinks.  This can come up for a variety of reasons,
+		 * but we need to make sure that we resolve the path all the way to the
+		 * final target, and not just where the current link happens to start.
+		 * Latest discussion is in #540828.
+		 *
+		 * Maybe we failed because of funky anonymous fd symlinks.
 		 * You can see this by doing something like:
 		 *		$ echo | ls -l /proc/self/fd/
 		 *		.......	0 -> pipe:[9422999]
@@ -248,11 +253,19 @@ static char *resolve_path(const char *path, int follow_link)
 		 * actual file paths for us to check against. #288863
 		 * Don't look for any particular string as these are dynamic
 		 * according to the kernel.  You can see pipe:, socket:, etc...
+		 *
+		 * Maybe we failed because it's a symlink to a path in /proc/ that
+		 * is a symlink to a path that longer exists -- readlink will set
+		 * ENOENT even in that case and the file ends in (deleted).  This
+		 * can come up in cases like:
+		 * /dev/stderr -> fd/2 -> /proc/self/fd/2 -> /removed/file (deleted)
 		 */
-		if (!ret && !strncmp(filtered_path, "/proc/", 6)) {
-			char *base = strrchr(filtered_path, '/');
-			if (base && strchr(base, ':'))
-				ret = filtered_path;
+		if (!ret && errno == ENOENT) {
+			ret = canonicalize_filename_mode(path, CAN_ALL_BUT_LAST);
+			if (ret) {
+				free(filtered_path);
+				filtered_path = ret;
+			}
 		}
 
 		if (!ret) {
