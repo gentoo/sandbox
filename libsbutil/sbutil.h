@@ -140,10 +140,13 @@ char *__xstrndup(const char *str, size_t size, const char *file, const char *fun
 #define xrealloc(_ptr, _size)  __xrealloc(_ptr, _size, __FILE__, __func__, __LINE__)
 #define xstrdup(_str)          __xstrdup(_str, __FILE__, __func__, __LINE__)
 #define xstrndup(_str, _size)  __xstrndup(_str, _size, __FILE__, __func__, __LINE__)
+#define xalloc_die()           __sb_ebort(__FILE__, __func__, __LINE__, "out of memory")
 
 /* errno helpers */
 #define save_errno()    int old_errno = errno;
 #define restore_errno() errno = old_errno;
 #define saved_errno     old_errno
+
+#include "gnulib/canonicalize.h"
 
 #endif /* __SBUTIL_H__ */

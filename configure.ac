@@ -1,6 +1,6 @@
 AC_PREREQ([2.61])
 AC_INIT([sandbox], [2.8], [sandbox@gentoo.org])
-AM_INIT_AUTOMAKE([1.12 dist-xz no-dist-gzip silent-rules -Wall])
+AM_INIT_AUTOMAKE([1.12 dist-xz no-dist-gzip silent-rules subdir-objects -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -416,6 +416,9 @@ if test "x${LDFLAG_VER}" = "x" ; then
 	AC_MSG_ERROR([unable to find a linker flag for versioning])
 fi
 AC_SUBST([LDFLAG_VER])
+
+dnl Add some glue for gnulib modules that include config.h directly.
+AH_BOTTOM([#include "headers.h"])
 
 AC_CONFIG_TESTDIR([tests])
 

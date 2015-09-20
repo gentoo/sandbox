@@ -42,6 +42,30 @@ libsbutil_la_SOURCES =                        \
 	src/config.c                          \
 	include/rcscripts/util/dynbuf.h       \
 	src/dynbuf.c                          \
+	gnulib/areadlink.h                    \
+	gnulib/areadlink-with-size.c          \
+	gnulib/bitrotate.c                    \
+	gnulib/bitrotate.h                    \
+	gnulib/canonicalize.c                 \
+	gnulib/canonicalize.h                 \
+	gnulib/careadlinkat.h                 \
+	gnulib/dosname.h                      \
+	gnulib/file-set.c                     \
+	gnulib/file-set.h                     \
+	gnulib/gl-inline.h                    \
+	gnulib/glue.h                         \
+	gnulib/hash.c                         \
+	gnulib/hash.h                         \
+	gnulib/hash-pjw.c                     \
+	gnulib/hash-pjw.h                     \
+	gnulib/hash-triple.c                  \
+	gnulib/hash-triple.h                  \
+	gnulib/pathmax.h                      \
+	gnulib/same.h                         \
+	gnulib/same-inode.h                   \
+	gnulib/xalloc.h                       \
+	gnulib/xalloc-oversized.h             \
+	gnulib/xgetcwd.h                      \
 	$(LOCAL_INCLUDES)
 
 EXTRA_DIST = headers.h
