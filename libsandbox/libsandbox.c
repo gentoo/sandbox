@@ -912,6 +912,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	resolved_path = resolve_path(file, 1);
 	if (!absolute_path || !resolved_path)
 		goto error;
+	sb_debug_dyn("absolute_path: %s\n", absolute_path);
+	sb_debug_dyn("resolved_path: %s\n", resolved_path);
 
 	verbose = is_env_set_on(ENV_SANDBOX_VERBOSE, &set);
 	if (set)
@@ -1098,9 +1100,9 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
 	     /* The strspn accept args are known non-writable modifiers */
 	     (strlen(mode+1) == strspn(mode+1, "xbtmce"))))
-		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
+		sb_nr = SB_NR_OPEN_RD, ext_func = "fopen_rd";
 	else
-		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
+		sb_nr = SB_NR_OPEN_WR, ext_func = "fopen_wr";
 	return before_syscall(dirfd, sb_nr, ext_func, file, 0);
 }
 
