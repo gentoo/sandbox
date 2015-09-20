@@ -123,9 +123,8 @@ static char *do_peekstr(unsigned long lptr)
 				strerror(e));
 		}
 
-		for (i = 0; i < liov.iov_len; ++i)
-			if (!((char *)liov.iov_base)[i])
-				return ret;
+		if (memchr(liov.iov_base, '\0', liov.iov_len) != NULL)
+			return ret;
 		riov.iov_base += l;
 		riov.iov_len = liov.iov_len = l;
 		len += l;
