@@ -109,6 +109,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	errno.h
 	execinfo.h
 	fcntl.h
+	getopt.h
 	grp.h
 	inttypes.h
 	libgen.h

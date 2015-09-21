@@ -29,6 +29,9 @@
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
 #endif
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#endif
 #ifdef HAVE_GRP_H
 # include <grp.h>
 #endif

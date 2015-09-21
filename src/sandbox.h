@@ -32,4 +32,7 @@ extern char **setup_environ(struct sandbox_info_t *sandbox_info);
 #define sb_err(fmt, args...)  _sb_err(warn, fmt, ## args)
 #define sb_perr(fmt, args...) _sb_err(pwarn, fmt, ## args)
 
+/* Option parsing related code */
+extern void parseargs(int argc, char *argv[]);
+
 #endif
