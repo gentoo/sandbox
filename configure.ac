@@ -117,6 +117,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	memory.h
 	pthread.h
 	pwd.h
+	sched.h
 	siginfo.h
 	signal.h
 	sigsegv.h
@@ -132,10 +133,13 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	unistd.h
 	utime.h
 	sys/file.h
+	sys/ioctl.h
 	sys/mman.h
+	sys/mount.h
 	sys/param.h
 	sys/ptrace.h
 	sys/reg.h
+	sys/socket.h
 	sys/stat.h
 	sys/syscall.h
 	sys/time.h
@@ -225,6 +229,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	symlinkat
 	truncate64
 	unlinkat
+	unshare
 	utime
 	utimensat
 	utimes

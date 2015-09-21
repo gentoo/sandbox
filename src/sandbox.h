@@ -28,6 +28,12 @@ extern char **setup_environ(struct sandbox_info_t *sandbox_info);
 
 extern bool sb_get_cnf_bool(const char *, bool);
 
+#ifdef __linux__
+extern pid_t setup_namespaces(void);
+#else
+#define setup_namespaces() fork()
+#endif
+
 #define sb_warn(fmt, args...)  fprintf(stderr, "%s:%s  " fmt "\n", "sandbox", __func__, ## args)
 #define sb_pwarn(fmt, args...) sb_warn(fmt ": %s\n", ## args, strerror(errno))
 #define _sb_err(func, fmt, args...) do { sb_##func(fmt, ## args); exit(EXIT_FAILURE); } while (0)
@@ -36,5 +42,13 @@ extern bool sb_get_cnf_bool(const char *, bool);
 
 /* Option parsing related code */
 extern void parseargs(int argc, char *argv[]);
+extern int opt_use_namespaces;
+extern int opt_use_ns_ipc;
+extern int opt_use_ns_mnt;
+extern int opt_use_ns_net;
+extern int opt_use_ns_pid;
+extern int opt_use_ns_sysv;
+extern int opt_use_ns_user;
+extern int opt_use_ns_uts;
 
 #endif

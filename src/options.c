@@ -9,6 +9,43 @@
 #include "sbutil.h"
 #include "sandbox.h"
 
+/* Setting to -1 will load defaults from the config file. */
+int opt_use_namespaces = -1;
+int opt_use_ns_ipc = -1;
+int opt_use_ns_mnt = -1;
+int opt_use_ns_net = -1;
+int opt_use_ns_pid = -1;
+int opt_use_ns_sysv = -1;
+int opt_use_ns_user = -1;
+int opt_use_ns_uts = -1;
+
+static const struct {
+	const char *name;
+	int *opt;
+	int default_val;
+} config_opts[] = {
+	/* Default these to off until they can get more testing. */
+	{ "NAMESPACES_ENABLE",     &opt_use_namespaces, false, },
+	{ "NAMESPACE_IPC_ENABLE",  &opt_use_ns_ipc,     false, },
+	{ "NAMESPACE_MNT_ENABLE",  &opt_use_ns_mnt,     false, },
+	{ "NAMESPACE_NET_ENABLE",  &opt_use_ns_net,     false, },
+	{ "NAMESPACE_PID_ENABLE",  &opt_use_ns_pid,     false, },
+	{ "NAMESPACE_SYSV_ENABLE", &opt_use_ns_sysv,    false, },
+	{ "NAMESPACE_USER_ENABLE", &opt_use_ns_user,    false, },
+	{ "NAMESPACE_UTS_ENABLE",  &opt_use_ns_uts,     false, },
+};
+
+static void read_config(void)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(config_opts); ++i) {
+		int *opt = config_opts[i].opt;
+		if (*opt == -1)
+			*opt = sb_get_cnf_bool(config_opts[i].name, config_opts[i].default_val);
+	}
+}
+
 static void show_version(void)
 {
 	puts(
@@ -36,11 +73,43 @@ static void show_version(void)
 #define PARSE_FLAGS "+hV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
+	{"ns-on",         no_argument, &opt_use_namespaces, true},
+	{"ns-off",        no_argument, &opt_use_namespaces, false},
+	{"ns-ipc-on",     no_argument, &opt_use_ns_ipc, true},
+	{"ns-ipc-off",    no_argument, &opt_use_ns_ipc, false},
+	{"ns-mnt-on",     no_argument, &opt_use_ns_mnt, true},
+	{"ns-mnt-off",    no_argument, &opt_use_ns_mnt, false},
+	{"ns-net-on",     no_argument, &opt_use_ns_net, true},
+	{"ns-net-off",    no_argument, &opt_use_ns_net, false},
+	{"ns-pid-on",     no_argument, &opt_use_ns_pid, true},
+	{"ns-pid-off",    no_argument, &opt_use_ns_pid, false},
+	{"ns-sysv-on",    no_argument, &opt_use_ns_sysv, true},
+	{"ns-sysv-off",   no_argument, &opt_use_ns_sysv, false},
+	{"ns-user-on",    no_argument, &opt_use_ns_user, true},
+	{"ns-user-off",   no_argument, &opt_use_ns_user, false},
+	{"ns-uts-on",     no_argument, &opt_use_ns_uts, true},
+	{"ns-uts-off",    no_argument, &opt_use_ns_uts, false},
 	{"help",          no_argument, NULL, 'h'},
 	{"version",       no_argument, NULL, 'V'},
 	{NULL,            no_argument, NULL, 0x0}
 };
 static const char * const opts_help[] = {
+	"Enable  the use of namespaces",
+	"Disable the use of namespaces",
+	"Enable  the use of IPC (and System V) namespaces",
+	"Disable the use of IPC (and System V) namespaces",
+	"Enable  the use of mount namespaces",
+	"Disable the use of mount namespaces",
+	"Enable  the use of network namespaces",
+	"Disable the use of network namespaces",
+	"Enable  the use of process (pid) namespaces",
+	"Disable the use of process (pid) namespaces",
+	"Enable  the use of System V namespaces",
+	"Disable the use of System V namespaces",
+	"Enable  the use of user namespaces",
+	"Disable the use of user namespaces",
+	"Enable  the use of UTS (hostname/uname) namespaces",
+	"Disable the use of UTS (hostname/uname) namespaces",
 	"Print this help and exit",
 	"Print version and exit",
 	NULL
@@ -113,4 +182,6 @@ void parseargs(int argc, char *argv[])
 			show_usage(1);
 		}
 	}
+
+	read_config();
 }

@@ -11,6 +11,7 @@ AM_CPPFLAGS = \
 sandbox_LDADD = $(top_builddir)/libsbutil/libsbutil.la $(LIBDL)
 sandbox_SOURCES = \
 	environ.c \
+	namespaces.c \
 	options.c \
 	sandbox.h \
 	sandbox.c

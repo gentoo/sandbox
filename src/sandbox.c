@@ -160,7 +160,7 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 	int status = 0;
 	int ret = 0;
 
-	child_pid = fork();
+	child_pid = opt_use_namespaces ? setup_namespaces() : fork();
 
 	/* Child's process */
 	if (0 == child_pid) {

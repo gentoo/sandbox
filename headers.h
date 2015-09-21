@@ -53,6 +53,9 @@
 #ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
+#ifdef HAVE_SCHED_H
+# include <sched.h>
+#endif
 #ifdef HAVE_SIGINFO_H
 # include <siginfo.h>
 #endif
@@ -96,10 +99,16 @@
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
+#ifdef HAVE_SYS_IOCTL_H
+# include <sys/ioctl.h>
+#endif
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h>
 #else
 #error
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+# include <sys/mount.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
@@ -109,6 +118,9 @@
 #endif
 #ifdef HAVE_SYS_REG_H
 # include <sys/reg.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
