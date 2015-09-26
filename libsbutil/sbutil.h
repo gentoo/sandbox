@@ -73,6 +73,8 @@ void get_sandbox_log(char *path, const char *tmpdir);
 void get_sandbox_debug_log(char *path, const char *tmpdir);
 void get_sandbox_message_path(char *path);
 int get_tmp_dir(char *path);
+bool is_val_on(const char *);
+bool is_val_off(const char *);
 bool is_env_on(const char *);
 bool is_env_off(const char *);
 bool is_env_set_on(const char *, bool *);

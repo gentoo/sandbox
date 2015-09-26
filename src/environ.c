@@ -101,6 +101,12 @@ static void setup_cfg_var(const char *env_var)
 	}
 }
 
+bool sb_get_cnf_bool(const char *key, bool default_val)
+{
+	const char *val = rc_get_cnf_entry(sb_conf_file(), key, NULL);
+	return val ? is_val_on(val) : default_val;
+}
+
 /* Get passed access variable from sandbox.conf for sandbox.d/, and set it in
  * the environment. */
 static int setup_access_var(const char *access_var)

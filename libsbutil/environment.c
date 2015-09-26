@@ -10,9 +10,27 @@
 #include "headers.h"
 #include "sbutil.h"
 
-static bool env_is_in(const char *env, const char *values[], bool *set)
+static const char * const true_values[] = {
+	"1", "true", "yes", NULL,
+};
+
+static const char * const false_values[] = {
+	"0", "false", "no", NULL,
+};
+
+static bool val_is_in(const char *val, const char * const values[])
 {
 	size_t i = 0;
+
+	while (values[i])
+		if (!strcasecmp(val, values[i++]))
+			return true;
+
+	return false;
+}
+
+static bool env_is_in(const char *env, const char * const values[], bool *set)
+{
 	const char *val;
 
 	if (unlikely(!env))
@@ -23,19 +41,21 @@ static bool env_is_in(const char *env, const char *values[], bool *set)
 	if (unlikely(!*set))
 		return false;
 
-	while (values[i])
-		if (!strcasecmp(val, values[i++]))
-			return true;
+	return val_is_in(val, values);
+}
 
-	return false;
+bool is_val_on(const char *val)
+{
+	return val_is_in(val, true_values);
+}
+bool is_val_off(const char *val)
+{
+	return val_is_in(val, false_values);
 }
 
 bool is_env_set_on(const char *env, bool *set)
 {
-	static const char *values[] = {
-		"1", "true", "yes", NULL,
-	};
-	return env_is_in(env, values, set);
+	return env_is_in(env, true_values, set);
 }
 bool is_env_on(const char *env)
 {
@@ -45,10 +65,7 @@ bool is_env_on(const char *env)
 
 bool is_env_set_off(const char *env, bool *set)
 {
-	static const char *values[] = {
-		"0", "false", "no", NULL,
-	};
-	return env_is_in(env, values, set);
+	return env_is_in(env, false_values, set);
 }
 bool is_env_off(const char *env)
 {
