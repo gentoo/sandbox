@@ -6,16 +6,12 @@
  * Licensed under the GPL-2
  */
 
-_GL_INLINE_HEADER_BEGIN
-
 extern char *egetcwd(char *buf, size_t size);
 
-_GL_INLINE char *xgetcwd(void)
+static inline char *xgetcwd(void)
 {
 	char *ret = egetcwd(NULL, 0);
 	if (ret == NULL && errno == ENOMEM)
 		xalloc_die();
 	return ret;
 }
-
-_GL_INLINE_HEADER_END
