@@ -909,7 +909,14 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	bool access, debug, verbose, set;
 
 	absolute_path = resolve_path(file, 0);
-	resolved_path = resolve_path(file, 1);
+	/* Do not bother dereferencing symlinks when we are using a function that
+	 * itself does not dereference.  This speeds things up and avoids updating
+	 * the atime implicitly. #415475
+	 */
+	if (symlink_func(sb_nr, flags, absolute_path))
+		resolved_path = absolute_path;
+	else
+		resolved_path = resolve_path(file, 1);
 	if (!absolute_path || !resolved_path)
 		goto error;
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
@@ -955,7 +962,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	}
 
 	free(absolute_path);
-	free(resolved_path);
+	if (absolute_path != resolved_path)
+		free(resolved_path);
 
 	errno = old_errno;
 
@@ -967,7 +975,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	 */
 	if (errno_is_too_long()) {
 		free(absolute_path);
-		free(resolved_path);
+		if (absolute_path != resolved_path)
+			free(resolved_path);
 		return 2;
 	}
 
