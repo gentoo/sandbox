@@ -9,7 +9,6 @@ const char *color_red    = "\033[31;01m";
 # define CONFIG 1
 #endif
 
-#define V_TIMESPEC "NULL"
 #define V_STRMODE "<r|w|a>[+bcemx] (see `man 3 fopen`)"
 
 static bool _strtoul(const char *sul, unsigned long *ul)
@@ -130,6 +129,28 @@ int at_get_fd(const char *str_dirfd)
 	str_mode = strtok(NULL, ":");
 
 	return open(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
+}
+
+#define V_TIMESPEC "NULL | NOW | #[,#]"
+struct timespec *parse_timespec(const char *s)
+{
+	struct timespec *times;
+
+	if (!strcmp(s, "NULL"))
+		return NULL;
+
+	times = xzalloc(sizeof(*times));
+
+	if (!strcmp(s, "NOW")) {
+		times->tv_sec = time(0);
+	} else {
+		long sec = 0, nsec = 0;
+		sscanf(s, "%li,%li", &sec, &nsec);
+		times->tv_sec = sec;
+		times->tv_nsec = nsec;
+	}
+
+	return times;
 }
 
 #define V_ACCESS_MODE "r | w | x | f"

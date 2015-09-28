@@ -14,7 +14,7 @@
 	const char *file = f_get_file(s); \
 	\
 	s = argv[i++]; \
-	const struct timespec *times = NULL; \
+	const struct timespec *times = parse_timespec(s); \
 	\
 	s = argv[i++]; \
 	int flags = at_get_flags(s);

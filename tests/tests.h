@@ -10,6 +10,9 @@
 #define err(fmt, args...) ({ _stderr_msg(fmt, ##args); exit(1); })
 #define errp(fmt, args...) ({ _stderr_pmsg(fmt, ##args); exit(1); })
 
+#define xmalloc(size) ({ void *ret = malloc(size); assert(ret); ret; })
+#define xzalloc(size) ({ void *ret = xmalloc(size); memset(ret, 0, size); ret; })
+
 typedef struct {
 	const char *name;
 	int val;
