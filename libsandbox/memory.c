@@ -15,6 +15,9 @@
 #include "libsandbox.h"
 #include "sbutil.h"
 
+/* Pick a value to guarantee alignment requirements. #565630 */
+#define MIN_ALIGN (2 * sizeof(void *))
+
 /* Well screw me sideways, someone decided to override mmap() #290249
  * We probably don't need to include the exact sym version ...
  */
@@ -35,14 +38,14 @@ static int sb_munmap(void *addr, size_t length)
 }
 #define munmap sb_munmap
 
-#define SB_MALLOC_TO_MMAP(ptr) ((void*)(((size_t*)ptr) - 1))
-#define SB_MMAP_TO_MALLOC(ptr) ((void*)(((size_t*)ptr) + 1))
+#define SB_MALLOC_TO_MMAP(ptr) ((void*)((uintptr_t)(ptr) - MIN_ALIGN))
+#define SB_MMAP_TO_MALLOC(ptr) ((void*)((uintptr_t)(ptr) + MIN_ALIGN))
 #define SB_MALLOC_TO_SIZE(ptr) (*((size_t*)SB_MALLOC_TO_MMAP(ptr)))
 
 void *malloc(size_t size)
 {
 	size_t *ret;
-	size += sizeof(size_t);
+	size += MIN_ALIGN;
 	ret = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 	if (ret == MAP_FAILED)
 		return NULL;
