@@ -40,7 +40,8 @@ static int sb_munmap(void *addr, size_t length)
 
 #define SB_MALLOC_TO_MMAP(ptr) ((void*)((uintptr_t)(ptr) - MIN_ALIGN))
 #define SB_MMAP_TO_MALLOC(ptr) ((void*)((uintptr_t)(ptr) + MIN_ALIGN))
-#define SB_MALLOC_TO_SIZE(ptr) (*((size_t*)SB_MALLOC_TO_MMAP(ptr)))
+#define SB_MALLOC_TO_MMAP_SIZE(ptr) (*((size_t*)SB_MALLOC_TO_MMAP(ptr)))
+#define SB_MALLOC_TO_SIZE(ptr) (SB_MALLOC_TO_MMAP_SIZE(ptr) - MIN_ALIGN)
 
 void *malloc(size_t size)
 {
@@ -57,7 +58,7 @@ void free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
-	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_SIZE(ptr)))
+	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_MMAP_SIZE(ptr)))
 		sb_ebort("sandbox memory corruption with free(%p): %s\n",
 			ptr, strerror(errno));
 }
