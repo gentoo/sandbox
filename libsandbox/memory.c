@@ -81,7 +81,7 @@ void *realloc(void *ptr, size_t size)
 		return malloc(size);
 	if (size == 0) {
 		free(ptr);
-		return ptr;
+		return NULL;
 	}
 
 	old_malloc_size = SB_MALLOC_TO_SIZE(ptr);
@@ -91,6 +91,10 @@ void *realloc(void *ptr, size_t size)
 	ret = malloc(size);
 	if (!ret)
 		return ret;
+	/* We already verified old_malloc_size is smaller than size above, so
+	 * we don't really need the MIN() here.  We leave it to be defensive,
+	 * and because gcc optimizes away the check for us.
+	 */
 	memcpy(ret, ptr, MIN(size, old_malloc_size));
 	free(ptr);
 	return ret;
