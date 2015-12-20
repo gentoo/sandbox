@@ -7,6 +7,8 @@
 #if !defined(HAVE_PTRACE) || !defined(HAVE_SYS_PTRACE_H) || \
     !defined(HAVE_SYS_USER_H) || !defined(PTRACE_SETOPTIONS)
 # define SB_NO_TRACE_ARCH
+#elif defined(__arm__)
+# include "arm.c"
 #elif defined(__bfin__)
 # include "bfin.c"
 #elif defined(__hppa__)
