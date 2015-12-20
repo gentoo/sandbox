@@ -88,7 +88,7 @@ if test "x$enable_schizo" != "xno" ; then
 fi
 AC_SUBST(SB_SCHIZO_SETTINGS)
 AC_SUBST(SB_SCHIZO_HEADERS)
-AM_CONDITIONAL([SB_SCHIZO], test "$SB_SCHIZO_SETTINGS" != "no")
+AM_CONDITIONAL([SB_SCHIZO], [test "x$enable_schizo" != "xno"])
 
 dnl this test fills up the stack and then triggers a segfault ...
 dnl but it's hard to wrap things without a stack, so let's ignore
