@@ -48,7 +48,8 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 	if (fd == -1)
 		fd = fileno(stderr);
 
-	sb_fdprintf(fd, " %s*%s ", color, COLOR_NORMAL);
+	if (color)
+		sb_fdprintf(fd, " %s*%s ", color, COLOR_NORMAL);
 	sb_vfdprintf(fd, format, args);
 
 	if (opened)
@@ -95,6 +96,17 @@ void sb_eqawarn(const char *format, ...)
 	va_list args;
 	va_start(args, format);
 	sb_vefunc("eqawarn", COLOR_YELLOW, format, args);
+	va_end(args);
+}
+
+/* This is a bit of a hack to expose the same file logic to generic printers.
+ * Probably want to revisit sb_vefunc and move the guts there to a new func.
+ */
+void sb_eraw(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	sb_vefunc(NULL, NULL, format, args);
 	va_end(args);
 }
 

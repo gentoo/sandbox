@@ -112,6 +112,7 @@ __printf(1, 2) void sb_ewarn(const char *format, ...);
 __printf(1, 2) void sb_eerror(const char *format, ...);
 __printf(1, 2) void sb_eqawarn(const char *format, ...);
 __printf(1, 2) void sb_debug_dyn(const char *format, ...);
+__printf(1, 2) void sb_eraw(const char *format, ...);
 __printf(4, 5) void __sb_ebort(const char *file, const char *func, size_t line_num, const char *format, ...) __noreturn;
 #define sb_ebort(format, ...) __sb_ebort(__FILE__, __func__, __LINE__, format, ## __VA_ARGS__)
 void sb_dump_backtrace(void);

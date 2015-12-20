@@ -18,7 +18,7 @@ static long _do_ptrace(enum __ptrace_request request, const char *srequest, void
 #else
 # define SBDEBUG 0
 #endif
-#define __sb_debug(fmt, args...) do { if (SBDEBUG) sb_printf(fmt, ## args); } while (0)
+#define __sb_debug(fmt, args...) do { if (SBDEBUG) sb_eraw(fmt, ## args); } while (0)
 #define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
 #define sb_debug(fmt, args...)   _sb_debug(fmt "\n", ## args)
 

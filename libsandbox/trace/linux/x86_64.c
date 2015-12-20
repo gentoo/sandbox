@@ -129,8 +129,8 @@ static unsigned long trace_arg(void *vregs, int num)
 static void trace_dump_regs(void *vregs)
 {
 	trace_regs *regs = vregs;
-	sb_printf("{ ");
-#define D(r) sb_printf(#r":%"PRIu64" ", regs->r)
+	__sb_debug("{ ");
+#define D(r) __sb_debug(#r":%"PRIu64" ", regs->r)
 	D(rax);
 	D(rdi);
 	D(rsi);
@@ -139,6 +139,6 @@ static void trace_dump_regs(void *vregs)
 	D(r8);
 	D(r9);
 #undef D
-	sb_printf("}");
+	__sb_debug("}");
 }
 #endif
