@@ -1,7 +1,11 @@
 #include "common.c"
 
-/* Linux uses ptrace() */
-#if !defined(HAVE_PTRACE) || !defined(HAVE_SYS_PTRACE_H) || !defined(HAVE_SYS_USER_H)
+/* Linux uses ptrace().  We require PTRACE_SETOPTIONS so the exec tracing logic
+ * is sane.  Otherwise we need a lot of arch-specific hacks to make it work.
+ * This should be fine for linux-2.6+ versions.
+ */
+#if !defined(HAVE_PTRACE) || !defined(HAVE_SYS_PTRACE_H) || \
+    !defined(HAVE_SYS_USER_H) || !defined(PTRACE_SETOPTIONS)
 # define SB_NO_TRACE_ARCH
 #elif defined(__bfin__)
 # include "bfin.c"

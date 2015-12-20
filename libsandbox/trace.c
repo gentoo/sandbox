@@ -430,41 +430,34 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 static void trace_loop(void)
 {
 	trace_regs regs;
-	bool before_syscall, fake_syscall_ret;
+	bool before_exec, before_syscall, fake_syscall_ret;
 	long ret;
-	int nr, exec_state;
-	const struct syscall_entry *se, *tbl_at_fork, *tbl_after_fork;
+	int nr, status;
+	const struct syscall_entry *se, *tbl_after_fork;
 
-	exec_state = 0;
-	before_syscall = true;
+	before_exec = true;
+	before_syscall = false;
 	fake_syscall_ret = false;
-	tbl_at_fork = tbl_after_fork = NULL;
+	tbl_after_fork = NULL;
 	do {
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
-		waitpid(trace_pid, NULL, 0);
+		waitpid(trace_pid, &status, 0);
+
+		if (before_exec) {
+			unsigned event = ((unsigned)status >> 16);
+			if (event == PTRACE_EVENT_EXEC) {
+				_sb_debug("hit exec!");
+				before_exec = false;
+			} else
+				_sb_debug("waiting for exec; status: %#x", status);
+			ret = trace_get_regs(&regs);
+			tbl_after_fork = trace_check_personality(&regs);
+			continue;
+		}
+
 		ret = trace_get_regs(&regs);
 		nr = trace_get_sysnum(&regs);
 
-		if (!exec_state) {
-			if (!tbl_at_fork)
-				tbl_at_fork = trace_check_personality(&regs);
-			se = lookup_syscall_in_tbl(tbl_at_fork, nr);
-			if (!before_syscall || !se || se->sys != SB_NR_EXECVE) {
-				if (before_syscall)
-					_sb_debug(">%s:%i", se ? se->name : "IDK", nr);
-				else
-					__sb_debug("(...pre-exec...) = ...\n");
-				goto loop_again;
-			}
-			++exec_state;
-		} else if (exec_state == 1) {
-			/* Don't bother poking exec return */
-			++exec_state;
-			goto loop_again;
-		}
-
-		if (!tbl_after_fork)
-			tbl_after_fork = trace_check_personality(&regs);
 		se = lookup_syscall_in_tbl(tbl_after_fork, nr);
 		ret = trace_get_regs(&regs);
 		if (before_syscall) {
@@ -486,24 +479,11 @@ static void trace_loop(void)
 				ret = trace_result(&regs, &err);
 
 			__sb_debug(" = %li", ret);
-			if (err) {
+			if (err)
 				__sb_debug(" (errno: %i: %s)", err, strerror(err));
-
-				/* If the exec() failed for whatever reason, kill the
-				 * child and have the parent resume like normal
-				 */
-				if (exec_state == 1) {
-					do_ptrace(PTRACE_KILL, NULL, NULL);
-					trace_pid = 0;
-					return;
-				}
-			}
 			__sb_debug("\n");
-
-			exec_state = 2;
 		}
 
- loop_again:
 		before_syscall = !before_syscall;
 	} while (1);
 }
@@ -527,10 +507,8 @@ void trace_main(const char *filename, char *const argv[])
 	} else if (trace_pid) {
 		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
-#if defined(PTRACE_SETOPTIONS) && defined(PTRACE_O_TRACESYSGOOD)
-		/* Not all kernel versions support this, so ignore return */
-		ptrace(PTRACE_SETOPTIONS, trace_pid, NULL, (void *)PTRACE_O_TRACESYSGOOD);
-#endif
+		do_ptrace(PTRACE_SETOPTIONS, NULL,
+			(void *)(PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC));
 		sb_close_all_fds();
 		trace_loop();
 		sb_ebort("ISE: child should have quit, as should we\n");
