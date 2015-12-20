@@ -75,7 +75,8 @@ AC_DEFUN([SB_CHECK_SCHIZO],[dnl
 if test "x$enable_schizo" != "xno" ; then
 	enable_schizo=no
 	case $host in
-	i686*linux|x86_64*linux*)
+	i686*linux*|\
+	x86_64*linux*)
 		SB_CHECK_SCHIZO([x86_64], [-m64])
 		SB_CHECK_SCHIZO([x86], [-m32])
 		SB_CHECK_SCHIZO([x32], [-mx32])
