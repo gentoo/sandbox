@@ -13,6 +13,8 @@
 # include "hppa.c"
 #elif defined(__i386__)
 # include "i386.c"
+#elif defined(__s390__)
+# include "s390.c"
 #elif defined(__sparc__)
 # include "sparc.c"
 #elif defined(__x86_64__)
