@@ -52,7 +52,12 @@ static long trace_raw_ret(void *vregs)
 
 static void trace_set_ret(void *vregs, int err)
 {
+	/* We set r19 here, but it looks like trace_set_regs does not sync that.
+	 * Remember that {r16..r31} == {a0..a15}, so when we write out {a0..a5},
+	 * we also write out {r16..r21} -- a3 == r19.
+	 */
 	trace_regs *regs = vregs;
-	regs->r0 = -err;
+	regs->r0 = err;
+	regs->r19 = -1;
 	trace_set_regs(regs);
 }
