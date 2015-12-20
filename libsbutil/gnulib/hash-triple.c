@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "hash-pjw.h"
-#include "same.h"
 #include "same-inode.h"
 
 #define STREQ(a, b) (strcmp (a, b) == 0)
@@ -51,14 +50,6 @@ triple_hash_no_name (void const *x, size_t table_size)
 }
 
 /* Compare two F_triple structs.  */
-bool
-triple_compare (void const *x, void const *y)
-{
-  struct F_triple const *a = x;
-  struct F_triple const *b = y;
-  return (SAME_INODE (*a, *b) && same_name (a->name, b->name)) ? true : false;
-}
-
 bool
 triple_compare_ino_str (void const *x, void const *y)
 {
