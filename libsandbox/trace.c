@@ -9,6 +9,7 @@
 #include "wrappers.h"
 #include "sb_nr.h"
 
+static long do_peekdata(long offset);
 static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data);
 #define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
 #define _trace_possible(data) true
