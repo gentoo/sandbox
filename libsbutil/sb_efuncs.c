@@ -35,8 +35,8 @@ static void sbio_init(void)
  */
 static void sb_vefunc(const char *prog, const char *color, const char *format, va_list args)
 {
+	bool opened;
 	int fd;
-	FILE *fp;
 
 	if (likely(sbio_message_path))
 		fd = sbio_open(sbio_message_path, O_WRONLY|O_APPEND|O_CLOEXEC, 0);
@@ -44,15 +44,15 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 		fd = -1;
 	if (fd == -1)
 		fd = sbio_open(sbio_fallback_path, O_WRONLY|O_CLOEXEC, 0);
-	fp = fd == -1 ? NULL : fdopen(fd, "ae");
-	if (!fp)
-		fp = stderr;
+	opened = (fd != -1);
+	if (fd == -1)
+		fd = fileno(stderr);
 
-	sb_fprintf(fp, " %s*%s ", color, COLOR_NORMAL);
-	sb_vfprintf(fp, format, args);
+	sb_fdprintf(fd, " %s*%s ", color, COLOR_NORMAL);
+	sb_vfdprintf(fd, format, args);
 
-	if (fp != stderr)
-		fclose(fp);
+	if (opened)
+		close(fd);
 }
 
 void sb_einfo(const char *format, ...)
