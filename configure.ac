@@ -434,7 +434,10 @@ SB_CHECK_CFLAG([-fno-builtin-malloc])
 SB_CHECK_CFLAG([-fno-builtin-realloc])
 AC_DEFUN([SB_CHECK_LDFLAG],[AX_CHECK_LINK_FLAG([-Wl,$1],[LDFLAGS="$LDFLAGS -Wl,$1"])])
 SB_CHECK_LDFLAG([--as-needed])
-SB_CHECK_LDFLAG([--gc-sections])
+dnl Itanium systems do not like this flag, so disable it to avoid warnings.
+if test "$host_cpu" != "ia64" ; then
+	SB_CHECK_LDFLAG([--gc-sections])
+fi
 case $host_os in
 	dnl bsd is dumb (environ)
 	*linux*) SB_CHECK_LDFLAG([--no-undefined]) ;;
