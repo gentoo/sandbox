@@ -8,5 +8,5 @@ openat_static-0 3 AT_FDCWD ok O_RDONLY 0666 || exit 1
 
 mkdir deny || exit 1
 adddeny $PWD/deny
-openat_static-0 -1 AT_FDCWD deny/not-ok "O_WRONLY|O_CREAT" 0666
+openat_static-0 -1,EPERM AT_FDCWD deny/not-ok "O_WRONLY|O_CREAT" 0666 || exit 1
 test -e sandbox.log
