@@ -62,7 +62,9 @@ mkstemps64
 #execlp
 execv
 execve
+execveat
 execvp
+execvpe
 fexecve
 system
 popen
