@@ -61,7 +61,6 @@ libsbutil_la_SOURCES =                        \
 	gnulib/hash-triple.c                  \
 	gnulib/hash-triple.h                  \
 	gnulib/pathmax.h                      \
-	gnulib/same.h                         \
 	gnulib/same-inode.h                   \
 	gnulib/xalloc.h                       \
 	gnulib/xalloc-oversized.h             \
