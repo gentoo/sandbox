@@ -1137,7 +1137,7 @@ typedef struct {
  * XXX: Might be much nicer if we could serialize these vars behind the back of
  *      the program.  Might be hard to handle LD_PRELOAD though ...
  */
-char **sb_check_envp(char **envp, size_t *mod_cnt)
+char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 {
 	char **my_env;
 	char *entry;
@@ -1194,7 +1194,8 @@ char **sb_check_envp(char **envp, size_t *mod_cnt)
 	}
 
 	/* If we found everything, there's nothing to do! */
-	if (num_vars == found_var_cnt)
+	if ((insert && num_vars == found_var_cnt) ||
+	    (!insert && found_var_cnt == 0))
 		/* Use the user's envp */
 		return envp;
 
@@ -1217,33 +1218,50 @@ char **sb_check_envp(char **envp, size_t *mod_cnt)
 	}
 
 	my_env = NULL;
-	if (mod_cnt) {
-		/* Count directly due to variability with LD_PRELOAD and the value
-		 * logic below.  Getting out of sync can mean memory corruption. */
-		*mod_cnt = 0;
-		if (unlikely(merge_ld_preload)) {
-			str_list_add_item(my_env, ld_preload, error);
-			(*mod_cnt)++;
-		}
-		for (i = 0; i < num_vars; ++i) {
-			if (found_vars[i] || !vars[i].value)
-				continue;
-			str_list_add_item_env(my_env, vars[i].name, vars[i].value, error);
-			(*mod_cnt)++;
-		}
-
-		str_list_for_each_item(envp, entry, count) {
-			if (unlikely(merge_ld_preload && is_env_var(entry, vars[0].name, vars[0].len)))
-				continue;
-			str_list_add_item(my_env, entry, error);
+	if (!insert) {
+		if (mod_cnt) {
+			str_list_for_each_item(envp, entry, count) {
+				for (i = 0; i < num_vars; ++i)
+					if (is_env_var(entry, vars[i].name, vars[i].len)) {
+						(*mod_cnt)++;
+						goto skip;
+					}
+				str_list_add_item(my_env, entry, error);
+ skip: ;
+			}
+		} else {
+			for (i = 0; i < num_vars; ++i)
+				unsetenv(vars[i].name);
 		}
 	} else {
-		if (unlikely(merge_ld_preload))
-			putenv(ld_preload);
-		for (i = 0; i < num_vars; ++i) {
-			if (found_vars[i] || !vars[i].value)
-				continue;
-			setenv(vars[i].name, vars[i].value, 1);
+		if (mod_cnt) {
+			/* Count directly due to variability with LD_PRELOAD and the value
+			 * logic below.  Getting out of sync can mean memory corruption. */
+			*mod_cnt = 0;
+			if (unlikely(merge_ld_preload)) {
+				str_list_add_item(my_env, ld_preload, error);
+				(*mod_cnt)++;
+			}
+			for (i = 0; i < num_vars; ++i) {
+				if (found_vars[i] || !vars[i].value)
+					continue;
+				str_list_add_item_env(my_env, vars[i].name, vars[i].value, error);
+				(*mod_cnt)++;
+			}
+
+			str_list_for_each_item(envp, entry, count) {
+				if (unlikely(merge_ld_preload && is_env_var(entry, vars[0].name, vars[0].len)))
+					continue;
+				str_list_add_item(my_env, entry, error);
+			}
+		} else {
+			if (unlikely(merge_ld_preload))
+				putenv(ld_preload);
+			for (i = 0; i < num_vars; ++i) {
+				if (found_vars[i] || !vars[i].value)
+					continue;
+				setenv(vars[i].name, vars[i].value, 1);
+			}
 		}
 	}
 

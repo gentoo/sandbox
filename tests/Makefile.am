@@ -73,6 +73,7 @@ check_PROGRAMS = \
 	\
 	getcwd-gnulib_tst \
 	libsigsegv_tst \
+	malloc_hooked_tst \
 	malloc_mmap_tst \
 	pipe-fork_tst \
 	pipe-fork_static_tst \
@@ -91,6 +92,8 @@ AM_LDFLAGS = `expr $@ : .*_static >/dev/null && echo -all-static`
 
 sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
+
+malloc_hooked_tst_LDFLAGS = $(AM_LDFLAGS) -pthread
 
 if HAVE_LIBSIGSEGV
 libsigsegv_tst_LDADD = -lsigsegv

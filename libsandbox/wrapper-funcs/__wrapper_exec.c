@@ -20,17 +20,20 @@ static WRAPPER_RET_TYPE (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 #ifndef SB_EXEC_COMMON
 #define SB_EXEC_COMMON
 
-/* Check to see if this a static ELF and if so, protect using trace mechanisms */
-static void sb_check_exec(const char *filename, char *const argv[])
+/* Check to see if we can run this program in-process.  If not, try to fall back
+ * tracing it out-of-process via some trace mechanisms (e.g. ptrace).
+ */
+static bool sb_check_exec(const char *filename, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
 	struct stat st;
 	bool do_trace = false;
+	bool run_in_process = true;
 
-	fd = open(filename, O_RDONLY|O_CLOEXEC);
+	fd = sb_unwrapped_open_DEFAULT(filename, O_RDONLY|O_CLOEXEC, 0);
 	if (fd == -1)
-		return;
+		return true;
 	if (fstat(fd, &st))
 		goto out_fd;
 	if (st.st_size < sizeof(Elf64_Ehdr))
@@ -57,19 +60,110 @@ static void sb_check_exec(const char *filename, char *const argv[])
 	 * gains root just to preload libsandbox.so.  That unfortunately
 	 * could easily open up people to root vulns.
 	 */
-	if (getuid() == 0 || !(st.st_mode & (S_ISUID | S_ISGID))) {
+	if (st.st_mode & (S_ISUID | S_ISGID))
+		if (getuid() != 0)
+			run_in_process = false;
+
+	/* We also need to ptrace programs that interpose their own allocator.
+	 * http://crbug.com/586444
+	 */
+	if (run_in_process) {
+		static const char * const libc_alloc_syms[] = {
+			"__libc_calloc",
+			"__libc_free",
+			"__libc_malloc",
+			"__libc_realloc",
+			"__malloc_hook",
+			"__realloc_hook",
+			"__free_hook",
+			"__memalign_hook",
+			"__malloc_initialize_hook",
+		};
 #define PARSE_ELF(n) \
 ({ \
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
 	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
-	uint16_t p; \
-	if (st.st_size < sizeof(*ehdr)) \
-		goto out_mmap; \
+	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0; \
+	Elf##n##_Off offset, symoff = 0, stroff = 0; \
+	Elf##n##_Dyn *dyn; \
+	Elf##n##_Sym *sym; \
+	uint##n##_t ent_size = 0, str_size = 0; \
+	bool dynamic = false; \
+	size_t i; \
+	\
 	if (st.st_size < ehdr->e_phoff + ehdr->e_phentsize * ehdr->e_phnum) \
 		goto out_mmap; \
-	for (p = 0; p < ehdr->e_phnum; ++p) \
-		if (phdr[p].p_type == PT_INTERP) \
-			goto done; \
+	\
+	/* First gather the tags we care about. */ \
+	for (i = 0; i < ehdr->e_phnum; ++i) { \
+		switch (phdr[i].p_type) { \
+		case PT_INTERP: dynamic = true; break; \
+		case PT_DYNAMIC: \
+			dyn = (void *)(elf + phdr[i].p_offset); \
+			while (dyn->d_tag != DT_NULL) { \
+				switch (dyn->d_tag) { \
+				case DT_SYMTAB: vsym = dyn->d_un.d_val; break; \
+				case DT_SYMENT: ent_size = dyn->d_un.d_val; break; \
+				case DT_STRTAB: vstr = dyn->d_un.d_val; break; \
+				case DT_STRSZ:  str_size = dyn->d_un.d_val; break; \
+				} \
+				++dyn; \
+			} \
+			break; \
+		} \
+	} \
+	\
+	if (dynamic && vsym && ent_size && vstr && str_size) { \
+		/* Figure out where in the file these tables live. */ \
+		for (i = 0; i < ehdr->e_phnum; ++i) { \
+			vaddr = phdr[i].p_vaddr; \
+			filesz = phdr[i].p_filesz; \
+			offset = phdr[i].p_offset; \
+			if (vsym >= vaddr && vsym < vaddr + filesz) \
+				symoff = offset + (vsym - vaddr); \
+			if (vstr >= vaddr && vstr < vaddr + filesz) \
+				stroff = offset + (vstr - vaddr); \
+		} \
+		\
+		/* Finally walk the symbol table.  This should generally be fast as \
+		 * we only look at exported symbols, and the vast majority of exes \
+		 * out there do not export any symbols at all. \
+		 */ \
+		if (symoff && stroff) { \
+			sym = (void *)(elf + symoff); \
+			/* Nowhere is the # of symbols recorded, or the size of the symbol \
+			 * table.  Instead, we do what glibc does: assume that the string \
+			 * table always follows the symbol table.  This seems like a poor \
+			 * assumption to make, but glibc has gotten by this long.  We could \
+			 * rely on DT_HASH and walking all the buckets to find the largest \
+			 * symbol index, but that's also a bit hacky. \
+			 * \
+			 * We don't sanity check the ranges here as you aren't executing \
+			 * corrupt programs in the sandbox. \
+			 */ \
+			for (i = 0; i < (vstr - vsym) / ent_size; ++i) { \
+				char *symname = (void *)(elf + stroff + sym->st_name); \
+				if (ELF##n##_ST_VISIBILITY(sym->st_other) == STV_DEFAULT && \
+				    sym->st_shndx != SHN_UNDEF && sym->st_shndx < SHN_LORESERVE && \
+				    sym->st_name && \
+				    /* Minor optimization to avoid strcmp. */ \
+				    symname[0] == '_' && symname[1] == '_') { \
+					/* Blacklist internal C library symbols. */ \
+					size_t j; \
+					for (j = 0; j < ARRAY_SIZE(libc_alloc_syms); ++j) \
+						if (!strcmp(symname, libc_alloc_syms[j])) { \
+							run_in_process = false; \
+							goto use_trace; \
+						} \
+				} \
+				++sym; \
+			} \
+		} \
+		\
+	} \
+	\
+	if (dynamic) \
+		goto done; \
 })
 		if (elf[EI_CLASS] == ELFCLASS32)
 			PARSE_ELF(32);
@@ -78,6 +172,7 @@ static void sb_check_exec(const char *filename, char *const argv[])
 #undef PARSE_ELF
 	}
 
+ use_trace:
 	do_trace = trace_possible(filename, argv, elf);
 	/* Now that we're done with stuff, clean up before forking */
 
@@ -90,6 +185,8 @@ static void sb_check_exec(const char *filename, char *const argv[])
 
 	if (do_trace)
 		trace_main(filename, argv);
+
+	return run_in_process;
 }
 
 #endif
@@ -107,6 +204,7 @@ WRAPPER_RET_TYPE SB_HIDDEN_FUNC(WRAPPER_NAME)(WRAPPER_ARGS_PROTO_FULL)
 WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 {
 	WRAPPER_RET_TYPE result = WRAPPER_RET_DEFAULT;
+	bool run_in_process = true;
 
 	/* The C library may implement some exec funcs by calling other
 	 * exec funcs.  So we might get a little sandbox recursion going
@@ -151,15 +249,15 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 		if (!SB_SAFE(check_path))
 			goto done;
 
-		sb_check_exec(check_path, argv);
+		run_in_process = sb_check_exec(check_path, argv);
 	}
 #endif
 
 #ifdef EXEC_MY_ENV
 	size_t mod_cnt;
-	char **my_env = sb_check_envp((char **)envp, &mod_cnt);
+	char **my_env = sb_check_envp((char **)envp, &mod_cnt, run_in_process);
 #else
-	sb_check_envp(environ, NULL);
+	sb_check_envp(environ, NULL, run_in_process);
 #endif
 
 	restore_errno();
