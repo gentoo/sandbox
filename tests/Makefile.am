@@ -18,6 +18,7 @@ check_PROGRAMS = \
 	chown-0 \
 	creat-0 \
 	creat64-0 \
+	execvp-0 \
 	faccessat-0 \
 	fchmodat-0 \
 	fchownat-0 \
@@ -72,6 +73,7 @@ check_PROGRAMS = \
 	\
 	getcwd-gnulib_tst \
 	libsigsegv_tst \
+	malloc_mmap_tst \
 	pipe-fork_tst \
 	pipe-fork_static_tst \
 	sb_printf_tst \
@@ -81,6 +83,7 @@ check_PROGRAMS = \
 
 dist_check_SCRIPTS = \
 	$(wildcard $(srcdir)/*-[0-9]*.sh) \
+	malloc-0 \
 	script-0 \
 	trace-0
 
