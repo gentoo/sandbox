@@ -8,6 +8,16 @@ static bool _trace_possible(const void *data)
 		(ehdr->e_machine == EM_386);
 }
 
+#ifdef SB_SCHIZO
+static const struct syscall_entry syscall_table[] = {
+#define S(s) { SB_SYS_x86_##s, SB_NR_##s, #s },
+#include "trace_syscalls_x86.h"
+#undef S
+	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
+};
+# define trace_check_personality(regs) syscall_table
+#endif
+
 #define trace_reg_sysnum orig_eax
 #define trace_reg_ret eax
 
