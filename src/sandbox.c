@@ -128,13 +128,21 @@ static void print_sandbox_log(char *sandbox_log)
 	sb_eerror("--------------------------------------------------------------------------------\n");
 }
 
+static int stop_count = 5;
+
 static void stop(int signum)
 {
 	if (0 == stop_called) {
 		stop_called = signum;
 		sb_warn("caught signal %d in pid %d", signum, getpid());
-	} else
-		sb_warn("signal already caught and busy still cleaning up!");
+	} else if (--stop_count) {
+		sb_warn("Send signal %i more time%s to force SIGKILL",
+			stop_count, stop_count == 1 ? "" : "s");
+	} else {
+		/* This really should kill all children; see usr1_handler. */
+		kill(child_pid, SIGKILL);
+		stop_count = 1;
+	}
 }
 
 static void usr1_handler(int signum, siginfo_t *siginfo, void *ucontext)
