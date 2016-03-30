@@ -710,6 +710,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	     sb_nr == SB_NR_EXECV     ||
 	     sb_nr == SB_NR_EXECVP    ||
 	     sb_nr == SB_NR_EXECVE    ||
+	     sb_nr == SB_NR_EXECVPE   ||
 	     sb_nr == SB_NR_FEXECVE))
 	{
 		retval = check_prefixes(sbcontext->read_prefixes,
