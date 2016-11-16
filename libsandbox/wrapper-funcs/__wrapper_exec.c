@@ -83,8 +83,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 ({ \
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
 	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
-	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0, vhash = 0; \
-	Elf##n##_Off offset, symoff = 0, stroff = 0, hashoff = 0; \
+	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0, vhash = 0, vliblist = 0; \
+	Elf##n##_Off offset, symoff = 0, stroff = 0, hashoff = 0, liblistoff = 0; \
 	Elf##n##_Dyn *dyn; \
 	Elf##n##_Sym *sym, *symend; \
 	uint##n##_t ent_size = 0, str_size = 0; \
@@ -102,11 +102,12 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 			dyn = (void *)(elf + phdr[i].p_offset); \
 			while (dyn->d_tag != DT_NULL) { \
 				switch (dyn->d_tag) { \
-				case DT_SYMTAB: vsym = dyn->d_un.d_val; break; \
-				case DT_SYMENT: ent_size = dyn->d_un.d_val; break; \
-				case DT_STRTAB: vstr = dyn->d_un.d_val; break; \
-				case DT_STRSZ:  str_size = dyn->d_un.d_val; break; \
-				case DT_HASH:   vhash = dyn->d_un.d_val; break; \
+				case DT_SYMTAB:      vsym = dyn->d_un.d_val; break; \
+				case DT_SYMENT:      ent_size = dyn->d_un.d_val; break; \
+				case DT_STRTAB:      vstr = dyn->d_un.d_val; break; \
+				case DT_STRSZ:       str_size = dyn->d_un.d_val; break; \
+				case DT_HASH:        vhash = dyn->d_un.d_val; break; \
+				case DT_GNU_LIBLIST: vliblist = dyn->d_un.d_val; break; \
 				} \
 				++dyn; \
 			} \
@@ -126,6 +127,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 				stroff = offset + (vstr - vaddr); \
 			if (vhash >= vaddr && vhash < vaddr + filesz) \
 				hashoff = offset + (vhash - vaddr); \
+			if (vliblist >= vaddr && vliblist < vaddr + filesz) \
+				liblistoff = offset + (vliblist - vaddr); \
 		} \
 		\
 		/* Finally walk the symbol table.  This should generally be fast as \
@@ -133,19 +136,33 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 		 * out there do not export any symbols at all. \
 		 */ \
 		if (symoff && stroff) { \
-			/* Hash entries are always 32-bits. */ \
-			uint32_t *hashes = (void *)(elf + hashoff); \
 			/* Nowhere is the # of symbols recorded, or the size of the symbol \
 			 * table.  Instead, we do what glibc does: use the sysv hash table \
 			 * if it exists, else assume that the string table always directly \
 			 * follows the symbol table.  This seems like a poor assumption to \
-			 * make, but glibc has gotten by this long. \
+			 * make, but glibc has gotten by this long.  See determine_info in \
+			 * glibc's elf/dl-addr.c. \
+			 * \
+			 * Turns out prelink will violate that assumption.  Fortunately it \
+			 * will insert its liblist at the same location all the time -- it \
+			 * replaces the string table with its liblist table. \
+			 * \
+			 * Long term, we should behave the same as glibc and walk the gnu \
+			 * hash table first before falling back to the raw symbol table. \
 			 * \
 			 * We don't sanity check the ranges here as you aren't executing \
 			 * corrupt programs in the sandbox. \
 			 */ \
 			sym = (void *)(elf + symoff); \
-			symend = vhash ? (sym + hashes[1]) : (void *)(elf + stroff); \
+			if (vhash) { \
+				/* Hash entries are always 32-bits. */ \
+				uint32_t *hashes = (void *)(elf + hashoff); \
+				symend = sym + hashes[1]; \
+			} else if (vliblist) \
+				symend = (void *)(elf + liblistoff); \
+			else \
+				symend = (void *)(elf + stroff); \
+			\
 			while (sym < symend) { \
 				char *symname = (void *)(elf + stroff + sym->st_name); \
 				if (ELF##n##_ST_VISIBILITY(sym->st_other) == STV_DEFAULT && \
