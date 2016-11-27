@@ -62,6 +62,7 @@ void sb_gdb(void)
 	}
 }
 
+#ifndef NDEBUG
 void sb_maybe_gdb(void)
 {
 	if (is_env_on("SANDBOX_GDB")) {
@@ -69,3 +70,4 @@ void sb_maybe_gdb(void)
 		sb_gdb();
 	}
 }
+#endif
