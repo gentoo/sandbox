@@ -794,46 +794,6 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto out;
 		}
 
-		/* XXX: Hack to enable us to remove symlinks pointing to
-		 * protected stuff.  First we make sure that the passed path
-		 * is writable, and if so, check if it's a symlink, and give
-		 * access only if the resolved path of the symlink's parent
-		 * also have write access.  We also want to let through funcs
-		 * whose flags say they will operate on symlinks themselves
-		 * rather than dereferencing them.
-		 */
-		if (sym_func) {
-			/* Check if the symlink unresolved path have access */
-			retval = check_prefixes(sbcontext->write_prefixes,
-						sbcontext->num_write_prefixes, abs_path);
-			if (1 == retval) { /* Does have write access on path */
-				char *dname, *dname_buf, *rpath;
-
-				dname_buf = xstrdup(abs_path);
-				dname = dirname(dname_buf);
-				/* Get symlink resolved path */
-				rpath = resolve_path(dname, 1);
-				free(dname_buf);
-				if (NULL == rpath)
-					/* Don't really worry here about
-					 * memory issues */
-					goto unlink_hack_end;
-
-				/* Now check if the symlink resolved path have access */
-				retval = check_prefixes(sbcontext->write_prefixes,
-							sbcontext->num_write_prefixes,
-							rpath);
-				free(rpath);
-				if (1 == retval) {
-					/* Does have write access on path, so
-					 * enable the hack as it is a symlink */
-					result = 1;
-					goto out;
-				}
-			}
-		}
- unlink_hack_end: ;
-
 		/* Hack to allow writing to '/proc/self/fd' #91516.  It needs
 		 * to be here as for each process, the '/proc/self' symlink
 		 * will differ ...
