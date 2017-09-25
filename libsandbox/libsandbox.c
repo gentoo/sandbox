@@ -632,9 +632,25 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 		return 0;
 
 	size_t i;
-	for (i = 0; i < num_prefixes; ++i)
-		if (prefixes[i] && !strncmp(path, prefixes[i], strlen(prefixes[i])))
-			return 1;
+	for (i = 0; i < num_prefixes; ++i) {
+		if (unlikely(!prefixes[i]))
+			continue;
+
+		size_t prefix_len = strlen(prefixes[i]);
+		/* Start with a regular prefix match for speed */
+		if (strncmp(path, prefixes[i], prefix_len))
+			continue;
+
+		/* Now, if prefix did not end with a slash, we need to make sure
+		 * we are not matching in the middle of a filename. So check
+		 * whether the match is followed by a slash, or NUL.
+		 */
+		if (prefixes[i][prefix_len-1] != '/'
+				&& path[prefix_len] != '/' && path[prefix_len] != '\0')
+			continue;
+
+		return 1;
+	}
 
 	return 0;
 }
