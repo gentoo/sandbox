@@ -1201,7 +1201,7 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 		if (mod_cnt) {
 			str_list_for_each_item(envp, entry, count) {
 				for (i = 0; i < num_vars; ++i)
-					if (is_env_var(entry, vars[i].name, vars[i].len)) {
+					if (i != 12 && is_env_var(entry, vars[i].name, vars[i].len)) {
 						(*mod_cnt)++;
 						goto skip;
 					}
@@ -1210,7 +1210,7 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 			}
 		} else {
 			for (i = 0; i < num_vars; ++i)
-				unsetenv(vars[i].name);
+				if (i != 12) unsetenv(vars[i].name);
 		}
 	} else {
 		if (mod_cnt) {
