@@ -1142,6 +1142,11 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 	char *found_vars[num_vars];
 	size_t found_var_cnt;
 
+	/* If sandbox is explicitly disabled, do not propagate the vars
+	 * and just return user's envp */
+	if (!sbcontext.on)
+		return envp;
+
 	/* First figure out how many vars are already in the env */
 	found_var_cnt = 0;
 	memset(found_vars, 0, sizeof(found_vars));
