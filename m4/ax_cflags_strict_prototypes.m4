@@ -1,6 +1,6 @@
-# ===============================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_cflags_strict_prototypes.html
-# ===============================================================================
+# ================================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_cflags_strict_prototypes.html
+# ================================================================================
 #
 # SYNOPSIS
 #
@@ -43,7 +43,7 @@
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -58,7 +58,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 13
+#serial 16
 
 AC_DEFUN([AX_FLAGS_STRICT_PROTOTYPES],[dnl
 AS_VAR_PUSHDEF([FLAGS],[_AC_LANG_PREFIX[]FLAGS])dnl
@@ -68,8 +68,8 @@ VAR,[VAR="no, unknown"
 ac_save_[]FLAGS="$[]FLAGS"
 for ac_arg dnl
 in "-pedantic -Werror % -fstrict-prototypes -Wstrict-prototypes" dnl   GCC
-   "-pedantic -Werror % -Wstrict-prototypes" dnl try to warn atleast
-   "-pedantic -Werror % -Wmissing-prototypes" dnl try to warn atleast
+   "-pedantic -Werror % -Wstrict-prototypes" dnl try to warn at least
+   "-pedantic -Werror % -Wmissing-prototypes" dnl try to warn at least
    "-pedantic -Werror % -Werror-implicit-function-declaration" dnl
    "-pedantic -Werror % -Wimplicit-function-declaration" dnl
    "-pedantic % -Wstrict-prototypes %% no, unsupported" dnl oops
