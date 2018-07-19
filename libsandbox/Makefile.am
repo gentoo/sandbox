@@ -20,7 +20,6 @@ libsandbox_la_LIBADD = \
 # and destructor will not be executed ...
 libsandbox_la_LDFLAGS = \
 	-no-undefined \
-	-nodefaultlibs \
 	-avoid-version \
 	$(LDFLAG_VER),libsandbox.map
 libsandbox_la_SOURCES = \
