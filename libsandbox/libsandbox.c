@@ -125,7 +125,14 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 	save_errno();
 
 	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
-	sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid ? : getpid(), dirfd);
+	if (trace_pid)
+	    sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid, dirfd);
+	else
+	    /* If /proc was mounted by a process in a different pid namespace,
+	     * getpid cannot be used to create a valid /proc/<pid> path. Instead
+	     * use sb_get_fd_dir() which works in any case.
+	     */
+	    sprintf(resolved_path, "%s/%i", sb_get_fd_dir(), dirfd);
 	ssize_t ret = readlink(resolved_path, resolved_path, at_len);
 	if (ret == -1) {
 		/* see comments at end of check_syscall() */
