@@ -56,8 +56,21 @@ void *get_dlsym(const char *symname, const char *symver);
 
 extern char sandbox_lib[SB_PATH_MAX];
 extern bool sandbox_on;
-char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert);
-void sb_cleanup_envp(char **envp, size_t mod_cnt);
+
+struct sb_envp_ctx {
+	/* Sandboxified environment with sandbox variables injected.
+	 * Allocated by 'sb_new_envp', freed by 'sb_free_envp'. */
+	char ** sb_envp;
+	/* Original environment. Passed from outside. */
+	char ** orig_envp;
+
+	/* Internal counter to free.
+	 * Not to be used outside sb_{new,free}_envp. */
+	size_t __mod_cnt;
+};
+struct sb_envp_ctx sb_new_envp(char **envp, bool insert);
+void sb_free_envp(struct sb_envp_ctx * envp_ctx);
+
 extern pid_t trace_pid;
 
 extern void sb_lock(void);

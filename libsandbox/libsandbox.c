@@ -1122,10 +1122,18 @@ typedef struct {
  *
  * XXX: Might be much nicer if we could serialize these vars behind the back of
  *      the program.  Might be hard to handle LD_PRELOAD though ...
+ *
+ * execv*() must never modify environment inplace with
+ * setenv/putenv/unsetenv as it can relocate 'environ' and break
+ * vfork()/execv() users: https://bugs.gentoo.org/669702
  */
-char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
+struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 {
-	char **my_env;
+	struct sb_envp_ctx r = {
+		.sb_envp   = envp,
+		.orig_envp = envp,
+		.__mod_cnt = 0,
+	};
 	char *entry;
 	size_t count, i;
 	env_pair vars[] = {
@@ -1152,7 +1160,7 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 	/* If sandbox is explicitly disabled, do not propagate the vars
 	 * and just return user's envp */
 	if (!sbcontext.on)
-		return envp;
+		return r;
 
 	/* First figure out how many vars are already in the env */
 	found_var_cnt = 0;
@@ -1188,7 +1196,7 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 	if ((insert && num_vars == found_var_cnt) ||
 	    (!insert && found_var_cnt == 0))
 		/* Use the user's envp */
-		return envp;
+		return r;
 
 	/* Ok, we need to create our own envp, as we need to restore stuff
 	 * and we should not touch the user's envp.  First we add our vars,
@@ -1208,61 +1216,50 @@ char **sb_check_envp(char **envp, size_t *mod_cnt, bool insert)
 		vars[13].value = "1";
 	}
 
-	my_env = NULL;
+	char ** my_env = NULL;
 	if (!insert) {
-		if (mod_cnt) {
-			str_list_for_each_item(envp, entry, count) {
-				for (i = 0; i < num_vars; ++i)
-					if (i != 12 && is_env_var(entry, vars[i].name, vars[i].len)) {
-						(*mod_cnt)++;
-						goto skip;
-					}
-				str_list_add_item(my_env, entry, error);
- skip: ;
-			}
-		} else {
+		str_list_for_each_item(envp, entry, count) {
 			for (i = 0; i < num_vars; ++i)
-				if (i != 12) unsetenv(vars[i].name);
+				if (i != 12 /* LD_LIBRARY_PATH index */
+				    && is_env_var(entry, vars[i].name, vars[i].len)) {
+					r.__mod_cnt++;
+					goto skip;
+				}
+			str_list_add_item(my_env, entry, error);
+ skip: ;
 		}
 	} else {
-		if (mod_cnt) {
-			/* Count directly due to variability with LD_PRELOAD and the value
-			 * logic below.  Getting out of sync can mean memory corruption. */
-			*mod_cnt = 0;
-			if (unlikely(merge_ld_preload)) {
-				str_list_add_item(my_env, ld_preload, error);
-				(*mod_cnt)++;
-			}
-			for (i = 0; i < num_vars; ++i) {
-				if (found_vars[i] || !vars[i].value)
-					continue;
-				str_list_add_item_env(my_env, vars[i].name, vars[i].value, error);
-				(*mod_cnt)++;
-			}
+		/* Count directly due to variability with LD_PRELOAD and the value
+		 * logic below.  Getting out of sync can mean memory corruption. */
+		r.__mod_cnt = 0;
+		if (unlikely(merge_ld_preload)) {
+			str_list_add_item(my_env, ld_preload, error);
+			r.__mod_cnt++;
+		}
+		for (i = 0; i < num_vars; ++i) {
+			if (found_vars[i] || !vars[i].value)
+				continue;
+			str_list_add_item_env(my_env, vars[i].name, vars[i].value, error);
+			r.__mod_cnt++;
+		}
 
-			str_list_for_each_item(envp, entry, count) {
-				if (unlikely(merge_ld_preload && is_env_var(entry, vars[0].name, vars[0].len)))
-					continue;
-				str_list_add_item(my_env, entry, error);
-			}
-		} else {
-			if (unlikely(merge_ld_preload))
-				putenv(ld_preload);
-			for (i = 0; i < num_vars; ++i) {
-				if (found_vars[i] || !vars[i].value)
-					continue;
-				setenv(vars[i].name, vars[i].value, 1);
-			}
+		str_list_for_each_item(envp, entry, count) {
+			if (unlikely(merge_ld_preload && is_env_var(entry, vars[0].name, vars[0].len)))
+				continue;
+			str_list_add_item(my_env, entry, error);
 		}
 	}
 
  error:
-	return my_env;
+	r.sb_envp = my_env;
+	return r;
 }
 
-void sb_cleanup_envp(char **envp, size_t mod_cnt)
+void sb_free_envp(struct sb_envp_ctx * envp_ctx)
 {
 	/* We assume all the stuffed vars are at the start */
+	size_t mod_cnt = envp_ctx->__mod_cnt;
+	char ** envp = envp_ctx->sb_envp;
 	size_t i;
 	for (i = 0; i < mod_cnt; ++i)
 		free(envp[i]);
@@ -1271,5 +1268,6 @@ void sb_cleanup_envp(char **envp, size_t mod_cnt)
 	 * entries except for LD_PRELOAD.  All the other entries are
 	 * pointers to existing envp memory.
 	 */
-	free(envp);
+	if (envp != envp_ctx->orig_envp)
+		free(envp);
 }

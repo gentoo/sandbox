@@ -18,6 +18,7 @@ check_PROGRAMS = \
 	chown-0 \
 	creat-0 \
 	creat64-0 \
+	execv-0 \
 	execvp-0 \
 	faccessat-0 \
 	fchmodat-0 \

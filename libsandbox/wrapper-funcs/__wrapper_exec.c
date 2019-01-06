@@ -275,10 +275,11 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 #endif
 
 #ifdef EXEC_MY_ENV
-	size_t mod_cnt;
-	char **my_env = sb_check_envp((char **)envp, &mod_cnt, run_in_process);
+	struct sb_envp_ctx ec = sb_new_envp((char**)envp, run_in_process);
+	char **my_env = ec.sb_envp;
 #else
-	sb_check_envp(environ, NULL, run_in_process);
+	struct sb_envp_ctx ec = sb_new_envp(environ, run_in_process);
+	environ = ec.sb_envp;
 #endif
 
 	restore_errno();
@@ -287,10 +288,12 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 #endif
 	result = SB_HIDDEN_FUNC(WRAPPER_NAME)(EXEC_ARGS);
 
-#ifdef EXEC_MY_ENV
-	if (my_env != envp)
-		sb_cleanup_envp(my_env, mod_cnt);
+#ifndef EXEC_MY_ENV
+	/* https://bugs.gentoo.org/669702: maintain illusion
+	 or unmodified 'environ'. */
+	environ = ec.orig_envp;
 #endif
+	sb_free_envp(&ec);
 
 #ifdef EXEC_RECUR_CHECK
 	--recursive;
