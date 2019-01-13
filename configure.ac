@@ -38,14 +38,6 @@ LT_INIT([disable-static])
 
 AC_PREFIX_DEFAULT([/usr])
 
-dnl allow pch to be controlled
-AC_MSG_CHECKING([whether to use pre-compiled sandbox headers])
-AC_ARG_ENABLE([pch],
-	[AS_HELP_STRING([--disable-pch],[Disable pre-compiled headers])],
-	[],[enable_pch="yes"])
-AM_CONDITIONAL([SB_BUILD_PCH], test "$enable_pch" = "yes")
-AC_MSG_RESULT($enable_pch)
-
 dnl multiple personality support (x86 & x86_64: multilib)
 AC_MSG_CHECKING([for multiple personalities])
 AC_ARG_ENABLE([schizo],
@@ -425,7 +417,6 @@ AC_SUBST([CFLAG_EXCEPTIONS])
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 AX_CFLAGS_WARN_ALL
 AC_DEFUN([SB_CHECK_CFLAG],[AX_CHECK_COMPILE_FLAG([$1],[CFLAGS="$CFLAGS $1"])])
-SB_CHECK_CFLAG([-Winvalid-pch])
 SB_CHECK_CFLAG([-fdata-sections])
 SB_CHECK_CFLAG([-ffunction-sections])
 dnl We have our own wrapped memory functions.
