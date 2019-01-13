@@ -456,13 +456,9 @@ AC_CONFIG_TESTDIR([tests])
 AC_CONFIG_FILES([src/sandbox.sh], [chmod +x src/sandbox.sh])
 AC_CONFIG_FILES([
 	Makefile
-	data/Makefile
-	etc/Makefile
 	etc/sandbox.d/00default
-	etc/sandbox.d/Makefile
 	libsandbox/Makefile
 	libsbutil/Makefile
-	scripts/Makefile
 	src/Makefile
 	tests/atlocal
 	tests/Makefile
