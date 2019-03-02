@@ -83,8 +83,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 ({ \
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
 	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
-	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0, vhash = 0, vliblist = 0; \
-	Elf##n##_Off offset, symoff = 0, stroff = 0, hashoff = 0, liblistoff = 0; \
+	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0, vhash = 0, vgnuhash = 0; \
+	Elf##n##_Off offset, symoff = 0, stroff = 0, hashoff = 0, gnuhashoff = 0; \
 	Elf##n##_Dyn *dyn; \
 	Elf##n##_Sym *sym, *symend; \
 	uint##n##_t ent_size = 0, str_size = 0; \
@@ -107,7 +107,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 				case DT_STRTAB:      vstr = dyn->d_un.d_val; break; \
 				case DT_STRSZ:       str_size = dyn->d_un.d_val; break; \
 				case DT_HASH:        vhash = dyn->d_un.d_val; break; \
-				case DT_GNU_LIBLIST: vliblist = dyn->d_un.d_val; break; \
+				case DT_GNU_HASH:    vgnuhash = dyn->d_un.d_val; break; \
 				} \
 				++dyn; \
 			} \
@@ -127,8 +127,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 				stroff = offset + (vstr - vaddr); \
 			if (vhash >= vaddr && vhash < vaddr + filesz) \
 				hashoff = offset + (vhash - vaddr); \
-			if (vliblist >= vaddr && vliblist < vaddr + filesz) \
-				liblistoff = offset + (vliblist - vaddr); \
+			if (vgnuhash >= vaddr && vgnuhash < vaddr + filesz) \
+				gnuhashoff = offset + (vgnuhash - vaddr); \
 		} \
 		\
 		/* Finally walk the symbol table.  This should generally be fast as \
@@ -137,47 +137,81 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 		 */ \
 		if (symoff && stroff) { \
 			/* Nowhere is the # of symbols recorded, or the size of the symbol \
-			 * table.  Instead, we do what glibc does: use the sysv hash table \
-			 * if it exists, else assume that the string table always directly \
+			 * table.  Instead, we do what glibc does: use the gnu or sysv hash \
+			 * table if it exists, else assume that the string table always directly \
 			 * follows the symbol table.  This seems like a poor assumption to \
 			 * make, but glibc has gotten by this long.  See determine_info in \
 			 * glibc's elf/dl-addr.c. \
-			 * \
-			 * Turns out prelink will violate that assumption.  Fortunately it \
-			 * will insert its liblist at the same location all the time -- it \
-			 * replaces the string table with its liblist table. \
-			 * \
-			 * Long term, we should behave the same as glibc and walk the gnu \
-			 * hash table first before falling back to the raw symbol table. \
 			 * \
 			 * We don't sanity check the ranges here as you aren't executing \
 			 * corrupt programs in the sandbox. \
 			 */ \
 			sym = (void *)(elf + symoff); \
-			if (vhash) { \
-				/* Hash entries are always 32-bits. */ \
-				uint32_t *hashes = (void *)(elf + hashoff); \
-				symend = sym + hashes[1]; \
-			} else if (vliblist) \
-				symend = (void *)(elf + liblistoff); \
-			else \
-				symend = (void *)(elf + stroff); \
-			\
-			while (sym < symend) { \
-				char *symname = (void *)(elf + stroff + sym->st_name); \
-				if (ELF##n##_ST_VISIBILITY(sym->st_other) == STV_DEFAULT && \
-				    sym->st_shndx != SHN_UNDEF && sym->st_shndx < SHN_LORESERVE && \
-				    sym->st_name && \
-				    /* Minor optimization to avoid strcmp. */ \
-				    symname[0] == '_' && symname[1] == '_') { \
-					/* Blacklist internal C library symbols. */ \
-					for (i = 0; i < ARRAY_SIZE(libc_alloc_syms); ++i) \
-						if (!strcmp(symname, libc_alloc_syms[i])) { \
-							run_in_process = false; \
-							goto use_trace; \
-						} \
+			if (vgnuhash) { \
+				uint32_t *hash32 = (void *)(elf + gnuhashoff); \
+				/* use glibc's elf/dl-lookup.c:_dl_setup_hash() as a reference */ \
+				/*   DT_GNU_HASH header: */ \
+				uint32_t nbuckets = *hash32++; \
+				uint32_t symbias = *hash32++; \
+				uint32_t bitmask_nwords = *hash32++; \
+				hash32++; /* gnu_shift */ \
+				hash32 += n / 32 * bitmask_nwords; /* gnu_bitmask */ \
+				uint32_t *gnu_buckets = hash32; \
+				hash32 += nbuckets; \
+				uint32_t *gnu_chain_zero = hash32 - symbias; \
+				\
+				uint32_t bucket; \
+				\
+				for (bucket = 0; bucket < nbuckets; bucket++) { \
+					uint32_t symndx = gnu_buckets[bucket]; \
+					if (symndx != 0) { \
+						const uint32_t *hasharr = &gnu_chain_zero[symndx]; \
+						do { \
+							Elf##n##_Sym * s = &sym[symndx]; \
+							\
+							/* keep in sync with 'vhash' case */ \
+							char *symname = (void *)(elf + stroff + s->st_name); \
+							if (ELF##n##_ST_VISIBILITY(s->st_other) == STV_DEFAULT && \
+							    s->st_shndx != SHN_UNDEF && s->st_shndx < SHN_LORESERVE && \
+							    s->st_name && \
+							    /* Minor optimization to avoid strcmp. */ \
+							    symname[0] == '_' && symname[1] == '_') { \
+								/* Blacklist internal C library symbols. */ \
+								for (i = 0; i < ARRAY_SIZE(libc_alloc_syms); ++i) \
+									if (!strcmp(symname, libc_alloc_syms[i])) { \
+										run_in_process = false; \
+										goto use_trace; \
+									} \
+							} \
+							++symndx; \
+						} while ((*hasharr++ & 1u) == 0); \
+					} \
 				} \
-				++sym; \
+			} else { \
+				if (vhash) { \
+					/* Hash entries are always 32-bits. */ \
+					uint32_t *hashes = (void *)(elf + hashoff); \
+					symend = sym + hashes[1]; \
+				} else \
+					symend = (void *)(elf + stroff); \
+				\
+				while (sym < symend) { \
+					/* keep insync with 'vgnuhash' case */ \
+					char *symname = (void *)(elf + stroff + sym->st_name); \
+					if (ELF##n##_ST_VISIBILITY(sym->st_other) == STV_DEFAULT && \
+					    sym->st_shndx != SHN_UNDEF && sym->st_shndx < SHN_LORESERVE && \
+					    sym->st_name && \
+					    /* Minor optimization to avoid strcmp. */ \
+					    symname[0] == '_' && symname[1] == '_') { \
+						/* Blacklist internal C library symbols. */ \
+						for (i = 0; i < ARRAY_SIZE(libc_alloc_syms); ++i) \
+							if (!strcmp(symname, libc_alloc_syms[i])) { \
+								run_in_process = false; \
+								goto use_trace; \
+							} \
+					} \
+					++sym; \
+				} \
 			} \
 		} \
 		\
