@@ -117,6 +117,10 @@ END {
 				gsub(/@|\./, "_", sym_real_name);
 			}
 
+			# Avoid libc's symbol rename via #define. musl defines aliases as:
+			# #define mkstemp64 mkstemp
+			# #define mkstemps64 mkstemps
+			printf("#undef %s\n", sym_index);
 			printf("#define symname_%s \"%s\"\n", sym_real_name, sym_index);
 
 			# We handle non-versioned libc's by setting symver_*
