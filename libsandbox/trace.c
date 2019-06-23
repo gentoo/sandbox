@@ -10,7 +10,16 @@
 #include "sb_nr.h"
 
 static long do_peekdata(long offset);
-static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data);
+/* Note on _do_ptrace argument types:
+   glibc defines ptrace as:
+     long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+   musl defines ptrace as:
+     long ptrace(int, ...);
+
+   Let's clobber to 'int' lowest common denominator.
+ */
+typedef int sb_ptrace_req_t;
+static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data);
 #define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
 #define _trace_possible(data) true
 
@@ -44,7 +53,7 @@ static void trace_exit(int status)
 	_exit(status);
 }
 
-static long _do_ptrace(enum __ptrace_request request, const char *srequest, void *addr, void *data)
+static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data)
 {
 	long ret;
  try_again:
