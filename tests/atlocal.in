@@ -2,6 +2,7 @@
 
 export abs_top_srcdir abs_top_builddir abs_srcdir abs_builddir
 export AWK="@AWK@"
+export HOST="@host@"
 
 if ! ${at_clean} ; then
 	export SB_UID=$(./get-user)
