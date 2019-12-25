@@ -970,6 +970,15 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (trace_pid && errno == ESRCH)
 		return 2;
 
+	/* Underlying directory we operate on went away: #590084 */
+	if (!absolute_path && !resolved_path && errno == ENOENT) {
+		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
+		if (sbcontext->show_access_violation)
+			sb_eerror("%sACCESS DENIED%s:  %s:%*s'%s' (from deleted directory, see https://bugs.gentoo.org/590084)\n",
+				COLOR_RED, COLOR_NORMAL, func, sym_len, "", file);
+		return 0;
+	}
+
 	/* If we get here, something bad happened */
 	sb_ebort("ISE: %s(%s)\n"
 		"\tabs_path: %s\n"
