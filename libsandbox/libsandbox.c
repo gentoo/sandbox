@@ -971,8 +971,14 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		return 2;
 
 	/* If we get here, something bad happened */
-	sb_ebort("ISE: %s(%s)\n\tabs_path: %s\n\tres_path: %s\n",
-		func, file, absolute_path, resolved_path);
+	sb_ebort("ISE: %s(%s)\n"
+		"\tabs_path: %s\n"
+		"\tres_path: %s\n"
+		"\terrno=%i: %s\n",
+		func, file,
+		absolute_path,
+		resolved_path,
+		errno, strerror(errno));
 }
 
 bool is_sandbox_on(void)
