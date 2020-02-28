@@ -10,14 +10,10 @@ SUBDIRS = \
 
 confdir = $(sysconfdir)
 confddir = $(sysconfdir)/sandbox.d
-pixmapdir = $(datadir)/pixmaps
-desktopdir = $(datadir)/applications
 
 dist_conf_DATA = etc/sandbox.conf
 confd_DATA = etc/sandbox.d/00default
 dist_pkgdata_DATA  = data/sandbox.bashrc
-dist_pixmap_DATA = data/sandbox.svg
-dist_desktop_DATA = data/sandbox.desktop
 noinst_LTLIBRARIES =
 
 libsandbox: libsbutil
@@ -28,6 +24,8 @@ EXTRA_DIST = \
 	headers.h \
 	localdecls.h \
 	ChangeLog.0 \
+	data/sandbox.desktop \
+	data/sandbox.svg \
 	etc/sandbox.d/00default.in \
 	scripts/gen_symbol_version_map.awk \
 	scripts/gen_symbol_header.awk \
