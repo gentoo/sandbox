@@ -1,5 +1,6 @@
 #!/bin/sh
-
+# http://bugs.gentoo.org/139591
+[ "${at_xfail}" = "yes" ] && exit 77 # see script-0
 addwrite $PWD
 
 mkdir -p to-be/deleted
