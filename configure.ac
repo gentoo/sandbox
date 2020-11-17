@@ -31,7 +31,7 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PROG_AWK
 AC_PROG_EGREP
-AC_CHECK_PROGS([READELF], [readelf eu-readelf], [false])
+AC_CHECK_TOOLS([READELF], [readelf eu-readelf], [false])
 AM_MISSING_PROG([AUTOM4TE], [autom4te])
 
 LT_INIT([disable-static])
