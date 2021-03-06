@@ -74,3 +74,4 @@ utimensat
 futimesat
 lutimes
 fork
+vfork
