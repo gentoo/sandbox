@@ -11,7 +11,7 @@
 
 #define WRITE(msg) ({ ssize_t w = write(1, msg, sizeof(msg) - 1); w; })
 
-#ifdef HAVE_SIGSEGV_H
+#if defined(HAVE_SIGSEGV_H) && defined(HAVE_LIBSIGSEGV)
 #include <sigsegv.h>
 
 static int segv_handler(void *address, int serious)

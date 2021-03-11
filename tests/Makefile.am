@@ -96,7 +96,9 @@ sb_printf_tst_LDADD = $(top_builddir)/libsbutil/libsbutil.la
 
 malloc_hooked_tst_LDFLAGS = $(AM_LDFLAGS) -pthread
 
+libsigsegv_tst_CPPFLAGS = ${AM_CPPFLAGS}
 if HAVE_LIBSIGSEGV
+libsigsegv_tst_CPPFLAGS += -DHAVE_LIBSIGSEGV
 libsigsegv_tst_LDADD = -lsigsegv
 endif
 

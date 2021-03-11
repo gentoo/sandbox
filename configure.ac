@@ -90,7 +90,6 @@ AM_CONDITIONAL([SB_SCHIZO], [test "x$enable_schizo" != "xno"])
 dnl this test fills up the stack and then triggers a segfault ...
 dnl but it's hard to wrap things without a stack, so let's ignore
 dnl this test for now ...
-ac_cv_header_sigsegv_h=no
 ac_cv_lib_sigsegv_stackoverflow_install_handler=false
 
 dnl Checks for libraries.
