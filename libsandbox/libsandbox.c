@@ -1181,6 +1181,7 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 	found_var_cnt = 0;
 	memset(found_vars, 0, sizeof(found_vars));
 
+	/* Iterate through user's environment and check against expected. */
 	str_list_for_each_item(envp, entry, count) {
 		for (i = 0; i < num_vars; ++i) {
 			if (found_vars[i])
@@ -1188,6 +1189,14 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 			if (unlikely(!is_env_var(entry, vars[i].name, vars[i].len)))
 				continue;
 			found_vars[i] = entry;
+			++found_var_cnt;
+		}
+	}
+
+	/* Treat unset and expected-unset variables as found. This will allow us
+	 * to keep existing environment. */
+	for (i = 0; i < num_vars; ++i) {
+		if (vars[i].value == NULL && found_vars[i] == NULL) {
 			++found_var_cnt;
 		}
 	}
