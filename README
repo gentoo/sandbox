@@ -26,3 +26,6 @@ we'll check the arguments against the environment settings.  Based on that, any
 access that is not permitted is logged and we return an error to the
 application.  Any access that is permitted is of course forwarded along to the
 real C library.
+
+In case of static ELF binary sandbox traces eecuted binary with ptrace() system
+call.
