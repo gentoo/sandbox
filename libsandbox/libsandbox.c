@@ -895,6 +895,9 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	bool access, debug, verbose, set;
 
 	absolute_path = resolve_path(file, 0);
+	if (!absolute_path)
+		goto error;
+
 	/* Do not bother dereferencing symlinks when we are using a function that
 	 * itself does not dereference.  This speeds things up and avoids updating
 	 * the atime implicitly. #415475
@@ -980,7 +983,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	}
 
 	/* If we get here, something bad happened */
-	sb_ebort("ISE: %s(%s)\n"
+	sb_ebort("ISE: %s('%s')\n"
 		"\tabs_path: %s\n"
 		"\tres_path: %s\n"
 		"\terrno=%i: %s\n",
