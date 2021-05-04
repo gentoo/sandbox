@@ -47,12 +47,3 @@ dist-hook:
 			touch "$(distdir)/ChangeLog" ; \
 		fi ; \
 	fi
-
-install-exec-hook:
-	set -e ; \
-	for f in $(bindir)/sandbox $(libdir)/libsandbox.so ; do \
-		sed -i.tmp \
-			's:__SANDBOX_TESTING:\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00:' \
-			$(DESTDIR)$$f ; \
-		rm -f $(DESTDIR)$$f.tmp ; \
-	done
