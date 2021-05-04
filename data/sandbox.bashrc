@@ -9,7 +9,6 @@ fi
 
 export BASH_ENV="${SANDBOX_BASHRC}"
 
-alias make="make LD_PRELOAD=${LD_PRELOAD}"
 alias su="su -c '/bin/bash -rcfile ${SANDBOX_BASHRC}'"
 
 declare -r SANDBOX_ACTIVE
