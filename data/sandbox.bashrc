@@ -102,7 +102,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 	sandboxon()  { export SANDBOX_ON="1" ; }
 	sandboxoff() { export SANDBOX_ON="0" ; }
 
-	[[ -z ${CCACHE_DIR} ]] && [[ -w /root/.ccache ]] && export CCACHE_DIR=/root/.ccache
+	[[ -z ${CCACHE_DIR} ]] && [[ -w $HOME/.ccache ]] && export CCACHE_DIR=$HOME/.ccache
 	for var in CCACHE_DIR DISTCC_DIR ; do
 		[[ ${!var+set} == "set" ]] && addwrite ${!var}
 	done
