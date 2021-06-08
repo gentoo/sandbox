@@ -714,15 +714,6 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto out;
 	}
 
-	/* Hardcode denying write to the whole log dir.  While this is a
-	 * parial match and so rejects paths that also start with this
-	 * string, that isn't going to happen in real life so live with
-	 * it.  We can't append a slash to this path either as that would
-	 * allow people to open the dir itself for writing.
-	 */
-	if (!strncmp(resolv_path, SANDBOX_LOG_LOCATION, strlen(SANDBOX_LOG_LOCATION)))
-		goto out;
-
 	if (sbcontext->read_prefixes &&
 	    (sb_nr == SB_NR_ACCESS_RD ||
 	     sb_nr == SB_NR_OPEN_RD   ||
@@ -753,6 +744,15 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto out;
 		}
 	}
+
+	/* Hardcode denying write to the whole log dir.  While this is a
+	 * parial match and so rejects paths that also start with this
+	 * string, that isn't going to happen in real life so live with
+	 * it.  We can't append a slash to this path either as that would
+	 * allow people to open the dir itself for writing.
+	 */
+	if (!strncmp(resolv_path, SANDBOX_LOG_LOCATION, strlen(SANDBOX_LOG_LOCATION)))
+		goto out;
 
 	if (sb_nr == SB_NR_ACCESS_WR   ||
 	    sb_nr == SB_NR_CHMOD       ||
