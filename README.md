@@ -23,5 +23,55 @@ access that is not permitted is logged and we return an error to the
 application.  Any access that is permitted is of course forwarded along to the
 real C library.
 
-In case of static ELF binary sandbox traces eecuted binary with ptrace() system
-call.
+Static ELFs and setuid/setgid programs are executed with
+[ptrace()](https://man7.org/linux/man-pages/man2/ptrace.2.html) instead.
+
+## Availability
+
+Sandbox supports multiple monitoring methods, but not all are available in all
+system configurations.
+
+### preload
+
+The in-process LD_PRELOAD method should be available on any reasonable ELF-based
+system as long as it uses dynamic linking.  Statically linked programs will run,
+but will not be monitored, nor will set*id programs (because the C library will
+clear LD_PRELOAD first).
+
+Multiple ABIs are supported (e.g. x86 32-bit & 64-bit).
+
+It has been tested & known to work with:
+* Architecture
+  * They all should work!
+* Operating system
+  * [Linux](https://kernel.org/) 2.4+
+* C library
+  * [GNU C library (glibc)](https://www.gnu.org/software/libc/) 2.2+
+  * [uClibc](https://uclibc.org/) 0.9.26+
+  * [musl](https://musl.libc.org/) 0.9.9+
+
+### ptrace
+
+The out-of-process ptrace method is available on Linux systems, works with
+dynamic & static linking, and supports set*id programs (by forcing them to run
+without any elevated privileges).
+
+Multiple personalities are supported (e.g. PowerPC 32-bit & 64-bit).
+
+NB: Does not work in userland emulators (e.g. QEMU) which do not provide ptrace
+emulation.
+
+It requires:
+* Architecture
+  * Alpha
+  * ARM (32-bit EABI)
+  * Blackfin
+  * HPPA/PA-RISC (32-bit)
+  * Itanium
+  * PowerPC (32-bit & 64-bit)
+  * s390 (32-bit & 64-bit)
+  * x86 (32-bit & 64-bit & x32)
+* Operating system
+  * [Linux](https://kernel.org/) 2.6.20+
+* C library
+  * They all should work!
