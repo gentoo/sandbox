@@ -169,6 +169,15 @@ char *__xstrndup(const char *str, size_t size, const char *file, const char *fun
 #define restore_errno() errno = old_errno;
 #define saved_errno     old_errno
 
+#define RETRY_EINTR(call) \
+({ \
+	long result; \
+	do { \
+		result = (call); \
+	} while (result == -1 && errno == EINTR); \
+	result; \
+})
+
 #include "gnulib/canonicalize.h"
 
 #endif /* __SBUTIL_H__ */

@@ -87,6 +87,8 @@ check_PROGRAMS += \
 	%D%/utimes-0 \
 	%D%/vfork-0 \
 	\
+	%D%/fork-follow_tst \
+	%D%/fork-follow_static_tst \
 	%D%/getcwd-gnulib_tst \
 	%D%/libsigsegv_tst \
 	%D%/malloc_hooked_tst \

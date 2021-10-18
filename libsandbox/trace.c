@@ -29,7 +29,7 @@ static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr
 # define SBDEBUG 0
 #endif
 #define __sb_debug(fmt, args...) do { if (SBDEBUG) sb_eraw(fmt, ## args); } while (0)
-#define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
+#define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i<%i):%s: " fmt, getpid(), trace_pid, __func__, ## args); } while (0)
 #define sb_debug(fmt, args...)   _sb_debug(fmt "\n", ## args)
 
 #include "trace/os.c"
@@ -397,6 +397,19 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
+static void trace_init_tracee(void)
+{
+	do_ptrace(PTRACE_SETOPTIONS, NULL, (void *)(uintptr_t)(
+		PTRACE_O_EXITKILL |
+		PTRACE_O_TRACECLONE |
+		PTRACE_O_TRACEEXEC |
+		PTRACE_O_TRACEEXIT |
+		PTRACE_O_TRACEFORK |
+		PTRACE_O_TRACEVFORK |
+		PTRACE_O_TRACESYSGOOD
+	));
+}
+
 static void trace_loop(void)
 {
 	trace_regs regs;
@@ -471,6 +484,56 @@ static void trace_loop(void)
 			__sb_debug(" exit event!\n");
 			continue;
 
+		case PTRACE_EVENT_CLONE:
+		case PTRACE_EVENT_FORK:
+		case PTRACE_EVENT_VFORK: {
+			/* The tracee is forking, so fork a new tracer to handle it. */
+			long newpid;
+			do_ptrace(PTRACE_GETEVENTMSG, NULL, &newpid);
+			sb_debug("following forking event %i; pid=%li %i\n",
+			         event, newpid, before_syscall);
+
+			/* Pipe for synchronizing detach & attach events. */
+			int fds[2];
+			ret = pipe(fds);
+			sb_assert(ret == 0);
+			if (fork() == 0) {
+				/* New tracer needs to take control of new tracee. */
+				char ch;
+				close(fds[1]);
+				RETRY_EINTR(read(fds[0], &ch, 1));
+				close(fds[0]);
+				trace_pid = newpid;
+ retry_attach:
+				ret = do_ptrace(PTRACE_ATTACH, NULL, NULL);
+				if (ret) {
+					if (errno == EPERM)
+						goto retry_attach;
+					sb_ebort("ISE:PTRACE_ATTACH %s", strerror(errno));
+				}
+				trace_init_tracee();
+				before_syscall = true;
+				continue;
+			} else {
+				/* Existing tracer needs to release new tracee. */
+ retry_detach:
+				ret = ptrace(PTRACE_DETACH, newpid, NULL, (void *)SIGSTOP);
+				if (ret) {
+					if (errno == ESRCH) {
+						/* The kernel might not have the proc ready yet. */
+						struct timespec ts = {0, 500 * 1000 /* 0.5 millisec */};
+						nanosleep(&ts, NULL);
+						goto retry_detach;
+					}
+					sb_ebort("ISE:PTRACE_DETACH %s", strerror(errno));
+				}
+				close(fds[0]);
+				RETRY_EINTR(write(fds[1], "", 1));
+				close(fds[1]);
+			}
+			continue;
+		}
+
 		default:
 			sb_ebort("ISE: unhandle ptrace signal %s (%i) event %u\n",
 			         strsig(sig), sig, event);
@@ -524,13 +587,7 @@ void trace_main(void)
 	} else if (trace_pid) {
 		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
-		do_ptrace(PTRACE_SETOPTIONS, NULL,
-			(void *)(uintptr_t)(
-				PTRACE_O_EXITKILL |
-				PTRACE_O_TRACEEXEC |
-				PTRACE_O_TRACEEXIT |
-				PTRACE_O_TRACESYSGOOD
-			));
+		trace_init_tracee();
 		sb_close_all_fds();
 		trace_loop();
 		sb_ebort("ISE: child should have quit, as should we\n");
