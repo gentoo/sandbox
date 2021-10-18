@@ -1,6 +1,4 @@
----------
-  about
----------
+# Sandbox
 
 Sandbox is a library (and helper utility) to run programs in a "sandboxed"
 environment.  This is used as a QA measure to try and prevent applications from
@@ -14,9 +12,7 @@ config files on the fly.
 For people who are familiar with the Debian "fakeroot" project or the RPM based
 "InstallWatch", sandbox is in the same vein of projects.
 
-----------
-  method
-----------
+## Method
 
 The way sandbox works is that you prime a few environment variables (in order
 to control the sandbox's behavior) and then stick it into the LD_PRELOAD
