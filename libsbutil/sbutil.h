@@ -54,6 +54,7 @@
 #define ENV_SANDBOX_WRITE      "SANDBOX_WRITE"
 #define ENV_SANDBOX_PREDICT    "SANDBOX_PREDICT"
 
+#define ENV_SANDBOX_METHOD     "SANDBOX_METHOD"
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
 
 #define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
@@ -83,6 +84,13 @@ static inline bool is_env_var(const char *env, const char *var, size_t vlen)
 {
 	return !strncmp(env, var, vlen) && env[vlen] == '=';
 }
+
+typedef enum sandbox_method_t {
+  SANDBOX_METHOD_ANY = 0,
+  SANDBOX_METHOD_PRELOAD,
+} sandbox_method_t;
+sandbox_method_t parse_sandbox_method(const char *);
+const char *str_sandbox_method(sandbox_method_t);
 
 /* proc helpers */
 extern const char sb_fd_dir[];
@@ -144,6 +152,9 @@ char *__xstrndup(const char *str, size_t size, const char *file, const char *fun
 #define xstrdup(_str)          __xstrdup(_str, __FILE__, __func__, __LINE__)
 #define xstrndup(_str, _size)  __xstrndup(_str, _size, __FILE__, __func__, __LINE__)
 #define xalloc_die()           __sb_ebort(__FILE__, __func__, __LINE__, "out of memory")
+
+/* string helpers */
+#define streq(s1, s2) (strcmp(s1, s2) == 0)
 
 /* errno helpers */
 #define save_errno()    int old_errno = errno;

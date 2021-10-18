@@ -51,6 +51,7 @@ bool before_syscall(int, int, const char *, const char *, int);
 bool before_syscall_access(int, int, const char *, const char *, int);
 bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
+enum sandbox_method_t get_sandbox_method(void);
 
 void *get_dlsym(const char *symname, const char *symver);
 

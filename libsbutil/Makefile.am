@@ -22,6 +22,7 @@ libsbutil_la_SOURCES =                        \
 	sb_backtrace.c                        \
 	sb_efuncs.c                           \
 	sb_gdb.c                              \
+	sb_method.c                           \
 	sb_open.c                             \
 	sb_read.c                             \
 	sb_write.c                            \

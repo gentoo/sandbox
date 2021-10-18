@@ -29,6 +29,7 @@ char sandbox_lib[SB_PATH_MAX];
 
 typedef struct {
 	bool show_access_violation, on, active, testing, verbose, debug;
+	sandbox_method_t method;
 	char *ld_library_path;
 	char **prefixes[5];
 	int num_prefixes[5];
@@ -94,11 +95,17 @@ void libsb_init(void)
 	sbcontext.verbose = is_env_on(ENV_SANDBOX_VERBOSE);
 	sbcontext.debug = is_env_on(ENV_SANDBOX_DEBUG);
 	sbcontext.testing = is_env_on(ENV_SANDBOX_TESTING);
+	sbcontext.method = get_sandbox_method();
 	if (sbcontext.testing) {
 		const char *ldpath = getenv("LD_LIBRARY_PATH");
 		if (ldpath)
 			sbcontext.ld_library_path = xstrdup(ldpath);
 	}
+}
+
+sandbox_method_t get_sandbox_method(void)
+{
+	return parse_sandbox_method(getenv(ENV_SANDBOX_METHOD));
 }
 
 /* resolve_dirfd_path - get the path relative to a dirfd
@@ -1170,6 +1177,7 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 		ENV_PAIR(11, ENV_SANDBOX_DEBUG, NULL),
 		ENV_PAIR(12, "LD_LIBRARY_PATH", NULL),
 		ENV_PAIR(13, ENV_SANDBOX_TESTING, NULL),
+		ENV_PAIR(14, ENV_SANDBOX_METHOD, NULL),
 	};
 	size_t num_vars = ARRAY_SIZE(vars);
 	char *found_vars[num_vars];
@@ -1242,6 +1250,8 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 		vars[12].value = sbcontext.ld_library_path;
 		vars[13].value = "1";
 	}
+	if (sbcontext.method != SANDBOX_METHOD_ANY)
+		vars[14].value = str_sandbox_method(sbcontext.method);
 
 	char ** my_env = NULL;
 	if (!insert) {

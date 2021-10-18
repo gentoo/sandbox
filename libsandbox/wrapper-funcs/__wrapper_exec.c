@@ -30,6 +30,10 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	struct stat st;
 	bool do_trace = false;
 	bool run_in_process = true;
+	sandbox_method_t method = get_sandbox_method();
+
+	if (unlikely(method == SANDBOX_METHOD_PRELOAD))
+		return true;
 
 	fd = sb_unwrapped_open_DEFAULT(filename, O_RDONLY|O_CLOEXEC, 0);
 	if (fd == -1)

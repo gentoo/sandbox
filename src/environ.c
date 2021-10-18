@@ -195,6 +195,7 @@ static int setup_cfg_vars(struct sandbox_info_t *sandbox_info)
 	setup_cfg_var(ENV_SANDBOX_VERBOSE);
 	setup_cfg_var(ENV_SANDBOX_DEBUG);
 	setup_cfg_var(ENV_NOCOLOR);
+	setup_cfg_var(ENV_SANDBOX_METHOD);
 
 	if (-1 == setup_access_var(ENV_SANDBOX_DENY))
 		return -1;
@@ -301,6 +302,8 @@ char **setup_environ(struct sandbox_info_t *sandbox_info)
 		sb_setenv(&new_environ, ENV_SANDBOX_DEBUG, "0");
 	if (!getenv(ENV_NOCOLOR))
 		sb_setenv(&new_environ, ENV_NOCOLOR, "no");
+	if (!getenv(ENV_SANDBOX_METHOD))
+		sb_setenv(&new_environ, ENV_SANDBOX_METHOD, "any");
 	/* If LD_PRELOAD was not set, set it here, else do it below */
 	if (!have_ld_preload)
 		sb_setenv(&new_environ, ENV_LD_PRELOAD, ld_preload_envvar);
