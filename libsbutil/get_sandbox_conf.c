@@ -19,6 +19,7 @@ char *get_sandbox_conf(void)
 	save_errno();
 	if (is_env_on(ENV_SANDBOX_TESTING)) {
 		char *abs = getenv("abs_top_srcdir");
+		sb_assert(abs != NULL);
 		ret = xmalloc(strlen(abs) + strlen(LOCAL_SANDBOX_CONF_FILE) + 1);
 		sprintf(ret, "%s%s", abs, LOCAL_SANDBOX_CONF_FILE);
 	}
