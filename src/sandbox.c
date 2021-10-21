@@ -337,7 +337,7 @@ int main(int argc, char **argv)
 		dputs(sandbox_footer);
 
 	/* Do the right thing and pass the signal back up.  See:
-	 * http://www.cons.org/cracauer/sigint.html
+	 * https://www.cons.org/cracauer/sigint.html
 	 */
 	if (stop_called != SIGUSR1 && WIFSIGNALED(shell_exit)) {
 		int signum = WTERMSIG(shell_exit);

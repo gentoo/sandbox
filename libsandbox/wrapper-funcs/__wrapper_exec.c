@@ -69,7 +69,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 			run_in_process = false;
 
 	/* We also need to ptrace programs that interpose their own allocator.
-	 * http://crbug.com/586444
+	 * https://crbug.com/586444
 	 */
 	if (run_in_process) {
 		static const char * const libc_alloc_syms[] = {

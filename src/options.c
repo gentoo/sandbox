@@ -57,7 +57,7 @@ static void show_version(void)
 		" version: " PACKAGE_VERSION "\n"
 		" C lib:   " LIBC_VERSION " (" LIBC_PATH ")\n"
 		" build:   " __DATE__ " " __TIME__ "\n"
-		" contact: " PACKAGE_BUGREPORT " via http://bugs.gentoo.org/\n"
+		" contact: " PACKAGE_BUGREPORT " via https://bugs.gentoo.org/\n"
 		" rtld:    "
 #ifdef BROKEN_RTLD_NEXT
 			"next is broken ;(\n"
@@ -175,7 +175,7 @@ static void show_usage(int status)
 		printf(" * %s\n", opts_help[i]);
 	}
 
-	fprintf(fp, "\nContact: " PACKAGE_BUGREPORT " via http://bugs.gentoo.org/\n");
+	fprintf(fp, "\nContact: " PACKAGE_BUGREPORT " via https://bugs.gentoo.org/\n");
 
 	exit(status);
 }

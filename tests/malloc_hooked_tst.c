@@ -9,7 +9,7 @@
  *             libsandbox tries to initialize itself (since it never finished originally) ->
  *               libsandbox's malloc() ->
  *                 dlsym() -> deadlock
- * http://crbug.com/586444
+ * https://crbug.com/586444
  */
 
 #include "headers.h"
