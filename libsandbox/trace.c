@@ -467,9 +467,8 @@ static void trace_loop(void)
 
 		ret = trace_get_regs(&regs);
 		nr = trace_get_sysnum(&regs);
-
 		se = lookup_syscall_in_tbl(tbl_after_fork, nr);
-		ret = trace_get_regs(&regs);
+
 		if (before_syscall) {
 			_sb_debug("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
