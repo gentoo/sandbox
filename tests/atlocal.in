@@ -24,5 +24,23 @@ export SANDBOX_VERBOSE=0
 # If the terminal has this flag set, the tests get all messed up.
 stty -tostop 2>/dev/null || :
 
+# Some tests want this internal path.
+for devfd in /proc/self/fd /dev/fd ; do
+	[ -e "${devfd}" ] && break
+done
+
+# GNU make likes to leak fds when using jobservers (i.e. using -j).
+case "${MAKEFLAGS}" in
+*--jobserver-auth=*)
+	flags=${MAKEFLAGS#*--jobserver-auth=}
+	flags=${flags%% *}
+	for fd in $(echo "${flags}" | tr ',' ' ') ; do
+		if [ -e "${devfd}/${fd}" ] ; then
+			eval "exec ${fd}>&-"
+		fi
+	done
+	;;
+esac
+
 # This script must finish with ($? == 0) else the autotest runner gets upset.
 :
