@@ -1130,7 +1130,7 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 typedef struct {
 	const char *name;
 	size_t len;
-	char *value;
+	const char *value;
 } env_pair;
 #define ENV_PAIR(x, n, v) [x] = { .name = n, .len = sizeof(n) - 1, .value = v, }
 
