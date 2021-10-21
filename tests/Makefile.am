@@ -104,6 +104,9 @@ endif
 
 TESTSUITEFLAGS = --jobs=`getconf _NPROCESSORS_ONLN || echo 1`
 
+# Helper target for devs to precompile.
+tests: $(check_PROGRAMS)
+
 check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='src:tests' $(TESTSUITEFLAGS)
 
