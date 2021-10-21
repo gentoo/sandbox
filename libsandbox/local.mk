@@ -57,13 +57,16 @@ GEN_TRACE_SCRIPT = $(SCRIPT_DIR)/gen_trace_header.awk
 SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -v srcdir="$(top_srcdir)/%D%" -f
 
 %D%/libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
+	@$(MKDIR_P) %D%
 	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
 
 %D%/symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
+	@$(MKDIR_P) %D%
 	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = %D%/sb_nr.h.in
 %D%/sb_nr.h: %D%/symbols.h $(SB_NR_FILE)
+	@$(MKDIR_P) %D%
 	$(AM_V_GEN)$(EGREP) -h '^\#define SB_' $^ > $@
 
 TRACE_MAKE_HEADER = \
@@ -78,6 +81,7 @@ else
 endif
 
 $(SB_SCHIZO_HEADERS): $(GEN_TRACE_SCRIPT)
+	@$(MKDIR_P) %D%
 	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
 		t=_$${pers%:*}; \
 		f=$${pers#*:}; \
