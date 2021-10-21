@@ -7,7 +7,8 @@ a.out
 .deps
 .libs
 .dirstamp
-Makefile
+/Makefile
+/tests/Makefile
 Makefile.in
 
 f

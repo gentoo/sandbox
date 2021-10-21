@@ -56,7 +56,7 @@ AC_DEFUN([SB_CHECK_SCHIZO],[dnl
 		], [
 			enable_schizo=yes
 			AS_VAR_APPEND([SB_SCHIZO_SETTINGS], " $1:$2")
-			AS_VAR_APPEND([SB_SCHIZO_HEADERS], " trace_syscalls_$1.h")
+			AS_VAR_APPEND([SB_SCHIZO_HEADERS], " libsandbox/trace_syscalls_$1.h")
 			AC_MSG_RESULT([yes])
 			AC_DEFINE_UNQUOTED([SB_SCHIZO_$1], 1, [Support for $1/$2 is available])
 		], [
@@ -464,9 +464,6 @@ AC_CONFIG_FILES([src/sandbox.sh], [chmod +x src/sandbox.sh])
 AC_CONFIG_FILES([
 	Makefile
 	etc/sandbox.d/00default
-	libsandbox/Makefile
-	libsbutil/Makefile
-	src/Makefile
 	tests/atlocal
 	tests/Makefile
 	tests/package.m4

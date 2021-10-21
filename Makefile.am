@@ -2,23 +2,19 @@ ACLOCAL_AMFLAGS  = -I m4
 MAKEFLAGS = --no-print-directory
 AM_CPPFLAGS = $(SANDBOX_DEFINES)
 
-SUBDIRS = \
-	libsbutil  \
-	libsandbox \
-	src        \
-	tests
+SUBDIRS = tests
 
 confdir = $(sysconfdir)
 confddir = $(sysconfdir)/sandbox.d
 
+bin_PROGRAMS =
 dist_conf_DATA = etc/sandbox.conf
 confd_DATA = etc/sandbox.d/00default
 dist_pkgdata_DATA  = data/sandbox.bashrc
+lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 
-libsandbox: libsbutil
-src: libsbutil
-tests: src
+CLEANFILES =
 
 EXTRA_DIST = \
 	headers.h \
@@ -30,8 +26,6 @@ EXTRA_DIST = \
 	scripts/gen_symbol_version_map.awk \
 	scripts/gen_symbol_header.awk \
 	scripts/gen_trace_header.awk
-
-DISTCLEANFILES = $(CLEANFILES)
 
 ChangeLog:
 	touch ChangeLog
@@ -47,3 +41,9 @@ dist-hook:
 			touch "$(distdir)/ChangeLog" ; \
 		fi ; \
 	fi
+
+include libsandbox/local.mk
+include libsbutil/local.mk
+include src/local.mk
+
+DISTCLEANFILES = $(CLEANFILES)
