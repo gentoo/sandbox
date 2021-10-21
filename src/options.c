@@ -11,11 +11,13 @@
 
 /* Setting to -1 will load defaults from the config file. */
 int opt_use_namespaces = -1;
+int opt_use_ns_cgroup = -1;
 int opt_use_ns_ipc = -1;
 int opt_use_ns_mnt = -1;
 int opt_use_ns_net = -1;
 int opt_use_ns_pid = -1;
 int opt_use_ns_sysv = -1;
+int opt_use_ns_time = -1;
 int opt_use_ns_user = -1;
 int opt_use_ns_uts = -1;
 
@@ -25,14 +27,16 @@ static const struct {
 	int default_val;
 } config_opts[] = {
 	/* Default these to off until they can get more testing. */
-	{ "NAMESPACES_ENABLE",     &opt_use_namespaces, false, },
-	{ "NAMESPACE_IPC_ENABLE",  &opt_use_ns_ipc,     false, },
-	{ "NAMESPACE_MNT_ENABLE",  &opt_use_ns_mnt,     false, },
-	{ "NAMESPACE_NET_ENABLE",  &opt_use_ns_net,     false, },
-	{ "NAMESPACE_PID_ENABLE",  &opt_use_ns_pid,     false, },
-	{ "NAMESPACE_SYSV_ENABLE", &opt_use_ns_sysv,    false, },
-	{ "NAMESPACE_USER_ENABLE", &opt_use_ns_user,    false, },
-	{ "NAMESPACE_UTS_ENABLE",  &opt_use_ns_uts,     false, },
+	{ "NAMESPACES_ENABLE",       &opt_use_namespaces, false, },
+	{ "NAMESPACE_CGROUP_ENABLE", &opt_use_ns_cgroup,  false, },
+	{ "NAMESPACE_IPC_ENABLE",    &opt_use_ns_ipc,     false, },
+	{ "NAMESPACE_MNT_ENABLE",    &opt_use_ns_mnt,     false, },
+	{ "NAMESPACE_NET_ENABLE",    &opt_use_ns_net,     false, },
+	{ "NAMESPACE_PID_ENABLE",    &opt_use_ns_pid,     false, },
+	{ "NAMESPACE_SYSV_ENABLE",   &opt_use_ns_sysv,    false, },
+	{ "NAMESPACE_TIME_ENABLE",   &opt_use_ns_time,    false, },
+	{ "NAMESPACE_USER_ENABLE",   &opt_use_ns_user,    false, },
+	{ "NAMESPACE_UTS_ENABLE",    &opt_use_ns_uts,     false, },
 };
 
 static void read_config(void)
@@ -75,6 +79,8 @@ static void show_version(void)
 static struct option const long_opts[] = {
 	{"ns-on",         no_argument, &opt_use_namespaces, true},
 	{"ns-off",        no_argument, &opt_use_namespaces, false},
+	{"ns-cgroup-on",  no_argument, &opt_use_ns_cgroup, true},
+	{"ns-cgroup-off", no_argument, &opt_use_ns_cgroup, false},
 	{"ns-ipc-on",     no_argument, &opt_use_ns_ipc, true},
 	{"ns-ipc-off",    no_argument, &opt_use_ns_ipc, false},
 	{"ns-mnt-on",     no_argument, &opt_use_ns_mnt, true},
@@ -85,6 +91,8 @@ static struct option const long_opts[] = {
 	{"ns-pid-off",    no_argument, &opt_use_ns_pid, false},
 	{"ns-sysv-on",    no_argument, &opt_use_ns_sysv, true},
 	{"ns-sysv-off",   no_argument, &opt_use_ns_sysv, false},
+	{"ns-time-on",    no_argument, &opt_use_ns_time, true},
+	{"ns-time-off",   no_argument, &opt_use_ns_time, false},
 	{"ns-user-on",    no_argument, &opt_use_ns_user, true},
 	{"ns-user-off",   no_argument, &opt_use_ns_user, false},
 	{"ns-uts-on",     no_argument, &opt_use_ns_uts, true},
@@ -96,6 +104,8 @@ static struct option const long_opts[] = {
 static const char * const opts_help[] = {
 	"Enable  the use of namespaces",
 	"Disable the use of namespaces",
+	"Enable  the use of cgroup namespaces",
+	"Disable the use of cgroup namespaces",
 	"Enable  the use of IPC (and System V) namespaces",
 	"Disable the use of IPC (and System V) namespaces",
 	"Enable  the use of mount namespaces",
@@ -106,6 +116,8 @@ static const char * const opts_help[] = {
 	"Disable the use of process (pid) namespaces",
 	"Enable  the use of System V namespaces",
 	"Disable the use of System V namespaces",
+	"Enable  the use of time namespaces",
+	"Disable the use of time namespaces",
 	"Enable  the use of user namespaces",
 	"Disable the use of user namespaces",
 	"Enable  the use of UTS (hostname/uname) namespaces",

@@ -182,6 +182,10 @@ pid_t setup_namespaces(void)
 	if (opt_use_ns_user)
 		ns_user_switch(uid, gid, 0, 0);
 
+#ifdef CLONE_NEWCGROUP
+	if (opt_use_ns_cgroup)
+		unshare(CLONE_NEWCGROUP);
+#endif
 #ifdef CLONE_NEWIPC
 	if (opt_use_ns_ipc)
 		unshare(CLONE_NEWIPC);
@@ -189,6 +193,10 @@ pid_t setup_namespaces(void)
 #ifdef CLONE_SYSVSEM
 	if (opt_use_ns_sysv)
 		unshare(CLONE_SYSVSEM);
+#endif
+#ifdef CLONE_NEWTIME
+	if (opt_use_ns_time)
+		unshare(CLONE_NEWTIME);
 #endif
 
 #ifdef CLONE_NEWUTS

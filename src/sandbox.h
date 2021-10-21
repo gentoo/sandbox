@@ -43,11 +43,13 @@ extern pid_t setup_namespaces(void);
 /* Option parsing related code */
 extern void parseargs(int argc, char *argv[]);
 extern int opt_use_namespaces;
+extern int opt_use_ns_cgroup;
 extern int opt_use_ns_ipc;
 extern int opt_use_ns_mnt;
 extern int opt_use_ns_net;
 extern int opt_use_ns_pid;
 extern int opt_use_ns_sysv;
+extern int opt_use_ns_time;
 extern int opt_use_ns_user;
 extern int opt_use_ns_uts;
 
