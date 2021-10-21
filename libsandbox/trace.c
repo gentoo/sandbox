@@ -178,20 +178,6 @@ static char *do_peekstr(unsigned long lptr)
 	}
 }
 
-static const char *strcld_chld(int cld)
-{
-	switch (cld) {
-#define C(c) case CLD_##c: return "CLD_"#c;
-	C(CONTINUED)
-	C(DUMPED)
-	C(EXITED)
-	C(KILLED)
-	C(TRAPPED)
-	C(STOPPED)
-#undef C
-	default: return "CLD_???";
-	}
-}
 /* strsignal() translates the string when i want C define */
 static const char *strsig(int sig)
 {
@@ -212,47 +198,6 @@ static const char *strsig(int sig)
 #undef S
 	default: return "SIG???";
 	}
-}
-
-static void trace_child_signal(int signo, siginfo_t *info, void *context)
-{
-	sb_debug("got sig %s(%i): code:%s(%i) status:%s(%i)",
-		strsig(signo), signo,
-		strcld_chld(info->si_code), info->si_code,
-		strsig(info->si_status), info->si_status);
-
-	switch (info->si_code) {
-		case CLD_DUMPED:
-		case CLD_KILLED:
-			trace_exit(128 + info->si_status);
-
-		case CLD_EXITED:
-			__sb_debug(" = %i\n", info->si_status);
-			trace_exit(info->si_status);
-
-		case CLD_TRAPPED:
-			switch (info->si_status) {
-				case SIGSTOP:
-					kill(trace_pid, SIGCONT);
-				case SIGTRAP:
-				case SIGCONT:
-					return;
-			}
-
-			/* For whatever signal the child caught, let's ignore it and
-			 * continue on.  If it aborted, segfaulted, whatever, that's
-			 * its problem, not ours, so don't whine about it.  We just
-			 * have to be sure to bubble it back up.  #265072
-			 */
-			do_ptrace(PTRACE_CONT, NULL, (void *)(long)info->si_status);
-			return;
-	}
-
-	sb_eerror("ISE:trace_child_signal: child (%i) signal %s(%i), code %s(%i), status %s(%i)\n",
-		trace_pid,
-		strsig(signo), signo,
-		strcld_chld(info->si_code), info->si_code,
-		strsig(info->si_status), info->si_status);
 }
 
 static const struct syscall_entry *lookup_syscall_in_tbl(const struct syscall_entry *tbl, int nr)
@@ -441,8 +386,9 @@ static void trace_loop(void)
 {
 	trace_regs regs;
 	bool before_exec, before_syscall, fake_syscall_ret;
+	unsigned event;
 	long ret;
-	int nr, status;
+	int nr, status, sig;
 	const struct syscall_entry *se, *tbl_after_fork;
 
 	before_exec = true;
@@ -453,16 +399,63 @@ static void trace_loop(void)
 		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
 		waitpid(trace_pid, &status, 0);
 
-		if (before_exec) {
-			unsigned event = ((unsigned)status >> 16);
-			if (event == PTRACE_EVENT_EXEC) {
-				_sb_debug("hit exec!");
-				before_exec = false;
-			} else
+		event = (unsigned)status >> 16;
+
+		if (WIFSIGNALED(status)) {
+			int sig = WTERMSIG(status);
+			sb_debug("signaled %s %i", strsig(sig), sig);
+			kill(getpid(), sig);
+			trace_exit(128 + sig);
+
+		} else if (WIFEXITED(status)) {
+			ret = WEXITSTATUS(status);
+			sb_debug("exited %li", ret);
+			trace_exit(ret);
+
+		}
+
+		sb_assert(WIFSTOPPED(status));
+		sig = WSTOPSIG(status);
+
+		switch (event) {
+		case 0:
+			if (sig != (SIGTRAP | 0x80)) {
+				/* For whatever signal the child caught, let's ignore it and
+				 * continue on.  If it aborted, segfaulted, whatever, that's
+				 * its problem, not ours, so don't whine about it.  We just
+				 * have to be sure to bubble it back up.  #265072
+				 *
+				 * The next run of this loop should see the WIFSIGNALED status
+				 * and we'll exit then.
+				 */
+				sb_debug("passing signal through %s (%i)", strsig(sig), sig);
+				do_ptrace(PTRACE_CONT, NULL, (void *)(uintptr_t)(sig));
+				continue;
+			}
+
+			if (before_exec) {
 				_sb_debug("waiting for exec; status: %#x", status);
+				continue;
+			}
+			break;
+
+		case PTRACE_EVENT_EXEC:
+			__sb_debug("hit exec!");
+			before_exec = false;
 			ret = trace_get_regs(&regs);
 			tbl_after_fork = trace_check_personality(&regs);
 			continue;
+
+		case PTRACE_EVENT_EXIT:
+			/* We'll tell the process to resume, which should make it exit,
+			 * and then we'll pick up its exit status and exit above.
+			 */
+			__sb_debug(" exit event!\n");
+			continue;
+
+		default:
+			sb_ebort("ISE: unhandle ptrace signal %s (%i) event %u\n",
+			         strsig(sig), sig, event);
 		}
 
 		ret = trace_get_regs(&regs);
@@ -499,17 +492,14 @@ static void trace_loop(void)
 
 void trace_main(const char *filename, char *const argv[])
 {
-	struct sigaction sa, old_sa;
-
-	sa.sa_flags = SA_RESTART | SA_SIGINFO;
-	sa.sa_sigaction = trace_child_signal;
-	sigaction(SIGCHLD, &sa, &old_sa);
+	struct sigaction old_sa, sa = { .sa_handler = SIG_DFL, };
 
 	sb_debug_dyn("trace_main: tracing: %s\n", filename);
 
 	if (trace_pid)
 		sb_ebort("ISE: trace code assumes multiple threads are not forking\n");
 
+	sigaction(SIGCHLD, &sa, &old_sa);
 	trace_pid = fork();
 	if (unlikely(trace_pid == -1)) {
 		sb_ebort("ISE: vfork() failed: %s\n", strerror(errno));
@@ -517,7 +507,7 @@ void trace_main(const char *filename, char *const argv[])
 		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
 		do_ptrace(PTRACE_SETOPTIONS, NULL,
-			(void *)(PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC));
+			(void *)(PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEEXIT));
 		sb_close_all_fds();
 		trace_loop();
 		sb_ebort("ISE: child should have quit, as should we\n");
