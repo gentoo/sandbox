@@ -24,7 +24,6 @@ libsbutil/.libs/libsbutil.a: libsbutil/libsbutil.la
 	-avoid-version \
 	$(LDFLAG_VER),%D%/libsandbox.map
 %C%_libsandbox_la_SOURCES = \
-	%D%/headers.h    \
 	%D%/libsandbox.h \
 	%D%/libsandbox.c \
 	%D%/lock.c       \

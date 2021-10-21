@@ -15,7 +15,6 @@ noinst_LTLIBRARIES += %D%/libsbutil.la
 	%D%/get_sandbox_log.c                     \
 	%D%/get_tmp_dir.c                         \
 	%D%/environment.c                         \
-	%D%/headers.h                             \
 	%D%/sb_backtrace.c                        \
 	%D%/sb_efuncs.c                           \
 	%D%/sb_gdb.c                              \
