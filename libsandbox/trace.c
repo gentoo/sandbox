@@ -507,7 +507,12 @@ void trace_main(const char *filename, char *const argv[])
 		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
 		waitpid(trace_pid, NULL, 0);
 		do_ptrace(PTRACE_SETOPTIONS, NULL,
-			(void *)(PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEEXIT));
+			(void *)(uintptr_t)(
+				PTRACE_O_EXITKILL |
+				PTRACE_O_TRACEEXEC |
+				PTRACE_O_TRACEEXIT |
+				PTRACE_O_TRACESYSGOOD
+			));
 		sb_close_all_fds();
 		trace_loop();
 		sb_ebort("ISE: child should have quit, as should we\n");

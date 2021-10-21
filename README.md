@@ -72,6 +72,6 @@ It requires:
   * s390 (32-bit & 64-bit)
   * x86 (32-bit & 64-bit & x32)
 * Operating system
-  * [Linux](https://kernel.org/) 2.6.20+
+  * [Linux](https://kernel.org/) 3.8+
 * C library
   * They all should work!
