@@ -9,6 +9,26 @@ review erealpath vs realpath usage
 wrappers for execl{,l,p} ... unfortunately, we'll probably have to basically
 reimplement the functions (building up argv[] and then call the execv* ver)
 
+wrappers for open funcs:
+ - freopen
+ - freopen64
+ - name_to_handle_at
+ - open_by_handle_at
+ - __open
+ - __open64
+
+wrappers for 64-bit time funcs
+https://bugs.gentoo.org/751241
+
+wrappers for syscalls that modify non-filesystem resources ?
+how would we `addpredict` these ?
+is it worth checking for these in the first place ?  unittests sometimes do
+terrible things to systems.
+ - clock_settime
+ - create_module
+ - setdomainname
+ - settimeofday
+
 erealpath() might deref symlinks when working with unreadable paths as non-root
 even when working on funcs that do not deref funcs themselves ... this isnt a
 real big issue though
