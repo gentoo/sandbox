@@ -13,8 +13,14 @@ static long trace_raw_ret(void *vregs)
 static void trace_set_ret(void *vregs, int err)
 {
 	trace_regs *regs = vregs;
-	regs->gpr[0] = -1;
-	regs->gpr[3] = err;
+	if ((regs->trap & 0xfff0) == 0x3000) {
+		/* ppc64 */
+		regs->gpr[3] = -err;
+	} else {
+		/* ppc32 */
+		regs->gpr[3] = err;
+		regs->ccr |= 0x10000000;
+	}
 	trace_set_regs(regs);
 }
 
