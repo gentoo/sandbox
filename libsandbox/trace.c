@@ -323,6 +323,8 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_MKNODAT)   return  trace_check_syscall_DC (&state);
 	else if (nr == SB_NR_RENAME)    return  trace_check_syscall_C  (&state) &&
 	                                       _trace_check_syscall_C  (&state, 2);
+	else if (nr == SB_NR_RENAMEAT2) return  trace_check_syscall_DC (&state) &&
+	                                       _trace_check_syscall_DC (&state, 3);
 	else if (nr == SB_NR_RENAMEAT)  return  trace_check_syscall_DC (&state) &&
 	                                       _trace_check_syscall_DC (&state, 3);
 	else if (nr == SB_NR_RMDIR)     return  trace_check_syscall_C  (&state);

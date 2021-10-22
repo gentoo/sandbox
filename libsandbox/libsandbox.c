@@ -682,6 +682,7 @@ static bool symlink_func(int sb_nr, int flags, const char *abs_path)
 	      sb_nr == SB_NR_REMOVE   ||
 	      sb_nr == SB_NR_RENAME   ||
 	      sb_nr == SB_NR_RENAMEAT ||
+	      sb_nr == SB_NR_RENAMEAT2||
 	      sb_nr == SB_NR_RMDIR    ||
 	      sb_nr == SB_NR_SYMLINK  ||
 	      sb_nr == SB_NR_SYMLINKAT))
@@ -795,6 +796,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_REMOVE      ||
 	    sb_nr == SB_NR_RENAME      ||
 	    sb_nr == SB_NR_RENAMEAT    ||
+	    sb_nr == SB_NR_RENAMEAT2   ||
 	    sb_nr == SB_NR_RMDIR       ||
 	    sb_nr == SB_NR_SYMLINK     ||
 	    sb_nr == SB_NR_SYMLINKAT   ||

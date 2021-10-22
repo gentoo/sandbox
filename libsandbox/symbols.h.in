@@ -34,6 +34,7 @@ faccessat
 remove
 rename
 renameat
+renameat2
 rmdir
 symlink
 symlinkat

@@ -211,6 +211,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	realpath
 	remove
 	renameat
+	renameat2
 	rmdir
 	setenv
 	strcasecmp

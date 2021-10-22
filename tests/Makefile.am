@@ -57,6 +57,7 @@ check_PROGRAMS = \
 	remove-0 \
 	rename-0 \
 	renameat-0 \
+	renameat2-0 \
 	rmdir-0 \
 	signal_static-0 \
 	symlink-0 \
