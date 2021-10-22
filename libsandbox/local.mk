@@ -58,11 +58,11 @@ SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -v srcdir="$(top_srcd
 
 %D%/libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 	@$(MKDIR_P) %D%
-	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
+	$(AM_V_GEN)$(READELF) -sW $(LIBC_PATH) | $(SB_AWK) $(GEN_VERSION_MAP_SCRIPT) > $@
 
 %D%/symbols.h: $(SYMBOLS_FILE) $(GEN_HEADER_SCRIPT)
 	@$(MKDIR_P) %D%
-	$(AM_V_GEN)$(READELF) -s $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
+	$(AM_V_GEN)$(READELF) -sW $(LIBC_PATH) | $(SB_AWK) $(GEN_HEADER_SCRIPT) > $@
 
 SB_NR_FILE = %D%/sb_nr.h.in
 %D%/sb_nr.h: %D%/symbols.h $(SB_NR_FILE)
