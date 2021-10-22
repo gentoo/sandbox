@@ -69,6 +69,10 @@ execvpe
 fexecve
 system
 popen
+removexattr
+lremovexattr
+setxattr
+lsetxattr
 utime
 utimes
 utimensat

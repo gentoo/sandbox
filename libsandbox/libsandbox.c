@@ -676,15 +676,17 @@ static bool symlink_func(int sb_nr, int flags, const char *abs_path)
 	struct stat st;
 
 	/* These funcs always operate on symlinks */
-	if (!(sb_nr == SB_NR_UNLINK   ||
-	      sb_nr == SB_NR_UNLINKAT ||
-	      sb_nr == SB_NR_LCHOWN   ||
-	      sb_nr == SB_NR_REMOVE   ||
-	      sb_nr == SB_NR_RENAME   ||
-	      sb_nr == SB_NR_RENAMEAT ||
-	      sb_nr == SB_NR_RENAMEAT2||
-	      sb_nr == SB_NR_RMDIR    ||
-	      sb_nr == SB_NR_SYMLINK  ||
+	if (!(sb_nr == SB_NR_UNLINK       ||
+	      sb_nr == SB_NR_UNLINKAT     ||
+	      sb_nr == SB_NR_LCHOWN       ||
+	      sb_nr == SB_NR_LREMOVEXATTR ||
+	      sb_nr == SB_NR_LSETXATTR    ||
+	      sb_nr == SB_NR_REMOVE       ||
+	      sb_nr == SB_NR_RENAME       ||
+	      sb_nr == SB_NR_RENAMEAT     ||
+	      sb_nr == SB_NR_RENAMEAT2    ||
+	      sb_nr == SB_NR_RMDIR        ||
+	      sb_nr == SB_NR_SYMLINK      ||
 	      sb_nr == SB_NR_SYMLINKAT))
 	{
 		/* These funcs sometimes operate on symlinks */
@@ -776,6 +778,8 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_LCHOWN      ||
 	    sb_nr == SB_NR_LINK        ||
 	    sb_nr == SB_NR_LINKAT      ||
+	    sb_nr == SB_NR_LREMOVEXATTR||
+	    sb_nr == SB_NR_LSETXATTR   ||
 	    sb_nr == SB_NR_LUTIMES     ||
 	    sb_nr == SB_NR_MKDIR       ||
 	    sb_nr == SB_NR_MKDIRAT     ||
@@ -794,10 +798,12 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_MKSTEMPS64  ||
 	    sb_nr == SB_NR_OPEN_WR     ||
 	    sb_nr == SB_NR_REMOVE      ||
+	    sb_nr == SB_NR_REMOVEXATTR ||
 	    sb_nr == SB_NR_RENAME      ||
 	    sb_nr == SB_NR_RENAMEAT    ||
 	    sb_nr == SB_NR_RENAMEAT2   ||
 	    sb_nr == SB_NR_RMDIR       ||
+	    sb_nr == SB_NR_SETXATTR    ||
 	    sb_nr == SB_NR_SYMLINK     ||
 	    sb_nr == SB_NR_SYMLINKAT   ||
 	    sb_nr == SB_NR_TRUNCATE    ||

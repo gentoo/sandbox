@@ -30,6 +30,8 @@ check_PROGRAMS = \
 	link-0 \
 	linkat-0 \
 	linkat_static-0 \
+	lremovexattr-0 \
+	lsetxattr-0 \
 	lutimes-0 \
 	mkdtemp-0 \
 	mkdir-0 \
@@ -55,10 +57,12 @@ check_PROGRAMS = \
 	openat64-0 \
 	opendir-0 \
 	remove-0 \
+	removexattr-0 \
 	rename-0 \
 	renameat-0 \
 	renameat2-0 \
 	rmdir-0 \
+	setxattr-0 \
 	signal_static-0 \
 	symlink-0 \
 	symlinkat-0 \

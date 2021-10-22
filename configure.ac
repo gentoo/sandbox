@@ -143,6 +143,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	sys/uio.h
 	sys/user.h
 	sys/wait.h
+	sys/xattr.h
 	asm/ptrace.h
 	linux/ptrace.h
 ]))
@@ -185,6 +186,8 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	getcwd
 	lchown
 	linkat
+	lremovexattr
+	lsetxattr
 	lutimes
 	memmove
 	memcpy
@@ -210,10 +213,12 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	ptrace
 	realpath
 	remove
+	removexattr
 	renameat
 	renameat2
 	rmdir
 	setenv
+	setxattr
 	strcasecmp
 	strchr
 	strdup

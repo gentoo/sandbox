@@ -143,6 +143,9 @@
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
+#ifdef HAVE_SYS_XATTR_H
+# include <sys/xattr.h>
+#endif
 
 #ifdef __ia64__ /* what a pos */
 # define ia64_fpreg FU_ia64_fpreg
