@@ -113,6 +113,9 @@
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
+#ifdef HAVE_SYS_PRCTL_H
+# include <sys/prctl.h>
+#endif
 #ifdef HAVE_SYS_PTRACE_H
 # include <sys/ptrace.h>
 #endif

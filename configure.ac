@@ -133,6 +133,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	sys/mman.h
 	sys/mount.h
 	sys/param.h
+	sys/prctl.h
 	sys/ptrace.h
 	sys/reg.h
 	sys/socket.h
@@ -209,6 +210,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	openat
 	openat64
 	pathconf
+	prctl
 	process_vm_readv
 	ptrace
 	realpath

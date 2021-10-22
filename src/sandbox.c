@@ -278,6 +278,22 @@ int main(int argc, char **argv)
 		}
 	}
 
+#ifdef HAVE_PRCTL
+	/* Lock down access to elevated privileges.  In practice, this will block
+	 * use of tools like su and sudo, and will allow use of seccomp bpf.
+	 */
+# ifdef PR_SET_NO_NEW_PRIVS
+	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1) {
+		/* Ignore EINVAL in case we're on old kernels.  Unfortunately we can't
+		 * differentiate between EINVAL due to unsupported PR_xxx and EINVAL
+		 * due to bad 2nd/3rd/4th/5th args.
+		 */
+		if (errno != EINVAL)
+			sb_eerror("prctl(PR_SET_NO_NEW_PRIVS) failed");
+	}
+# endif
+#endif
+
 	/* Set up the required signal handlers */
 	int sigs[] = { SIGHUP, SIGINT, SIGQUIT, SIGTERM, SIGUSR1, };
 	struct sigaction act_new, act_old[ARRAY_SIZE(sigs)];
