@@ -3,7 +3,8 @@ TESTSUITE = $(srcdir)/testsuite
 DISTCLEANFILES = atconfig
 EXTRA_DIST = atlocal.in package.m4.in $(AT_FILES) $(TESTSUITE) \
 	test-skel-0.c \
-	tests.h
+	tests.h \
+	xattr-0
 
 AM_CPPFLAGS = -I$(top_srcdir) $(SANDBOX_DEFINES)
 
