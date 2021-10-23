@@ -48,12 +48,11 @@ TRACE_FILES = $(wildcard $(top_srcdir)/%D%/trace/*.[ch] $(top_srcdir)/%D%/trace/
 SCRIPT_DIR = $(top_srcdir)/scripts
 
 SYMBOLS_FILE = $(top_srcdir)/%D%/symbols.h.in
-SYMBOLS_LIST = $(shell $(SED) -n '/^[^\#]/p' $(SYMBOLS_FILE))
 SYMBOLS_WRAPPERS = $(wildcard $(top_srcdir)/%D%/wrapper-funcs/*.[ch])
 GEN_VERSION_MAP_SCRIPT = $(SCRIPT_DIR)/gen_symbol_version_map.awk
 GEN_HEADER_SCRIPT = $(SCRIPT_DIR)/gen_symbol_header.awk
 GEN_TRACE_SCRIPT = $(SCRIPT_DIR)/gen_trace_header.awk
-SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_LIST="$(SYMBOLS_LIST)" -v srcdir="$(top_srcdir)/%D%" -f
+SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_FILE="$(SYMBOLS_FILE)" -v srcdir="$(top_srcdir)/%D%" -f
 
 %D%/libsandbox.map: $(SYMBOLS_FILE) $(GEN_VERSION_MAP_SCRIPT)
 	@$(MKDIR_P) %D%

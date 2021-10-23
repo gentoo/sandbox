@@ -1,9 +1,10 @@
+# Read the symbols list and create regexs to use for processing readelf output.
 BEGIN {
-	split(" " SYMBOLS_LIST, SYMBOLS);
-
 	sym_regex = "";
-	for (x in SYMBOLS) {
-		symbol = SYMBOLS[x];
+	while ((getline symbol < SYMBOLS_FILE) > 0) {
+		if (symbol ~ /^ *#/ || symbol ~ /^$/)
+			continue;
+
 		if (sym_regex)
 			sym_regex = sym_regex "|";
 		sym_regex = sym_regex symbol;

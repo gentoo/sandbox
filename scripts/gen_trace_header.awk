@@ -1,5 +1,16 @@
+# Read the symbols list and create regexs to use for processing readelf output.
+function read_symbols() {
+	COUNT = 0;
+	while ((getline symbol < SYMBOLS_FILE) > 0) {
+		if (symbol ~ /^ *#/ || symbol ~ /^$/)
+			continue;
+
+		SYMBOLS[++COUNT] = symbol;
+	}
+}
+
 BEGIN {
-	COUNT = split(" " SYMBOLS_LIST, SYMBOLS);
+	read_symbols();
 
 	if (MODE == "gen") {
 		for (x in SYMBOLS) {
