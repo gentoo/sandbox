@@ -50,9 +50,11 @@ static void read_config(void)
 	}
 }
 
+static const char sb_sonfigure_opts[] = SANDBOX_CONFIGURE_OPTS;
+
 static void show_version(void)
 {
-	puts(
+	printf(
 		"Gentoo path sandbox\n"
 		" version: " PACKAGE_VERSION "\n"
 		" C lib:   " LIBC_VERSION " (" LIBC_PATH ")\n"
@@ -68,8 +70,8 @@ static void show_version(void)
 # define SB_SCHIZO "no"
 #endif
 		" schizo:  " SB_SCHIZO "\n"
-		"\nconfigured with these options:\n"
-		SANDBOX_CONFIGURE_OPTS
+		"\nconfigured with these options:\n%s\n",
+		sb_sonfigure_opts
 	);
 	exit(0);
 }
@@ -99,6 +101,7 @@ static struct option const long_opts[] = {
 	{"ns-uts-off",    no_argument, &opt_use_ns_uts, false},
 	{"help",          no_argument, NULL, 'h'},
 	{"version",       no_argument, NULL, 'V'},
+	{"run-configure", no_argument, NULL, 0x800},
 	{NULL,            no_argument, NULL, 0x0}
 };
 static const char * const opts_help[] = {
@@ -124,6 +127,7 @@ static const char * const opts_help[] = {
 	"Disable the use of UTS (hostname/uname) namespaces",
 	"Print this help and exit",
 	"Print version and exit",
+	"Run local sandbox configure in same way and exit (developer only)",
 	NULL
 };
 
@@ -180,6 +184,17 @@ static void show_usage(int status)
 	exit(status);
 }
 
+static void run_configure(int argc, char *argv[])
+{
+	int i;
+	char *cmd;
+	xasprintf(&cmd, "set -x; ./configure %s", sb_sonfigure_opts);
+	/* This doesn't need to be fast, so keep it simple. */
+	for (i = optind; i < argc; ++i)
+		xasprintf(&cmd, "%s %s", cmd, argv[i]);
+	exit(system(cmd));
+}
+
 void parseargs(int argc, char *argv[])
 {
 	int i;
@@ -190,6 +205,8 @@ void parseargs(int argc, char *argv[])
 			show_version();
 		case 'h':
 			show_usage(0);
+		case 0x800:
+			run_configure(argc, argv);
 		case '?':
 			show_usage(1);
 		}

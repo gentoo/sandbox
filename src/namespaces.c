@@ -26,13 +26,6 @@
 #define xchmod(...) sb_assert(chmod(__VA_ARGS__) == 0)
 #define xsymlink(...) sb_assert(symlink(__VA_ARGS__) == 0)
 
-#define xasprintf(fmt, ...) \
-({ \
-	int _ret = asprintf(fmt, __VA_ARGS__); \
-	if (_ret == 0) \
-		sb_perr("asprintf(%s) failed", #fmt); \
-	_ret; \
-})
 #define xfopen(path, ...) \
 ({ \
 	FILE *_ret = fopen(path, __VA_ARGS__); \
