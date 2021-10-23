@@ -96,7 +96,6 @@ BEGIN {
 END {
 	printf("#ifndef __symbols_h\n");
 	printf("#define __symbols_h\n\n");
-	printf("#define SB_NR_UNDEF -99999\n\n");
 
 	SB_MAX_STRING_LEN = 0
 
@@ -109,7 +108,7 @@ END {
 			SB_MAX_STRING_LEN = length(sym_index);
 
 		if (full_count == 0)
-			printf("#define SB_NR_%s SB_NR_UNDEF\n", toupper(sym_index));
+			printf("#define SB_NR_%s (SB_NR_UNDEF - %i)\n", toupper(sym_index), i);
 
 		for (x in sym_full_names) {
 			split(sym_full_names[x], symbol_array, /@|@@/);

@@ -46,6 +46,10 @@
 #define  SB_SAFE_OPEN_CHAR(_path, _mode) \
          SB_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
+/* Symbols that don't exist in the C library will be <= this value. */
+#define SB_NR_UNDEF -99999
+#define SB_NR_IS_DEFINED(nr) (nr > SB_NR_UNDEF)
+
 bool is_sandbox_on(void);
 bool before_syscall(int, int, const char *, const char *, int);
 bool before_syscall_access(int, int, const char *, const char *, int);
