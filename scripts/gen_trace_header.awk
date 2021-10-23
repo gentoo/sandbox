@@ -1,11 +1,16 @@
 # Read the symbols list and create regexs to use for processing readelf output.
 function read_symbols() {
 	COUNT = 0;
-	while ((getline symbol < SYMBOLS_FILE) > 0) {
-		if (symbol ~ /^ *#/ || symbol ~ /^$/)
+	while ((getline line < SYMBOLS_FILE) > 0) {
+		if (line ~ /^ *#/ || line ~ /^$/)
 			continue;
+		nfields = split(line, fields);
+		symbol = fields[1];
+		syscall = nfields > 1 ? fields[2] : symbol;
 
-		SYMBOLS[++COUNT] = symbol;
+		c = ++COUNT
+		SYMBOLS[c] = symbol;
+		SYSCALLS[c] = syscall;
 	}
 }
 
@@ -13,19 +18,22 @@ BEGIN {
 	read_symbols();
 
 	if (MODE == "gen") {
-		for (x in SYMBOLS) {
-			s = SYMBOLS[x]
-			print "SB_" s " = SYS_" s
+		for (x in SYSCALLS) {
+			print "SB_" SYMBOLS[x] " = SYS_" SYSCALLS[x];
 		}
 		exit(0);
 	}
 }
 
-function out(name, val)
+function out(name, syscall, val)
 {
-	name = toupper(name)
-	print "#define SB_SYS" syscall_prefix "_" name " " val;
-	print "S(" name ")";
+	uname = toupper(name)
+	syscall_define = "SB_SYS" syscall_prefix "_" uname
+	print "#define " syscall_define " " val;
+	if (name == syscall)
+		print "S(" uname ")";
+	else
+		print "{ " syscall_define ", SB_NR_" uname ", \"" uname "\" },";
 }
 
 {
@@ -42,21 +50,23 @@ function out(name, val)
 	# a straight number or an expression (a syscall base)
 	sub(/^[^=]*= /, "");
 
-	for (i = 1; i <= COUNT; ++i)
+	syscall = "<awk_script_error>";
+	for (i = 1; i <= COUNT; ++i) {
 		if (SYMBOLS[i] == name) {
-			SYMBOLS[i] = "";
+			FOUND[i] = 1;
+			syscall = SYSCALLS[i];
 			break;
 		}
+	}
 
-	out(name, $0);
+	out(name, syscall, $0);
 }
 
 END {
 	if (MODE != "gen") {
 		for (x in SYMBOLS) {
-			s = SYMBOLS[x];
-			if (s != "")
-				out(s, "SB_NR_UNDEF");
+			if (!FOUND[x])
+				out(SYMBOLS[x], SYSCALLS[x], "SB_NR_UNDEF");
 		}
 	}
 }

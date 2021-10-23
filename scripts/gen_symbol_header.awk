@@ -3,9 +3,11 @@ BEGIN {
 	COUNT = 0;
 
 	sym_regex = "";
-	while ((getline symbol < SYMBOLS_FILE) > 0) {
-		if (symbol ~ /^ *#/ || symbol ~ /^$/)
+	while ((getline line < SYMBOLS_FILE) > 0) {
+		if (line ~ /^ *#/ || line ~ /^$/)
 			continue;
+		split(line, fields);
+		symbol = fields[1];
 
 		SYMBOLS[++COUNT] = symbol;
 		if (sym_regex)
