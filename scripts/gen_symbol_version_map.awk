@@ -1,5 +1,15 @@
 BEGIN {
 	split(" " SYMBOLS_LIST, SYMBOLS);
+
+	sym_regex = "";
+	for (x in SYMBOLS) {
+		symbol = SYMBOLS[x];
+		if (sym_regex)
+			sym_regex = sym_regex "|";
+		sym_regex = sym_regex symbol;
+	}
+	SYMBOL_REGEX = "^(" sym_regex ")(@|$)";
+	WEAK_SYMBOL_REGEX = "^__(" sym_regx ")(@@|$)";
 }
 
 /^  OS\/ABI:/ {
@@ -17,81 +27,77 @@ BEGIN {
 	if ($4 != "FUNC" || $5 == "LOCAL" || $6 != "DEFAULT")
 		next;
 
-	for (x in SYMBOLS) {
-		sym_regex = "^" SYMBOLS[x] "(@|$)";
-		# On x86, x86_64 and others, $8 is the symbol name, but on
-		# alpha, its $10, so rather use $NF, as it should be the
-		# last field
-		if ($NF ~ sym_regex) {
-			split($NF, symbol_array, /@|@@/);
+	# On x86, x86_64 and others, $8 is the symbol name, but on
+	# alpha, its $10, so rather use $NF, as it should be the
+	# last field
+	if ($NF ~ SYMBOL_REGEX) {
+		split($NF, symbol_array, /@|@@/);
 
-			# Don't add local symbols of versioned libc's
-			if (VERSIONED_LIBC && !symbol_array[2])
-				continue;
+		# Don't add local symbols of versioned libc's
+		if (VERSIONED_LIBC && !symbol_array[2])
+			next;
 
-			# Handle non-versioned libc's like uClibc ...
-			if (!symbol_array[2])
-				symbol_array[2] = "";
+		# Handle non-versioned libc's like uClibc ...
+		if (!symbol_array[2])
+			symbol_array[2] = "";
 
-			# We have a versioned libc
-			if (symbol_array[2] && !VERSIONED_LIBC)
-				VERSIONED_LIBC = 1;
+		# We have a versioned libc
+		if (symbol_array[2] && !VERSIONED_LIBC)
+			VERSIONED_LIBC = 1;
 
-			ADD = 1;
-			# Check that we do not add duplicates
-			for (y in PROCESSED_SYMBOLS) {
-				if (y == $NF) {
-					ADD = 0;
-					break;
-				}
-			}
-
-			if (ADD) {
-				SYMBOL_LIST[symbol_array[2]] = SYMBOL_LIST[symbol_array[2]] " " symbol_array[1];
-				PROCESSED_SYMBOLS[$NF] = $NF;
+		ADD = 1;
+		# Check that we do not add duplicates
+		for (y in PROCESSED_SYMBOLS) {
+			if (y == $NF) {
+				ADD = 0;
+				break;
 			}
 		}
 
-		# No apparent need to handle weak __XXX symbols ... so disable
-		# until we have documentation on why ...
-		# If we do re-add this, need to update the `readelf` call in
-		# libsandbox/ to include the -h flag again.
-		continue;
+		if (ADD) {
+			SYMBOL_LIST[symbol_array[2]] = SYMBOL_LIST[symbol_array[2]] " " symbol_array[1];
+			PROCESSED_SYMBOLS[$NF] = $NF;
+		}
+	}
 
-		sym_regex = "^__" SYMBOLS[x] "(@@|$)";
-		if (($5 == "WEAK") && ($NF ~ sym_regex)) {
-			split($NF, symbol_array, /@@/);
+	# No apparent need to handle weak __XXX symbols ... so disable
+	# until we have documentation on why ...
+	# If we do re-add this, need to update the `readelf` call in
+	# libsandbox/ to include the -h flag again.
+	next;
 
-			# Don't add local symbols of versioned libc's
-			if (VERSIONED_LIBC && !symbol_array[2])
-				continue;
+	if (($5 == "WEAK") && ($NF ~ WEAK_SYMBOL_REGEX)) {
+		split($NF, symbol_array, /@@/);
 
-			# Blacklist __getcwd on FreeBSD
-			# Unleashed - May 2006
-			if ((symbol_array[1] == "__getcwd") && (ABI == "FreeBSD"))
-				continue;
+		# Don't add local symbols of versioned libc's
+		if (VERSIONED_LIBC && !symbol_array[2])
+			next;
 
-			# Handle non-versioned libc's like uClibc ...
-			if (!symbol_array[2])
-				symbol_array[2] = "";
+		# Blacklist __getcwd on FreeBSD
+		# Unleashed - May 2006
+		if ((symbol_array[1] == "__getcwd") && (ABI == "FreeBSD"))
+			next;
 
-			# We have a versioned libc
-			if (symbol_array[2] && !VERSIONED_LIBC)
-				VERSIONED_LIBC = 1;
+		# Handle non-versioned libc's like uClibc ...
+		if (!symbol_array[2])
+			symbol_array[2] = "";
 
-			ADD = 1;
-			# Check that we do not add duplicates
-			for (y in PROCESSED_SYMBOLS) {
-				if (y == $NF) {
-					ADD = 0;
-					break;
-				}
+		# We have a versioned libc
+		if (symbol_array[2] && !VERSIONED_LIBC)
+			VERSIONED_LIBC = 1;
+
+		ADD = 1;
+		# Check that we do not add duplicates
+		for (y in PROCESSED_SYMBOLS) {
+			if (y == $NF) {
+				ADD = 0;
+				break;
 			}
+		}
 
-			if (ADD) {
-				SYMBOL_LIST[symbol_array[2]] = SYMBOL_LIST[symbol_array[2]] " " symbol_array[1];
-				PROCESSED_SYMBOLS[$NF] = $NF;
-			}
+		if (ADD) {
+			SYMBOL_LIST[symbol_array[2]] = SYMBOL_LIST[symbol_array[2]] " " symbol_array[1];
+			PROCESSED_SYMBOLS[$NF] = $NF;
 		}
 	}
 }
