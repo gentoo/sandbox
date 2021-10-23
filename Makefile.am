@@ -1,6 +1,8 @@
 ACLOCAL_AMFLAGS  = -I m4
 MAKEFLAGS = --no-print-directory
-AM_CPPFLAGS = $(SANDBOX_DEFINES)
+AM_CPPFLAGS = \
+	$(SANDBOX_DEFINES) \
+	-I$(top_srcdir)
 
 SUBDIRS = tests
 

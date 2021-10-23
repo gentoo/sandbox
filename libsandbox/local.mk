@@ -3,7 +3,6 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 %C%_libsandbox_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I%D% \
-	-I$(top_srcdir) \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include
