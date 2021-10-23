@@ -390,8 +390,8 @@ static void trace_loop(void)
 	bool before_exec, before_syscall, fake_syscall_ret;
 	unsigned event;
 	long ret;
-	int nr, status, sig;
-	const struct syscall_entry *se, *tbl_after_fork;
+	int status, sig;
+	const struct syscall_entry *tbl_after_fork;
 
 	before_exec = true;
 	before_syscall = false;
@@ -461,10 +461,12 @@ static void trace_loop(void)
 		}
 
 		ret = trace_get_regs(&regs);
-		nr = trace_get_sysnum(&regs);
-		se = lookup_syscall_in_tbl(tbl_after_fork, nr);
 
 		if (before_syscall) {
+			/* NB: The kernel guarantees syscall NR is valid only on entry. */
+			int nr = trace_get_sysnum(&regs);
+			const struct syscall_entry *se = lookup_syscall_in_tbl(tbl_after_fork, nr);
+
 			_sb_debug("%s:%i", se ? se->name : "IDK", nr);
 			if (!trace_check_syscall(se, &regs)) {
 				sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
