@@ -217,6 +217,7 @@ struct syscall_state {
 	bool (*pre_check)(const char *func, const char *pathname, int dirfd);
 };
 
+/* Check syscall that only takes a path as its |ibase| argument. */
 static bool _trace_check_syscall_C(struct syscall_state *state, int ibase)
 {
 	char *path = do_peekstr(trace_arg(state->regs, ibase));
@@ -233,6 +234,7 @@ static bool _trace_check_syscall_C(struct syscall_state *state, int ibase)
 	free(path);
 	return ret;
 }
+/* Check syscall that only takes a path as its first argument. */
 static bool trace_check_syscall_C(struct syscall_state *state)
 {
 	return _trace_check_syscall_C(state, 1);
@@ -255,20 +257,24 @@ static bool __trace_check_syscall_DCF(struct syscall_state *state, int ibase, in
 	free(path);
 	return ret;
 }
-static bool _trace_check_syscall_DCF(struct syscall_state *state, int ibase)
+/* Check syscall that takes a dirfd & path starting at |ibase| argument, and flags at |fbase|. */
+static bool _trace_check_syscall_DCF(struct syscall_state *state, int ibase, int fbase)
 {
-	int flags = trace_arg(state->regs, ibase + 2);
+	int flags = trace_arg(state->regs, fbase);
 	return __trace_check_syscall_DCF(state, ibase, flags);
 }
+/* Check syscall that takes a dirfd, path, and flags as its first 3 arguments. */
 static bool trace_check_syscall_DCF(struct syscall_state *state)
 {
-	return _trace_check_syscall_DCF(state, 1);
+	return _trace_check_syscall_DCF(state, 1, 3);
 }
 
+/* Check syscall that takes a dirfd & path starting at |ibase| argument. */
 static bool _trace_check_syscall_DC(struct syscall_state *state, int ibase)
 {
 	return __trace_check_syscall_DCF(state, ibase, 0);
 }
+/* Check syscall that takes a dirfd & path as its first 2 arguments (but no flags). */
 static bool trace_check_syscall_DC(struct syscall_state *state)
 {
 	return _trace_check_syscall_DC(state, 1);
@@ -311,12 +317,13 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_CHMOD)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_CHOWN)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_CREAT)     return  trace_check_syscall_C  (&state);
-	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DCF(&state);
-	else if (nr == SB_NR_FCHOWNAT)  return  trace_check_syscall_DCF(&state);
+	/* NB: Linux syscall does not have a flags argument. */
+	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DC (&state);
+	else if (nr == SB_NR_FCHOWNAT)  return _trace_check_syscall_DCF(&state, 1, 5);
 	else if (nr == SB_NR_FUTIMESAT) return  trace_check_syscall_DC (&state);
 	else if (nr == SB_NR_LCHOWN)    return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_LINK)      return _trace_check_syscall_C  (&state, 2);
-	else if (nr == SB_NR_LINKAT)    return _trace_check_syscall_DCF(&state, 3);
+	else if (nr == SB_NR_LINKAT)    return _trace_check_syscall_DCF(&state, 3, 5);
 	else if (nr == SB_NR_MKDIR)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_MKDIRAT)   return  trace_check_syscall_DC (&state);
 	else if (nr == SB_NR_MKNOD)     return  trace_check_syscall_C  (&state);
@@ -336,7 +343,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	else if (nr == SB_NR_UNLINKAT)  return  trace_check_syscall_DCF(&state);
 	else if (nr == SB_NR_UTIME)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_UTIMES)    return  trace_check_syscall_C  (&state);
-	else if (nr == SB_NR_UTIMENSAT) return _trace_check_syscall_DCF(&state, 1);
+	else if (nr == SB_NR_UTIMENSAT) return _trace_check_syscall_DCF(&state, 1, 4);
 
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
