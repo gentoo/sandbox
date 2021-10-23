@@ -74,9 +74,14 @@ lremovexattr
 setxattr
 lsetxattr
 utime
+__utime64
 utimes
+__utimes64
 utimensat
+__utimensat64
 futimesat
+__futimesat64
 lutimes
+__lutimes64
 fork
 vfork

@@ -81,7 +81,9 @@ check_PROGRAMS += \
 	%D%/unlinkat-0 \
 	%D%/utime-0 \
 	%D%/utimensat-0 \
+	%D%/utimensat64-0 \
 	%D%/utimensat_static-0 \
+	%D%/utimensat64_static-0 \
 	%D%/utimes-0 \
 	%D%/vfork-0 \
 	\

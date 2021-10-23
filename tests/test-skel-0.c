@@ -144,8 +144,8 @@ struct timespec *parse_timespec(const char *s)
 	if (!strcmp(s, "NOW")) {
 		times->tv_sec = time(0);
 	} else {
-		long sec = 0, nsec = 0;
-		sscanf(s, "%li,%li", &sec, &nsec);
+		int64_t sec = 0, nsec = 0;
+		sscanf(s, "%" PRIi64 ",%" PRIi64, &sec, &nsec);
 		times->tv_sec = sec;
 		times->tv_nsec = nsec;
 	}
