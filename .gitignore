@@ -8,8 +8,7 @@ a.out
 .libs
 .dirstamp
 /Makefile
-/tests/Makefile
-Makefile.in
+/Makefile.in
 
 f
 f2
@@ -43,7 +42,6 @@ core
 /ltmain.sh
 /missing
 /stamp-h1
-/test.sh
 
 /m4/libtool.m4
 /m4/ltoptions.m4

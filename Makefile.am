@@ -4,12 +4,13 @@ AM_CPPFLAGS = \
 	$(SANDBOX_DEFINES) \
 	-I$(top_srcdir)
 
-SUBDIRS = tests
-
 confdir = $(sysconfdir)
 confddir = $(sysconfdir)/sandbox.d
 
 bin_PROGRAMS =
+check_PROGRAMS =
+check_SCRIPTS =
+dist_check_SCRIPTS =
 dist_conf_DATA = etc/sandbox.conf
 confd_DATA = etc/sandbox.d/00default
 dist_pkgdata_DATA  = data/sandbox.bashrc
@@ -17,6 +18,7 @@ lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 
 CLEANFILES =
+DISTCLEANFILES =
 
 EXTRA_DIST = \
 	headers.h \
@@ -47,5 +49,6 @@ dist-hook:
 include libsandbox/local.mk
 include libsbutil/local.mk
 include src/local.mk
+include tests/local.mk
 
-DISTCLEANFILES = $(CLEANFILES)
+DISTCLEANFILES += $(CLEANFILES)

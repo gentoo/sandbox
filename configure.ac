@@ -471,7 +471,6 @@ AC_CONFIG_FILES([
 	Makefile
 	etc/sandbox.d/00default
 	tests/atlocal
-	tests/Makefile
 	tests/package.m4
 ])
 AC_OUTPUT
