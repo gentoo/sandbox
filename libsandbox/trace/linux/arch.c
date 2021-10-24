@@ -27,6 +27,8 @@
 # include "sparc.c"
 #elif defined(__x86_64__)
 # include "x86_64.c"
+#elif defined(HAVE_STRUCT_PTRACE_SYSCALL_INFO)
+# include "syscall_info.c"
 #else
 # define SB_NO_TRACE_ARCH
 #endif

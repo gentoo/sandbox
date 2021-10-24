@@ -165,6 +165,7 @@ AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
 
 save_CPPFLAGS=$CPPFLAGS
 CPPFLAGS="-I$srcdir $CPPFLAGS"
+AC_CHECK_TYPES([struct ptrace_syscall_info],,,[#include "headers.h"])
 AC_CHECK_TYPES([struct user_regs_struct, struct pt_regs],,,[#include "headers.h"])
 AC_CHECK_SIZEOF([struct user_regs_struct],,[#include "headers.h"])
 AC_CHECK_SIZEOF([struct pt_regs],,[#include "headers.h"])
