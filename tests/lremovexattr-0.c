@@ -1,5 +1,5 @@
-#define FUNC removexattr
-#define SFUNC "removexattr"
+#define FUNC lremovexattr
+#define SFUNC "lremovexattr"
 #define FUNC_STR "\"%s\", \"%s\""
 #define FUNC_IMP path, name
 #define ARG_CNT 2
