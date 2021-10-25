@@ -77,6 +77,10 @@ if test "x$enable_schizo" != "xno" ; then
 		SB_CHECK_SCHIZO([s390x], [-m64])
 		SB_CHECK_SCHIZO([s390], [-m31])
 		;;
+	sparc*linux*)
+		SB_CHECK_SCHIZO([sparc64], [-m64])
+		SB_CHECK_SCHIZO([sparc], [-m32])
+		;;
 	esac
 	SB_SCHIZO_SETTINGS=${SB_SCHIZO_SETTINGS# }
 	if test "x$enable_schizo" != "xno" ; then

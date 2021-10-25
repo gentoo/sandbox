@@ -13,6 +13,76 @@
 #define U_REG_G1 0
 #define U_REG_O0 7
 
+#undef _trace_possible
+#define _trace_possible _trace_possible
+
+#ifdef SB_SCHIZO
+
+static const struct syscall_entry syscall_table_32[] = {
+#ifdef SB_SCHIZO_sparc
+#define S(s) { SB_SYS_sparc_##s, SB_NR_##s, #s },
+#include "trace_syscalls_sparc.h"
+#undef S
+#endif
+	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
+};
+static const struct syscall_entry syscall_table_64[] = {
+#ifdef SB_SCHIZO_sparc64
+#define S(s) { SB_SYS_sparc64_##s, SB_NR_##s, #s },
+#include "trace_syscalls_sparc64.h"
+#undef S
+#endif
+	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
+};
+
+static bool pers_is_32(trace_regs *regs)
+{
+#ifdef __arch64__
+	/* Sparc does not make it easy to detect 32-bit vs 64-bit.
+	 * Inspect the syscall trap insn to see which one it is.
+	 */
+	unsigned long ret = do_ptrace(PTRACE_PEEKTEXT, (void *)regs->tpc, NULL);
+	return (ret >> 32) == 0x91d02010;
+#else
+	return true;
+#endif
+}
+
+static const struct syscall_entry *trace_check_personality(void *vregs)
+{
+	trace_regs *regs = vregs;
+	if (pers_is_32(regs))
+		return syscall_table_32;
+	else
+		return syscall_table_64;
+}
+
+static bool _trace_possible(const void *data)
+{
+#ifdef __arch64__
+	/* sparc64 can trace sparc32. */
+	return true;
+#else
+	/* sparc32 can only trace sparc32 :(. */
+	const Elf64_Ehdr *ehdr = data;
+	return ehdr->e_ident[EI_CLASS] == ELFCLASS32;
+#endif
+}
+
+#else
+
+static bool _trace_possible(const void *data)
+{
+	const Elf64_Ehdr *ehdr = data;
+#ifdef __arch64__
+	return ehdr->e_ident[EI_CLASS] == ELFCLASS64;
+#else
+	return ehdr->e_ident[EI_CLASS] == ELFCLASS32;
+#endif
+}
+
+#endif
+
 /* Sparc systems have swapped the addr/data args. */
 #undef trace_get_regs
 #undef trace_set_regs

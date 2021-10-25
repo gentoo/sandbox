@@ -60,3 +60,6 @@ really only way around this would be to have sandbox set up
 a named pipe in $T and set the message path to that.  then
 it would poll that for data and take care of writing it to
 its open stderr.
+
+sparc32 tracing under sparc64 doesn't work quite right.  we need to reload the
+syscall table after the exec call finishes.  not sure any other port needs this.
