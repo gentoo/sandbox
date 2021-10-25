@@ -70,6 +70,7 @@ It requires:
   * Itanium
   * PowerPC (32-bit & 64-bit)
   * s390 (32-bit & 64-bit)
+  * SPARC (32-bit & 64-bit)
   * x86 (32-bit & 64-bit & x32)
 * Operating system
   * [Linux](https://kernel.org/) 3.8+

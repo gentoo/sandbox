@@ -1,6 +1,3 @@
-#define SB_NO_TRACE_ARCH
-#if 0 /* XXX: broken sometimes #293632 */
-
 /* Since sparc's g0 register is hardcoded to 0 in the ISA, the kernel does not
  * bother copying it out when using the regs ptrace.  Instead it shifts things
  * by one and stores [g1..g7] in [0..6] and [o0..o7] in [7..14] (leaving the
@@ -18,9 +15,14 @@
 
 /* Sparc systems have swapped the addr/data args. */
 #undef trace_get_regs
-#define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, regs, NULL)
 #undef trace_set_regs
-#define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS, regs, NULL)
+#ifdef __arch64__
+# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS64, regs, NULL)
+# define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS64, regs, NULL)
+#else
+# define trace_get_regs(regs) do_ptrace(PTRACE_GETREGS, regs, NULL)
+# define trace_set_regs(regs) do_ptrace(PTRACE_SETREGS, regs, NULL)
+#endif
 
 #define trace_reg_sysnum u_regs[U_REG_G1]
 
@@ -33,8 +35,12 @@ static long trace_raw_ret(void *vregs)
 static void trace_set_ret(void *vregs, int err)
 {
 	trace_regs *regs = vregs;
+#ifndef __arch64__
 	/* The carry bit is used to flag errors. */
 	regs->psr |= PSR_C;
+#else
+	regs->tstate |= 0x1100000000;
+#endif
 	/* Userland negates the value on sparc. */
 	regs->u_regs[U_REG_O0] = err;
 	trace_set_regs(regs);
@@ -48,5 +54,3 @@ static unsigned long trace_arg(void *vregs, int num)
 	else
 		return -1;
 }
-
-#endif
