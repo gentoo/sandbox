@@ -671,36 +671,31 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 }
 
 /* Is this a func that works on symlinks, and is the file a symlink ? */
-static bool symlink_func(int sb_nr, int flags, const char *abs_path)
+static bool symlink_func(int sb_nr, int flags)
 {
-	struct stat st;
-
 	/* These funcs always operate on symlinks */
-	if (!(sb_nr == SB_NR_UNLINK       ||
-	      sb_nr == SB_NR_UNLINKAT     ||
-	      sb_nr == SB_NR_LCHOWN       ||
-	      sb_nr == SB_NR_LREMOVEXATTR ||
-	      sb_nr == SB_NR_LSETXATTR    ||
-	      sb_nr == SB_NR_REMOVE       ||
-	      sb_nr == SB_NR_RENAME       ||
-	      sb_nr == SB_NR_RENAMEAT     ||
-	      sb_nr == SB_NR_RENAMEAT2    ||
-	      sb_nr == SB_NR_RMDIR        ||
-	      sb_nr == SB_NR_SYMLINK      ||
-	      sb_nr == SB_NR_SYMLINKAT))
-	{
-		/* These funcs sometimes operate on symlinks */
-		if (!((sb_nr == SB_NR_FCHOWNAT ||
-		       sb_nr == SB_NR_FCHMODAT ||
-		       sb_nr == SB_NR_UTIMENSAT) &&
-		      (flags & AT_SYMLINK_NOFOLLOW)))
-			return false;
-	}
-
-	if (-1 != lstat(abs_path, &st) && S_ISLNK(st.st_mode))
+	if (sb_nr == SB_NR_UNLINK       ||
+	    sb_nr == SB_NR_UNLINKAT     ||
+	    sb_nr == SB_NR_LCHOWN       ||
+	    sb_nr == SB_NR_LREMOVEXATTR ||
+	    sb_nr == SB_NR_LSETXATTR    ||
+	    sb_nr == SB_NR_REMOVE       ||
+	    sb_nr == SB_NR_RENAME       ||
+	    sb_nr == SB_NR_RENAMEAT     ||
+	    sb_nr == SB_NR_RENAMEAT2    ||
+	    sb_nr == SB_NR_RMDIR        ||
+	    sb_nr == SB_NR_SYMLINK      ||
+	    sb_nr == SB_NR_SYMLINKAT)
 		return true;
-	else
-		return false;
+
+	/* These funcs sometimes operate on symlinks */
+	if ((sb_nr == SB_NR_FCHOWNAT ||
+	     sb_nr == SB_NR_FCHMODAT ||
+	     sb_nr == SB_NR_UTIMENSAT) &&
+	    (flags & AT_SYMLINK_NOFOLLOW))
+		return true;
+
+	return false;
 }
 
 static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
@@ -709,7 +704,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	int old_errno = errno;
 	int result = 0;
 	int retval;
-	bool sym_func = symlink_func(sb_nr, flags, abs_path);
+	bool sym_func = symlink_func(sb_nr, flags);
 
 	retval = check_prefixes(sbcontext->deny_prefixes,
 		sbcontext->num_deny_prefixes, abs_path);
@@ -904,7 +899,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	 * itself does not dereference.  This speeds things up and avoids updating
 	 * the atime implicitly. #415475
 	 */
-	if (symlink_func(sb_nr, flags, absolute_path))
+	if (symlink_func(sb_nr, flags))
 		resolved_path = absolute_path;
 	else
 		resolved_path = resolve_path(file, 1);
