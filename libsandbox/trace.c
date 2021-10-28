@@ -405,13 +405,16 @@ static void trace_loop(void)
 	long ret;
 	int status, sig;
 	const struct syscall_entry *tbl_after_fork;
+	void *data;
 
 	before_exec = true;
 	before_syscall = false;
 	fake_syscall_ret = false;
 	tbl_after_fork = NULL;
+	data = NULL;
 	do {
-		ret = do_ptrace(PTRACE_SYSCALL, NULL, NULL);
+		ret = do_ptrace(PTRACE_SYSCALL, NULL, data);
+		data = NULL;
 		waitpid(trace_pid, &status, 0);
 
 		event = (unsigned)status >> 16;
@@ -444,7 +447,7 @@ static void trace_loop(void)
 				 * and we'll exit then.
 				 */
 				sb_debug("passing signal through %s (%i)", strsig(sig), sig);
-				do_ptrace(PTRACE_CONT, NULL, (void *)(uintptr_t)(sig));
+				data = (void *)(uintptr_t)(sig);
 				continue;
 			}
 
