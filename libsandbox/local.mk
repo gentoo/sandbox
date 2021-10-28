@@ -72,6 +72,7 @@ TRACE_MAKE_HEADER = \
 		$(COMPILE) -E -P -include $(top_srcdir)/headers.h - $$f | \
 		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
 %D%/trace_syscalls.h: $(SYMBOLS_FILE) $(GEN_TRACE_SCRIPT) $(SB_SCHIZO_HEADERS)
+	@$(MKDIR_P) %D%
 if SB_SCHIZO
 	$(AM_V_GEN)touch $@
 else
