@@ -5,6 +5,11 @@
  * Licensed under the GPL-2
  */
 
+#include "headers.h"
+#include "sbutil.h"
+#include "libsandbox.h"
+#include "wrappers.h"
+
 /* We assume the parent has nested use with save/restore errno */
 bool sb_common_at_pre_check(const char *func, const char **pathname, int dirfd,
                             char *dirfd_path, size_t dirfd_path_len)

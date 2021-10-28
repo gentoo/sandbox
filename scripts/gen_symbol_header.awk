@@ -201,8 +201,6 @@ END {
 		}
 	}
 
-	printf("#include \"wrapper-funcs/__pre_check.c\"\n");
-
 	printf("#define SB_MAX_STRING_LEN %i\n\n", SB_MAX_STRING_LEN);
 
 	printf("#endif /* __symbols_h */\n");

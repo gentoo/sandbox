@@ -5,6 +5,11 @@
  * Licensed under the GPL-2
  */
 
+#include "headers.h"
+#include "sbutil.h"
+#include "libsandbox.h"
+#include "wrappers.h"
+
 bool sb_mkdirat_pre_check(const char *func, const char *pathname, int dirfd)
 {
 	char canonic[SB_PATH_MAX];

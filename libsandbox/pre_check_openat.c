@@ -5,6 +5,11 @@
  * Licensed under the GPL-2
  */
 
+#include "headers.h"
+#include "sbutil.h"
+#include "libsandbox.h"
+#include "wrappers.h"
+
 bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int flags)
 {
 	/* If we're not trying to create, fail normally if
