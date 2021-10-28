@@ -15,6 +15,9 @@
 #include "sbutil.h"
 #include "sandbox.h"
 
+/* The C library might have a macro for this. */
+#undef dprintf
+
 static int print_debug = 0;
 #define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
 #define dputs(str) do { if (print_debug) puts(str); } while (0)
