@@ -82,7 +82,7 @@ extern void sb_lock(void);
 extern void sb_unlock(void);
 
 bool trace_possible(const char *filename, char *const argv[], const void *data);
-void trace_main(const char *filename, char *const argv[]);
+void trace_main(void);
 
 /* glibc modified realpath() function */
 char *erealpath(const char *, char *);

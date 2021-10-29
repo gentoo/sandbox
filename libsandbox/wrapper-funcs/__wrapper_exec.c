@@ -242,8 +242,10 @@ static bool sb_check_exec(const char *filename, char *const argv[])
  out_fd:
 	close(fd);
 
-	if (do_trace)
-		trace_main(filename, argv);
+	if (do_trace) {
+		sb_debug_dyn("tracing: %s\n", filename);
+		trace_main();
+	}
 
 	return run_in_process;
 }

@@ -510,11 +510,9 @@ static void trace_loop(void)
 	} while (1);
 }
 
-void trace_main(const char *filename, char *const argv[])
+void trace_main(void)
 {
 	struct sigaction old_sa, sa = { .sa_handler = SIG_DFL, };
-
-	sb_debug_dyn("trace_main: tracing: %s\n", filename);
 
 	if (trace_pid)
 		sb_ebort("ISE: trace code assumes multiple threads are not forking\n");
@@ -550,7 +548,7 @@ void trace_main(const char *filename, char *const argv[])
 #undef _trace_possible
 #define _trace_possible(data) false
 
-void trace_main(const char *filename, char *const argv[])
+void trace_main(void)
 {
 	/* trace_possible() triggers a warning for us */
 }
