@@ -263,21 +263,19 @@ int main(int argc, char **argv)
 	str_list_add_item_copy(argv_bash, sandbox_info.sandbox_rc, oom_error);
 	if (argc >= 2) {
 		int i;
+		size_t cmdlen;
+		char *cmd = NULL;
 
 		str_list_add_item_copy(argv_bash, run_str, oom_error);
 		str_list_add_item_copy(argv_bash, argv[1], oom_error);
+		cmdlen = strlen(argv_bash[4]);
 		for (i = 2; i < argc; i++) {
-			char *tmp_ptr;
-
-			tmp_ptr = xrealloc(argv_bash[4],
-					   (strlen(argv_bash[4]) +
-					    strlen(argv[i]) + 2) *
-					   sizeof(char));
-			argv_bash[4] = tmp_ptr;
-
-			snprintf(argv_bash[4] + strlen(argv_bash[4]),
-				 strlen(argv[i]) + 2, " %s",
-				 argv[i]);
+			size_t arglen = strlen(argv[i]);
+			argv_bash[4] = xrealloc(argv_bash[4], cmdlen + arglen + 2);
+			argv_bash[4][cmdlen] = ' ';
+			memcpy(argv_bash[4] + cmdlen + 1, argv[i], arglen);
+			cmdlen += arglen + 1;
+			argv_bash[4][cmdlen] = '\0';
 		}
 	}
 
