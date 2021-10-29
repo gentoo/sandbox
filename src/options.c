@@ -20,6 +20,7 @@ int opt_use_ns_sysv = -1;
 int opt_use_ns_time = -1;
 int opt_use_ns_user = -1;
 int opt_use_ns_uts = -1;
+bool opt_use_bash = false;
 
 static const struct {
 	const char *name;
@@ -76,7 +77,7 @@ static void show_version(void)
 	exit(0);
 }
 
-#define PARSE_FLAGS "+hV"
+#define PARSE_FLAGS "+chV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"ns-on",         no_argument, &opt_use_namespaces, true},
@@ -99,6 +100,7 @@ static struct option const long_opts[] = {
 	{"ns-user-off",   no_argument, &opt_use_ns_user, false},
 	{"ns-uts-on",     no_argument, &opt_use_ns_uts, true},
 	{"ns-uts-off",    no_argument, &opt_use_ns_uts, false},
+	{"bash",          no_argument, NULL, 'c'},
 	{"help",          no_argument, NULL, 'h'},
 	{"version",       no_argument, NULL, 'V'},
 	{"run-configure", no_argument, NULL, 0x800},
@@ -125,6 +127,7 @@ static const char * const opts_help[] = {
 	"Disable the use of user namespaces",
 	"Enable  the use of UTS (hostname/uname) namespaces",
 	"Disable the use of UTS (hostname/uname) namespaces",
+	"Run command through bash shell",
 	"Print this help and exit",
 	"Print version and exit",
 	"Run local sandbox configure in same way and exit (developer only)",
@@ -201,6 +204,9 @@ void parseargs(int argc, char *argv[])
 
 	while ((i = getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
 		switch (i) {
+		case 'c':
+			opt_use_bash = true;
+			break;
 		case 'V':
 			show_version();
 		case 'h':

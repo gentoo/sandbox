@@ -175,7 +175,9 @@ static int spawn_shell(char *argv_bash[], char **env, int debug)
 
 	/* Child's process */
 	if (0 == child_pid) {
-		int ret = execve(argv_bash[0], argv_bash, env);
+		/* Would be nice if execvpe were in POSIX. */
+		environ = env;
+		int ret = execvp(argv_bash[0], argv_bash);
 		sb_pwarn("failed to exec child");
 		_exit(ret);
 	} else if (child_pid < 0) {
@@ -258,25 +260,31 @@ int main(int argc, char **argv)
 		goto oom_error;
 
 	/* Setup bash argv */
-	str_list_add_item_copy(argv_bash, "/bin/bash", oom_error);
-	str_list_add_item_copy(argv_bash, "-rcfile", oom_error);
-	str_list_add_item_copy(argv_bash, sandbox_info.sandbox_rc, oom_error);
-	if (argc >= 2) {
-		int i;
-		size_t cmdlen;
-		char *cmd = NULL;
+	if (opt_use_bash || argc == 1) {
+		str_list_add_item_copy(argv_bash, "/bin/bash", oom_error);
+		str_list_add_item_copy(argv_bash, "-rcfile", oom_error);
+		str_list_add_item_copy(argv_bash, sandbox_info.sandbox_rc, oom_error);
+		if (argc >= 2) {
+			int i;
+			size_t cmdlen;
+			char *cmd = NULL;
 
-		str_list_add_item_copy(argv_bash, run_str, oom_error);
-		str_list_add_item_copy(argv_bash, argv[1], oom_error);
-		cmdlen = strlen(argv_bash[4]);
-		for (i = 2; i < argc; i++) {
-			size_t arglen = strlen(argv[i]);
-			argv_bash[4] = xrealloc(argv_bash[4], cmdlen + arglen + 2);
-			argv_bash[4][cmdlen] = ' ';
-			memcpy(argv_bash[4] + cmdlen + 1, argv[i], arglen);
-			cmdlen += arglen + 1;
-			argv_bash[4][cmdlen] = '\0';
+			str_list_add_item_copy(argv_bash, run_str, oom_error);
+			str_list_add_item_copy(argv_bash, argv[1], oom_error);
+			cmdlen = strlen(argv_bash[4]);
+			for (i = 2; i < argc; i++) {
+				size_t arglen = strlen(argv[i]);
+				argv_bash[4] = xrealloc(argv_bash[4], cmdlen + arglen + 2);
+				argv_bash[4][cmdlen] = ' ';
+				memcpy(argv_bash[4] + cmdlen + 1, argv[i], arglen);
+				cmdlen += arglen + 1;
+				argv_bash[4][cmdlen] = '\0';
+			}
 		}
+	} else {
+		int i;
+		for (i = 1; i < argc; ++i)
+			str_list_add_item_copy(argv_bash, argv[i], oom_error);
 	}
 
 #ifdef HAVE_PRCTL

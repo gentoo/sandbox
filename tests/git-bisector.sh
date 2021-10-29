@@ -21,10 +21,21 @@ make="make -s -j"
 cat << EOF > git-run.sh
 #!/bin/sh
 ./autogen.sh
-./configure -q -C $(sandbox -V | tail -n1)
+# Newer versions of sandbox can run configure for us.
+# Should drop old support around Jan 2023.
+if sandbox --help | grep -q -e--run-configure ; then
+	sandbox --run-configure -q -C
+else
+	./configure -q -C $(sandbox -V | tail -n1)
+fi
 ${make} clean
 ${make}
-./src/sandbox.sh . ./data/sandbox.bashrc \; . ./git-run-sandbox.sh
+opt=
+# Older versions of sandbox implied -c all the time.
+if ./src/sandbox.sh --help | grep -q -e--bash ; then
+	opt="-c"
+fi
+./src/sandbox.sh ${opt} . ./data/sandbox.bashrc \; . ./git-run-sandbox.sh
 EOF
 chmod a+rx git-run.sh
 

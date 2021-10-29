@@ -6,7 +6,7 @@ dnl due to the default PM test env having that predict.
 m4_defun([SB_RUN],[\
 	env \
 		SANDBOX_LOG="$PWD/sandbox.log" \
-		sandbox.sh \
+		sandbox.sh -c \
 			addpredict / \; \
 			addwrite "${PWD%/*}" \; \
 			set -x \; \

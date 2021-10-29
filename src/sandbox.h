@@ -52,5 +52,6 @@ extern int opt_use_ns_sysv;
 extern int opt_use_ns_time;
 extern int opt_use_ns_user;
 extern int opt_use_ns_uts;
+extern bool opt_use_bash;
 
 #endif
