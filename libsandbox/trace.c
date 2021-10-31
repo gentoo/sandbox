@@ -584,8 +584,14 @@ static char *flatten_args(char *const argv[])
 
 bool trace_possible(const char *filename, char *const argv[], const void *data)
 {
-	if (_trace_possible(data))
-		return true;
+	if (_trace_possible(data)) {
+		/* If we're in an environment like QEMU where ptrace doesn't work, then
+		 * don't try to use it.  If ptrace does work, this should fail with ESRCH.
+		 */
+		errno = 0;
+		ptrace(PTRACE_CONT, 0, NULL, NULL);
+		return errno == ENOSYS ? false : true;
+	}
 
 	char *args = flatten_args(argv);
 	sb_eqawarn("Unable to trace static ELF: %s: %s\n", filename, args);
