@@ -114,7 +114,7 @@ static void print_sandbox_log(char *sandbox_log)
 		return;
 	}
 
-	sb_eerror("--------------------------- ACCESS VIOLATION SUMMARY ---------------------------\n");
+	sb_eerror("----------------------- SANDBOX ACCESS VIOLATION SUMMARY -----------------------\n");
 	sb_eerror("LOG FILE: \"%s\"\n", sandbox_log);
 
 	while (1) {
