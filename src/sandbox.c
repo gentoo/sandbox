@@ -260,6 +260,15 @@ int main(int argc, char **argv)
 		goto oom_error;
 
 	/* Setup bash argv */
+	if (!opt_use_bash && argc == 2) {
+		/* Backwards compatibility hack: if there's only one argument, and it
+		 * appears to be a shell command (not an absolute path to a program),
+		 * then fallback to running through the shell.
+		 */
+		if (access(argv[1], X_OK))
+			opt_use_bash = true;
+	}
+
 	if (opt_use_bash || argc == 1) {
 		str_list_add_item_copy(argv_bash, "/bin/bash", oom_error);
 		str_list_add_item_copy(argv_bash, "-rcfile", oom_error);
