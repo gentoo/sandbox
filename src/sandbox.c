@@ -267,7 +267,6 @@ int main(int argc, char **argv)
 		if (argc >= 2) {
 			int i;
 			size_t cmdlen;
-			char *cmd = NULL;
 
 			str_list_add_item_copy(argv_bash, run_str, oom_error);
 			str_list_add_item_copy(argv_bash, argv[1], oom_error);
