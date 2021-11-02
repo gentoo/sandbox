@@ -390,6 +390,39 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 			ret = 1;
 		free(path);
 		return ret;
+
+	} else if (nr == SB_NR_EXECVE || nr == SB_NR_EXECVEAT) {
+		/* Try to extract environ and merge with our own. */
+		char *path;
+		unsigned long environ, i = 0;
+
+		if (nr == SB_NR_EXECVEAT) {
+			int dirfd = do_peekdata(trace_arg(regs, 1));
+			unsigned long argv = trace_arg(regs, 3);
+			environ = trace_arg(regs, 4);
+			path = do_peekstr(trace_arg(regs, 2));
+			__sb_debug("(%i, \"%s\", %lx, %lx{", dirfd, path, argv, environ);
+		} else {
+			path = do_peekstr(trace_arg(regs, 1));
+			unsigned long argv = trace_arg(regs, 2);
+			environ = trace_arg(regs, 3);
+			__sb_debug("(\"%s\", %lx, %lx{", path, argv, environ);
+		}
+
+		while (1) {
+			unsigned long envp = do_peekdata(environ + i);
+			if (!envp)
+				break;
+
+			char *env = do_peekstr(envp);
+			if (strncmp(env, "SANDBOX_", 8) == 0) {
+				__sb_debug("\"%s\"  ", env);
+				putenv(env);
+			}
+			i += sizeof(long);
+		}
+		__sb_debug("})");
+		return 1;
 	}
 
  done:

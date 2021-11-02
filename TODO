@@ -46,8 +46,6 @@ handle multiple processing writing to log simultaneously
 doesnt seem to work quite right:
 	echo $(./vfork-0 ./mkdir_static-0 2>&1)
 
-handle env var modification inside of traced apps
-
 messaging still needs a little work.  consider:
  - user is running as root
  - user does `emerge foo`
