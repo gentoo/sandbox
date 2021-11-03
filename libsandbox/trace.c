@@ -704,6 +704,8 @@ static char *flatten_args(char *const argv[])
 
 bool trace_possible(const char *filename, char *const argv[], const void *data)
 {
+	char *args;
+
 	/* If YAMA ptrace_scope is very high, then we can't trace at all.  #771360 */
 	int yama = trace_yama_level();
 	if (yama >= 2) {
@@ -721,7 +723,7 @@ bool trace_possible(const char *filename, char *const argv[], const void *data)
 	}
 
  fail:
-	char *args = flatten_args(argv);
+	args = flatten_args(argv);
 	sb_eqawarn("Unable to trace static ELF: %s: %s\n", filename, args);
 	free(args);
 	return false;
