@@ -52,7 +52,6 @@ static void sb_vefunc(const char *prog, const char *color, const char *format, v
 		sb_fdprintf(fd, " %s*%s ", color, COLOR_NORMAL);
 	sb_vfdprintf(fd, format, args);
 
-	fsync(fd);
 	if (opened)
 		close(fd);
 }
