@@ -49,13 +49,7 @@ pid_t trace_pid;
 static int trace_yama_level(void)
 {
 	char ch;
-	int fd;
-
-	/* ptrace scope binds access to specific capabilities.  Lets use uid==0 as a
-	 * lazy proxy for "we have all capabilities" until we can refine this.
-	 */
-	if (getuid() == 0)
-		return 0;
+	int fd, level;
 
 	fd = open("/proc/sys/kernel/yama/ptrace_scope", O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
@@ -63,7 +57,25 @@ static int trace_yama_level(void)
 
 	RETRY_EINTR(read(fd, &ch, 1));
 	close(fd);
-	return ch - '0';
+	level = ch - '0';
+
+	switch (level) {
+	case 0:
+		/* Normal levels work fine. */
+		return 0;
+
+	case 1:
+	case 2:
+		/* ptrace scope binds access to specific capabilities.  Lets use uid==0 as a
+		 * lazy proxy for "we have all capabilities" until we can refine this.
+		 */
+		return getuid() == 0 ? 0 : level;
+
+	case 3:
+	default:
+		/* Level 3+ is not supported. */
+		sb_ebort("YAMA ptrace_scope=%i+ is not supported as it makes tracing impossible.\n", level);
+	}
 }
 
 static void trace_exit(int status)
@@ -709,7 +721,7 @@ bool trace_possible(const char *filename, char *const argv[], const void *data)
 	/* If YAMA ptrace_scope is very high, then we can't trace at all.  #771360 */
 	int yama = trace_yama_level();
 	if (yama >= 2) {
-		sb_eqawarn("YAMA ptrace_scope=%i\n", yama);
+		sb_eqawarn("YAMA ptrace_scope=%i is not currently supported\n", yama);
 		goto fail;
 	}
 
