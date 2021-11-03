@@ -46,6 +46,26 @@ pid_t trace_pid;
 # define sb_openat_pre_check sb_openat64_pre_check
 #endif
 
+static int trace_yama_level(void)
+{
+	char ch;
+	int fd;
+
+	/* ptrace scope binds access to specific capabilities.  Lets use uid==0 as a
+	 * lazy proxy for "we have all capabilities" until we can refine this.
+	 */
+	if (getuid() == 0)
+		return 0;
+
+	fd = open("/proc/sys/kernel/yama/ptrace_scope", O_RDONLY | O_CLOEXEC);
+	if (fd == -1)
+		return 0;
+
+	RETRY_EINTR(read(fd, &ch, 1));
+	close(fd);
+	return ch - '0';
+}
+
 static void trace_exit(int status)
 {
 	/* if we were vfork-ed, clear trace_pid and exit */
@@ -526,6 +546,16 @@ static void trace_loop(void)
 			sb_debug("following forking event %i; pid=%li %i\n",
 			         event, newpid, before_syscall);
 
+			/* If YAMA ptrace_scope is active, then we can't hand off the child
+			 * to a new tracer.  Give up.  #821403
+			 */
+			int yama = trace_yama_level();
+			if (yama >= 1) {
+				sb_eqawarn("Unable to trace children due to YAMA ptrace_scope=%i\n", yama);
+				ptrace(PTRACE_DETACH, newpid, NULL, NULL);
+				continue;
+			}
+
 			/* Pipe for synchronizing detach & attach events. */
 			int fds[2];
 			ret = pipe(fds);
@@ -674,6 +704,13 @@ static char *flatten_args(char *const argv[])
 
 bool trace_possible(const char *filename, char *const argv[], const void *data)
 {
+	/* If YAMA ptrace_scope is very high, then we can't trace at all.  #771360 */
+	int yama = trace_yama_level();
+	if (yama >= 2) {
+		sb_eqawarn("YAMA ptrace_scope=%i\n", yama);
+		goto fail;
+	}
+
 	if (_trace_possible(data)) {
 		/* If we're in an environment like QEMU where ptrace doesn't work, then
 		 * don't try to use it.  If ptrace does work, this should fail with ESRCH.
@@ -683,6 +720,7 @@ bool trace_possible(const char *filename, char *const argv[], const void *data)
 		return errno == ENOSYS ? false : true;
 	}
 
+ fail:
 	char *args = flatten_args(argv);
 	sb_eqawarn("Unable to trace static ELF: %s: %s\n", filename, args);
 	free(args);
