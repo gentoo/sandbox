@@ -42,5 +42,14 @@ case "${MAKEFLAGS}" in
 	;;
 esac
 
+# Figure out currently YAMA ptrace_scope restriction level.
+at_yama_ptrace_scope=$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || echo 0)
+if [ ${at_yama_ptrace_scope} -gt 0 ] ; then
+	if [ "$(id -u)" -eq 0 ] ; then
+		at_yama_ptrace_scope=0
+	fi
+fi
+export at_yama_ptrace_scope
+
 # This script must finish with ($? == 0) else the autotest runner gets upset.
 :

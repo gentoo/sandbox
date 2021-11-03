@@ -10,7 +10,13 @@ adddeny "${PWD}/subdir"
 for child in 0 1 2 3 4 5 ; do
 	fork-follow_tst ${child} subdir/dyn${child} || exit $?
 done
-for child in 0 1 2 3 4 5 ; do
+
+depth="0"
+# We can't trace static children currently with YAMA ptrace_scope 1+.
+if [ ${at_yama_ptrace_scope} -eq 0 ] ; then
+	depth="${depth} 1 2 3 4 5"
+fi
+for child in ${depth} ; do
 	fork-follow_static_tst ${child} subdir/static${child} || exit $?
 done
 
