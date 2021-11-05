@@ -140,7 +140,14 @@ void sb_maybe_gdb(void);
 #define sb_fprintf(fp, ...) sb_fdprintf(fileno(fp), __VA_ARGS__)
 #define sb_vfprintf(fp, ...) sb_vfdprintf(fileno(fp), __VA_ARGS__)
 
-/* Memory functions */
+/*
+ * Memory functions.
+ *
+ * NB: These are wrappers around libsbutil functions that build off memory calls that we
+ * implement directly (see libsandbox/memory.c).  Do not add any helpers here that cannot
+ * be mirrored in libsandbox as attempts to pass memory between the two allocators will
+ * lead to corruption & crashes.
+ */
 void *__xcalloc(size_t nmemb, size_t size, const char *file, const char *func, size_t line);
 void *__xmalloc(size_t size, const char *file, const char *func, size_t line);
 void *__xzalloc(size_t size /*, const char *file, const char *func, size_t line */);
@@ -154,14 +161,6 @@ char *__xstrndup(const char *str, size_t size, const char *file, const char *fun
 #define xstrdup(_str)          __xstrdup(_str, __FILE__, __func__, __LINE__)
 #define xstrndup(_str, _size)  __xstrndup(_str, _size, __FILE__, __func__, __LINE__)
 #define xalloc_die()           __sb_ebort(__FILE__, __func__, __LINE__, "out of memory")
-
-#define xasprintf(fmt, ...) \
-({ \
-	int _ret = asprintf(fmt, __VA_ARGS__); \
-	if (_ret == 0) \
-		sb_perr("asprintf(%s) failed", #fmt); \
-	_ret; \
-})
 
 /* string helpers */
 #define streq(s1, s2) (strcmp(s1, s2) == 0)

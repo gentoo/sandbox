@@ -40,6 +40,14 @@ extern pid_t setup_namespaces(void);
 #define sb_err(fmt, args...)  _sb_err(warn, fmt, ## args)
 #define sb_perr(fmt, args...) _sb_err(pwarn, fmt, ## args)
 
+#define xasprintf(fmt, ...) \
+({ \
+	int _ret = asprintf(fmt, __VA_ARGS__); \
+	if (_ret == 0) \
+		sb_perr("asprintf(%s) failed", #fmt); \
+	_ret; \
+})
+
 /* Option parsing related code */
 extern void parseargs(int argc, char *argv[]);
 extern int opt_use_namespaces;
