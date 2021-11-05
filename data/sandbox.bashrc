@@ -79,7 +79,11 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 					           -e '/^[[:alnum:]_-]* ()/Q' "${sbs_tmpenvfile}") 2>/dev/null
 					# Then grab everything (including functions)
 					source "${sbs_tmpenvfile}" 2> /dev/null
-					export SANDBOX_WRITE=${SANDBOX_WRITE}:${sbs_pdir}${sbs_bdir}:${sbs_pdir}/homedir
+					# Some variables portage does not write out to th environment.
+					: "${T:=${sbs_tmpenvfile%/*}}"
+					HOME=${sbs_pdir}/homedir
+					SANDBOX_WRITE+=:${sbs_pdir}${sbs_bdir}:${HOME}
+					export T HOME SANDBOX_WRITE
 				fi
 				PWD=${sbs_PREPWD}
 			fi
