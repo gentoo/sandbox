@@ -15,19 +15,7 @@
 bool
 rc_file_exists (const char *pathname)
 {
-  struct stat buf;
-  int retval;
-
-  if (!check_str (pathname))
-    return false;
-
-  retval = lstat (pathname, &buf);
-  if (-1 != retval)
-    retval = true;
-  else
-    retval = false;
-
-  return retval;
+  return faccessat(AT_FDCWD, pathname, F_OK, AT_SYMLINK_NOFOLLOW) == 0;
 }
 
 bool
