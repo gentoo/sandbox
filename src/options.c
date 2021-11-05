@@ -21,6 +21,7 @@ int opt_use_ns_time = -1;
 int opt_use_ns_user = -1;
 int opt_use_ns_uts = -1;
 bool opt_use_bash = false;
+int opt_debug = -1;
 
 static const struct {
 	const char *name;
@@ -38,6 +39,7 @@ static const struct {
 	{ "NAMESPACE_TIME_ENABLE",   &opt_use_ns_time,    false, },
 	{ "NAMESPACE_USER_ENABLE",   &opt_use_ns_user,    false, },
 	{ "NAMESPACE_UTS_ENABLE",    &opt_use_ns_uts,     false, },
+	{ "SANDBOX_DEBUG",           &opt_debug,          false, },
 };
 
 static void read_config(void)
@@ -77,7 +79,7 @@ static void show_version(void)
 	exit(0);
 }
 
-#define PARSE_FLAGS "+chV"
+#define PARSE_FLAGS "+cdhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"ns-on",         no_argument, &opt_use_namespaces, true},
@@ -101,6 +103,7 @@ static struct option const long_opts[] = {
 	{"ns-uts-on",     no_argument, &opt_use_ns_uts, true},
 	{"ns-uts-off",    no_argument, &opt_use_ns_uts, false},
 	{"bash",          no_argument, NULL, 'c'},
+	{"debug",         no_argument, NULL, 'd'},
 	{"help",          no_argument, NULL, 'h'},
 	{"version",       no_argument, NULL, 'V'},
 	{"run-configure", no_argument, NULL, 0x800},
@@ -128,6 +131,7 @@ static const char * const opts_help[] = {
 	"Enable  the use of UTS (hostname/uname) namespaces",
 	"Disable the use of UTS (hostname/uname) namespaces",
 	"Run command through bash shell",
+	"Enable debug output",
 	"Print this help and exit",
 	"Print version and exit",
 	"Run local sandbox configure in same way and exit (developer only)",
@@ -207,6 +211,12 @@ void parseargs(int argc, char *argv[])
 		case 'c':
 			opt_use_bash = true;
 			break;
+		case 'd':
+			if (opt_debug <= 0)
+				opt_debug = 1;
+			else
+				++opt_debug;
+			break;
 		case 'V':
 			show_version();
 		case 'h':
@@ -215,6 +225,8 @@ void parseargs(int argc, char *argv[])
 			run_configure(argc, argv);
 		case '?':
 			show_usage(1);
+		default:
+			sb_ebort("ISE: unhandled CLI option %c\n", i);
 		}
 	}
 

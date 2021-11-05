@@ -303,7 +303,7 @@ char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive)
 	if (!getenv(ENV_SANDBOX_VERBOSE))
 		sb_setenv(&new_environ, ENV_SANDBOX_VERBOSE, "1");
 	if (!getenv(ENV_SANDBOX_DEBUG))
-		sb_setenv(&new_environ, ENV_SANDBOX_DEBUG, "0");
+		sb_setenv(&new_environ, ENV_SANDBOX_DEBUG, opt_debug ? "1" : "0");
 	if (!getenv(ENV_NOCOLOR))
 		sb_setenv(&new_environ, ENV_NOCOLOR, "no");
 	if (!getenv(ENV_SANDBOX_METHOD))
