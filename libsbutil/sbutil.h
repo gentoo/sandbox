@@ -57,6 +57,8 @@
 #define ENV_SANDBOX_METHOD     "SANDBOX_METHOD"
 #define ENV_SANDBOX_ON         "SANDBOX_ON"
 
+#define ENV_SANDBOX_INTRACTV   "SANDBOX_INTRACTV"
+
 #define ENV_SANDBOX_ACTIVE     "SANDBOX_ACTIVE"
 #define SANDBOX_ACTIVE         "armedandready"
 

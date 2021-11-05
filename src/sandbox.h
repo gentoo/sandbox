@@ -24,7 +24,7 @@ struct sandbox_info_t {
 	char *home_dir;
 };
 
-extern char **setup_environ(struct sandbox_info_t *sandbox_info);
+extern char **setup_environ(struct sandbox_info_t *sandbox_info, bool interactive);
 
 extern bool sb_get_cnf_bool(const char *, bool);
 
