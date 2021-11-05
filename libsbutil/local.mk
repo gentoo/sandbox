@@ -2,7 +2,6 @@ noinst_LTLIBRARIES += %D%/libsbutil.la
 
 %C%_libsbutil_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-	-D_FILE_OFFSET_BITS=64 \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/%D%/include
 %C%_libsbutil_la_LDFLAGS = -no-undefined
