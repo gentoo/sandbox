@@ -70,7 +70,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 			sbs_tmpenvfile=${sbs_pdir}${sbs_bdir}/temp/environment
 			if [[ -e ${sbs_tmpenvfile} ]] ; then
 				echo "Found environment at ${sbs_tmpenvfile}"
-				printf " * Would you like to enter the portage environment ? "
+				printf " * Would you like to enter the portage environment (y/N) ? "
 				read env
 				sbs_PREPWD=${PWD}
 				if [[ ${env} == "y" ]] ; then
