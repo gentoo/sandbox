@@ -234,19 +234,22 @@ int main(int argc, char **argv)
 			sb_err("not launching a new sandbox as one is already running in this process hierarchy");
 
 	/* determine the location of all the sandbox support files */
-	dputs("Detection of the support files.");
+	if (opt_debug)
+		dputs("Detection of the support files.");
 
 	if (-1 == setup_sandbox(&sandbox_info, print_debug))
 		sb_err("failed to setup sandbox");
 
 	/* verify the existance of required files */
-	dputs("Verification of the required files.");
+	if (opt_debug)
+		dputs("Verification of the required files.");
 
 	if (!rc_file_exists(sandbox_info.sandbox_rc))
 		sb_perr("could not open the sandbox rc file: %s", sandbox_info.sandbox_rc);
 
 	/* set up the required environment variables */
-	dputs("Setting up the required environment variables.");
+	if (opt_debug)
+		dputs("Setting up the required environment variables.");
 
 	/* If not in portage, cd into it work directory */
 	if ('\0' != sandbox_info.work_dir[0])
@@ -346,9 +349,8 @@ int main(int argc, char **argv)
 		sigaction(SIGHUP, &act_old[0], NULL);
 
 	/* STARTING PROTECTED ENVIRONMENT */
-	dputs("The protected environment has been started.");
-	dputs(sandbox_footer);
-	dputs("Process being started in forked instance.");
+	if (opt_debug)
+		dputs("The protected environment has been started.");
 
 	/* Start Bash */
 	int shell_exit = spawn_shell(argv_bash, sandbox_environ, print_debug);
@@ -359,8 +361,6 @@ int main(int argc, char **argv)
 	argv_bash = NULL;
 	sandbox_environ = NULL;
 
-	dputs("Cleaning up sandbox process");
-	dputs(sandbox_banner);
 	dputs("The protected environment has been shut down.");
 
 	if (rc_file_exists(sandbox_info.sandbox_log)) {
