@@ -11,9 +11,8 @@
 /* take care of broken ld loading */
 #if defined(__GLIBC__) && !defined(__UCLIBC__)
 
-# if __GLIBC__ <= 2 && __GLIBC_MINOR__ <= 2
-#  define BROKEN_RTLD_NEXT
-#  define LIBC 5
+# if __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 2)
+#  error "glibc-2.3+ required"
 # endif
 
 # if !defined(BROKEN_RTLD_NEXT)
@@ -21,14 +20,6 @@
 #   define BROKEN_RTLD_NEXT
 #  endif
 # endif
-
-#else
-
-#if 0
-# if defined(__FreeBSD__)
-#  define BROKEN_RTLD_NEXT
-# endif
-#endif
 
 #endif
 
