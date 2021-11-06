@@ -25,6 +25,13 @@ AS_IF([test "$ac_cv_prog_cc_c99" = "no"], [AC_MSG_ERROR([A C99+ compiler is requ
 AM_PROG_CC_C_O
 AC_ISC_POSIX
 AC_USE_SYSTEM_EXTENSIONS
+dnl http://www.gnu.org/s/libc/manual/html_node/Feature-Test-Macros.html
+dnl _LARGEFILE_SOURCE: enable support for new LFS funcs (ftello/etc...)
+dnl _LARGEFILE64_SOURCE: enable support for 64-bit variants (off64_t/fseeko64/etc...)
+dnl NB: We do not want -D_FILE_OFFSET_BITS=64 because we need to interpose both 32-bit
+dnl and 64-bit FS interfaces, and having the C library rewrite them makes that difficult.
+dnl Along those lines, we do not use AC_SYS_LARGEFILE.
+AS_VAR_APPEND([CPPFLAGS], [" -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE"])
 
 dnl Checks for programs.
 AM_PROG_AR

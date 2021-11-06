@@ -51,7 +51,7 @@ static int trace_yama_level(void)
 	char ch;
 	int fd, level;
 
-	fd = open("/proc/sys/kernel/yama/ptrace_scope", O_RDONLY | O_CLOEXEC);
+	fd = open64("/proc/sys/kernel/yama/ptrace_scope", O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return 0;
 

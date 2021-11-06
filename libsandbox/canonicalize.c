@@ -92,7 +92,7 @@ erealpath(const char *name, char *resolved)
 			goto error;
 		}
 
-		/* This stat() business uses relative paths atm */
+		/* This stat business uses relative paths atm. */
 		if (trace_pid)
 			goto no_recover;
 
@@ -100,14 +100,14 @@ erealpath(const char *name, char *resolved)
 		 * If not, try a little harder to consume this path in
 		 * case it has symlinks out into a better world ...
 		 */
-		struct stat st;
-		if (lstat(rpath, &st) == -1 && errno == EACCES) {
+		struct stat64 st;
+		if (lstat64(rpath, &st) == -1 && errno == EACCES) {
 			char *p = rpath;
 			strcpy(rpath, name);
 			do {
 				p = strchr(p, '/');
 				if (p) *p = '\0';
-				if (lstat(rpath, &st))
+				if (lstat64(rpath, &st))
 					break;
 				if (S_ISLNK(st.st_mode)) {
 					ssize_t cnt = readlink(rpath, rpath, path_max);
