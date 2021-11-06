@@ -20,7 +20,8 @@ env 1>&AS_MESSAGE_LOG_FD
 AC_MSG_RESULT([ok])
 
 dnl Check for compiler and features first.
-AC_PROG_CC
+AC_PROG_CC_C99
+AS_IF([test "$ac_cv_prog_cc_c99" = "no"], [AC_MSG_ERROR([A C99+ compiler is required])])
 AM_PROG_CC_C_O
 AC_ISC_POSIX
 AC_USE_SYSTEM_EXTENSIONS
