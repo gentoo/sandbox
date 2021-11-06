@@ -13,11 +13,7 @@
 # define dirfd AT_FDCWD
 #endif
 
-#ifdef SB64
-# define WRAPPER_PRE_CHECKS() sb_openat64_pre_check(STRING_NAME, pathname, dirfd, flags)
-#else
-# define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
-#endif
+#define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
 
 #include "__wrapper_simple.c"
 

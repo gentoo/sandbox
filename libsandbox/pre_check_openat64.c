@@ -10,8 +10,6 @@
 #include "libsandbox.h"
 #include "wrappers.h"
 
-#include "wrapper-funcs/__64_pre.h"
 #define sb_openat_pre_check sb_openat64_pre_check
 #include "pre_check_openat.c"
 #undef sb_openat_pre_check
-#include "wrapper-funcs/__64_post.h"

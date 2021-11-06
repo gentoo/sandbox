@@ -5,6 +5,6 @@
  * Licensed under the GPL-2
  */
 
-#include "__64_pre.h"
+#define sb_openat_pre_check sb_openat64_pre_check
 #include "__openat_2.c"
-#include "__64_post.h"
+#undef sb_openat_pre_check
