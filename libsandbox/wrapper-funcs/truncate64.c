@@ -5,6 +5,5 @@
  * Licensed under the GPL-2
  */
 
-#include "__64_pre.h"
+#define WRAPPER_ARGS_PROTO const char *path, off64_t length
 #include "truncate.c"
-#include "__64_post.h"

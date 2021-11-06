@@ -16,11 +16,7 @@
 # define dirfd AT_FDCWD
 #endif
 
-#ifdef SB64
-# define WRAPPER_PRE_CHECKS() sb_openat64_pre_check(STRING_NAME, pathname, dirfd, flags)
-#else
-# define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
-#endif
+#define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
 
 #define WRAPPER_SAFE_POST_EXPAND \
 	int mode = 0; \
