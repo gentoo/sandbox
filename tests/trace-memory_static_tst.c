@@ -26,7 +26,7 @@ volatile uintptr_t offset = 0;
 #define check_ptr(addr) \
 ({ \
 	printf("  open(%p)\n", addr); \
-	ret = open(non_const_ptr(addr), O_RDONLY); \
+	ret = open64(non_const_ptr(addr), O_RDONLY); \
 	assert(ret == -1 && errno == EFAULT); \
 })
 
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 			printf("  open(%p -> %p [+%#zx])\n", p, p + len, len);
 			memset(p, 'a', len);
 			path[end] = '\0';
-			ret = open(p, O_RDONLY);
+			ret = open64(p, O_RDONLY);
 			assert(ret == -1 && (errno == ENOENT || errno == ENAMETOOLONG));
 		}
 	}

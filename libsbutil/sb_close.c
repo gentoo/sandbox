@@ -34,7 +34,7 @@ int sb_close(int fd)
 void sb_close_all_fds(void)
 {
 	DIR *dirp;
-	struct dirent *de;
+	struct dirent64 *de;
 	int dfd, fd;
 	const char *fd_dir = sb_get_fd_dir();
 
@@ -43,7 +43,7 @@ void sb_close_all_fds(void)
 		sb_ebort("could not process %s\n", fd_dir);
 	dfd = dirfd(dirp);
 
-	while ((de = readdir(dirp)) != NULL) {
+	while ((de = readdir64(dirp)) != NULL) {
 		if (de->d_name[0] == '.')
 			continue;
 		fd = atoi(de->d_name);

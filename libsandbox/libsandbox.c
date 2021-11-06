@@ -333,7 +333,7 @@ static char *resolve_path(const char *path, int follow_link)
 
 char *egetcwd(char *buf, size_t size)
 {
-	struct stat st;
+	struct stat64 st;
 	char *tmpbuf;
 
 	/* We can't let the C lib allocate memory for us since we have our
@@ -376,12 +376,12 @@ char *egetcwd(char *buf, size_t size)
 	 */
 	if ((tmpbuf) && (errno == 0)) {
 		save_errno();
-		if (!lstat(buf, &st))
+		if (!lstat64(buf, &st))
 			/* errno is set only on failure */
 			errno = 0;
 
 		if (errno == ENOENT)
-			/* If lstat() failed with eerror = ENOENT, then its
+			/* If lstat failed with eerror = ENOENT, then its
 			 * possible that we are running on an older kernel
 			 * which had issues with returning invalid paths if
 			 * they got too long.  Return with errno = ENAMETOOLONG,
@@ -396,8 +396,8 @@ char *egetcwd(char *buf, size_t size)
 				free(buf);
 
 			/* Not sure if we should quit here, but I guess if
-			 * lstat() fails, getcwd could have messed up. Not
-			 * sure what to do about errno - use lstat()'s for
+			 * lstat fails, getcwd could have messed up. Not
+			 * sure what to do about errno - use lstat's for
 			 * now.
 			 */
 			return NULL;
@@ -435,12 +435,12 @@ void __sb_dump_backtrace(void)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
 {
-	struct stat log_stat;
+	struct stat64 log_stat;
 	int stat_ret;
 	int logfd;
 	bool ret = false;
 
-	stat_ret = lstat(logfile, &log_stat);
+	stat_ret = lstat64(logfile, &log_stat);
 	/* Do not care about failure */
 	errno = 0;
 	if (stat_ret == 0 && S_ISREG(log_stat.st_mode) == 0)

@@ -23,7 +23,7 @@ bool rc_is_dir (const char *pathname, bool follow_link);
 /* The following functions do not care about errors - it only returns
  * the size/mtime of 'pathname' if it exists, and is the type requested,
  * or else 0. */
-off_t rc_get_size (const char *pathname, bool follow_link);
+off64_t rc_get_size (const char *pathname, bool follow_link);
 
 /* The following return a pointer on success, or NULL with errno set on error.
  * If it returned NULL, but errno is not set, then there was no error, but
