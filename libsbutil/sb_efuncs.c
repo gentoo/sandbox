@@ -113,10 +113,23 @@ void sb_eraw(const char *format, ...)
 void sb_dump_backtrace(void)
 {
 #ifdef HAVE_BACKTRACE
+#if defined(HAVE_EXECINFO_H)
 	void *funcs[10];
 	int num_funcs;
 	num_funcs = backtrace(funcs, ARRAY_SIZE(funcs));
 	backtrace_symbols_fd(funcs, num_funcs, STDERR_FILENO);
+#elif defined(HAVE_LIBUNWIND_H)
+	unw_cursor_t cursor; unw_context_t uc;
+	unw_word_t ip, sp;
+
+	unw_getcontext(&uc);
+	unw_init_local(&cursor, &uc);
+	while (unw_step(&cursor) > 0) {
+		unw_get_reg(&cursor, UNW_REG_IP, &ip);
+		unw_get_reg(&cursor, UNW_REG_SP, &sp);
+		fprintf(STDERR_FILENO, "ip = %lx, sp = %lx\n", (long) ip, (long) sp);
+	}
+#endif
 #endif
 	__sb_dump_backtrace();
 }
