@@ -249,11 +249,7 @@ static char *resolve_path(const char *path, int follow_link)
 		 * etc.  If that fails (might not exist), we try to get the
 		 * realpath of the parent directory, as that should hopefully
 		 * exist.  If all else fails, just go with canonicalize */
-		char *ret;
-		if (trace_pid)
-			ret = erealpath(path, filtered_path);
-		else
-			ret = realpath(path, filtered_path);
+		char *ret = erealpath(path, filtered_path);
 
 		/* Handle broken symlinks.  This can come up for a variety of reasons,
 		 * but we need to make sure that we resolve the path all the way to the
@@ -291,10 +287,7 @@ static char *resolve_path(const char *path, int follow_link)
 
 			/* If not, then check if we can resolve the
 			 * parent directory */
-			if (trace_pid)
-				ret = erealpath(dname, filtered_path);
-			else
-				ret = realpath(dname, filtered_path);
+			ret = erealpath(dname, filtered_path);
 			if (!ret) {
 				/* Fall back to canonicalize */
 				if (-1 == canonicalize(path, filtered_path)) {
