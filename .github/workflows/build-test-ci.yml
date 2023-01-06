@@ -1,0 +1,58 @@
+# GitHub actions workflow.
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+
+name: Build+Test CI
+
+#on:
+#  push:
+#    branches: [master, gh-actions]
+#    tags: [v*]
+#  pull_request:
+#    types: [created, opened, edited, push]
+
+on: [pull_request, push]
+
+jobs:
+  make:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cc: [gcc, clang]
+        sanitize: [none] # [none, asan, ubsan]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+      SANITIZER: ${{ matrix.sanitize }}
+      UBSAN_OPTIONS: "print_stacktrace=1:halt_on_error=1"
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install build-essential gcc clang automake autoconf autoconf-archive libtool pax-utils -qy
+
+        case "$SANITIZER" in
+          none)
+             ;;
+          asan)
+             echo CFLAGS="-O2 -ggdb3 -fsanitize=address" >> $GITHUB_ENV
+             echo CXXFLAGS="-O2 -ggdb3 -fsanitize=address" >> $GITHUB_ENV
+             echo LDFLAGS="-fsanitize=address" >> $GITHUB_ENV
+             ;;
+          ubsan)
+             echo CFLAGS="-O2 -ggdb3 -fsanitize=undefined" >> $GITHUB_ENV
+             echo CXXFLAGS="-O2 -ggdb3 -fsanitize=undefined" >> $GITHUB_ENV
+             echo LDFLAGS="-fsanitize=undefined" >> $GITHUB_ENV
+             ;;
+        esac
+
+    - uses: actions/checkout@v3
+      name: Checkout
+
+    - name: Build
+      run: |
+        ./autogen.sh
+        ./configure || cat config.log
+        make V=1
+        make V=1 check
+        make V=1 distcheck
