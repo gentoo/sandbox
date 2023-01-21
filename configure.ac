@@ -352,16 +352,11 @@ try_link() {
 	) 1>&AS_MESSAGE_LOG_FD
 }
 LIBC_PATH=$(AS_IF(
-	dnl GNU linker (bfd & gold) searching for
-	dnl (bfd)  "attempt to open /usr/lib/gcc/x86_64-pc-linux-gnu/8.3.0/../../../../lib64/libc.so succeeded"
-	dnl (gold) "/usr/lib/gcc/x86_64-pc-linux-gnu/8.3.0/../../../../x86_64-pc-linux-gnu/bin/ld: Attempt to open /lib64/libc.so.6 succeeded"
-	dnl if log does not contain "attempt" word then it's not a GNU linker
-	[try_link -Wl,--verbose && grep -q '[[Aa]]ttempt' libctest.log],
-		[$AWK '/[[Aa]]ttempt to open/ { if (($(NF-1) ~ /\/libc\.so/) && ($NF == "succeeded")) LIBC = $(NF-1); }; END {print LIBC}' libctest.log],
-	dnl LLVM lld searching for latest (successful) entry of
-	dnl     "ld.lld: /usr/lib/gcc/x86_64-pc-linux-gnu/8.3.0/../../../../lib64/libc.so"
-	dnl     "ld.lld: /lib64/libc.so.6"
-	[try_link -Wl,--verbose],
+	dnl GNU linkers (bfd, gold), LLVM lld, mold - searching for latest entry of:
+	dnl     "/usr/lib/gcc/x86_64-pc-linux-gnu/8.3.0/../../../../lib64/libc.so"
+	dnl     "/lib64/libc.so.6"
+	dnl Note that mold prefixes output with "trace: " whereas others do not.
+	[try_link -Wl,--trace],
 		[$EGREP -o '/[[^ ]]*/libc.so.*' libctest.log | tail -n1],
 	dnl Solaris linker
 	[try_link -Wl,-m],
