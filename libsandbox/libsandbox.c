@@ -679,6 +679,7 @@ static bool symlink_func(int sb_nr, int flags)
 	    sb_nr == SB_NR_LCHOWN       ||
 	    sb_nr == SB_NR_LREMOVEXATTR ||
 	    sb_nr == SB_NR_LSETXATTR    ||
+	    sb_nr == SB_NR_LUTIMES      ||
 	    sb_nr == SB_NR_REMOVE       ||
 	    sb_nr == SB_NR_RENAME       ||
 	    sb_nr == SB_NR_RENAMEAT     ||
