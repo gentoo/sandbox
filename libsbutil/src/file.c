@@ -15,7 +15,7 @@
 bool
 rc_file_exists (const char *pathname)
 {
-  return faccessat(AT_FDCWD, pathname, F_OK, AT_SYMLINK_NOFOLLOW) == 0;
+  return sb_exists(AT_FDCWD, pathname, AT_SYMLINK_NOFOLLOW) == 0;
 }
 
 bool

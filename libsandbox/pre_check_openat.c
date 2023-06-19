@@ -19,7 +19,7 @@ bool sb_openat_pre_check(const char *func, const char *pathname, int dirfd, int 
 	save_errno();
 
 	/* Doesn't exist -> skip permission checks */
-	if (faccessat(dirfd, pathname, F_OK, (flags & O_NOFOLLOW) ? AT_SYMLINK_NOFOLLOW : 0) == -1) {
+	if (sb_exists(dirfd, pathname, (flags & O_NOFOLLOW) ? AT_SYMLINK_NOFOLLOW : 0) == -1) {
 		sb_debug_dyn("EARLY FAIL: %s(%s): %s\n", func, pathname, strerror(errno));
 		return false;
 	}

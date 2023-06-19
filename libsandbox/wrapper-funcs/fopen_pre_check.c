@@ -11,7 +11,7 @@ bool sb_fopen_pre_check(const char *func, const char *pathname, const char *mode
 		save_errno();
 
 		/* If we're trying to read, fail normally if file does not stat */
-		if (faccessat(AT_FDCWD, pathname, F_OK, 0) == -1) {
+		if (sb_exists(AT_FDCWD, pathname, 0) == -1) {
 			sb_debug_dyn("EARLY FAIL: %s(%s): %s\n",
 				func, pathname, strerror(errno));
 			return false;
