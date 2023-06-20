@@ -7,8 +7,10 @@
 #     before 'creat()' as 'creat()' uses 'open()' ...
 
 chmod
+fchmod
 fchmodat
 chown
+fchown
 fchownat
 open
 __open_2

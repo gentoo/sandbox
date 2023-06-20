@@ -455,7 +455,20 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		}
 		__sb_debug("})");
 		return 1;
+	} else if (nr == SB_NR_FCHMOD) {
+		int fd = trace_arg(regs, 1);
+		mode_t mode = trace_arg(regs, 2);
+		__sb_debug("(%i, %o)", fd, mode);
+		return _SB_SAFE_FD(nr, name, fd);
+
+	} else if (nr == SB_NR_FCHOWN) {
+		int fd = trace_arg(regs, 1);
+		uid_t uid = trace_arg(regs, 2);
+		gid_t gid = trace_arg(regs, 3);
+		__sb_debug("(%i, %i, %i)", fd, uid, gid);
+		return _SB_SAFE_FD(nr, name, fd);
 	}
+
 
  done:
 	__sb_debug("(...)");
