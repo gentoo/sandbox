@@ -766,7 +766,9 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_CHOWN       ||
 	    sb_nr == SB_NR_CREAT       ||
 	    sb_nr == SB_NR_CREAT64     ||
+	    sb_nr == SB_NR_FCHMOD      ||
 	    sb_nr == SB_NR_FCHMODAT    ||
+	    sb_nr == SB_NR_FCHOWN      ||
 	    sb_nr == SB_NR_FCHOWNAT    ||
 	  /*sb_nr == SB_NR_FTRUNCATE   ||
 	    sb_nr == SB_NR_FTRUNCATE64 ||*/
@@ -1100,6 +1102,21 @@ bool before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char 
 	else
 		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
 	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
+}
+
+bool before_syscall_fd(int sb_nr, const char *func, int fd) {
+#ifdef SANDBOX_PROC_SELF_FD
+	/* We only know how to handle e.g. fchmod() and fchown() on
+	 * linux, where it's possible to (eventually) get a path out
+	 * of the given file descriptor. The "64" below accounts for
+	 * the length of an integer string, and is probably
+	 * overkill. */
+	char path[sizeof("/proc/self/fd/") + 64];
+	snprintf(path, sizeof("/proc/self/fd/") + 64, "/proc/self/fd/%i", fd);
+	return before_syscall(AT_FDCWD, sb_nr, func, path, 0);
+#else
+	return true;
+#endif
 }
 
 bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
