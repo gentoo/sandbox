@@ -46,6 +46,11 @@
 #define  SB_SAFE_OPEN_CHAR(_path, _mode) \
          SB_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
+#define _SB_SAFE_FD(_nr, _name, _fd) \
+        __SB_SAFE(before_syscall_fd(_nr, _name, fd))
+#define  SB_SAFE_FD(_fd) \
+         _SB_SAFE_FD(WRAPPER_NR, STRING_NAME, _fd)
+
 /* Symbols that don't exist in the C library will be <= this value. */
 #define SB_NR_UNDEF -99999
 #define SB_NR_IS_DEFINED(nr) (nr > SB_NR_UNDEF)
@@ -55,6 +60,8 @@ bool before_syscall(int, int, const char *, const char *, int);
 bool before_syscall_access(int, int, const char *, const char *, int);
 bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
+bool before_syscall_fd(int, const char *, int);
+
 enum sandbox_method_t get_sandbox_method(void);
 
 void *get_dlsym(const char *symname, const char *symver);
