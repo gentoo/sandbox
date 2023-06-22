@@ -79,11 +79,15 @@ utime
 __utime64
 utimes
 __utimes64
+__utimes_time64
 utimensat
 __utimensat64 utimensat_time64
+__utimensat_time64
 futimesat
 __futimesat64
+__futimesat_time64
 lutimes
 __lutimes64
+__lutimes_time64
 fork
 vfork
