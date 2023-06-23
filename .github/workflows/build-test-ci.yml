@@ -13,7 +13,7 @@ name: Build+Test CI
 on: [pull_request, push]
 
 jobs:
-  make:
+  glibc:
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -56,3 +56,22 @@ jobs:
         make V=1
         make V=1 check
         make V=1 distcheck
+
+  musl:
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - name: Install dependencies
+        run: apk add bash coreutils build-base automake autoconf autoconf-archive libtool pax-utils gawk sed
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        run: |
+          ./autogen.sh
+          ./configure || { cat config.log; false; }
+          make V=1
+          make V=1 check || { cat tests/testsuite.log; false; }
