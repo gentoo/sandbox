@@ -1,5 +1,4 @@
 #define trace_reg_ret regs[0]  /* x0 */
-#define trace_reg_sysnum regs[8]  /* w0 */
 
 #undef trace_get_regs
 static long trace_get_regs(void *vregs)
@@ -28,4 +27,24 @@ static unsigned long trace_arg(void *vregs, int num)
 		return regs->regs[num - 1];  /* x0 - x5 */
 	else
 		return -1;
+}
+
+static int trace_get_sysnum(void *vregs)
+{
+	int nr;
+	struct iovec iov_nr = {
+		.iov_base = &nr,
+		.iov_len = sizeof(nr),
+	};
+	do_ptrace(PTRACE_GETREGSET, NT_ARM_SYSTEM_CALL, &iov_nr);
+	return nr;
+}
+
+static void trace_set_sysnum(void *vregs, int nr)
+{
+	struct iovec iov_nr = {
+		.iov_base = &nr,
+		.iov_len = sizeof(nr),
+	};
+	do_ptrace(PTRACE_SETREGSET, NT_ARM_SYSTEM_CALL, &iov_nr);
 }
