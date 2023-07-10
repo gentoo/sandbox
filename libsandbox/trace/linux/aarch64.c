@@ -36,7 +36,7 @@ static int trace_get_sysnum(void *vregs)
 		.iov_base = &nr,
 		.iov_len = sizeof(nr),
 	};
-	do_ptrace(PTRACE_GETREGSET, NT_ARM_SYSTEM_CALL, &iov_nr);
+	do_ptrace(PTRACE_GETREGSET, (void *)(uintptr_t)NT_ARM_SYSTEM_CALL, &iov_nr);
 	return nr;
 }
 
@@ -46,5 +46,5 @@ static void trace_set_sysnum(void *vregs, int nr)
 		.iov_base = &nr,
 		.iov_len = sizeof(nr),
 	};
-	do_ptrace(PTRACE_SETREGSET, NT_ARM_SYSTEM_CALL, &iov_nr);
+	do_ptrace(PTRACE_SETREGSET, (void *)(uintptr_t)NT_ARM_SYSTEM_CALL, &iov_nr);
 }
