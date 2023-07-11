@@ -131,7 +131,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 
 	save_errno();
 
-	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
+	/*unused: size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);*/
 	if (trace_pid) {
 		sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid, dirfd);
 	} else {
@@ -141,7 +141,16 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 		 */
 		sprintf(resolved_path, "%s/%i", sb_get_fd_dir(), dirfd);
 	}
-	ssize_t ret = readlink(resolved_path, resolved_path, at_len);
+
+
+	/*   avoid undefined behaviour resulting from passing resolved_path 
+	 *   as source and destination buffer to readlink:
+	 *   C99 warning: passing argument 2 to 'restrict'-qualified 
+	 *   parameter aliases with argument 1 [-Wrestrict] 
+	 */
+	char buffer[resolved_path_len];
+
+	ssize_t ret = readlink(resolved_path, buffer, sizeof(buffer));
 	if (ret == -1) {
 		/* see comments at end of check_syscall() */
 		if (errno_is_too_long()) {
@@ -153,11 +162,25 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 		if (errno == ENOENT)
 			errno = EBADF;
 		return -1;
-	}
-	resolved_path[ret] = '/';
-	resolved_path[ret + 1] = '\0';
-	if (path)
-		strcat(resolved_path, path);
+	} else if (ret + 1 >= sizeof(buffer)) {
+		errno = ENOMEM;
+		sb_debug_dyn("AT_FD LOOKUP: unsufficient buffer space for resolved_path; max len is %ld; %s\n", sizeof(buffer), strerror(errno));
+		return -1;
+	} 
+
+	buffer[ret] = '/';
+	buffer[ret + 1] = '\0';
+	if (path) {
+	    if ( strlen(buffer) + strlen(path) + 1 < sizeof(buffer) ) {
+		 strcat(buffer, path);
+            } else {
+		  errno = ENOMEM;
+		  sb_debug_dyn("AT_FD LOOKUP: unsufficient buffer space for resolved_path+path; max len is %ld; %s\n", sizeof(buffer), strerror(errno));
+		  return -1;
+            }
+        }
+
+	strcpy(resolved_path,buffer);
 
 	restore_errno();
 	return 0;

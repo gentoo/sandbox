@@ -34,10 +34,12 @@ const char sbio_fallback_path[] = "/dev/stderr";
 
 static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 {
-	if (NULL != getenv(ENV_PORTAGE_TMPDIR)) {
-		/* Portage handle setting SANDBOX_WRITE itself. */
-		sandbox_info->work_dir[0] = '\0';
-	} else {
+        /* avoid using uninitialized fields */
+	memset(sandbox_info,0,sizeof(*sandbox_info));
+
+
+	if (NULL == getenv(ENV_PORTAGE_TMPDIR)) {
+		/* Portage does not handle setting SANDBOX_WRITE itself. */
 		if (NULL == getcwd(sandbox_info->work_dir, SB_PATH_MAX)) {
 			sb_pwarn("failed to get current directory");
 			return -1;
@@ -252,7 +254,7 @@ int main(int argc, char **argv)
 		dputs("Setting up the required environment variables.");
 
 	/* If not in portage, cd into it work directory */
-	if ('\0' != sandbox_info.work_dir[0])
+	if (strlen(sandbox_info.work_dir))
 		if (chdir(sandbox_info.work_dir))
 			sb_perr("chdir(%s) failed", sandbox_info.work_dir);
 

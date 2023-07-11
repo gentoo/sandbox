@@ -110,10 +110,17 @@ erealpath(const char *name, char *resolved)
 				if (lstat64(rpath, &st))
 					break;
 				if (S_ISLNK(st.st_mode)) {
-					ssize_t cnt = readlink(rpath, rpath, path_max);
+					/*   avoid undefined behaviour resulting from passing rpath
+					 *   as source and destination buffer to readlink:
+					 *   warning: passing argument 2 to 'restrict'-qualified
+					 *   parameter aliases with argument 1 [-Wrestrict]
+					 */
+				        char buffer[path_max];
+					ssize_t cnt = readlink(rpath, buffer, sizeof(buffer));
 					if (cnt == -1)
 						break;
-					rpath[cnt] = '\0';
+					buffer[cnt] = '\0';
+					strcpy(rpath,buffer);
 					if (p) {
 						size_t bytes_left = strlen(p);
 						if (bytes_left >= path_max)
