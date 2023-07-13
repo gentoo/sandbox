@@ -131,7 +131,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 
 	save_errno();
 
-	/*unused: size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);*/
+	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
 	if (trace_pid) {
 		sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid, dirfd);
 	} else {
@@ -143,8 +143,8 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 	}
 
 
-	char buffer[resolved_path_len];
-	ssize_t ret = readlink(resolved_path, buffer, sizeof(buffer)-2);
+	char buffer[at_len];
+	ssize_t ret = readlink(resolved_path, buffer, at_len);
 	if (ret == -1) {
 		/* see comments at end of check_syscall() */
 		if (errno_is_too_long()) {
@@ -159,22 +159,16 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 	} 
 	buffer[ret] = '/';
 	buffer[ret + 1] = '\0';
-	if (path) {
-	    if ( strlen(buffer) + strlen(path) + 1 < sizeof(buffer) ) {
-		 strcat(buffer, path);
-            } else {
-		  errno = ENOMEM;
-		  sb_debug_dyn("AT_FD LOOKUP: unsufficient buffer space for resolved_path+path; max len is %ld; %s\n", sizeof(buffer), strerror(errno));
-		  return -1;
-            }
-        }
-
 	strcpy(resolved_path,buffer);
+	
+	if (path) {
+	    strcat(resolved_path, path);
+        }
 
 	restore_errno();
 	return 0;
 }
-
+ 
 int canonicalize(const char *path, char *resolved_path)
 {
 	int old_errno = errno;
