@@ -208,7 +208,7 @@ static int setup_cfg_vars(struct sandbox_info_t *sandbox_info)
 	if (-1 == setup_access_var(ENV_SANDBOX_WRITE))
 		return -1;
 	if ((NULL == getenv(ENV_SANDBOX_WRITE)) &&
-	    (NULL != sandbox_info->work_dir))
+	    strlen(sandbox_info->work_dir))
 		setenv(ENV_SANDBOX_WRITE, sandbox_info->work_dir, 1);
 
 	if (-1 == setup_access_var(ENV_SANDBOX_PREDICT))
