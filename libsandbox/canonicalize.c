@@ -110,13 +110,15 @@ erealpath(const char *name, char *resolved)
 				if (lstat64(rpath, &st))
 					break;
 				if (S_ISLNK(st.st_mode)) {
-					ssize_t cnt = readlink(rpath, rpath, path_max);
+				        char buffer[path_max];
+					ssize_t cnt = readlink(rpath, buffer, sizeof(buffer)-1);
 					if (cnt == -1)
 						break;
-					rpath[cnt] = '\0';
+					buffer[cnt] = '\0';
+					strcpy(rpath,buffer);
 					if (p) {
 						size_t bytes_left = strlen(p);
-						if (bytes_left >= path_max)
+						if (bytes_left >= path_max-1)
 							break;
 						strncat(rpath, name + (p - rpath + 1),
 							path_max - bytes_left - 1);
