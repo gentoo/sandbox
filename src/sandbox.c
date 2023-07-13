@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 {
 	int sandbox_log_presence = 0;
 
-	struct sandbox_info_t sandbox_info;
+	struct sandbox_info_t sandbox_info = {};
 
 	char **sandbox_environ;
 	char **argv_bash = NULL;
