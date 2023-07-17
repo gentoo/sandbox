@@ -1095,8 +1095,11 @@ bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *f
 	const char *ext_func;
 	if (flags & W_OK)
 		sb_nr = SB_NR_ACCESS_WR, ext_func = "access_wr";
-	else
+	else if (flags & R_OK)
 		sb_nr = SB_NR_ACCESS_RD, ext_func = "access_rd";
+	else
+		/* Must be F_OK or X_OK; we do not need to check either. */
+		return true;
 	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
 }
 
