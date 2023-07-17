@@ -15,6 +15,8 @@
  */
 #define                sb_unwrapped_access sb_unwrapped_access_DEFAULT
 attribute_hidden int   sb_unwrapped_access (const char *, int);
+#define                sb_unwrapped_faccessat sb_unwrapped_faccessat_DEFAULT
+attribute_hidden int   sb_unwrapped_faccessat (int, const char *, int, int);
 #define                sb_unwrapped_getcwd sb_unwrapped_getcwd_DEFAULT
 attribute_hidden char *sb_unwrapped_getcwd (char *, size_t);
 #define                sb_unwrapped_open   sb_unwrapped_open_DEFAULT

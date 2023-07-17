@@ -21,6 +21,7 @@
 static int print_debug = 0;
 #define dprintf(fmt, args...) do { if (print_debug) printf(fmt, ## args); } while (0)
 #define dputs(str) do { if (print_debug) puts(str); } while (0)
+int (*sbio_faccessat)(int, const char *, int, int) = faccessat;
 int (*sbio_open)(const char *, int, mode_t) = (void *)open;
 FILE *(*sbio_popen)(const char *, const char *) = popen;
 
