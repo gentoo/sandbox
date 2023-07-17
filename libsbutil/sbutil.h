@@ -100,6 +100,7 @@ extern const char sb_fd_dir[];
 const char *sb_get_cmdline(pid_t pid);
 
 /* libsandbox need to use a wrapper for open */
+attribute_hidden extern int (*sbio_faccessat)(int, const char *, int, int);
 attribute_hidden extern int (*sbio_open)(const char *, int, mode_t);
 attribute_hidden extern FILE *(*sbio_popen)(const char *, const char *);
 extern const char *sbio_message_path;

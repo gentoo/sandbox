@@ -54,6 +54,7 @@ static char message_path[SB_PATH_MAX];
 bool sandbox_on = true;
 static bool sb_init = false;
 static bool sb_env_init = false;
+int (*sbio_faccessat)(int, const char *, int, int) = sb_unwrapped_faccessat;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
 FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 
