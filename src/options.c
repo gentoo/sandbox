@@ -67,10 +67,10 @@ static void show_version(void)
 #else
 			"next is OK! :D\n"
 #endif
-#ifndef SB_SCHIZO
-# define SB_SCHIZO "no"
+#ifndef SB_PERSONALITIES
+# define SB_PERSONALITIES "no"
 #endif
-		" schizo:  " SB_SCHIZO "\n"
+		" personalities:  " SB_PERSONALITIES "\n"
 		"\nconfigured with these options:\n%s\n",
 		sb_sonfigure_opts
 	);

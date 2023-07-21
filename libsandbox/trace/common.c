@@ -7,7 +7,7 @@ static int trace_get_sysnum(void *vregs);
 static long trace_raw_ret(void *vregs);
 static unsigned long trace_arg(void *vregs, int num);
 
-#ifndef SB_SCHIZO
+#ifndef SB_PERSONALITIES
 static const struct syscall_entry syscall_table[] = {
 #define S(s) { SB_SYS_##s, SB_NR_##s, #s },
 #include "trace_syscalls.h"
