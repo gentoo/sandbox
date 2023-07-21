@@ -294,18 +294,18 @@ if test x"$va_copy" != xva_copy ; then
   )
 fi
 
-dnl Verify people aren't doing stupid shit
+dnl Avoid footguns.
 if test x"$enable_static" != xno ; then
-  AC_MSG_ERROR([dont be a Kumba, building a libsandbox.a is stupid])
+  AC_MSG_ERROR([Building a static libsandbox.a is not supported])
 fi
 if test x"$enable_shared" != xyes ; then
-  AC_MSG_ERROR([dont be a Kumba, omitting a libsandbox.so is stupid])
+  AC_MSG_ERROR([Omitting a libsandbox.so is not supported])
 fi
 if echo " $CFLAGS " | $EGREP ' -static ' >/dev/null 2>&1; then
-  AC_MSG_ERROR([dont be a Kumba, using -static in CFLAGS is stupid])
+  AC_MSG_ERROR([Using -static in CFLAGS is not supported])
 fi
 if echo " $LDFLAGS " | $EGREP ' -static ' >/dev/null 2>&1; then
-  AC_MSG_ERROR([dont be a Kumba, using -static in LDFLAGS is stupid])
+  AC_MSG_ERROR([Using -static in LDFLAGS is not supported])
 fi
 
 dnl Some libc's like those on bsd have dlopen() in libc, and not libdl
