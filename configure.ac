@@ -343,7 +343,7 @@ if test x"$have_rtld_next" = xyes ; then
   AC_DEFINE([HAVE_RTLD_NEXT], [1], [Have RTLD_NEXT enabled libc])
 fi
 
-dnl we need to handle symbols differently based upon their version, 
+dnl we need to handle symbols differently based upon their version,
 dnl but we have to know which symbols the libc supports first
 AC_MSG_CHECKING([libc path])
 echo "int main(void) { return 0; }" > libctest.c
@@ -381,7 +381,7 @@ AC_DEFINE_UNQUOTED([LIBC_PATH], ["$LIBC_PATH"], [Full path to the libc])
 AC_MSG_RESULT([$LIBC_PATH])
 AC_SUBST([LIBC_PATH])
 
-dnl when intercepting libc calls, we have to know the name of the 
+dnl when intercepting libc calls, we have to know the name of the
 dnl libc to load and search with dl*() calls
 AC_MSG_CHECKING([libc version])
 dnl the sed script at the end here looks funny but it's ok ...
