@@ -48,12 +48,12 @@ AC_PREFIX_DEFAULT([/usr])
 
 dnl multiple personality support (x86 & x86_64: multilib)
 AC_MSG_CHECKING([for multiple personalities])
-AC_ARG_ENABLE([schizo],
-	[AS_HELP_STRING([--enable-schizo],[Support multiple personalities])],
-	[],[enable_schizo="auto"])
-AC_MSG_RESULT([$enable_schizo])
-SB_SCHIZO_SETTINGS=
-AC_DEFUN([SB_CHECK_SCHIZO],[dnl
+AC_ARG_ENABLE([personalities],
+	[AS_HELP_STRING([--enable-personalities],[Support multiple Linux personalities using ptrace])],
+	[],[enable_personalities="auto"])
+AC_MSG_RESULT([$enable_personalities])
+SB_PERSONALITIES_SETTINGS=
+AC_DEFUN([SB_CHECK_PERSONALITIES],[dnl
 		AC_MSG_CHECKING([checking for $1/$2 compiler support])
 		ac_save_CFLAGS=$CFLAGS
 		CFLAGS="$CFLAGS $2"
@@ -62,42 +62,42 @@ AC_DEFUN([SB_CHECK_SCHIZO],[dnl
 		], [
 			return 0
 		], [
-			enable_schizo=yes
-			AS_VAR_APPEND([SB_SCHIZO_SETTINGS], " $1:$2")
-			AS_VAR_APPEND([SB_SCHIZO_HEADERS], " libsandbox/trace_syscalls_$1.h")
+			enable_personalities=yes
+			AS_VAR_APPEND([SB_PERSONALITIES_SETTINGS], " $1:$2")
+			AS_VAR_APPEND([SB_PERSONALITIES_HEADERS], " libsandbox/trace_syscalls_$1.h")
 			AC_MSG_RESULT([yes])
-			AC_DEFINE_UNQUOTED([SB_SCHIZO_$1], 1, [Support for $1/$2 is available])
+			AC_DEFINE_UNQUOTED([SB_PERSONALITIES_$1], 1, [Support for $1/$2 is available])
 		], [
 			AC_MSG_RESULT([no])
 		])
 		CFLAGS=$ac_save_CFLAGS
 ])
-if test "x$enable_schizo" != "xno" ; then
-	enable_schizo=no
+if test "x$enable_personalities" != "xno" ; then
+	enable_personalities=no
 	case $host in
 	i686*linux*|\
 	x86_64*linux*)
-		SB_CHECK_SCHIZO([x86_64], [-m64])
-		SB_CHECK_SCHIZO([x86], [-m32])
-		SB_CHECK_SCHIZO([x32], [-mx32])
+		SB_CHECK_PERSONALITIES([x86_64], [-m64])
+		SB_CHECK_PERSONALITIES([x86], [-m32])
+		SB_CHECK_PERSONALITIES([x32], [-mx32])
 		;;
 	s390*linux*)
-		SB_CHECK_SCHIZO([s390x], [-m64])
-		SB_CHECK_SCHIZO([s390], [-m31])
+		SB_CHECK_PERSONALITIES([s390x], [-m64])
+		SB_CHECK_PERSONALITIES([s390], [-m31])
 		;;
 	sparc*linux*)
-		SB_CHECK_SCHIZO([sparc64], [-m64])
-		SB_CHECK_SCHIZO([sparc], [-m32])
+		SB_CHECK_PERSONALITIES([sparc64], [-m64])
+		SB_CHECK_PERSONALITIES([sparc], [-m32])
 		;;
 	esac
-	SB_SCHIZO_SETTINGS=${SB_SCHIZO_SETTINGS# }
-	if test "x$enable_schizo" != "xno" ; then
-		AC_DEFINE_UNQUOTED([SB_SCHIZO], ["$SB_SCHIZO_SETTINGS"], [Enable multiple personalities support])
+	SB_PERSONALITIES_SETTINGS=${SB_PERSONALITIES_SETTINGS# }
+	if test "x$enable_personalities" != "xno" ; then
+		AC_DEFINE_UNQUOTED([SB_PERSONALITIES], ["$SB_PERSONALITIES_SETTINGS"], [Enable multiple personalities support])
 	fi
 fi
-AC_SUBST(SB_SCHIZO_SETTINGS)
-AC_SUBST(SB_SCHIZO_HEADERS)
-AM_CONDITIONAL([SB_SCHIZO], [test "x$enable_schizo" != "xno"])
+AC_SUBST(SB_PERSONALITIES_SETTINGS)
+AC_SUBST(SB_PERSONALITIES_HEADERS)
+AM_CONDITIONAL([SB_PERSONALITIES], [test "x$enable_personalities" != "xno"])
 
 dnl this test fills up the stack and then triggers a segfault ...
 dnl but it's hard to wrap things without a stack, so let's ignore

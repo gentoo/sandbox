@@ -16,10 +16,10 @@
 #undef _trace_possible
 #define _trace_possible _trace_possible
 
-#ifdef SB_SCHIZO
+#ifdef SB_PERSONALITIES
 
 static const struct syscall_entry syscall_table_32[] = {
-#ifdef SB_SCHIZO_sparc
+#ifdef SB_PERSONALITIES_sparc
 #define S(s) { SB_SYS_sparc_##s, SB_NR_##s, #s },
 #include "trace_syscalls_sparc.h"
 #undef S
@@ -27,7 +27,7 @@ static const struct syscall_entry syscall_table_32[] = {
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
 static const struct syscall_entry syscall_table_64[] = {
-#ifdef SB_SCHIZO_sparc64
+#ifdef SB_PERSONALITIES_sparc64
 #define S(s) { SB_SYS_sparc64_##s, SB_NR_##s, #s },
 #include "trace_syscalls_sparc64.h"
 #undef S

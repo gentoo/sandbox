@@ -76,17 +76,17 @@ TRACE_MAKE_HEADER = \
 	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
 		$(COMPILE) -E -P -include $(top_srcdir)/headers.h - $$f | \
 		$(SB_AWK) $(GEN_TRACE_SCRIPT) -v syscall_prefix=$$t > $$header
-%D%/trace_syscalls.h: $(SYMBOLS_FILE) $(GEN_TRACE_SCRIPT) $(SB_SCHIZO_HEADERS)
+%D%/trace_syscalls.h: $(SYMBOLS_FILE) $(GEN_TRACE_SCRIPT) $(SB_PERSONALITIES_HEADERS)
 	@$(MKDIR_P) %D%
-if SB_SCHIZO
+if SB_PERSONALITIES
 	$(AM_V_GEN)touch $@
 else
 	$(AM_V_GEN)t= f= header=$@; $(TRACE_MAKE_HEADER)
 endif
 
-$(SB_SCHIZO_HEADERS): $(SYMBOLS_FILE) $(GEN_TRACE_SCRIPT)
+$(SB_PERSONALITIES_HEADERS): $(SYMBOLS_FILE) $(GEN_TRACE_SCRIPT)
 	@$(MKDIR_P) %D%
-	$(AM_V_GEN)for pers in $(SB_SCHIZO_SETTINGS) ; do \
+	$(AM_V_GEN)for pers in $(SB_PERSONALITIES_SETTINGS) ; do \
 		t=_$${pers%:*}; \
 		f=$${pers#*:}; \
 		header="%D%/trace_syscalls$${t}.h"; \
