@@ -713,6 +713,12 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
+	if (!strncmp(resolv_path, "/memfd:", strlen("/memfd:"))) {
+		/* Allow operations on memfd objects #910561 */
+		result = 1;
+		goto out;
+	}
+
 	if (!sym_func) {
 		retval = check_prefixes(sbcontext->deny_prefixes,
 			sbcontext->num_deny_prefixes, resolv_path);
