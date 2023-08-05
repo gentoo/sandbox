@@ -132,24 +132,25 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 
 	save_errno();
 
+	char fd_path[SB_PATH_MAX];
 	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
 	if (trace_pid) {
-		sprintf(resolved_path, "/proc/%i/fd/%i", trace_pid, dirfd);
+		sprintf(fd_path, "/proc/%i/fd/%i", trace_pid, dirfd);
 	} else {
 		/* If /proc was mounted by a process in a different pid namespace,
 		 * getpid cannot be used to create a valid /proc/<pid> path. Instead
 		 * use sb_get_fd_dir() which works in any case.
 		 */
-		sprintf(resolved_path, "%s/%i", sb_get_fd_dir(), dirfd);
+		sprintf(fd_path, "%s/%i", sb_get_fd_dir(), dirfd);
 	}
-	ssize_t ret = readlink(resolved_path, resolved_path, at_len);
+	ssize_t ret = readlink(fd_path, resolved_path, at_len);
 	if (ret == -1) {
 		/* see comments at end of check_syscall() */
 		if (errno_is_too_long()) {
 			restore_errno();
 			return 2;
 		}
-		sb_debug_dyn("AT_FD LOOKUP fail: %s: %s\n", resolved_path, strerror(errno));
+		sb_debug_dyn("AT_FD LOOKUP fail: %s: %s\n", fd_path, strerror(errno));
 		/* If the fd isn't found, some guys (glibc) expect errno */
 		if (errno == ENOENT)
 			errno = EBADF;
