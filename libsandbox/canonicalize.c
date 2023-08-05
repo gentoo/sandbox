@@ -49,7 +49,6 @@ erealpath(const char *name, char *resolved)
 {
 	char *rpath, *dest, *recover;
 	const char *start, *end, *rpath_limit;
-	long int path_max;
 
 	if (name == NULL) {
 		/* As per Single Unix Specification V2 we must return an error if
@@ -66,16 +65,9 @@ erealpath(const char *name, char *resolved)
 		__set_errno(ENOENT);
 		return NULL;
 	}
-#ifdef SB_PATH_MAX
-	path_max = SB_PATH_MAX;
-#else
-	path_max = pathconf(name, _PC_PATH_MAX);
-	if (path_max <= 0)
-		path_max = 1024;
-#endif
 
 	if (resolved == NULL) {
-		rpath = xmalloc(path_max);
+		rpath = xmalloc(SB_PATH_MAX);
 	} else {
 		/* We can't handle resolving a buffer inline, so demand
 		 * separate read and write strings.
@@ -83,11 +75,11 @@ erealpath(const char *name, char *resolved)
 		sb_assert(name != resolved);
 		rpath = resolved;
 	}
-	rpath_limit = rpath + path_max;
+	rpath_limit = rpath + SB_PATH_MAX;
 
 	recover = NULL;
 	if (name[0] != '/') {
-		if (!egetcwd(rpath, path_max)) {
+		if (!egetcwd(rpath, SB_PATH_MAX)) {
 			rpath[0] = '\0';
 			goto error;
 		}
@@ -110,16 +102,16 @@ erealpath(const char *name, char *resolved)
 				if (lstat64(rpath, &st))
 					break;
 				if (S_ISLNK(st.st_mode)) {
-					ssize_t cnt = readlink(rpath, rpath, path_max);
+					ssize_t cnt = readlink(rpath, rpath, SB_PATH_MAX);
 					if (cnt == -1)
 						break;
 					rpath[cnt] = '\0';
 					if (p) {
 						size_t bytes_left = strlen(p);
-						if (bytes_left >= path_max)
+						if (bytes_left >= SB_PATH_MAX)
 							break;
 						strncat(rpath, name + (p - rpath + 1),
-							path_max - bytes_left - 1);
+							SB_PATH_MAX - bytes_left - 1);
 					}
 
 					/* Ok, we have a chance at something better.  If
@@ -187,10 +179,10 @@ erealpath(const char *name, char *resolved)
 					goto error;
 				}
 				new_size = rpath_limit - rpath;
-				if (end - start + 1 > path_max)
+				if (end - start + 1 > SB_PATH_MAX)
 					new_size += end - start + 1;
 				else
-					new_size += path_max;
+					new_size += SB_PATH_MAX;
 				new_rpath = (char *) xrealloc(rpath, new_size);
 				rpath = new_rpath;
 				rpath_limit = rpath + new_size;
@@ -213,7 +205,7 @@ erealpath(const char *name, char *resolved)
 
 error:
 	if (resolved)
-		snprintf(resolved, path_max, "%s", rpath);
+		snprintf(resolved, SB_PATH_MAX, "%s", rpath);
 	else
 		free(rpath);
 	free(recover);
