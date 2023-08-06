@@ -11,7 +11,7 @@
 #include "headers.h"
 #include "rcscripts/rcutil.h"
 
-volatile static int debug_errno = 0;
+static volatile int debug_errno = 0;
 
 #define log_domain "sandbox"
 
