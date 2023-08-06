@@ -25,8 +25,8 @@ int (*sbio_faccessat)(int, const char *, int, int) = faccessat;
 int (*sbio_open)(const char *, int, mode_t) = (void *)open;
 FILE *(*sbio_popen)(const char *, const char *) = popen;
 
-volatile static int stop_called = 0;
-volatile static pid_t child_pid = 0;
+static volatile int stop_called = 0;
+static volatile pid_t child_pid = 0;
 
 static const char sandbox_banner[] = "============================= Gentoo path sandbox ==============================";
 static const char sandbox_footer[] = "--------------------------------------------------------------------------------";
