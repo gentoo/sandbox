@@ -349,14 +349,14 @@ char *egetcwd(char *buf, size_t size)
 
 	/* If tracing a child, our cwd may not be the same as the child's */
 	if (trace_pid) {
-		char proc[20];
-		sprintf(proc, "/proc/%i/cwd", trace_pid);
-		ssize_t ret = readlink(proc, buf, size);
-		if (ret == -1) {
+		char proc[22];
+		snprintf(proc, sizeof(proc), "/proc/%i/cwd", trace_pid);
+		ssize_t link_len = readlink(proc, buf, size - 1);
+		if (link_len == -1) {
 			errno = ESRCH;
 			return NULL;
 		}
-		buf[ret] = '\0';
+		buf[link_len] = '\0';
 		return buf;
 	}
 
