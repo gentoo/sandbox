@@ -37,7 +37,7 @@ bool sb_mkdirat_pre_check(const char *func, const char *pathname, int dirfd)
 	 * will trigger a sandbox violation.
 	 */
 	struct stat64 st;
-	if (0 == lstat64(canonic, &st)) {
+	if (0 == lstat64(pathname, &st)) {
 		int new_errno;
 		sb_debug_dyn("EARLY FAIL: %s(%s[%s]) @ lstat: %s\n",
 			func, pathname, canonic, strerror(errno));
