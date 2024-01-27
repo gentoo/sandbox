@@ -132,7 +132,8 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 
 	save_errno();
 
-	char fd_path[SB_PATH_MAX];
+	char *fd_path = xmalloc(SB_PATH_MAX * sizeof(char));
+
 	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
 	if (trace_pid) {
 		sprintf(fd_path, "/proc/%i/fd/%i", trace_pid, dirfd);
@@ -148,12 +149,14 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 		/* see comments at end of check_syscall() */
 		if (errno_is_too_long()) {
 			restore_errno();
+			free(fd_path);
 			return 2;
 		}
 		sb_debug_dyn("AT_FD LOOKUP fail: %s: %s\n", fd_path, strerror(errno));
 		/* If the fd isn't found, some guys (glibc) expect errno */
 		if (errno == ENOENT)
 			errno = EBADF;
+		free(fd_path);
 		return -1;
 	}
 	resolved_path[ret] = '/';
@@ -162,6 +165,7 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 		strcat(resolved_path, path);
 
 	restore_errno();
+	free(fd_path);
 	return 0;
 }
 
@@ -286,7 +290,7 @@ static char *resolve_path(const char *path, int follow_link)
 		}
 
 		if (!ret) {
-			char tmp_str1[SB_PATH_MAX];
+			char *tmp_str1 = xmalloc(SB_PATH_MAX * sizeof(char));
 			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
 
 			dname = dirname(tmp_str1);
@@ -304,7 +308,7 @@ static char *resolve_path(const char *path, int follow_link)
 					filtered_path = NULL;
 				}
 			} else {
-				char tmp_str2[SB_PATH_MAX];
+				char *tmp_str2 = xmalloc(SB_PATH_MAX * sizeof(char));
 				/* OK, now add the basename to keep our access
 				 * checking happy (don't want '/usr/lib' if we
 				 * tried to do something with non-existing
@@ -316,7 +320,10 @@ static char *resolve_path(const char *path, int follow_link)
 				snprintf(filtered_path + len, SB_PATH_MAX - len, "%s%s",
 					(filtered_path[len - 1] != '/') ? "/" : "",
 					bname);
+				free(tmp_str2);
 			}
+
+			free(tmp_str1);
 		}
 	}
 
@@ -1034,10 +1041,24 @@ bool is_sandbox_on(void)
 	return result;
 }
 
+static int resolve_dirfd_path_alloc(int dirfd, const char *path, char **resolved_path)
+{
+	size_t resolved_path_size = SB_PATH_MAX * sizeof(char);
+	*resolved_path = xmalloc(resolved_path_size);
+	int result = resolve_dirfd_path(dirfd, path, *resolved_path, resolved_path_size);
+
+	if (result) {
+		free(*resolved_path);
+		*resolved_path = NULL;
+	}
+
+	return result;
+}
+
 bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
 {
 	int result;
-	char at_file_buf[SB_PATH_MAX];
+	char *at_file_buf;
 
 	/* Some funcs operate on a fd directly and so filename is NULL, but
 	 * the rest should get rejected as "file/directory does not exist".
@@ -1056,7 +1077,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 		}
 	}
 
-	switch (resolve_dirfd_path(dirfd, file, at_file_buf, sizeof(at_file_buf))) {
+	switch (resolve_dirfd_path_alloc(dirfd, file, &at_file_buf)) {
 		case -1: return false;
 		case 0: file = at_file_buf; break;
 		case 2: return true;
@@ -1078,6 +1099,9 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	sbcontext.show_access_violation = true;
 
 	result = check_syscall(&sbcontext, sb_nr, func, file, flags);
+
+	if (at_file_buf)
+		free(at_file_buf);
 
 	sb_unlock();
 
