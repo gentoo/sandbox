@@ -7,7 +7,7 @@ touch ChangeLog
 # whatever updated version is on the host
 rm -f m4/*.m4
 
-# not everyone has sys-devel/autoconf-archive installed
+# not everyone has dev-build/autoconf-archive installed
 has() { [[ " ${*:2} " == *" $1 "* ]] ; }
 import_ax() {
 	local macro content m4 found lm4s=()
