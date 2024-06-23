@@ -41,6 +41,10 @@
 #ifdef HAVE_LIBGEN_H
 # include <libgen.h>
 #endif
+#if !defined(HAVE_EXECINFO_H) && defined(HAVE_LIBUNWIND_H)
+#define UNW_LOCAL_ONLY
+# include <libunwind.h>
+#endif
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif
