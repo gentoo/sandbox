@@ -4,4 +4,6 @@
 set -e
 mkdirat-0 -1,ENOENT .:O_DIRECTORY '' 0
 
+mkdirat-0 -1,ENOENT .:O_DIRECTORY 'foo/..' 0
+
 mkdirat-0 -1,ENOENT -3 '' 0

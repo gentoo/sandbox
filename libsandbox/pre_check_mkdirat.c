@@ -37,15 +37,17 @@ bool sb_mkdirat_pre_check(const char *func, const char *pathname, int dirfd)
 	 * will trigger a sandbox violation.
 	 */
 	struct stat64 st;
-	if (0 == lstat64(pathname, &st)) {
+	if (0 == lstat64(canonic, &st)) {
 		int new_errno;
 		sb_debug_dyn("EARLY FAIL: %s(%s[%s]) @ lstat: %s\n",
 			func, pathname, canonic, strerror(errno));
 
 		new_errno = EEXIST;
 
-		/* Hmm, is this a broken symlink we're trying to extend ? */
-		if (S_ISLNK(st.st_mode) && stat64(pathname, &st) != 0) {
+		/* Hmm, is this a broken symlink we're trying to extend ?
+		 * Or is this a path like "foo/.." ?
+		 */
+		if (stat64(pathname, &st) != 0) {
 			/* XXX: This awful hack should probably be turned into a
 			 * common func that does a better job.  For now, we have
 			 * enough crap to catch gnulib tests #297026.
