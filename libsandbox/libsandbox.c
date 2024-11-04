@@ -159,8 +159,9 @@ int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
 		free(fd_path);
 		return -1;
 	}
-	resolved_path[ret] = '/';
-	resolved_path[ret + 1] = '\0';
+	if (path && path[0])
+		resolved_path[ret++] = '/';
+	resolved_path[ret] = '\0';
 	if (path)
 		strcat(resolved_path, path);
 
