@@ -1064,7 +1064,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	 * the rest should get rejected as "file/directory does not exist".
 	 */
 	if (file == NULL || file[0] == '\0') {
-		if (file == NULL && dirfd != AT_FDCWD &&
+		if ((file == NULL || (flags & AT_EMPTY_PATH)) &&
 			(sb_nr == SB_NR_UTIMENSAT || sb_nr == SB_NR_FUTIMESAT))
 		{
 			/* let it slide -- the func is magic and changes behavior
