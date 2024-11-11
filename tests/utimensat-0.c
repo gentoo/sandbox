@@ -1,3 +1,6 @@
+#pragma GCC push_options
+#pragma GCC optimize("-fno-isolate-erroneous-paths-dereference,-fno-isolate-erroneous-paths-attribute")
+
 #define CONFIG HAVE_UTIMENSAT
 #define FUNC utimensat
 #define SFUNC "utimensat"
@@ -20,3 +23,5 @@
 	int flags = at_get_flags(s);
 
 #include "test-skel-0.c"
+
+#pragma GCC pop_options
