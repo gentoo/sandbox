@@ -26,7 +26,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 
 	if [[ ${__SANDBOX_TESTING} != "yes" ]] ; then
 		(
-		[[ ${NOCOLOR} == "true" || ${NOCOLOR} == "yes" || ${NOCOLOR} == "1" ]] && \
+		[[ ${NO_COLOR} == "true" || ${NO_COLOR} == "yes" || ${NO_COLOR} == "1" ]] && \
 			export RC_NOCOLOR="yes"
 		source /lib/gentoo/functions.sh
 		if [[ $? -ne 0 ]] ; then
@@ -93,7 +93,7 @@ if [[ ${SANDBOX_INTRACTV} == "1" && -t 1 ]] || [[ ${__SANDBOX_TESTING} == "yes" 
 	fi
 
 	cd "${PWD}"
-	if [[ ${NOCOLOR} != "true" && ${NOCOLOR} != "yes" && ${NOCOLOR} != "1" ]] ; then
+	if [[ ${NO_COLOR} != "true" && ${NO_COLOR} != "yes" && ${NO_COLOR} != "1" ]] ; then
 		export PS1="\[\e[31;01m\][s]\[\e[0m\] ${PS1}"
 	else
 		export PS1="[s] ${PS1}"

@@ -19,7 +19,7 @@ const char *colors[] = {
 __attribute__((constructor))
 static void sbio_init(void)
 {
-	if (is_env_on(ENV_NOCOLOR)) {
+	if (is_env_on(ENV_NO_COLOR)) {
 		size_t i;
 		for (i = 0; i < ARRAY_SIZE(colors); ++i)
 			colors[i] = "";

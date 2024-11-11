@@ -35,7 +35,7 @@
 
 #define ENV_BASH_ENV           "BASH_ENV"
 
-#define ENV_NOCOLOR            "NOCOLOR"
+#define ENV_NO_COLOR            "NO_COLOR"
 
 #define ENV_SANDBOX_VERBOSE    "SANDBOX_VERBOSE"
 #define ENV_SANDBOX_DEBUG      "SANDBOX_DEBUG"

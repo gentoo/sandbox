@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (getenv("NOCOLOR"))
+	if (getenv("NO_COLOR"))
 		color_normal = color_green = color_yellow = color_red = "";
 
 	test_ret = 0;
