@@ -121,6 +121,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	grp.h
 	inttypes.h
 	libgen.h
+	libunwind.h
 	limits.h
 	memory.h
 	pthread.h
