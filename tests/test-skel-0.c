@@ -66,7 +66,7 @@ const char *f_get_file(const char *str_file)
 		return str_file;
 }
 
-#define V_ATFLAGS "0 | AT_SYMLINK_NOFOLLOW | AT_REMOVEDIR | AT_SYMLINK_FOLLOW | AT_EACCESS"
+#define V_ATFLAGS "0 | AT_SYMLINK_NOFOLLOW | AT_REMOVEDIR | AT_SYMLINK_FOLLOW | AT_EACCESS | AT_EMPTY_PATH"
 int at_get_flags(const char *str_flags)
 {
 	const value_pair flags[] = {
@@ -74,6 +74,7 @@ int at_get_flags(const char *str_flags)
 		PAIR(AT_REMOVEDIR)
 		PAIR(AT_SYMLINK_FOLLOW)
 		PAIR(AT_EACCESS)
+		PAIR(AT_EMPTY_PATH)
 		{ }
 	};
 	return _get_flags(str_flags, flags);
