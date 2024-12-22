@@ -1080,7 +1080,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 
 	if (file == NULL) {
 		/* futimesat treats dirfd as the target when file is NULL */
-		if (sb_nr != SB_NR_FUTIMESAT)
+		if (sb_nr != SB_NR_FUTIMESAT && sb_nr != SB_NR_UTIMENSAT)
 			return true; /* let the kernel reject this */
 	}
 	else if (file[0] == '\0') {
