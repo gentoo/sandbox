@@ -10,15 +10,16 @@ jobs:
     strategy:
       matrix:
         cc: [gcc, clang]
+        abi: [-m64, -m32]
       fail-fast: false
     runs-on: ubuntu-latest
     env:
-      CC: ${{ matrix.cc }}
+      CC: ${{ matrix.cc }} ${{ matrix.abi }}
     steps:
     - name: Install dependencies
       run: |
         sudo apt-get update -qq
-        sudo apt-get install build-essential gcc clang automake autoconf autoconf-archive libtool pax-utils -qy
+        sudo apt-get install build-essential gcc gcc-multilib clang automake autoconf autoconf-archive libtool pax-utils -qy
 
     - uses: actions/checkout@v3
       name: Checkout
