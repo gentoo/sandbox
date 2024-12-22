@@ -34,15 +34,18 @@ jobs:
 
   musl:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/386]
     container:
       image: alpine:latest
-      options: --cap-add=SYS_PTRACE
+      options: --cap-add=SYS_PTRACE --platform=${{ matrix.platform }}
     steps:
       - name: Install dependencies
         run: apk add bash coreutils build-base automake autoconf autoconf-archive libtool pax-utils gawk sed
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: taiki-e/checkout-action@v1
 
       - name: Build
         run: |
