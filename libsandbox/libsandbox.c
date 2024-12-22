@@ -700,12 +700,29 @@ static bool symlink_func(int sb_nr, int flags)
 		return true;
 
 	/* These funcs sometimes operate on symlinks */
-	if ((sb_nr == SB_NR_FCHOWNAT ||
+	if ((sb_nr == SB_NR_ACCESS_RD ||
+	     sb_nr == SB_NR_ACCESS_WR ||
+	     sb_nr == SB_NR_FACCESSAT ||
+	     sb_nr == SB_NR_FACCESSAT2 ||
+	     sb_nr == SB_NR_FCHOWNAT ||
 	     sb_nr == SB_NR_FCHMODAT ||
 	     sb_nr == SB_NR_UTIMENSAT) &&
 	    (flags & AT_SYMLINK_NOFOLLOW))
 		return true;
 
+	return false;
+}
+
+static bool check_at_empty_path(int sb_nr, int flags)
+{
+	if (sb_nr == SB_NR_ACCESS_RD ||
+		sb_nr == SB_NR_ACCESS_WR ||
+		sb_nr == SB_NR_FACCESSAT ||
+		sb_nr == SB_NR_FACCESSAT2 ||
+		sb_nr == SB_NR_FCHOWNAT ||
+		sb_nr == SB_NR_FCHMODAT ||
+		sb_nr == SB_NR_UTIMENSAT)
+		return (flags & AT_EMPTY_PATH) ? true : false;
 	return false;
 }
 
@@ -1067,7 +1084,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 			return true; /* let the kernel reject this */
 	}
 	else if (file[0] == '\0') {
-		if (!(flags & AT_EMPTY_PATH))
+		if (!check_at_empty_path(sb_nr, flags))
 			return true; /* let the kernel reject this */
 	}
 
