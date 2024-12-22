@@ -33,6 +33,7 @@ mkfifo
 mkfifoat
 access
 faccessat
+faccessat2
 remove
 rename
 renameat

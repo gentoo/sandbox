@@ -29,6 +29,7 @@ check_PROGRAMS += \
 	%D%/execv-0 \
 	%D%/execvp-0 \
 	%D%/faccessat-0 \
+	%D%/faccessat_static-0 \
 	%D%/fchmod-0 \
 	%D%/fchmodat-0 \
 	%D%/fchown-0 \

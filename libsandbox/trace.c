@@ -385,9 +385,9 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 
 	else if (nr == SB_NR_ACCESS) {
 		char *path = do_peekstr(trace_arg(regs, 1));
-		int flags = trace_arg(regs, 2);
-		__sb_debug("(\"%s\", %x)", path, flags);
-		ret = _SB_SAFE_ACCESS(nr, name, path, flags);
+		int mode = trace_arg(regs, 2);
+		__sb_debug("(\"%s\", %x)", path, mode);
+		ret = _SB_SAFE_ACCESS(nr, name, path, mode);
 		free(path);
 		return ret;
 
@@ -397,6 +397,16 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		int mode = trace_arg(regs, 3);
 		__sb_debug("(%i, \"%s\", %x)", dirfd, path, mode);
 		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, mode, 0);
+		free(path);
+		return ret;
+
+	} else if (nr == SB_NR_FACCESSAT2) {
+		int dirfd = trace_arg(regs, 1);
+		char *path = do_peekstr(trace_arg(regs, 2));
+		int mode = trace_arg(regs, 3);
+		int flags = trace_arg(regs, 4);
+		__sb_debug("(%i, \"%s\", %x, %x)", dirfd, path, mode, flags);
+		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, mode, flags);
 		free(path);
 		return ret;
 
