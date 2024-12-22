@@ -1061,21 +1061,14 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	int result;
 	char *at_file_buf;
 
-	/* Some funcs operate on a fd directly and so filename is NULL, but
-	 * the rest should get rejected as "file/directory does not exist".
-	 */
-	if (file == NULL || file[0] == '\0') {
-		if ((file == NULL || (flags & AT_EMPTY_PATH)) &&
-			(sb_nr == SB_NR_UTIMENSAT || sb_nr == SB_NR_FUTIMESAT))
-		{
-			/* let it slide -- the func is magic and changes behavior
-			 * from "file relative to dirfd" to "dirfd is actually file
-			 * fd" whenever file is NULL.
-			 */
-		} else {
-			errno = ENOENT;
-			return false;
-		}
+	if (file == NULL) {
+		/* futimesat treats dirfd as the target when file is NULL */
+		if (sb_nr != SB_NR_FUTIMESAT)
+			return true; /* let the kernel reject this */
+	}
+	else if (file[0] == '\0') {
+		if (!(flags & AT_EMPTY_PATH))
+			return true; /* let the kernel reject this */
 	}
 
 	switch (resolve_dirfd_path_alloc(dirfd, file, &at_file_buf)) {
@@ -1117,13 +1110,17 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	return result ? true : false;
 }
 
-bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int flags)
+bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int mode, int flags)
 {
 	const char *ext_func;
-	if (flags & W_OK)
-		sb_nr = SB_NR_ACCESS_WR, ext_func = "access_wr";
-	else if (flags & R_OK)
-		sb_nr = SB_NR_ACCESS_RD, ext_func = "access_rd";
+	if (mode & W_OK) {
+		sb_nr = SB_NR_ACCESS_WR;
+		ext_func = "access_wr";
+	}
+	else if (mode & R_OK) {
+		sb_nr = SB_NR_ACCESS_RD;
+		ext_func = "access_rd";
+	}
 	else
 		/* Must be F_OK or X_OK; we do not need to check either. */
 		return true;

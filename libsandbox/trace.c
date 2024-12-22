@@ -394,9 +394,9 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	} else if (nr == SB_NR_FACCESSAT) {
 		int dirfd = trace_arg(regs, 1);
 		char *path = do_peekstr(trace_arg(regs, 2));
-		int flags = trace_arg(regs, 3);
-		__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
-		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, flags);
+		int mode = trace_arg(regs, 3);
+		__sb_debug("(%i, \"%s\", %x)", dirfd, path, mode);
+		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, mode, 0);
 		free(path);
 		return ret;
 

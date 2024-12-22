@@ -23,14 +23,14 @@
 #define  SB_SAFE(_path) \
          SB_SAFE_AT(AT_FDCWD, _path, 0)
 
-#define _SB_SAFE_ACCESS_AT(_nr, _name, _dirfd, _path, _flags) \
-       __SB_SAFE(before_syscall_access(_dirfd, _nr, _name, _path, _flags))
-#define  SB_SAFE_ACCESS_AT(_dirfd, _path, _flags) \
-        _SB_SAFE_ACCESS_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
-#define _SB_SAFE_ACCESS(_nr, _name, _path, _flags) \
-        _SB_SAFE_ACCESS_AT(_nr, _name, AT_FDCWD, _path, _flags)
-#define  SB_SAFE_ACCESS(_path, _flags) \
-         SB_SAFE_ACCESS_AT(AT_FDCWD, _path, _flags)
+#define _SB_SAFE_ACCESS_AT(_nr, _name, _dirfd, _path, _mode, _flags) \
+       __SB_SAFE(before_syscall_access(_dirfd, _nr, _name, _path, _mode, _flags))
+#define  SB_SAFE_ACCESS_AT(_dirfd, _path, _mode, _flags) \
+        _SB_SAFE_ACCESS_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _mode, _flags)
+#define _SB_SAFE_ACCESS(_nr, _name, _path, _mode) \
+        _SB_SAFE_ACCESS_AT(_nr, _name, AT_FDCWD, _path, _mode, 0)
+#define  SB_SAFE_ACCESS(_path, _mode) \
+         SB_SAFE_ACCESS_AT(AT_FDCWD, _path, _mode, 0)
 
 #define _SB_SAFE_OPEN_INT_AT(_nr, _name, _dirfd, _path, _flags) \
        __SB_SAFE(before_syscall_open_int(_dirfd, _nr, _name, _path, _flags))
@@ -57,7 +57,7 @@
 
 bool is_sandbox_on(void);
 bool before_syscall(int, int, const char *, const char *, int);
-bool before_syscall_access(int, int, const char *, const char *, int);
+bool before_syscall_access(int, int, const char *, const char *, int, int);
 bool before_syscall_open_int(int, int, const char *, const char *, int);
 bool before_syscall_open_char(int, int, const char *, const char *, const char *);
 bool before_syscall_fd(int, const char *, int);
