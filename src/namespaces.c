@@ -28,7 +28,7 @@
 
 #define xfopen(path, ...) \
 ({ \
-	FILE *_ret = fopen64(path, __VA_ARGS__); \
+	FILE *_ret = fopen(path, __VA_ARGS__); \
 	if (_ret == 0) \
 		sb_perr("fopen(%s) failed", #path); \
 	_ret; \
@@ -107,7 +107,7 @@ static void ns_mount_setup(void)
 	/* Now map in all the files/dirs we do want to expose. */
 	int fd;
 #define bind_file(node) \
-	fd = open64("/dev/shm/" node, O_CREAT, 0); \
+	fd = open("/dev/shm/" node, O_CREAT, 0); \
 	sb_assert(fd != -1); \
 	close(fd); \
 	xmount("/dev/" node, "/dev/shm/" node, NULL, MS_BIND, NULL)

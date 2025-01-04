@@ -111,6 +111,7 @@ int sb_close(int fd);
 void sb_close_all_fds(void);
 int sb_copy_file_to_fd(const char *file, int ofd);
 int sb_exists(int dirfd, const char *pathname, int flags);
+int sb_fstat(int fd, mode_t *mode, int64_t *size);
 
 /* Reliable output */
 __printf(1, 2) void sb_printf(const char *format, ...);

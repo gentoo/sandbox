@@ -13,4 +13,5 @@
 	s = argv[i++]; \
 	mode_t mode = sscanf_mode_t(s);
 
+#define _LARGEFILE64_SOURCE
 #include "test-skel-0.c"

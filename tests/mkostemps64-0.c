@@ -17,4 +17,5 @@
 	s = argv[i++]; \
 	int flags = f_get_flags(s);
 
+#define _LARGEFILE64_SOURCE
 #include "test-skel-0.c"

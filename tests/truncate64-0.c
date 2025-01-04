@@ -16,4 +16,5 @@
 	sscanf(s, "%llu", &sl); \
 	length = sl;
 
+#define _LARGEFILE64_SOURCE
 #include "test-skel-0.c"

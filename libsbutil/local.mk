@@ -2,6 +2,7 @@ noinst_LTLIBRARIES += %D%/libsbutil.la
 
 %C%_libsbutil_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	$(SIXTY_FOUR_FLAGS) \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/%D%/include
 %C%_libsbutil_la_LDFLAGS = -no-undefined
@@ -16,11 +17,11 @@ noinst_LTLIBRARIES += %D%/libsbutil.la
 	%D%/environment.c                         \
 	%D%/sb_backtrace.c                        \
 	%D%/sb_efuncs.c                           \
-	%D%/sb_exists.c                           \
 	%D%/sb_gdb.c                              \
 	%D%/sb_method.c                           \
 	%D%/sb_open.c                             \
 	%D%/sb_read.c                             \
+	%D%/sb_stat.c                             \
 	%D%/sb_write.c                            \
 	%D%/sb_write_fd.c                         \
 	%D%/sb_close.c                            \

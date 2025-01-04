@@ -21,62 +21,53 @@ rc_file_exists (const char *pathname)
 bool
 rc_is_file (const char *pathname, bool follow_link)
 {
-  struct stat64 buf;
-  int retval;
+  struct stat buf;
+  int r;
 
   if (!check_str (pathname))
     return false;
 
-  retval = follow_link ? stat64 (pathname, &buf) : lstat64 (pathname, &buf);
-  if ((-1 != retval) && (S_ISREG (buf.st_mode)))
-    retval = true;
-  else
-    retval = false;
-
-  return retval;
+  r = follow_link ? stat (pathname, &buf) : lstat (pathname, &buf);
+  if (r == -1)
+	  return false;
+  return (S_ISREG (buf.st_mode));
 }
 
 bool
 rc_is_dir (const char *pathname, bool follow_link)
 {
-  struct stat64 buf;
-  int retval;
+  struct stat buf;
+  int r;
 
   if (!check_str (pathname))
     return false;
 
-  retval = follow_link ? stat64 (pathname, &buf) : lstat64 (pathname, &buf);
-  if ((-1 != retval) && (S_ISDIR (buf.st_mode)))
-    retval = true;
-  else
-    retval = false;
-
-  return retval;
+  r = follow_link ? stat (pathname, &buf) : lstat (pathname, &buf);
+  if (r == -1)
+	  return false;
+  return (S_ISDIR (buf.st_mode));
 }
 
-off64_t
+int64_t
 rc_get_size (const char *pathname, bool follow_link)
 {
-  struct stat64 buf;
-  int retval;
+  struct stat buf;
+  int r;
 
   if (!check_str (pathname))
     return 0;
 
-  retval = follow_link ? stat64 (pathname, &buf) : lstat64 (pathname, &buf);
-  if (-1 != retval)
-    retval = buf.st_size;
-  else
-    retval = 0;
-
-  return retval;
+  r = follow_link ? stat (pathname, &buf) : lstat (pathname, &buf);
+  if (r == -1)
+	  return 0;
+  return buf.st_size;
 }
 
 char **
 rc_ls_dir (const char *pathname, bool hidden, bool sort)
 {
   DIR *dp;
-  struct dirent64 *dir_entry;
+  struct dirent *dir_entry;
   char **dirlist = NULL;
 
   if (!check_arg_str (pathname))
@@ -102,7 +93,7 @@ rc_ls_dir (const char *pathname, bool hidden, bool sort)
     {
       /* Clear errno to distinguish between EOF and error */
       errno = 0;
-      dir_entry = readdir64 (dp);
+      dir_entry = readdir (dp);
       /* Only an error if 'errno' != 0, else EOF */
       if ((NULL == dir_entry) && (0 != errno))
 	{
@@ -184,10 +175,10 @@ error:
 int
 rc_file_map (const char *filename, char **buf, size_t * bufsize)
 {
-  struct stat64 stats;
+  struct stat stats;
   int fd;
 
-  fd = open64 (filename, O_RDONLY);
+  fd = open (filename, O_RDONLY);
   if (fd < 0)
     {
       rc_errno_set (errno);
@@ -195,7 +186,7 @@ rc_file_map (const char *filename, char **buf, size_t * bufsize)
       return -1;
     }
 
-  if (fstat64 (fd, &stats) < 0)
+  if (fstat (fd, &stats) < 0)
     {
       rc_errno_set (errno);
       DBG_MSG ("Failed to stat file!\n");

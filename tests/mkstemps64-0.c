@@ -14,4 +14,5 @@
 	int suffixlen = 0; \
 	sscanf(s, "%i", &suffixlen);
 
+#define _LARGEFILE64_SOURCE
 #include "test-skel-0.c"

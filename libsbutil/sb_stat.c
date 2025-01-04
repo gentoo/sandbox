@@ -9,7 +9,7 @@
 /* Wrapper for faccessat to work around buggy behavior on musl */
 int sb_exists(int dirfd, const char *pathname, int flags)
 {
-	struct stat64 buf;
+	struct stat buf;
 
 	if (sbio_faccessat(dirfd, pathname, F_OK, flags|AT_EACCESS) == 0)
 		return 0;
@@ -20,5 +20,15 @@ int sb_exists(int dirfd, const char *pathname, int flags)
 	if (errno != EINVAL)
 		return -1;
 
-	return fstatat64(dirfd, pathname, &buf, flags);
+	return fstatat(dirfd, pathname, &buf, flags);
+}
+
+int sb_fstat(int fd, mode_t *mode, int64_t *size)
+{
+	struct stat buf;
+	if(fstat(fd, &buf))
+		return -1;
+	*mode = buf.st_mode;
+	*size = buf.st_size;
+	return 0;
 }

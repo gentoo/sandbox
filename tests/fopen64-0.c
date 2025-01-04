@@ -13,4 +13,5 @@
 	s = argv[i++]; \
 	char *mode = s;
 
+#define _LARGEFILE64_SOURCE
 #include "test-skel-0.c"

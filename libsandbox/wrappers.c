@@ -10,6 +10,10 @@
  *  as some of the InstallWatch code was used.
  */
 
+#undef _FILE_OFFSET_BITS
+#undef _TIME_BITS
+#define _LARGEFILE64_SOURCE
+
 #include "headers.h"
 #include "sbutil.h"
 #include "libsandbox.h"

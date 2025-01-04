@@ -27,7 +27,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
-	struct stat64 st;
+	mode_t mode;
+	int64_t size;
 	bool do_trace = false;
 	bool run_in_process = true;
 	sandbox_method_t method = get_sandbox_method();
@@ -38,11 +39,11 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	fd = sb_unwrapped_open_DEFAULT(filename, O_RDONLY|O_CLOEXEC, 0);
 	if (fd == -1)
 		return true;
-	if (fstat64(fd, &st))
+	if (sb_fstat(fd, &mode, &size))
 		goto out_fd;
-	if (st.st_size < sizeof(Elf64_Ehdr))
+	if (size < sizeof(Elf64_Ehdr))
 		goto out_fd;
-	elf = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	elf = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
 	if (elf == MAP_FAILED)
 		goto out_fd;
 
@@ -64,7 +65,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	 * gains root just to preload libsandbox.so.  That unfortunately
 	 * could easily open up people to root vulns.
 	 */
-	if (st.st_mode & (S_ISUID | S_ISGID))
+	if (mode & (S_ISUID | S_ISGID))
 		if (getuid() != 0)
 			run_in_process = false;
 
@@ -95,7 +96,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	bool dynamic = false; \
 	size_t i; \
 	\
-	if (st.st_size < ehdr->e_phoff + ehdr->e_phentsize * ehdr->e_phnum) \
+	if (size < ehdr->e_phoff + ehdr->e_phentsize * ehdr->e_phnum) \
 		goto out_mmap; \
 	\
 	/* First gather the tags we care about. */ \
@@ -238,7 +239,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
  done:
 
  out_mmap:
-	munmap(elf, st.st_size);
+	munmap(elf, size);
  out_fd:
 	close(fd);
 

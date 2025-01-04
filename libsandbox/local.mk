@@ -2,6 +2,7 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 
 %C%_libsandbox_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	$(SIXTY_FOUR_FLAGS) \
 	-I%D% \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/libsbutil \
@@ -14,8 +15,8 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 libsbutil/.libs/libsbutil.a: libsbutil/libsbutil.la
 %C%_libsandbox_la_LIBSBLIB = libsbutil/.libs/libsbutil.a
 %C%_libsandbox_la_LIBADD = \
-	-lc $(LIBDL) \
-	$(%C%_libsandbox_la_LIBSBLIB)
+	$(%C%_libsandbox_la_LIBSBLIB) \
+	$(LIBDL)
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 %C%_libsandbox_la_LDFLAGS = \
