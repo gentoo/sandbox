@@ -2,6 +2,7 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 
 %C%_libsandbox_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	-D_FILE_OFFSET_BITS=64 \
 	-I%D% \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/libsbutil \

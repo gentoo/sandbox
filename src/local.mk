@@ -2,6 +2,7 @@ bin_PROGRAMS += %D%/sandbox
 
 %C%_sandbox_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	-D_FILE_OFFSET_BITS=64 \
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include
 

@@ -27,7 +27,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
-	struct stat64 st;
+	struct stat st;
 	bool do_trace = false;
 	bool run_in_process = true;
 	sandbox_method_t method = get_sandbox_method();
@@ -38,7 +38,7 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	fd = sb_unwrapped_open_DEFAULT(filename, O_RDONLY|O_CLOEXEC, 0);
 	if (fd == -1)
 		return true;
-	if (fstat64(fd, &st))
+	if (fstat(fd, &st))
 		goto out_fd;
 	if (st.st_size < sizeof(Elf64_Ehdr))
 		goto out_fd;

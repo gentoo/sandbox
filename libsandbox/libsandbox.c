@@ -343,7 +343,7 @@ static char *resolve_path(const char *path, int follow_link)
 
 char *egetcwd(char *buf, size_t size)
 {
-	struct stat64 st;
+	struct stat st;
 	char *tmpbuf;
 
 	/* We can't let the C lib allocate memory for us since we have our
@@ -386,7 +386,7 @@ char *egetcwd(char *buf, size_t size)
 	 */
 	if ((tmpbuf) && (errno == 0)) {
 		save_errno();
-		if (!lstat64(buf, &st))
+		if (!lstat(buf, &st))
 			/* errno is set only on failure */
 			errno = 0;
 
@@ -445,12 +445,12 @@ void __sb_dump_backtrace(void)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
 {
-	struct stat64 log_stat;
+	struct stat log_stat;
 	int stat_ret;
 	int logfd;
 	bool ret = false;
 
-	stat_ret = lstat64(logfile, &log_stat);
+	stat_ret = lstat(logfile, &log_stat);
 	/* Do not care about failure */
 	errno = 0;
 	if (stat_ret == 0 && S_ISREG(log_stat.st_mode) == 0)

@@ -129,7 +129,7 @@ int at_get_fd(const char *str_dirfd)
 	}
 	str_mode = strtok(NULL, ":");
 
-	return open64(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
+	return open(str_path, f_get_flags(str_flags), sscanf_mode_t(str_mode));
 }
 
 #define V_TIMESPEC "NULL | NOW | #[,#]"
