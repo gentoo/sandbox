@@ -26,7 +26,7 @@ volatile uintptr_t offset = 0;
 #define check_ptr(addr) \
 ({ \
 	printf("  open(%p)\n", addr); \
-	ret = open64(non_const_ptr(addr), O_RDONLY); \
+	ret = open(non_const_ptr(addr), O_RDONLY); \
 	assert(ret == -1 && errno == EFAULT); \
 })
 

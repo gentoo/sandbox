@@ -1,7 +1,24 @@
+noinst_LTLIBRARIES += %D%/libwrappers.la
+
+%C%_libwrappers_la_CFLAGS = $(CFLAG_EXCEPTIONS)
+
+%C%_libwrappers_la_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I%D% \
+	-I$(top_srcdir)/%D% \
+	-I$(top_srcdir)/libsbutil \
+	-I$(top_srcdir)/libsbutil/include
+
+%C%_libwrappers_la_SOURCES = \
+	%D%/libsandbox.h \
+	%D%/wrappers.h   \
+	%D%/wrappers.c
+
 lib_LTLIBRARIES += %D%/libsandbox.la
 
 %C%_libsandbox_la_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
+	-D_FILE_OFFSET_BITS=64 \
 	-I%D% \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/libsbutil \
@@ -14,8 +31,9 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 libsbutil/.libs/libsbutil.a: libsbutil/libsbutil.la
 %C%_libsandbox_la_LIBSBLIB = libsbutil/.libs/libsbutil.a
 %C%_libsandbox_la_LIBADD = \
-	-lc $(LIBDL) \
-	$(%C%_libsandbox_la_LIBSBLIB)
+	%D%/libwrappers.la \
+	$(%C%_libsandbox_la_LIBSBLIB) \
+	$(LIBDL)
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 %C%_libsandbox_la_LDFLAGS = \
@@ -34,7 +52,6 @@ libsbutil/.libs/libsbutil.a: libsbutil/libsbutil.la
 	%D%/pre_check_unlinkat.c \
 	%D%/trace.c      \
 	%D%/wrappers.h   \
-	%D%/wrappers.c   \
 	%D%/canonicalize.c
 
 install-exec-hook:

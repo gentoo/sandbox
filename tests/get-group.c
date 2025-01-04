@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
 				printf("%i\n", grp->gr_gid);
 			} else {
 				const char *file = argv[1];
-				struct stat64 st;
-				if (lstat64(file, &st))
+				struct stat st;
+				if (lstat(file, &st))
 					errp("lstat(%s) failed", file);
 				printf("%i\n", st.st_gid);
 			}

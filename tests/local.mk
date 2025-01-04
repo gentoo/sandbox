@@ -110,6 +110,9 @@ dist_check_SCRIPTS += \
 # This will be used by all programs, not just tests/ ...
 AM_LDFLAGS = `expr $@ : .*_static >/dev/null && echo -all-static`
 
+%C%_get_group_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+%C%_get_user_CPPFLAGS = -D_FILE_OFFSET_BITS=64
+
 %C%_sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
 %C%_sb_printf_tst_LDADD = libsbutil/libsbutil.la
 

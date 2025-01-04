@@ -92,14 +92,14 @@ erealpath(const char *name, char *resolved)
 		 * If not, try a little harder to consume this path in
 		 * case it has symlinks out into a better world ...
 		 */
-		struct stat64 st;
-		if (lstat64(rpath, &st) == -1 && errno == EACCES) {
+		struct stat st;
+		if (lstat(rpath, &st) == -1 && errno == EACCES) {
 			char *p = rpath;
 			strcpy(rpath, name);
 			do {
 				p = strchr(p, '/');
 				if (p) *p = '\0';
-				if (lstat64(rpath, &st))
+				if (lstat(rpath, &st))
 					break;
 				if (S_ISLNK(st.st_mode)) {
 					char buffer[SB_PATH_MAX];
