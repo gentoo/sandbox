@@ -309,18 +309,6 @@ dnl uClibc doesn't currently provide dlvsym() so lets
 dnl verify the toolchain supports it
 AC_CHECK_FUNCS([dlvsym])
 
-dnl when using libc5, (f)trucate's offset argument type is size_t with
-dnl libc5, but it's off_t with libc6 (glibc2).
-AC_MSG_CHECKING([truncate argument type])
-AC_EGREP_HEADER([truncate.*size_t], [unistd.h],
-	[dnl
-		AC_MSG_RESULT([size_t])
-		AC_DEFINE([TRUNCATE_T], [size_t], [truncate arg type])
-	],[dnl
-		AC_MSG_RESULT([off_t])
-		AC_DEFINE([TRUNCATE_T], [off_t], [truncate arg type])
-])
-
 dnl Check if libc provides RTLD_NEXT
 AC_MSG_CHECKING([for RTLD_NEXT])
 AC_TRY_COMPILE([
