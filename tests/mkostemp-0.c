@@ -1,4 +1,6 @@
+#ifndef CONFIG
 #define CONFIG HAVE_MKOSTEMP
+#endif
 #define FUNC mkostemp
 #define SFUNC "mkostemp"
 #define FUNC_STR "\"%s\", %#x"

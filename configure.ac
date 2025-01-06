@@ -241,6 +241,8 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	unshare
 	utime
 	utimensat
+	__utimensat64
+	__utimensat_time64
 	utimes
 ]))
 AC_CHECK_LIB([sigsegv], [stackoverflow_install_handler],

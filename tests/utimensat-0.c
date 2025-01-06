@@ -1,7 +1,9 @@
 #pragma GCC push_options
 #pragma GCC optimize("-fno-isolate-erroneous-paths-dereference,-fno-isolate-erroneous-paths-attribute")
 
+#ifndef CONFIG
 #define CONFIG HAVE_UTIMENSAT
+#endif
 #define FUNC utimensat
 #define SFUNC "utimensat"
 #define FUNC_STR "%i, \"%s\", %p, %x"
