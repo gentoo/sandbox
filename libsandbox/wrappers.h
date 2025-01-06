@@ -19,7 +19,11 @@ attribute_hidden int   sb_unwrapped_access (const char *, int);
 attribute_hidden int   sb_unwrapped_faccessat (int, const char *, int, int);
 #define                sb_unwrapped_getcwd sb_unwrapped_getcwd_DEFAULT
 attribute_hidden char *sb_unwrapped_getcwd (char *, size_t);
+#ifdef HAVE_OPEN64
+#define                sb_unwrapped_open   sb_unwrapped_open64_DEFAULT
+#else
 #define                sb_unwrapped_open   sb_unwrapped_open_DEFAULT
+#endif
 attribute_hidden int   sb_unwrapped_open   (const char *, int, mode_t);
 #define                sb_unwrapped_popen  sb_unwrapped_popen_DEFAULT
 attribute_hidden FILE *sb_unwrapped_popen  (const char *, const char *);
