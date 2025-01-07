@@ -25,7 +25,11 @@ static void *(*_sb_mmap)(void *addr, size_t length, int prot, int flags, int fd,
 static void *sb_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
 	if (!_sb_mmap)
+#ifdef HAVE_MMAP64
+		_sb_mmap = get_dlsym("mmap64", NULL);
+#else
 		_sb_mmap = get_dlsym("mmap", NULL);
+#endif
 	return _sb_mmap(addr, length, prot, flags, fd, offset);
 }
 #define mmap sb_mmap

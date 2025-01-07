@@ -211,6 +211,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	mkstemp64
 	mkstemps
 	mkstemps64
+	mmap64
 	open64
 	openat
 	openat64
