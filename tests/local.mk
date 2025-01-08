@@ -142,8 +142,7 @@ clean-local:
 TESTSUITE_LIST = $(top_srcdir)/%D%/testsuite.list.at
 AUTOTEST = $(AUTOM4TE) --language=autotest
 $(TESTSUITE): $(AT_FILES) $(TESTSUITE_LIST)
-	@$(MKDIR_P) $(top_srcdir)/%D%
-	$(AM_V_GEN)cd $(top_srcdir)/%D% && $(AUTOTEST) -I. -o testsuite.tmp testsuite.at
+	$(AM_V_GEN)$(AUTOTEST) -I'$(top_srcdir)/%D%' -o $@.tmp $@.at
 	$(AM_V_at)mv $@.tmp $@
 
 $(TESTSUITE_LIST): $(AT_FILES)
