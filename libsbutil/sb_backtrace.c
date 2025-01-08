@@ -10,6 +10,7 @@
 #include "headers.h"
 #include "sbutil.h"
 
+__attribute__((weak))
 void __sb_dump_backtrace(void)
 {
 }

@@ -9,14 +9,7 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 	-I$(top_srcdir)/libsbutil/include
 
 %C%_libsandbox_la_CFLAGS = $(CFLAG_EXCEPTIONS)
-# Could use the following to libsandbox_la_LIBADD, but then libtool links it
-# with --whole-archive, and libsandbox.so increase with a few KB in size:
-#	libsbutil/libsbutil.la
-libsbutil/.libs/libsbutil.a: libsbutil/libsbutil.la
-%C%_libsandbox_la_LIBSBLIB = libsbutil/.libs/libsbutil.a
-%C%_libsandbox_la_LIBADD = \
-	$(%C%_libsandbox_la_LIBSBLIB) \
-	$(LIBDL)
+%C%_libsandbox_la_LIBADD = libsbutil/libsbutil.la $(LIBDL)
 # Do not add -nostdlib or -nostartfiles, as then our constructor
 # and destructor will not be executed ...
 %C%_libsandbox_la_LDFLAGS = \
