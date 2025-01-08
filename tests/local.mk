@@ -13,7 +13,11 @@ EXTRA_DIST += \
 	%D%/package.m4.in \
 	%D%/test-skel-0.c \
 	%D%/tests.h \
-	%D%/xattr-0
+	%D%/malloc-0 \
+	%D%/script-0 \
+	%D%/trace-0 \
+	%D%/xattr-0 \
+	$(wildcard $(top_srcdir)/%D%/*-[0-9]*.sh)
 
 check_PROGRAMS += \
 	%D%/get-group \
@@ -100,12 +104,6 @@ check_PROGRAMS += \
 	%D%/sigsuspend-zsh_tst \
 	%D%/sigsuspend-zsh_static_tst \
 	%D%/trace-memory_static_tst
-
-dist_check_SCRIPTS += \
-	$(wildcard $(top_srcdir)/%D%/*-[0-9]*.sh) \
-	%D%/malloc-0 \
-	%D%/script-0 \
-	%D%/trace-0
 
 # This will be used by all programs, not just tests/ ...
 AM_LDFLAGS = `expr $@ : .*_static >/dev/null && echo -all-static`

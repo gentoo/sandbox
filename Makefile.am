@@ -11,8 +11,6 @@ confddir = $(sysconfdir)/sandbox.d
 
 bin_PROGRAMS =
 check_PROGRAMS =
-check_SCRIPTS =
-dist_check_SCRIPTS =
 dist_conf_DATA = etc/sandbox.conf
 confd_DATA = etc/sandbox.d/00default
 dist_pkgdata_DATA  = data/sandbox.bashrc
