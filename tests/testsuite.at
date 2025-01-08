@@ -6,4 +6,4 @@ m4_defun([SB_SECTION],[$1])
 m4_include([]SB_SECTION[.at])
 ])
 
-m4_include([testsuite.list.at])
+m4_include([testsuite.list])

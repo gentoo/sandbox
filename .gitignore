@@ -73,5 +73,5 @@ core
 /tests/package.m4
 /tests/testsuite
 /tests/testsuite.dir/
-/tests/testsuite.list.at
+/tests/testsuite.list
 /tests/testsuite.log

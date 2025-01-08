@@ -139,7 +139,7 @@ installcheck-local: %D%/atconfig %D%/atlocal $(TESTSUITE)
 clean-local:
 	test ! -f '$(TESTSUITE)' || { cd %D% && $(SHELL) '$(ABS_TESTSUITE)' --clean; }
 
-TESTSUITE_LIST = $(top_srcdir)/%D%/testsuite.list.at
+TESTSUITE_LIST = $(top_srcdir)/%D%/testsuite.list
 AUTOTEST = $(AUTOM4TE) --language=autotest
 $(TESTSUITE): $(AT_FILES) $(TESTSUITE_LIST)
 	@$(MKDIR_P) '$(top_srcdir)/%D%'
