@@ -2,7 +2,7 @@ AC_PREREQ([2.69])
 AC_INIT([sandbox], [2.42], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE([1.15 dist-xz foreign no-dist-gzip silent-rules subdir-objects -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADER([sandboxconfig.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl we want to strip out quote chars and normalize whitespace
@@ -453,9 +453,6 @@ if test "x${LDFLAG_VER}" = "x" ; then
 	AC_MSG_ERROR([unable to find a linker flag for versioning])
 fi
 AC_SUBST([LDFLAG_VER])
-
-dnl Add some glue for gnulib modules that include config.h directly.
-AH_BOTTOM([#include "headers.h"])
 
 AC_CONFIG_TESTDIR([tests])
 

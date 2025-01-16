@@ -8,7 +8,7 @@
 #define __SB_HEADERS_H__
 
 #ifdef HAVE_CONFIG_H
-# include "config.h"
+# include <sandboxconfig.h>
 #endif
 
 #ifdef HAVE_DIRENT_H
@@ -166,7 +166,5 @@
 #ifdef HAVE_CONFIG_H
 # include "localdecls.h"
 #endif
-
-#include "libsbutil/gnulib/glue.h"
 
 #endif
