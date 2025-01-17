@@ -1,8 +1,8 @@
-AC_PREREQ([2.69])
+AC_PREREQ([2.72])
 AC_INIT([sandbox], [2.42], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE([1.15 dist-xz foreign no-dist-gzip silent-rules subdir-objects -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
-AC_CONFIG_HEADER([sandboxconfig.h])
+AC_CONFIG_HEADERS([sandboxconfig.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 dnl we want to strip out quote chars and normalize whitespace
@@ -22,7 +22,6 @@ AC_MSG_RESULT([ok])
 dnl Check for compiler and features first.
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_ISC_POSIX
 AC_USE_SYSTEM_EXTENSIONS
 
 dnl Checks for programs.
@@ -49,11 +48,11 @@ AC_DEFUN([SB_CHECK_PERSONALITIES],[dnl
 		AC_MSG_CHECKING([checking for $1/$2 compiler support])
 		ac_save_CFLAGS=$CFLAGS
 		CFLAGS="$CFLAGS $2"
-		AC_TRY_COMPILE([
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 			#include <stdio.h>
 		], [
-			return 0
-		], [
+			return 0;
+		])], [
 			enable_personalities=yes
 			AS_VAR_APPEND([SB_PERSONALITIES_SETTINGS], " $1:$2")
 			AS_VAR_APPEND([SB_PERSONALITIES_HEADERS], " libsandbox/trace_syscalls_$1.h")
@@ -100,7 +99,8 @@ dnl Checks for libraries.
 dnl Checks for header files.
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
-AC_HEADER_STDC
+AC_PROG_EGREP
+
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS_ONCE(m4_flatten([
 	dirent.h
@@ -176,7 +176,6 @@ AC_FUNC_CHOWN
 AC_FUNC_FORK
 AC_FUNC_LSTAT
 AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
-AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_CHECK_FUNCS_ONCE(m4_flatten([
 	backtrace
@@ -254,8 +253,8 @@ AM_CONDITIONAL(HAVE_LIBSIGSEGV, $HAVE_LIBSIGSEGV)
 dnl Check for gcc atomic primitives
 AC_MSG_CHECKING([for __sync_lock_test_and_set])
 sltas=no
-AC_TRY_LINK([],
-	[int i; __sync_lock_test_and_set(&i, 1); return i;],
+AC_LINK_IFELSE([AC_LANG_PROGRAM([],
+	[int i; __sync_lock_test_and_set(&i, 1); return i;])],
 	[sltas=yes]
 )
 if test "$sltas" = yes ; then
@@ -265,19 +264,19 @@ AC_MSG_RESULT($sltas)
 
 dnl Check if gcc provides va_copy or __va_copy (for librcutil)
 AC_MSG_CHECKING([for va_copy])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
     #include <stdarg.h>
   ], [
     va_list ap, aq;
     va_copy(ap, aq);
-  ],
+  ])],
   [va_copy="va_copy"],
-  [AC_TRY_COMPILE([
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
       #include <stdarg.h>
     ], [
       va_list ap, aq;
       __va_copy(ap, aq);
-    ],
+    ])],
     [va_copy="__va_copy"],
     [AC_MSG_ERROR([Unable to determine name of va_copy macro])]
   )]
@@ -285,7 +284,7 @@ AC_TRY_COMPILE([
 AC_MSG_RESULT([$va_copy])
 if test x"$va_copy" != xva_copy ; then
   AC_DEFINE_UNQUOTED([va_copy], [$va_copy],
-    [Define to name of va_copy macro proviced by gcc if its not `va_copy'.]
+    [Define to name of va_copy macro proviced by gcc if its not 'va_copy'.]
   )
 fi
 
@@ -312,13 +311,13 @@ AC_CHECK_FUNCS([dlvsym])
 
 dnl Check if libc provides RTLD_NEXT
 AC_MSG_CHECKING([for RTLD_NEXT])
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
     #include <dlfcn.h>
   ], [
     #if !defined(RTLD_NEXT)
     # error no RTLD_NEXT
     #endif
-  ],
+  ])],
   [have_rtld_next="yes"],
   [have_rtld_next="no"]
 )
@@ -413,7 +412,7 @@ AC_MSG_CHECKING([how to enable exception handling])
 for CFLAG_EXCEPTIONS in -fexceptions "" ; do
 	ac_save_CFLAGS=$CFLAGS
 	CFLAGS="$CFLAGS -fexceptions"
-	AC_TRY_COMPILE([],[],[ok=yes],[ok=no])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],[ok=yes],[ok=no])
 	CFLAGS=$ac_save_CFLAGS
 	test "$ok" = "yes" && break
 done
