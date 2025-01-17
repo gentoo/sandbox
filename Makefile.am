@@ -21,6 +21,7 @@ CLEANFILES =
 DISTCLEANFILES =
 
 EXTRA_DIST = \
+	config.h \
 	headers.h \
 	localdecls.h \
 	ChangeLog.0 \
