@@ -115,16 +115,14 @@ typedef struct user_regs_struct trace_regs;
 # define AT_SYMLINK_NOFOLLOW 0
 #endif
 
-#if !HAVE_DLVSYM
-# define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
-#endif
-
-#if HAVE_DLVSYM
+#ifdef HAVE_DLVSYM
 /* Taken from glibc */
 # define symbol_version(_real, _name, _version) \
 	__asm__ (".symver " #_real "," #_name "@" #_version)
 # define default_symbol_version(_real, _name, _version) \
 	__asm__ (".symver " #_real "," #_name "@@" #_version)
+#else
+# define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif
 
 /* Taken from glibc */
