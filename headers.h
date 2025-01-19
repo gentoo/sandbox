@@ -167,4 +167,6 @@
 # include "localdecls.h"
 #endif
 
+#include "libsbutil/gnulib/glue.h"
+
 #endif

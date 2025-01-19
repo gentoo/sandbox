@@ -149,7 +149,7 @@ AC_C_CONST
 AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
-AC_CHECK_DECLS_ONCE([environ])
+AC_CHECK_DECLS_ONCE([environ, rawmemchr])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
 
@@ -208,6 +208,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	prctl
 	process_vm_readv
 	ptrace
+	rawmemchr
 	realpath
 	remove
 	removexattr

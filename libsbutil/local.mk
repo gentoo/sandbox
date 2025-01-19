@@ -4,7 +4,8 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	$(AM_CPPFLAGS) \
 	$(SIXTY_FOUR_FLAGS) \
 	-I$(top_srcdir)/%D% \
-	-I$(top_srcdir)/%D%/include
+	-I$(top_srcdir)/%D%/include \
+	-I$(top_srcdir)/%D%/gnulib
 %C%_libsbutil_a_CFLAGS = -fPIC
 %C%_libsbutil_a_SOURCES = \
 	%D%/sbutil.h                              \
@@ -40,26 +41,32 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	%D%/src/config.c                          \
 	%D%/include/rcscripts/util/dynbuf.h       \
 	%D%/src/dynbuf.c                          \
-	%D%/gnulib/areadlink.h                    \
-	%D%/gnulib/areadlink-with-size.c          \
-	%D%/gnulib/bitrotate.c                    \
-	%D%/gnulib/bitrotate.h                    \
-	%D%/gnulib/canonicalize.c                 \
-	%D%/gnulib/canonicalize.h                 \
-	%D%/gnulib/careadlinkat.h                 \
-	%D%/gnulib/dosname.h                      \
-	%D%/gnulib/file-set.c                     \
-	%D%/gnulib/file-set.h                     \
-	%D%/gnulib/gl-inline.h                    \
-	%D%/gnulib/glue.h                         \
-	%D%/gnulib/hash.c                         \
-	%D%/gnulib/hash.h                         \
-	%D%/gnulib/hash-pjw.c                     \
-	%D%/gnulib/hash-pjw.h                     \
-	%D%/gnulib/hash-triple.c                  \
-	%D%/gnulib/hash-triple.h                  \
-	%D%/gnulib/pathmax.h                      \
-	%D%/gnulib/same-inode.h                   \
-	%D%/gnulib/xalloc.h                       \
-	%D%/gnulib/xalloc-oversized.h             \
-	%D%/gnulib/xgetcwd.h
+	%D%/gnulib/attribute.h \
+	%D%/gnulib/bitrotate.c \
+	%D%/gnulib/bitrotate.h \
+	%D%/gnulib/canonicalize.c \
+	%D%/gnulib/canonicalize.h \
+	%D%/gnulib/cdefs.h \
+	%D%/gnulib/file-set.c \
+	%D%/gnulib/file-set.h \
+	%D%/gnulib/filename.h \
+	%D%/gnulib/gl-inline.h \
+	%D%/gnulib/glue.h \
+	%D%/gnulib/hash-pjw.c \
+	%D%/gnulib/hash-pjw.h \
+	%D%/gnulib/hash-triple-simple.c \
+	%D%/gnulib/hash-triple.h \
+	%D%/gnulib/hash.c \
+	%D%/gnulib/hash.h \
+	%D%/gnulib/idx.h \
+	%D%/gnulib/intprops-internal.h \
+	%D%/gnulib/intprops.h \
+	%D%/gnulib/libc-config.h \
+	%D%/gnulib/malloc/scratch_buffer.gl.h \
+	%D%/gnulib/malloc/scratch_buffer_grow.c \
+	%D%/gnulib/malloc/scratch_buffer_grow_preserve.c \
+	%D%/gnulib/rawmemchr.c \
+	%D%/gnulib/same-inode.h \
+	%D%/gnulib/scratch_buffer.h \
+	%D%/gnulib/xalloc-oversized.h \
+	%D%/gnulib/xalloc.h
