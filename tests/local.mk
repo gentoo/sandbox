@@ -113,7 +113,7 @@ AM_LDFLAGS = `expr $@ : .*_static >/dev/null && echo -all-static`
 %C%_trace_memory_static_tst_CPPFLAGS = $(SIXTY_FOUR_FLAGS)
 
 %C%_sb_printf_tst_CFLAGS = -I$(top_srcdir)/libsbutil -I$(top_srcdir)/libsbutil/include
-%C%_sb_printf_tst_LDADD = libsbutil/libsbutil.la
+%C%_sb_printf_tst_LDADD = libsbutil/libsbutil.a
 
 %C%_malloc_hooked_tst_LDFLAGS = $(AM_LDFLAGS) -pthread
 

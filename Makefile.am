@@ -15,7 +15,7 @@ dist_conf_DATA = etc/sandbox.conf
 confd_DATA = etc/sandbox.d/00default
 dist_pkgdata_DATA  = data/sandbox.bashrc
 lib_LTLIBRARIES =
-noinst_LTLIBRARIES =
+noinst_LIBRARIES =
 
 CLEANFILES =
 DISTCLEANFILES =

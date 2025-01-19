@@ -1,12 +1,12 @@
-noinst_LTLIBRARIES += %D%/libsbutil.la
+noinst_LIBRARIES += %D%/libsbutil.a
 
-%C%_libsbutil_la_CPPFLAGS = \
+%C%_libsbutil_a_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	$(SIXTY_FOUR_FLAGS) \
 	-I$(top_srcdir)/%D% \
 	-I$(top_srcdir)/%D%/include
-%C%_libsbutil_la_LDFLAGS = -no-undefined
-%C%_libsbutil_la_SOURCES = \
+%C%_libsbutil_a_CFLAGS = -fPIC
+%C%_libsbutil_a_SOURCES = \
 	%D%/sbutil.h                              \
 	%D%/get_sandbox_conf.c                    \
 	%D%/get_sandbox_confd.c                   \

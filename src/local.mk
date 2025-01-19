@@ -6,7 +6,7 @@ bin_PROGRAMS += %D%/sandbox
 	-I$(top_srcdir)/libsbutil \
 	-I$(top_srcdir)/libsbutil/include
 
-%C%_sandbox_LDADD = libsbutil/libsbutil.la $(LIBDL)
+%C%_sandbox_LDADD = libsbutil/libsbutil.a $(LIBDL)
 %C%_sandbox_SOURCES = \
 	%D%/environ.c \
 	%D%/namespaces.c \
