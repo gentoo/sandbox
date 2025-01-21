@@ -18,6 +18,7 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	%D%/environment.c                         \
 	%D%/sb_backtrace.c                        \
 	%D%/sb_efuncs.c                           \
+	%D%/sb_getcwd.c                           \
 	%D%/sb_gdb.c                              \
 	%D%/sb_method.c                           \
 	%D%/sb_open.c                             \

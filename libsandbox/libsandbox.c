@@ -428,6 +428,11 @@ char *egetcwd(char *buf, size_t size)
 	return tmpbuf;
 }
 
+char *sb_getcwd(char *buf, size_t size)
+{
+	return egetcwd(buf, size);
+}
+
 void __sb_dump_backtrace(void)
 {
 	const char *cmdline = sb_get_cmdline(trace_pid);
