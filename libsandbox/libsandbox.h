@@ -91,11 +91,9 @@ extern void sb_unlock(void);
 bool trace_possible(const char *filename, char *const argv[], const void *data);
 void trace_main(void);
 
-/* glibc modified realpath() function */
-char *erealpath(const char *, char *);
-char *egetcwd(char *, size_t);
-int canonicalize(const char *, char *);
-int resolve_dirfd_path(int, const char *, char *, size_t);
+bool sb_abspathat(int dirfd, const char *restrict path, char *buf, size_t bufsiz);
+bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsiz, int flags, bool create);
+
 /* most linux systems use ENAMETOOLONG, but some (ia64) use ERANGE, as do some BSDs */
 #define errno_is_too_long() (errno == ENAMETOOLONG || errno == ERANGE)
 

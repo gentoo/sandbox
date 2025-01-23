@@ -18,7 +18,6 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	%D%/environment.c                         \
 	%D%/sb_backtrace.c                        \
 	%D%/sb_efuncs.c                           \
-	%D%/sb_getcwd.c                           \
 	%D%/sb_gdb.c                              \
 	%D%/sb_method.c                           \
 	%D%/sb_open.c                             \
@@ -41,33 +40,4 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	%D%/include/rcscripts/util/config.h       \
 	%D%/src/config.c                          \
 	%D%/include/rcscripts/util/dynbuf.h       \
-	%D%/src/dynbuf.c                          \
-	%D%/gnulib/attribute.h \
-	%D%/gnulib/bitrotate.c \
-	%D%/gnulib/bitrotate.h \
-	%D%/gnulib/canonicalize.c \
-	%D%/gnulib/canonicalize.h \
-	%D%/gnulib/cdefs.h \
-	%D%/gnulib/file-set.c \
-	%D%/gnulib/file-set.h \
-	%D%/gnulib/filename.h \
-	%D%/gnulib/gl-inline.h \
-	%D%/gnulib/glue.h \
-	%D%/gnulib/hash-pjw.c \
-	%D%/gnulib/hash-pjw.h \
-	%D%/gnulib/hash-triple-simple.c \
-	%D%/gnulib/hash-triple.h \
-	%D%/gnulib/hash.c \
-	%D%/gnulib/hash.h \
-	%D%/gnulib/idx.h \
-	%D%/gnulib/intprops-internal.h \
-	%D%/gnulib/intprops.h \
-	%D%/gnulib/libc-config.h \
-	%D%/gnulib/malloc/scratch_buffer.gl.h \
-	%D%/gnulib/malloc/scratch_buffer_grow.c \
-	%D%/gnulib/malloc/scratch_buffer_grow_preserve.c \
-	%D%/gnulib/rawmemchr.c \
-	%D%/gnulib/same-inode.h \
-	%D%/gnulib/scratch_buffer.h \
-	%D%/gnulib/xalloc-oversized.h \
-	%D%/gnulib/xalloc.h
+	%D%/src/dynbuf.c

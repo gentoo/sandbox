@@ -25,6 +25,12 @@ attribute_hidden char *sb_unwrapped_getcwd (char *, size_t);
 #define                sb_unwrapped_open   sb_unwrapped_open_DEFAULT
 #endif
 attribute_hidden int   sb_unwrapped_open   (const char *, int, mode_t);
+#ifdef HAVE_OPENAT64
+#define                sb_unwrapped_openat   sb_unwrapped_openat64_DEFAULT
+#else
+#define                sb_unwrapped_openat   sb_unwrapped_openat_DEFAULT
+#endif
+attribute_hidden int   sb_unwrapped_openat (int dirfd, const char *path, int flags, mode_t mode);
 #define                sb_unwrapped_popen  sb_unwrapped_popen_DEFAULT
 attribute_hidden FILE *sb_unwrapped_popen  (const char *, const char *);
 

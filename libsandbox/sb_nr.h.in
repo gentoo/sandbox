@@ -2,3 +2,5 @@
 #define SB_NR_ACCESS_WR -2
 #define SB_NR_OPEN_RD   -3
 #define SB_NR_OPEN_WR   -4
+#define SB_NR_OPEN_RD_CREAT -5
+#define SB_NR_OPEN_WR_CREAT -6

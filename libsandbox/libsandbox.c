@@ -58,7 +58,6 @@ int (*sbio_faccessat)(int, const char *, int, int) = sb_unwrapped_faccessat;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
 FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 
-static char *resolve_path(const char *, int);
 static int check_prefixes(char **, int, const char *);
 static void clean_env_entries(char ***, int *);
 static void sb_process_env_settings(void);
@@ -107,330 +106,6 @@ void libsb_init(void)
 sandbox_method_t get_sandbox_method(void)
 {
 	return parse_sandbox_method(getenv(ENV_SANDBOX_METHOD));
-}
-
-/* resolve_dirfd_path - get the path relative to a dirfd
- *
- * return value:
- * -1 - error!
- *  0 - path is in @resolved_path
- *  1 - path is in @path (no resolution necessary)
- *  2 - errno issues -- ignore this path
- */
-int resolve_dirfd_path(int dirfd, const char *path, char *resolved_path,
-                       size_t resolved_path_len)
-{
-	/* The *at style functions have the following semantics:
-	 *	- dirfd = AT_FDCWD: same as non-at func: file is based on CWD
-	 *	- file is absolute: dirfd is ignored
-	 *	- otherwise: file is relative to dirfd
-	 * Since maintaining fd state based on open's is real messy, we'll
-	 * just rely on the kernel doing it for us with /proc/<pid>/fd/ ...
-	 */
-	if (dirfd == AT_FDCWD || (path && path[0] == '/'))
-		return 1;
-
-	save_errno();
-
-	char *fd_path = xmalloc(SB_PATH_MAX * sizeof(char));
-
-	size_t at_len = resolved_path_len - 1 - 1 - (path ? strlen(path) : 0);
-	if (trace_pid) {
-		sprintf(fd_path, "/proc/%i/fd/%i", trace_pid, dirfd);
-	} else {
-		/* If /proc was mounted by a process in a different pid namespace,
-		 * getpid cannot be used to create a valid /proc/<pid> path. Instead
-		 * use sb_get_fd_dir() which works in any case.
-		 */
-		sprintf(fd_path, "%s/%i", sb_get_fd_dir(), dirfd);
-	}
-	ssize_t ret = readlink(fd_path, resolved_path, at_len);
-	if (ret == -1) {
-		/* see comments at end of check_syscall() */
-		if (errno_is_too_long()) {
-			restore_errno();
-			free(fd_path);
-			return 2;
-		}
-		sb_debug_dyn("AT_FD LOOKUP fail: %s: %s\n", fd_path, strerror(errno));
-		/* If the fd isn't found, some guys (glibc) expect errno */
-		if (errno == ENOENT)
-			errno = EBADF;
-		free(fd_path);
-		return -1;
-	}
-	if (path && path[0])
-		resolved_path[ret++] = '/';
-	resolved_path[ret] = '\0';
-	if (path)
-		strcat(resolved_path, path);
-
-	restore_errno();
-	free(fd_path);
-	return 0;
-}
-
-int canonicalize(const char *path, char *resolved_path)
-{
-	int old_errno = errno;
-	char *retval;
-
-	*resolved_path = '\0';
-
-	/* If path == NULL, return or we get a segfault */
-	if (NULL == path) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	/* Do not try to resolve an empty path */
-	if ('\0' == path[0]) {
-		errno = old_errno;
-		return 0;
-	}
-
-	/* We can't handle resolving a buffer inline (erealpath),
-	 * so demand separate read and write strings.
-	 */
-	sb_assert(path != resolved_path);
-
-	retval = erealpath(path, resolved_path);
-
-	if ((NULL == retval) && (path[0] != '/')) {
-		/* The path could not be canonicalized, append it
-		 * to the current working directory if it was not
-		 * an absolute path
-		 */
-
-		if (errno_is_too_long())
-			return -1;
-
-		if (NULL == egetcwd(resolved_path, SB_PATH_MAX - 2))
-			return -1;
-		size_t len = strlen(resolved_path);
-		snprintf(resolved_path + len, SB_PATH_MAX - len, "/%s", path);
-
-		char *copy = xstrdup(resolved_path);
-		char *ret = erealpath(copy, resolved_path);
-		free(copy);
-		if (ret == NULL) {
-			if (errno_is_too_long()) {
-				/* The resolved path is too long for the buffer to hold */
-				return -1;
-			} else {
-				/* Whatever it resolved, is not a valid path */
-				errno = ENOENT;
-				return -1;
-			}
-		}
-
-	} else if ((NULL == retval) && (path[0] == '/')) {
-		/* Whatever it resolved, is not a valid path */
-		errno = ENOENT;
-		return -1;
-	}
-
-	errno = old_errno;
-	return 0;
-}
-
-static char *resolve_path(const char *path, int follow_link)
-{
-	char *dname, *bname;
-	char *filtered_path;
-
-	if (NULL == path)
-		return NULL;
-
-	save_errno();
-
-	filtered_path = xmalloc(SB_PATH_MAX * sizeof(char));
-
-	if (0 == follow_link) {
-		if (-1 == canonicalize(path, filtered_path)) {
-			free(filtered_path);
-			filtered_path = NULL;
-		}
-	} else {
-		/* Basically we get the realpath which should resolve symlinks,
-		 * etc.  If that fails (might not exist), we try to get the
-		 * realpath of the parent directory, as that should hopefully
-		 * exist.  If all else fails, just go with canonicalize */
-		char *ret;
-		if (trace_pid)
-			ret = erealpath(path, filtered_path);
-		else
-			ret = realpath(path, filtered_path);
-
-		/* Handle broken symlinks.  This can come up for a variety of reasons,
-		 * but we need to make sure that we resolve the path all the way to the
-		 * final target, and not just where the current link happens to start.
-		 * Latest discussion is in #540828.
-		 *
-		 * Maybe we failed because of funky anonymous fd symlinks.
-		 * You can see this by doing something like:
-		 *		$ echo | ls -l /proc/self/fd/
-		 *		.......	0 -> pipe:[9422999]
-		 * So any syntax like this we should allow as there isn't any
-		 * actual file paths for us to check against. #288863
-		 * Don't look for any particular string as these are dynamic
-		 * according to the kernel.  You can see pipe:, socket:, etc...
-		 *
-		 * Maybe we failed because it's a symlink to a path in /proc/ that
-		 * is a symlink to a path that longer exists -- readlink will set
-		 * ENOENT even in that case and the file ends in (deleted).  This
-		 * can come up in cases like:
-		 * /dev/stderr -> fd/2 -> /proc/self/fd/2 -> /removed/file (deleted)
-		 */
-		if (!ret && errno == ENOENT) {
-			ret = canonicalize_filename_mode(path, CAN_ALL_BUT_LAST);
-			if (ret) {
-				free(filtered_path);
-				filtered_path = ret;
-			}
-		}
-
-		if (!ret) {
-			char *tmp_str1 = xmalloc(SB_PATH_MAX * sizeof(char));
-			snprintf(tmp_str1, SB_PATH_MAX, "%s", path);
-
-			dname = dirname(tmp_str1);
-
-			/* If not, then check if we can resolve the
-			 * parent directory */
-			if (trace_pid)
-				ret = erealpath(dname, filtered_path);
-			else
-				ret = realpath(dname, filtered_path);
-			if (!ret) {
-				/* Fall back to canonicalize */
-				if (-1 == canonicalize(path, filtered_path)) {
-					free(filtered_path);
-					filtered_path = NULL;
-				}
-			} else {
-				char *tmp_str2 = xmalloc(SB_PATH_MAX * sizeof(char));
-				/* OK, now add the basename to keep our access
-				 * checking happy (don't want '/usr/lib' if we
-				 * tried to do something with non-existing
-				 * file '/usr/lib/cf*' ...) */
-				snprintf(tmp_str2, SB_PATH_MAX, "%s", path);
-
-				bname = basename(tmp_str2);
-				size_t len = strlen(filtered_path);
-				snprintf(filtered_path + len, SB_PATH_MAX - len, "%s%s",
-					(filtered_path[len - 1] != '/') ? "/" : "",
-					bname);
-				free(tmp_str2);
-			}
-
-			free(tmp_str1);
-		}
-	}
-
-	/* If things failed, don't restore errno.  More info at comment at
-	 * end of check_syscall() function.
-	 */
-	if (filtered_path)
-		restore_errno();
-
-	return filtered_path;
-}
-
-/*
- * Internal Functions
- */
-
-char *egetcwd(char *buf, size_t size)
-{
-	struct stat st;
-	char *tmpbuf;
-
-	/* We can't let the C lib allocate memory for us since we have our
-	 * own local routines to handle things.
-	 */
-	bool allocated = (buf == NULL);
-	if (allocated) {
-		size = SB_PATH_MAX;
-		buf = xmalloc(size);
-	}
-
-	/* If tracing a child, our cwd may not be the same as the child's */
-	if (trace_pid) {
-		char proc[20];
-		sprintf(proc, "/proc/%i/cwd", trace_pid);
-		ssize_t ret = readlink(proc, buf, size);
-		if (ret == -1) {
-			errno = ESRCH;
-			return NULL;
-		}
-		buf[ret] = '\0';
-		return buf;
-	}
-
-	/* Need to disable sandbox, as on non-linux libc's, opendir() is
-	 * used by some getcwd() implementations and resolves to the sandbox
-	 * opendir() wrapper, causing infinit recursion and finially crashes.
-	 */
-	sandbox_on = false;
-	errno = 0;
-	tmpbuf = sb_unwrapped_getcwd(buf, size);
-	sandbox_on = true;
-
-	/* We basically try to figure out if we can trust what getcwd()
-	 * returned.  If one of the following happens kernel/libc side,
-	 * bad things will happen, but not much we can do about it:
-	 *  - Invalid pointer with errno = 0
-	 *  - Truncated path with errno = 0
-	 *  - Whatever I forgot about
-	 */
-	if ((tmpbuf) && (errno == 0)) {
-		save_errno();
-		if (!lstat(buf, &st))
-			/* errno is set only on failure */
-			errno = 0;
-
-		if (errno == ENOENT)
-			/* If lstat failed with eerror = ENOENT, then its
-			 * possible that we are running on an older kernel
-			 * which had issues with returning invalid paths if
-			 * they got too long.  Return with errno = ENAMETOOLONG,
-			 * so that canonicalize() and check_syscall() know
-			 * what the issue is.
-			 */
-		  	errno = ENAMETOOLONG;
-
-		if (errno && errno != EACCES) {
-			/* If getcwd() allocated the buffer, free it. */
-			if (allocated)
-				free(buf);
-
-			/* Not sure if we should quit here, but I guess if
-			 * lstat fails, getcwd could have messed up. Not
-			 * sure what to do about errno - use lstat's for
-			 * now.
-			 */
-			return NULL;
-		}
-
-		restore_errno();
-	} else if (errno != 0) {
-		/* If getcwd() allocated the buffer, free it. */
-		if (allocated)
-			free(buf);
-
-		/* Make sure we do not return garbage if the current libc or
-		 * kernel's getcwd() is buggy.
-		 */
-		return NULL;
-	}
-
-	return tmpbuf;
-}
-
-char *sb_getcwd(char *buf, size_t size)
-{
-	return egetcwd(buf, size);
 }
 
 void __sb_dump_backtrace(void)
@@ -540,11 +215,11 @@ static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
 #define pfx_num		(*prefixes_num)
 #define pfx_array	(*prefixes_array)
 #define pfx_item	((*prefixes_array)[(*prefixes_num)])
+#define pfx_prev	((*prefixes_array)[(*prefixes_num) - 1])
 
 static void init_env_entries(char ***prefixes_array, int *prefixes_num, const char *env, const char *prefixes_env, int warn)
 {
 	char *token = NULL;
-	char *rpath = NULL;
 	char *buffer = NULL;
 	char *buffer_ptr = NULL;
 	int prefixes_env_length = strlen(prefixes_env);
@@ -585,23 +260,18 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	token = strtok(buffer_ptr, ":");
 #endif
 
-	while ((NULL != token) && (strlen(token) > 0)) {
-		pfx_item = resolve_path(token, 0);
-		/* We do not care about errno here */
-		errno = 0;
-		if (NULL != pfx_item) {
-			pfx_num++;
-
+	while (token && strlen(token) > 0) {
+		char buf[SB_PATH_MAX];
+		if (sb_abspathat(AT_FDCWD, token, buf, sizeof(buf))) {
+			pfx_item = xstrdup(buf);
+			++pfx_num;
 			/* Now add the realpath if it exists and
 			 * are not a duplicate */
-			rpath = xmalloc(SB_PATH_MAX * sizeof(char));
-			pfx_item = realpath(*(&(pfx_item) - 1), rpath);
-			if ((NULL != pfx_item) &&
-			    (0 != strcmp(*(&(pfx_item) - 1), pfx_item))) {
-				pfx_num++;
-			} else {
-				free(rpath);
-				pfx_item = NULL;
+			if (sb_realpathat(AT_FDCWD, token, buf, sizeof(buf), 0, false)) {
+				if (strcmp(buf, pfx_prev)) {
+					pfx_item = xstrdup(buf);
+					++pfx_num;
+				}
 			}
 		}
 
@@ -685,59 +355,19 @@ static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
 	return 0;
 }
 
-/* Is this a func that works on symlinks, and is the file a symlink ? */
-static bool symlink_func(int sb_nr, int flags)
-{
-	/* These funcs always operate on symlinks */
-	if (sb_nr == SB_NR_UNLINK       ||
-	    sb_nr == SB_NR_UNLINKAT     ||
-	    sb_nr == SB_NR_LCHOWN       ||
-	    sb_nr == SB_NR_LREMOVEXATTR ||
-	    sb_nr == SB_NR_LSETXATTR    ||
-	    sb_nr == SB_NR_LUTIMES      ||
-	    sb_nr == SB_NR_REMOVE       ||
-	    sb_nr == SB_NR_RENAME       ||
-	    sb_nr == SB_NR_RENAMEAT     ||
-	    sb_nr == SB_NR_RENAMEAT2    ||
-	    sb_nr == SB_NR_RMDIR        ||
-	    sb_nr == SB_NR_SYMLINK      ||
-	    sb_nr == SB_NR_SYMLINKAT)
-		return true;
-
-	/* These funcs sometimes operate on symlinks */
-	if ((sb_nr == SB_NR_ACCESS_RD ||
-	     sb_nr == SB_NR_ACCESS_WR ||
-	     sb_nr == SB_NR_FACCESSAT ||
-	     sb_nr == SB_NR_FACCESSAT2 ||
-	     sb_nr == SB_NR_FCHOWNAT ||
-	     sb_nr == SB_NR_FCHMODAT ||
-	     sb_nr == SB_NR_UTIMENSAT) &&
-	    (flags & AT_SYMLINK_NOFOLLOW))
-		return true;
-
-	return false;
-}
-
-static bool check_at_empty_path(int sb_nr, int flags)
-{
-	if (sb_nr == SB_NR_ACCESS_RD ||
-		sb_nr == SB_NR_ACCESS_WR ||
-		sb_nr == SB_NR_FACCESSAT ||
-		sb_nr == SB_NR_FACCESSAT2 ||
-		sb_nr == SB_NR_FCHOWNAT ||
-		sb_nr == SB_NR_FCHMODAT ||
-		sb_nr == SB_NR_UTIMENSAT)
-		return (flags & AT_EMPTY_PATH) ? true : false;
-	return false;
-}
-
 static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
                         int flags, const char *abs_path, const char *resolv_path)
 {
 	int old_errno = errno;
 	int result = 0;
 	int retval;
-	bool sym_func = symlink_func(sb_nr, flags);
+
+	/* Do not check non-filesystem objects like pipes and sockets */
+	/* Allow operations on memfd objects #910561 */
+	if (resolv_path[0] != '/' || !strncmp(resolv_path, "/memfd:", 7)) {
+		result = 1;
+		goto out;
+	}
 
 	retval = check_prefixes(sbcontext->deny_prefixes,
 		sbcontext->num_deny_prefixes, abs_path);
@@ -745,23 +375,16 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
-	if (!strncmp(resolv_path, "/memfd:", strlen("/memfd:"))) {
-		/* Allow operations on memfd objects #910561 */
-		result = 1;
+	retval = check_prefixes(sbcontext->deny_prefixes,
+		sbcontext->num_deny_prefixes, resolv_path);
+	if (1 == retval)
+		/* Fall in a read/write denied path, Deny Access */
 		goto out;
-	}
-
-	if (!sym_func) {
-		retval = check_prefixes(sbcontext->deny_prefixes,
-			sbcontext->num_deny_prefixes, resolv_path);
-		if (1 == retval)
-			/* Fall in a read/write denied path, Deny Access */
-			goto out;
-	}
 
 	if (sbcontext->read_prefixes &&
 	    (sb_nr == SB_NR_ACCESS_RD ||
 	     sb_nr == SB_NR_OPEN_RD   ||
+	     sb_nr == SB_NR_OPEN_RD_CREAT ||
 	     sb_nr == SB_NR_OPENDIR   ||
 	     sb_nr == SB_NR_POPEN     ||
 	     sb_nr == SB_NR_SYSTEM    ||
@@ -833,6 +456,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR_MKSTEMPS    ||
 	    sb_nr == SB_NR_MKSTEMPS64  ||
 	    sb_nr == SB_NR_OPEN_WR     ||
+	    sb_nr == SB_NR_OPEN_WR_CREAT ||
 	    sb_nr == SB_NR_REMOVE      ||
 	    sb_nr == SB_NR_REMOVEXATTR ||
 	    sb_nr == SB_NR_RENAME      ||
@@ -918,35 +542,117 @@ out:
 	return result;
 }
 
+static bool is_symlink_func(int sb_nr)
+{
+	switch (sb_nr) {
+		case SB_NR_UNLINK:
+		case SB_NR_UNLINKAT:
+		case SB_NR_LCHOWN:
+		case SB_NR_LREMOVEXATTR:
+		case SB_NR_LSETXATTR:
+		case SB_NR_LUTIMES:
+		case SB_NR_REMOVE:
+		case SB_NR_RENAME:
+		case SB_NR_RENAMEAT:
+		case SB_NR_RENAMEAT2:
+		case SB_NR_RMDIR:
+		case SB_NR_SYMLINK:
+		case SB_NR_SYMLINKAT:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool is_create(int sb_nr)
+{
+	switch (sb_nr) {
+		case SB_NR_CREAT:
+		case SB_NR_CREAT64:
+		case SB_NR_LINK:
+		case SB_NR_LINKAT:
+		case SB_NR_MKDIR:
+		case SB_NR_MKDIRAT:
+		case SB_NR_MKDTEMP:
+		case SB_NR_MKFIFO:
+		case SB_NR_MKNOD:
+		case SB_NR_MKNODAT:
+		case SB_NR_MKSTEMP:
+		case SB_NR_MKSTEMP64:
+		case SB_NR_MKSTEMPS:
+		case SB_NR_MKSTEMPS64:
+		case SB_NR_MKOSTEMP:
+		case SB_NR_MKOSTEMP64:
+		case SB_NR_MKOSTEMPS:
+		case SB_NR_MKOSTEMPS64:
+		case SB_NR_OPEN_RD_CREAT:
+		case SB_NR_OPEN_WR_CREAT:
+		case SB_NR_RENAME:
+		case SB_NR_RENAMEAT:
+		case SB_NR_RENAMEAT2:
+		case SB_NR_SYMLINK:
+		case SB_NR_SYMLINKAT:
+		case SB_NR__XMKNOD:
+		case SB_NR___XMKNOD:
+		case SB_NR___XMKNODAT:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static int get_pid_fd(pid_t pid, int dirfd)
+{
+	char path[33];
+	int r;
+
+	if (dirfd == AT_FDCWD)
+		sprintf(path, "/proc/%i/cwd", pid);
+	else
+		sprintf(path, "/proc/%i/fd/%i", pid, dirfd);
+
+	r = sb_unwrapped_open(path, O_PATH|O_CLOEXEC, 0);
+
+	if (r < 0 && errno == ENOENT)
+		errno = EBADF;
+
+	return r;
+}
+
 /* Return values:
  *  0: failure, caller should abort
  *  1: things worked out fine
  *  2: things worked out fine, but the errno should not be restored
  */
 static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
-                         const char *file, int flags)
+                         int dirfd, const char *file, int flags)
 {
-	char *absolute_path = NULL;
-	char *resolved_path = NULL;
+	char absolute_path[SB_PATH_MAX];
+	char resolved_path[SB_PATH_MAX];
 	int old_errno = errno;
 	int result;
 	bool access, debug, verbose, set;
 
-	absolute_path = resolve_path(file, 0);
-	if (!absolute_path)
-		goto error;
+	int trace_dirfd = -1;
+	if (trace_pid && (file == NULL || file[0] != '/')) {
+		trace_dirfd = get_pid_fd(trace_pid, dirfd);
+		if (trace_dirfd < 0)
+			return 2;
+		dirfd = trace_dirfd;
+	}
 
-	/* Do not bother dereferencing symlinks when we are using a function that
-	 * itself does not dereference.  This speeds things up and avoids updating
-	 * the atime implicitly. #415475
-	 */
-	if (symlink_func(sb_nr, flags))
-		resolved_path = absolute_path;
-	else
-		resolved_path = resolve_path(file, 1);
-	if (!absolute_path || !resolved_path)
-		goto error;
+	if (is_symlink_func(sb_nr))
+		flags |= AT_SYMLINK_NOFOLLOW;
+
+	if (!sb_abspathat(dirfd, file, absolute_path, sizeof(absolute_path)))
+		return 1;
+
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
+
+	if (!sb_realpathat(dirfd, file, resolved_path, sizeof(resolved_path),
+				flags, is_create(sb_nr)))
+		return 1;
+
 	sb_debug_dyn("resolved_path: %s\n", resolved_path);
 
 	verbose = is_env_set_on(ENV_SANDBOX_VERBOSE, &set);
@@ -988,9 +694,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto error;
 	}
 
-	free(absolute_path);
-	if (absolute_path != resolved_path)
-		free(resolved_path);
+	if (trace_dirfd >= 0)
+		close(trace_dirfd);
 
 	errno = old_errno;
 
@@ -1000,32 +705,19 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	/* The path is too long to be canonicalized, so just warn and let the
 	 * function handle it (see bugs #21766 #94630 #101728 #227947)
 	 */
-	if (errno_is_too_long()) {
-		free(absolute_path);
-		if (absolute_path != resolved_path)
-			free(resolved_path);
+	if (errno_is_too_long())
 		return 2;
-	}
 
 	/* Process went away while we were tracing it ... #264478 */
 	if (trace_pid && errno == ESRCH)
 		return 2;
 
-	/* Underlying directory we operate on went away: #590084 */
-	if (!absolute_path && !resolved_path && errno == ENOENT) {
-		int sym_len = SB_MAX_STRING_LEN + 1 - strlen(func);
-		if (sbcontext->show_access_violation)
-			sb_eerror("%sACCESS DENIED%s:  %s:%*s'%s' (from deleted directory, see https://bugs.gentoo.org/590084)\n",
-				COLOR_RED, COLOR_NORMAL, func, sym_len, "", file);
-		return 0;
-	}
-
 	/* If we get here, something bad happened */
-	sb_ebort("ISE: %s('%s')\n"
+	sb_ebort("ISE: %s(%i, '%s')\n"
 		"\tabs_path: %s\n"
 		"\tres_path: %s\n"
 		"\terrno=%i: %s\n",
-		func, file,
+		func, dirfd, file,
 		absolute_path,
 		resolved_path,
 		errno, strerror(errno));
@@ -1064,39 +756,45 @@ bool is_sandbox_on(void)
 	return result;
 }
 
-static int resolve_dirfd_path_alloc(int dirfd, const char *path, char **resolved_path)
+static bool reject_empty_path(int sb_nr, int flags)
 {
-	size_t resolved_path_size = SB_PATH_MAX * sizeof(char);
-	*resolved_path = xmalloc(resolved_path_size);
-	int result = resolve_dirfd_path(dirfd, path, *resolved_path, resolved_path_size);
-
-	if (result) {
-		free(*resolved_path);
-		*resolved_path = NULL;
+	switch (sb_nr) {
+		case SB_NR_ACCESS_RD:
+		case SB_NR_ACCESS_WR:
+		case SB_NR_FCHOWNAT:
+		case SB_NR_FCHMODAT:
+		case SB_NR_UTIMENSAT:
+			return !(flags & AT_EMPTY_PATH);
+		default:
+			return true;
 	}
+}
 
-	return result;
+static bool reject_null_path(int sb_nr)
+{
+	switch (sb_nr) {
+		case SB_NR_FCHMOD:
+		case SB_NR_FCHOWN:
+		case SB_NR_FUTIMESAT:
+		case SB_NR_UTIMENSAT:
+			return false;
+		default:
+			return true;
+	}
 }
 
 bool before_syscall(int sb_nr, const char *func, int dirfd, const char *file, int flags)
 {
 	int result;
-	char *at_file_buf;
 
 	if (file == NULL) {
 		/* futimesat treats dirfd as the target when file is NULL */
-		if (sb_nr != SB_NR_FUTIMESAT && sb_nr != SB_NR_UTIMENSAT)
+		if (reject_null_path(sb_nr))
 			return true; /* let the kernel reject this */
 	}
 	else if (file[0] == '\0') {
-		if (!check_at_empty_path(sb_nr, flags))
+		if (reject_empty_path(sb_nr, flags))
 			return true; /* let the kernel reject this */
-	}
-
-	switch (resolve_dirfd_path_alloc(dirfd, file, &at_file_buf)) {
-		case -1: return false;
-		case 0: file = at_file_buf; break;
-		case 2: return true;
 	}
 
 	save_errno();
@@ -1114,10 +812,7 @@ bool before_syscall(int sb_nr, const char *func, int dirfd, const char *file, in
 	/* Might have been reset in check_access() */
 	sbcontext.show_access_violation = true;
 
-	result = check_syscall(&sbcontext, sb_nr, func, file, flags);
-
-	if (at_file_buf)
-		free(at_file_buf);
+	result = check_syscall(&sbcontext, sb_nr, func, dirfd, file, flags);
 
 	sb_unlock();
 
@@ -1149,29 +844,35 @@ bool before_syscall_access(int sb_nr, const char *func, int dirfd, const char *f
 	return before_syscall(sb_nr, ext_func, dirfd, file, flags);
 }
 
+bool before_syscall_fd(int sb_nr, const char *func, int fd) {
+	return before_syscall(sb_nr, func, fd, NULL, 0);
+}
+
 bool before_syscall_open_int(int sb_nr, const char *func, int dirfd, const char *file, int flags)
 {
 	const char *ext_func;
-	if ((flags & O_WRONLY) || (flags & O_RDWR))
-		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
-	else
-		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
-	return before_syscall(sb_nr, ext_func, dirfd, file, flags);
-}
+	if (flags & O_CREAT) {
+		if (flags & (O_WRONLY|O_RDWR)) {
+			sb_nr = SB_NR_OPEN_WR_CREAT;
+			ext_func = "open_wr_creat";
+		} else {
+			sb_nr = SB_NR_OPEN_RD_CREAT;
+			ext_func = "open_rd_creat";
+		}
+	}
+	else if (flags & (O_WRONLY|O_RDWR)) {
+		sb_nr = SB_NR_OPEN_WR;
+		ext_func = "open_wr";
+	} else {
+		sb_nr = SB_NR_OPEN_RD;
+		ext_func = "open_rd";
+	}
 
-bool before_syscall_fd(int sb_nr, const char *func, int fd) {
-#ifdef SANDBOX_PROC_SELF_FD
-	/* We only know how to handle e.g. fchmod() and fchown() on
-	 * linux, where it's possible to (eventually) get a path out
-	 * of the given file descriptor. The "64" below accounts for
-	 * the length of an integer string, and is probably
-	 * overkill. */
-	char path[sizeof("/proc/self/fd/") + 64];
-	snprintf(path, sizeof("/proc/self/fd/") + 64, "/proc/self/fd/%i", fd);
-	return before_syscall(sb_nr, func, AT_FDCWD, path, 0);
-#else
-	return true;
-#endif
+	int atflags = 0;
+	if (flags & O_NOFOLLOW)
+		atflags |= AT_SYMLINK_NOFOLLOW;
+
+	return before_syscall(sb_nr, ext_func, dirfd, file, atflags);
 }
 
 bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char *file, const char *mode)
@@ -1180,12 +881,18 @@ bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char
 		return false;
 
 	const char *ext_func;
-	if ((*mode == 'r') && ((0 == (strcmp(mode, "r"))) ||
-	     /* The strspn accept args are known non-writable modifiers */
-	     (strlen(mode+1) == strspn(mode+1, "xbtmce"))))
-		sb_nr = SB_NR_OPEN_RD, ext_func = "fopen_rd";
-	else
-		sb_nr = SB_NR_OPEN_WR, ext_func = "fopen_wr";
+	if (mode[0] == 'r') {
+		if (mode[1] == '+') {
+			sb_nr = SB_NR_OPEN_WR;
+			ext_func = "fopen_wr";
+		} else {
+			sb_nr = SB_NR_OPEN_RD;
+			ext_func = "fopen_rd";
+		}
+	} else {
+		sb_nr = SB_NR_OPEN_WR_CREAT;
+		ext_func = "fopen_wr_creat";
+	}
 	return before_syscall(sb_nr, ext_func, dirfd, file, 0);
 }
 

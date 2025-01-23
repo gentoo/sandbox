@@ -7,6 +7,6 @@ mkdir -p to-be/deleted
 cd to-be/deleted
 rmdir ../deleted
 
-# In https://bugs.gentoo.org/590084 sanbox should deny
-# access here and touch should fail:
-! touch ../foo
+# This should succeed without an ISE
+# https://bugs.gentoo.org/590084
+touch ../foo

@@ -21,15 +21,14 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 	%D%/libsandbox.c \
 	%D%/lock.c       \
 	%D%/memory.c     \
-	%D%/pre_check_at.c \
 	%D%/pre_check_mkdirat.c \
 	%D%/pre_check_openat64.c \
 	%D%/pre_check_openat.c \
 	%D%/pre_check_unlinkat.c \
+	%D%/realpath.c \
 	%D%/trace.c      \
 	%D%/wrappers.h   \
-	%D%/wrappers.c   \
-	%D%/canonicalize.c
+	%D%/wrappers.c
 
 install-exec-hook:
 	rm -f $(DESTDIR)$(libdir)/libsandbox.la

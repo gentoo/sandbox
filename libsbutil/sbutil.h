@@ -112,7 +112,6 @@ void sb_close_all_fds(void);
 int sb_copy_file_to_fd(const char *file, int ofd);
 int sb_exists(int dirfd, const char *pathname, int flags);
 int sb_fstat(int fd, mode_t *mode, int64_t *size);
-char *sb_getcwd(char *buf, size_t size);
 
 /* Reliable output */
 __printf(1, 2) void sb_printf(const char *format, ...);
@@ -172,7 +171,5 @@ char *__xstrndup(const char *str, size_t size, const char *file, const char *fun
 #define save_errno()    int old_errno = errno;
 #define restore_errno() errno = old_errno;
 #define saved_errno     old_errno
-
-#include "gnulib/canonicalize.h"
 
 #endif /* __SBUTIL_H__ */
