@@ -15,7 +15,7 @@
 	(!is_sandbox_on() || (test))
 
 #define _SB_SAFE_AT(_nr, _name, _dirfd, _path, _flags) \
-       __SB_SAFE(before_syscall(_dirfd, _nr, _name, _path, _flags))
+       __SB_SAFE(before_syscall(_nr, _name, _dirfd, _path, _flags))
 #define  SB_SAFE_AT(_dirfd, _path, _flags) \
         _SB_SAFE_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
 #define _SB_SAFE(_nr, _name, _path) \
@@ -24,7 +24,7 @@
          SB_SAFE_AT(AT_FDCWD, _path, 0)
 
 #define _SB_SAFE_ACCESS_AT(_nr, _name, _dirfd, _path, _mode, _flags) \
-       __SB_SAFE(before_syscall_access(_dirfd, _nr, _name, _path, _mode, _flags))
+       __SB_SAFE(before_syscall_access(_nr, _name, _dirfd, _path, _mode, _flags))
 #define  SB_SAFE_ACCESS_AT(_dirfd, _path, _mode, _flags) \
         _SB_SAFE_ACCESS_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _mode, _flags)
 #define _SB_SAFE_ACCESS(_nr, _name, _path, _mode) \
@@ -33,7 +33,7 @@
          SB_SAFE_ACCESS_AT(AT_FDCWD, _path, _mode, 0)
 
 #define _SB_SAFE_OPEN_INT_AT(_nr, _name, _dirfd, _path, _flags) \
-       __SB_SAFE(before_syscall_open_int(_dirfd, _nr, _name, _path, _flags))
+       __SB_SAFE(before_syscall_open_int(_nr, _name, _dirfd, _path, _flags))
 #define  SB_SAFE_OPEN_INT_AT(_dirfd, _path, _flags) \
         _SB_SAFE_OPEN_INT_AT(WRAPPER_NR, STRING_NAME, _dirfd, _path, _flags)
 #define _SB_SAFE_OPEN_INT(_nr, _name, _path, _flags) \
@@ -42,12 +42,12 @@
          SB_SAFE_OPEN_INT_AT(AT_FDCWD, _path, _flags)
 
 #define  SB_SAFE_OPEN_CHAR_AT(_dirfd, _path, _mode) \
-       __SB_SAFE(before_syscall_open_char(_dirfd, WRAPPER_NR, STRING_NAME, _path, _mode))
+       __SB_SAFE(before_syscall_open_char(WRAPPER_NR, STRING_NAME, _dirfd, _path, _mode))
 #define  SB_SAFE_OPEN_CHAR(_path, _mode) \
          SB_SAFE_OPEN_CHAR_AT(AT_FDCWD, _path, _mode)
 
 #define _SB_SAFE_FD(_nr, _name, _fd) \
-        __SB_SAFE(before_syscall_fd(_nr, _name, fd))
+        __SB_SAFE(before_syscall_fd(_nr, _name, _fd))
 #define  SB_SAFE_FD(_fd) \
          _SB_SAFE_FD(WRAPPER_NR, STRING_NAME, _fd)
 
@@ -56,11 +56,11 @@
 #define SB_NR_IS_DEFINED(nr) (nr > SB_NR_UNDEF)
 
 bool is_sandbox_on(void);
-bool before_syscall(int, int, const char *, const char *, int);
-bool before_syscall_access(int, int, const char *, const char *, int, int);
-bool before_syscall_open_int(int, int, const char *, const char *, int);
-bool before_syscall_open_char(int, int, const char *, const char *, const char *);
-bool before_syscall_fd(int, const char *, int);
+bool before_syscall(int sb_nr, const char *func, int dirfd, const char *file, int flags);
+bool before_syscall_access(int sb_nr, const char *func, int dirfd, const char *file, int mode, int flags);
+bool before_syscall_open_int(int sb_nr, const char *func, int dirfd, const char *file, int flags);
+bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char *file, const char *mode);
+bool before_syscall_fd(int sb_nr, const char *func, int fd);
 
 enum sandbox_method_t get_sandbox_method(void);
 

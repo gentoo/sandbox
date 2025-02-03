@@ -1078,7 +1078,7 @@ static int resolve_dirfd_path_alloc(int dirfd, const char *path, char **resolved
 	return result;
 }
 
-bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, int flags)
+bool before_syscall(int sb_nr, const char *func, int dirfd, const char *file, int flags)
 {
 	int result;
 	char *at_file_buf;
@@ -1132,7 +1132,7 @@ bool before_syscall(int dirfd, int sb_nr, const char *func, const char *file, in
 	return result ? true : false;
 }
 
-bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *file, int mode, int flags)
+bool before_syscall_access(int sb_nr, const char *func, int dirfd, const char *file, int mode, int flags)
 {
 	const char *ext_func;
 	if (mode & W_OK) {
@@ -1146,17 +1146,17 @@ bool before_syscall_access(int dirfd, int sb_nr, const char *func, const char *f
 	else
 		/* Must be F_OK or X_OK; we do not need to check either. */
 		return true;
-	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
+	return before_syscall(sb_nr, ext_func, dirfd, file, flags);
 }
 
-bool before_syscall_open_int(int dirfd, int sb_nr, const char *func, const char *file, int flags)
+bool before_syscall_open_int(int sb_nr, const char *func, int dirfd, const char *file, int flags)
 {
 	const char *ext_func;
 	if ((flags & O_WRONLY) || (flags & O_RDWR))
 		sb_nr = SB_NR_OPEN_WR, ext_func = "open_wr";
 	else
 		sb_nr = SB_NR_OPEN_RD, ext_func = "open_rd";
-	return before_syscall(dirfd, sb_nr, ext_func, file, flags);
+	return before_syscall(sb_nr, ext_func, dirfd, file, flags);
 }
 
 bool before_syscall_fd(int sb_nr, const char *func, int fd) {
@@ -1168,13 +1168,13 @@ bool before_syscall_fd(int sb_nr, const char *func, int fd) {
 	 * overkill. */
 	char path[sizeof("/proc/self/fd/") + 64];
 	snprintf(path, sizeof("/proc/self/fd/") + 64, "/proc/self/fd/%i", fd);
-	return before_syscall(AT_FDCWD, sb_nr, func, path, 0);
+	return before_syscall(sb_nr, func, AT_FDCWD, path, 0);
 #else
 	return true;
 #endif
 }
 
-bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char *file, const char *mode)
+bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char *file, const char *mode)
 {
 	if (NULL == mode)
 		return false;
@@ -1186,7 +1186,7 @@ bool before_syscall_open_char(int dirfd, int sb_nr, const char *func, const char
 		sb_nr = SB_NR_OPEN_RD, ext_func = "fopen_rd";
 	else
 		sb_nr = SB_NR_OPEN_WR, ext_func = "fopen_wr";
-	return before_syscall(dirfd, sb_nr, ext_func, file, 0);
+	return before_syscall(sb_nr, ext_func, dirfd, file, 0);
 }
 
 typedef struct {
