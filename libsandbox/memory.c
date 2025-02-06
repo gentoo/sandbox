@@ -33,6 +33,7 @@ static void *sb_mmap(void *addr, size_t length, int prot, int flags, int fd, off
 	return _sb_mmap(addr, length, prot, flags, fd, offset);
 }
 #define mmap sb_mmap
+
 static int (*_sb_munmap)(void *addr, size_t length);
 static int sb_munmap(void *addr, size_t length)
 {
@@ -41,6 +42,15 @@ static int sb_munmap(void *addr, size_t length)
 	return _sb_munmap(addr, length);
 }
 #define munmap sb_munmap
+
+static void *(*_sb_mremap)(void *old_address, size_t old_size, size_t new_size, int flags);
+static void *sb_mremap(void *old_address, size_t old_size, size_t new_size, int flags)
+{
+	if (!_sb_mremap)
+		_sb_mremap = get_dlsym("mremap", NULL);
+	return _sb_mremap(old_address, old_size, new_size, flags);
+}
+#define mremap sb_mremap
 
 #define SB_MALLOC_TO_MMAP(ptr) ((void*)((uintptr_t)(ptr) - MIN_ALIGN))
 #define SB_MMAP_TO_MALLOC(ptr) ((void*)((uintptr_t)(ptr) + MIN_ALIGN))
@@ -84,30 +94,23 @@ void *calloc(size_t nmemb, size_t size)
 
 void *realloc(void *ptr, size_t size)
 {
-	void *ret;
-	size_t old_malloc_size;
-
 	if (ptr == NULL)
 		return malloc(size);
 	if (size == 0) {
 		free(ptr);
 		return NULL;
 	}
-
-	old_malloc_size = SB_MALLOC_TO_SIZE(ptr);
-	/* Since mmap() is heavy, don't bother shrinking */
-	if (size <= old_malloc_size)
-		return ptr;
-	ret = malloc(size);
-	if (!ret)
-		return ret;
-	/* We already verified old_malloc_size is smaller than size above, so
-	 * we don't really need the MIN() here.  We leave it to be defensive,
-	 * and because gcc optimizes away the check for us.
-	 */
-	memcpy(ret, ptr, MIN(size, old_malloc_size));
-	free(ptr);
-	return ret;
+	if (__builtin_add_overflow(size, MIN_ALIGN, &size)) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	size_t *sp = SB_MALLOC_TO_MMAP(ptr);
+	size_t old_size = *sp;
+	sp = mremap(sp, old_size, size, MREMAP_MAYMOVE);
+	if (sp == MAP_FAILED)
+		return NULL;
+	*sp = size;
+	return SB_MMAP_TO_MALLOC(sp);
 }
 
 char *strdup(const char *s)
