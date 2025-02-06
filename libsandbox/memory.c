@@ -49,9 +49,11 @@ static int sb_munmap(void *addr, size_t length)
 
 void *malloc(size_t size)
 {
-	size_t *ret;
-	size += MIN_ALIGN;
-	ret = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	if (__builtin_add_overflow(size, MIN_ALIGN, &size)) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	size_t *ret = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 	if (ret == MAP_FAILED)
 		return NULL;
 	*ret = size;
@@ -70,9 +72,13 @@ void free(void *ptr)
 /* Hrm, implement a zalloc() ? */
 void *calloc(size_t nmemb, size_t size)
 {
-	void *ret = malloc(nmemb * size); /* dont care about overflow */
+	if (__builtin_mul_overflow(nmemb, size, &size)) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	void *ret = malloc(size);
 	if (ret)
-		memset(ret, 0, nmemb * size);
+		memset(ret, 0, size);
 	return ret;
 }
 
