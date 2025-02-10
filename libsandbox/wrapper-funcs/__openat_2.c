@@ -13,8 +13,6 @@
 # define dirfd AT_FDCWD
 #endif
 
-#define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
-
 #include "__wrapper_simple.c"
 
 #undef dirfd

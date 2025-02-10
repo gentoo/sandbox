@@ -22,8 +22,6 @@ lib_LTLIBRARIES += %D%/libsandbox.la
 	%D%/lock.c       \
 	%D%/memory.c     \
 	%D%/pre_check_mkdirat.c \
-	%D%/pre_check_openat64.c \
-	%D%/pre_check_openat.c \
 	%D%/pre_check_unlinkat.c \
 	%D%/realpath.c \
 	%D%/trace.c      \

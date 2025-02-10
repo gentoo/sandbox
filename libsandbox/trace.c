@@ -42,10 +42,6 @@ pid_t trace_pid;
 # error "unable to find struct for tracing regs"
 #endif
 
-#ifdef HAVE_OPEN64
-# define sb_openat_pre_check sb_openat64_pre_check
-#endif
-
 static void trace_exit(int status)
 {
 	/* if we were vfork-ed, clear trace_pid and exit */
@@ -382,10 +378,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		char *path = do_peekstr(trace_arg(regs, 1));
 		int flags = trace_arg(regs, 2);
 		__sb_debug("(\"%s\", %x)", path, flags);
-		if (sb_openat_pre_check(name, path, AT_FDCWD, flags))
-			ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
-		else
-			ret = 1;
+		ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
 		free(path);
 		return ret;
 
@@ -394,10 +387,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 		char *path = do_peekstr(trace_arg(regs, 2));
 		int flags = trace_arg(regs, 3);
 		__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
-		if (sb_openat_pre_check(name, path, dirfd, flags))
-			ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
-		else
-			ret = 1;
+		ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
 		free(path);
 		return ret;
 

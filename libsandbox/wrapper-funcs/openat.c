@@ -16,8 +16,6 @@
 # define dirfd AT_FDCWD
 #endif
 
-#define WRAPPER_PRE_CHECKS() sb_openat_pre_check(STRING_NAME, pathname, dirfd, flags)
-
 #define WRAPPER_SAFE_POST_EXPAND \
 	int mode = 0; \
 	if (flags & (O_CREAT | O_TMPFILE)) { \
