@@ -641,6 +641,12 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		dirfd = trace_dirfd;
 	}
 
+	if (sb_nr == SB_NR_OPEN_WR || sb_nr == SB_NR_OPEN_WR_CREAT) {
+		struct stat st;
+		if (!fstatat(dirfd, file, &st, flags) && S_ISDIR(st.st_mode))
+			return 1; /* let the kernel return EISDIR */
+	}
+
 	if (is_symlink_func(sb_nr))
 		flags |= AT_SYMLINK_NOFOLLOW;
 
