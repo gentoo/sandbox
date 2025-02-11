@@ -17,8 +17,8 @@ void get_sandbox_rc(char *path)
 {
 	save_errno();
 	if (is_env_on(ENV_SANDBOX_TESTING))
-		snprintf(path, SB_PATH_MAX, "%s/data/%s",
-			getenv("abs_top_srcdir"), BASHRC_NAME);
+		snprintf(path, SB_PATH_MAX, "%s/%s",
+			getenv("__SANDBOX_BASHRC_PATH"), BASHRC_NAME);
 	else
 		snprintf(path, SB_PATH_MAX, "%s/%s",
 			SANDBOX_BASHRC_PATH, BASHRC_NAME);

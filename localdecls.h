@@ -125,6 +125,17 @@ typedef struct user_regs_struct trace_regs;
 # define dlvsym(_lib, _sym, _ver) dlsym(_lib, _sym)
 #endif
 
+#ifndef HAVE_STRLCPY
+static size_t strlcpy(char *dst, const char *src, size_t size)
+{
+	size_t srclen = strlen(src);
+	size_t copylen = (srclen < size ? srclen : size - 1);
+	memcpy(dst, src, copylen);
+	dst[copylen] = '\0';
+	return srclen;
+}
+#endif
+
 /* Taken from glibc */
 # define strong_alias(_name, _aliasname) \
 	extern __typeof (_name) _aliasname __attribute__ ((alias (#_name)));

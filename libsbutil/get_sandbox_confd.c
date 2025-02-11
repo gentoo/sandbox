@@ -13,9 +13,9 @@
 char *get_sandbox_confd(char *path)
 {
 	save_errno();
-	if (is_env_on(ENV_SANDBOX_TESTING))
-		snprintf(path, SB_PATH_MAX, "%s/etc/sandbox.d/",
-			getenv("abs_top_srcdir"));
+	char *p;
+	if (is_env_on(ENV_SANDBOX_TESTING) && (p = getenv("__SANDBOX_CONFD_DIR")))
+		strlcpy(path, p, SB_PATH_MAX);
 	else
 		strcpy(path, SANDBOX_CONFD_DIR);
 	restore_errno();

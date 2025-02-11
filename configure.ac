@@ -220,6 +220,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	strchr
 	strdup
 	strerror
+	strlcpy
 	strndup
 	strrchr
 	strspn

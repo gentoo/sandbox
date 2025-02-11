@@ -1,9 +1,10 @@
 #!/bin/sh
 # quick wrapper to run local sandbox with local libsandbox
 dir=${0%/*}
-export abs_top_srcdir="@abs_top_srcdir@"
-export abs_top_builddir="@abs_top_builddir@"
-export LD_LIBRARY_PATH="${abs_top_builddir}/libsandbox/.libs"
+export LD_LIBRARY_PATH="@abs_top_builddir@/libsandbox/.libs"
+export __SANDBOX_BASHRC_PATH="@abs_top_srcdir@/data"
+export __SANDBOX_CONF_FILE="@abs_top_srcdir@/etc/sandbox.conf"
+export __SANDBOX_CONFD_DIR="@abs_top_builddir@/etc/sandbox.d"
 export __SANDBOX_TESTING=yes
 if [ -x "${dir}"/sandbox ] ; then
 	exec "${dir}"/sandbox "$@"
