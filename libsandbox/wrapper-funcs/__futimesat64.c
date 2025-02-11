@@ -9,5 +9,6 @@
  * NB: Reusing the 32-bit time interface isn't entirely correct as the 64-bit time interface uses a
  * different structure, but we never decode the time values in sandbox, so it doesn't matter to use.
  */
-#define WRAPPER_SAFE() _SB_SAFE_AT(SB_NR_FUTIMESAT, STRING_NAME, dirfd, filename, 0)
+#undef WRAPPER_NR
+#define WRAPPER_NR SB_NR_FUTIMESAT
 #include "futimesat.c"
