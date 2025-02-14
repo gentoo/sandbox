@@ -61,7 +61,7 @@ SB_AWK = LC_ALL=C $(AWK) -v SYMBOLS_FILE="$(SYMBOLS_FILE)" -v srcdir="$(top_srcd
 SB_NR_FILE = %D%/sb_nr.h.in
 %D%/sb_nr.h: %D%/symbols.h $(SB_NR_FILE)
 	@$(MKDIR_P) %D%
-	$(AM_V_GEN)$(EGREP) -h '^\#define SB_' $^ > $@
+	$(AM_V_GEN)$(EGREP) -h '^#define SB_' $^ > $@
 
 TRACE_MAKE_HEADER = \
 	$(SB_AWK) $(GEN_TRACE_SCRIPT) -v MODE=gen | \
