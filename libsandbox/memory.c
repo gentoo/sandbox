@@ -15,9 +15,6 @@
 #include "libsandbox.h"
 #include "sbutil.h"
 
-/* Pick a value to guarantee alignment requirements. #565630 */
-#define MIN_ALIGN (2 * sizeof(void *))
-
 /* Well screw me sideways, someone decided to override mmap() #290249
  * We probably don't need to include the exact sym version ...
  */
@@ -52,29 +49,37 @@ static void *sb_mremap(void *old_address, size_t old_size, size_t new_size, int 
 }
 #define mremap sb_mremap
 
-#define SB_MALLOC_TO_MMAP(ptr) ((void*)((uintptr_t)(ptr) - MIN_ALIGN))
-#define SB_MMAP_TO_MALLOC(ptr) ((void*)((uintptr_t)(ptr) + MIN_ALIGN))
-#define SB_MALLOC_TO_MMAP_SIZE(ptr) (*((size_t*)SB_MALLOC_TO_MMAP(ptr)))
-#define SB_MALLOC_TO_SIZE(ptr) (SB_MALLOC_TO_MMAP_SIZE(ptr) - MIN_ALIGN)
+/* Ensure malloc returns aligned memory #565630 */
+#define ALIGN_FACTOR 2
+#define ALIGN_SIZE (ALIGN_FACTOR * sizeof(size_t))
 
 void *malloc(size_t size)
 {
-	if (__builtin_add_overflow(size, MIN_ALIGN, &size)) {
+	long pagesize = sysconf(_SC_PAGESIZE);
+
+	if (__builtin_add_overflow(size, ALIGN_SIZE, &size) ||
+			__builtin_add_overflow(size, pagesize - size % pagesize, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	size_t *ret = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-	if (ret == MAP_FAILED)
+
+	size_t *sp = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	if (sp == MAP_FAILED)
 		return NULL;
-	*ret = size;
-	return SB_MMAP_TO_MALLOC(ret);
+
+	*sp = size;
+	return sp + ALIGN_FACTOR;
 }
 
 void free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
-	if (munmap(SB_MALLOC_TO_MMAP(ptr), SB_MALLOC_TO_MMAP_SIZE(ptr)))
+
+	size_t *sp = ptr;
+	sp -= ALIGN_FACTOR;
+
+	if (munmap(sp, *sp))
 		sb_ebort("sandbox memory corruption with free(%p): %s\n",
 			ptr, strerror(errno));
 }
@@ -86,9 +91,11 @@ void *calloc(size_t nmemb, size_t size)
 		errno = ENOMEM;
 		return NULL;
 	}
+
 	void *ret = malloc(size);
 	if (ret)
 		memset(ret, 0, size);
+
 	return ret;
 }
 
@@ -100,17 +107,24 @@ void *realloc(void *ptr, size_t size)
 		free(ptr);
 		return NULL;
 	}
-	if (__builtin_add_overflow(size, MIN_ALIGN, &size)) {
+
+	long pagesize = sysconf(_SC_PAGESIZE);
+
+	if (__builtin_add_overflow(size, ALIGN_SIZE, &size) ||
+			__builtin_add_overflow(size, pagesize - size % pagesize, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	size_t *sp = SB_MALLOC_TO_MMAP(ptr);
-	size_t old_size = *sp;
-	sp = mremap(sp, old_size, size, MREMAP_MAYMOVE);
+
+	size_t *sp = ptr;
+	sp -= 2;
+
+	sp = mremap(sp, *sp, size, MREMAP_MAYMOVE);
 	if (sp == MAP_FAILED)
 		return NULL;
+
 	*sp = size;
-	return SB_MMAP_TO_MALLOC(sp);
+	return sp + ALIGN_FACTOR;
 }
 
 char *strdup(const char *s)
