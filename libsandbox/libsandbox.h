@@ -97,6 +97,8 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 /* most linux systems use ENAMETOOLONG, but some (ia64) use ERANGE, as do some BSDs */
 #define errno_is_too_long() (errno == ENAMETOOLONG || errno == ERANGE)
 
+size_t malloc_size(void *ptr);
+
 #include "sbutil.h"
 
 /* glibc sometimes redefines this crap on us */

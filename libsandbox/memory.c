@@ -127,6 +127,17 @@ void *realloc(void *ptr, size_t size)
 	return sp + ALIGN_FACTOR;
 }
 
+size_t malloc_size(void *ptr)
+{
+	if (!ptr)
+		return 0;
+
+	size_t *sp = ptr;
+	sp -= 2;
+
+	return *sp - ALIGN_SIZE;
+}
+
 char *strdup(const char *s)
 {
 	size_t len;

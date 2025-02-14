@@ -31,18 +31,12 @@ typedef struct {
 	bool show_access_violation, on, active, testing, verbose, debug;
 	sandbox_method_t method;
 	char *ld_library_path;
-	char **prefixes[5];
-	int num_prefixes[5];
+	char *prefixes[5];
 #define             deny_prefixes     prefixes[0]
-#define         num_deny_prefixes num_prefixes[0]
 #define             read_prefixes     prefixes[1]
-#define         num_read_prefixes num_prefixes[1]
 #define            write_prefixes     prefixes[2]
-#define        num_write_prefixes num_prefixes[2]
 #define          predict_prefixes     prefixes[3]
-#define      num_predict_prefixes num_prefixes[3]
 #define     write_denied_prefixes     prefixes[4]
-#define num_write_denied_prefixes num_prefixes[4]
 #define MAX_DYN_PREFIXES 4 /* the first 4 are dynamic */
 } sbcontext_t;
 static sbcontext_t sbcontext;
@@ -58,8 +52,6 @@ int (*sbio_faccessat)(int, const char *, int, int) = sb_unwrapped_faccessat;
 int (*sbio_open)(const char *, int, mode_t) = sb_unwrapped_open;
 FILE *(*sbio_popen)(const char *, const char *) = sb_unwrapped_popen;
 
-static int check_prefixes(char **, int, const char *);
-static void clean_env_entries(char ***, int *);
 static void sb_process_env_settings(void);
 
 const char *sbio_message_path;
@@ -190,41 +182,27 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	return ret;
 }
 
-static void clean_env_entries(char ***prefixes_array, int *prefixes_num)
+static size_t strv_append(char **basep, size_t offset, const char *value)
 {
-	if (*prefixes_array == NULL)
-		return;
+	char *base = *basep;
+	size_t bsize = malloc_size(base);
+	size_t vsize = strlen(value) + 1;
 
-	size_t i;
-	save_errno();
+	if (offset + vsize >= bsize)
+		*basep = base = xrealloc(base, offset + vsize + 1);
 
-	for (i = 0; i < *prefixes_num; ++i) {
-		if (NULL != (*prefixes_array)[i]) {
-			free((*prefixes_array)[i]);
-			(*prefixes_array)[i] = NULL;
-		}
-	}
-	if (NULL != *prefixes_array)
-		free(*prefixes_array);
-	*prefixes_array = NULL;
-	*prefixes_num = 0;
+	memcpy(base + offset, value, vsize);
+	offset += vsize;
+	base[offset] = '\0';
 
-	restore_errno();
+	return offset;
 }
 
-#define pfx_num		(*prefixes_num)
-#define pfx_array	(*prefixes_array)
-#define pfx_item	((*prefixes_array)[(*prefixes_num)])
-#define pfx_prev	((*prefixes_array)[(*prefixes_num) - 1])
-
-static void init_env_entries(char ***prefixes_array, int *prefixes_num, const char *env, const char *prefixes_env, int warn)
+static void init_env_entries(char **prefixes, const char *env, const char *prefixes_env)
 {
 	char *token = NULL;
 	char *buffer = NULL;
 	char *buffer_ptr = NULL;
-	int prefixes_env_length = strlen(prefixes_env);
-	int num_delimiters = 0;
-	int i = 0;
 	int old_errno = errno;
 
 	if (NULL == prefixes_env) {
@@ -234,23 +212,10 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 			fprintf(stderr,
 				"libsandbox:  The '%s' env variable is not defined!\n",
 				env);
-		if (pfx_array) {
-			for (i = 0; i < pfx_num; i++)
-				free(pfx_item);
-			free(pfx_array);
-		}
-		pfx_num = 0;
 
 		goto done;
 	}
 
-	for (i = 0; i < prefixes_env_length; i++) {
-		if (':' == prefixes_env[i])
-			num_delimiters++;
-	}
-
-	/* num_delimiters might be 0, and we need 2 entries at least */
-	pfx_array = xmalloc(((num_delimiters * 2) + 2) * sizeof(char *));
 	buffer = xstrdup(prefixes_env);
 	buffer_ptr = buffer;
 
@@ -260,19 +225,18 @@ static void init_env_entries(char ***prefixes_array, int *prefixes_num, const ch
 	token = strtok(buffer_ptr, ":");
 #endif
 
+	size_t offset = 0;
+
 	while (token && strlen(token) > 0) {
 		char buf[SB_PATH_MAX];
 		if (sb_abspathat(AT_FDCWD, token, buf, sizeof(buf))) {
-			pfx_item = xstrdup(buf);
-			++pfx_num;
+			size_t prev_offset = offset;
+			offset = strv_append(prefixes, offset, buf);
 			/* Now add the realpath if it exists and
 			 * are not a duplicate */
-			if (sb_realpathat(AT_FDCWD, token, buf, sizeof(buf), 0, false)) {
-				if (strcmp(buf, pfx_prev)) {
-					pfx_item = xstrdup(buf);
-					++pfx_num;
-				}
-			}
+			if (sb_realpathat(AT_FDCWD, token, buf, sizeof(buf), 0, false))
+				if (strcmp(buf, *prefixes + prev_offset))
+					offset = strv_append(prefixes, offset, buf);
 		}
 
 #ifdef HAVE_STRTOK_R
@@ -311,14 +275,12 @@ static void sb_process_env_settings(void)
 		    !cached_env_vars[i] ||
 		    strcmp(cached_env_vars[i], sb_env) != 0)
 		{
-			clean_env_entries(&sbcontext.prefixes[i], &sbcontext.num_prefixes[i]);
-
-			if (cached_env_vars[i])
-				free(cached_env_vars[i]);
+			free(sbcontext.prefixes[i]);
+			sbcontext.prefixes[i] = NULL;
+			free(cached_env_vars[i]);
 
 			if (sb_env) {
-				init_env_entries(&sbcontext.prefixes[i], &sbcontext.num_prefixes[i],
-					sb_env_names[i], sb_env, 1);
+				init_env_entries(sbcontext.prefixes + i, sb_env_names[i], sb_env);
 				cached_env_vars[i] = xstrdup(sb_env);
 			} else
 				cached_env_vars[i] = NULL;
@@ -326,33 +288,31 @@ static void sb_process_env_settings(void)
 	}
 }
 
-static int check_prefixes(char **prefixes, int num_prefixes, const char *path)
+static bool check_prefixes(char *prefixes, const char *path)
 {
 	if (!prefixes)
-		return 0;
+		return false;
 
-	size_t i;
-	for (i = 0; i < num_prefixes; ++i) {
-		if (unlikely(!prefixes[i]))
-			continue;
+	size_t prefix_len;
 
-		size_t prefix_len = strlen(prefixes[i]);
+	for (const char *prefix = prefixes; *prefix; prefix += prefix_len + 1) {
+		prefix_len = strlen(prefix);
+
 		/* Start with a regular prefix match for speed */
-		if (strncmp(path, prefixes[i], prefix_len))
+		if (strncmp(path, prefix, prefix_len))
 			continue;
 
 		/* Now, if prefix did not end with a slash, we need to make sure
 		 * we are not matching in the middle of a filename. So check
 		 * whether the match is followed by a slash, or NUL.
 		 */
-		if (prefixes[i][prefix_len-1] != '/'
-				&& path[prefix_len] != '/' && path[prefix_len] != '\0')
+		if (prefix[prefix_len - 1] != '/' && path[prefix_len] != '/' && path[prefix_len] != '\0')
 			continue;
 
-		return 1;
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
 static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
@@ -360,7 +320,6 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 {
 	int old_errno = errno;
 	int result = 0;
-	int retval;
 
 	/* Do not check non-filesystem objects like pipes and sockets */
 	/* Allow operations on memfd objects #910561 */
@@ -369,15 +328,11 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		goto out;
 	}
 
-	retval = check_prefixes(sbcontext->deny_prefixes,
-		sbcontext->num_deny_prefixes, abs_path);
-	if (1 == retval)
+	if (check_prefixes(sbcontext->deny_prefixes, abs_path))
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
-	retval = check_prefixes(sbcontext->deny_prefixes,
-		sbcontext->num_deny_prefixes, resolv_path);
-	if (1 == retval)
+	if (check_prefixes(sbcontext->deny_prefixes, resolv_path))
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
@@ -397,9 +352,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	     sb_nr == SB_NR_EXECVPE   ||
 	     sb_nr == SB_NR_FEXECVE))
 	{
-		retval = check_prefixes(sbcontext->read_prefixes,
-					sbcontext->num_read_prefixes, resolv_path);
-		if (1 == retval) {
+		if (check_prefixes(sbcontext->read_prefixes, resolv_path)) {
 			/* Fall in a readable path, Grant Access */
 			result = 1;
 			goto out;
@@ -478,16 +431,11 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	    sb_nr == SB_NR___XMKNODAT)
 	{
 
-		retval = check_prefixes(sbcontext->write_denied_prefixes,
-					sbcontext->num_write_denied_prefixes,
-					resolv_path);
-		if (1 == retval)
+		if (check_prefixes(sbcontext->write_denied_prefixes, resolv_path))
 			/* Falls in a write denied path, Deny Access */
 			goto out;
 
-		retval = check_prefixes(sbcontext->write_prefixes,
-					sbcontext->num_write_prefixes, resolv_path);
-		if (1 == retval) {
+		if (check_prefixes(sbcontext->write_prefixes, resolv_path)) {
 			/* Falls in a writable path, Grant Access */
 			result = 1;
 			goto out;
@@ -519,9 +467,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 			goto out;
 		}
 
-		retval = check_prefixes(sbcontext->predict_prefixes,
-					sbcontext->num_predict_prefixes, resolv_path);
-		if (1 == retval) {
+		if (check_prefixes(sbcontext->predict_prefixes, resolv_path)) {
 			/* Is a known access violation, so deny access,
 			 * and do not log it */
 			sbcontext->show_access_violation = false;
