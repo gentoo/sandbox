@@ -802,6 +802,9 @@ bool before_syscall_fd(int sb_nr, const char *func, int fd) {
 
 bool before_syscall_open_int(int sb_nr, const char *func, int dirfd, const char *file, int flags)
 {
+	if (flags & O_PATH)
+		return true;
+
 	const char *ext_func;
 	if (flags & O_CREAT) {
 		if (flags & (O_WRONLY|O_RDWR)) {
