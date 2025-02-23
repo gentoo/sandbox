@@ -565,6 +565,14 @@ static int get_pid_fd(pid_t pid, int dirfd)
 	return r;
 }
 
+static void cleanup_free(void *vp)
+{
+	void **vpp = vp;
+	free(*vpp);
+}
+
+#define _cleanup_free_ __attribute__((cleanup(cleanup_free)))
+
 /* Return values:
  *  0: failure, caller should abort
  *  1: things worked out fine
@@ -573,11 +581,11 @@ static int get_pid_fd(pid_t pid, int dirfd)
 static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
                          int dirfd, const char *file, int flags)
 {
-	char absolute_path[SB_PATH_MAX];
-	char resolved_path[SB_PATH_MAX];
 	int old_errno = errno;
 	int result;
 	bool access, debug, verbose, set;
+	_cleanup_free_ char *absolute_path = xmalloc(SB_PATH_MAX);
+	_cleanup_free_ char *resolved_path = xmalloc(SB_PATH_MAX);
 
 	int trace_dirfd = -1;
 	if (trace_pid && (file == NULL || file[0] != '/')) {
@@ -596,12 +604,12 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (is_symlink_func(sb_nr))
 		flags |= AT_SYMLINK_NOFOLLOW;
 
-	if (!sb_abspathat(dirfd, file, absolute_path, sizeof(absolute_path)))
+	if (!sb_abspathat(dirfd, file, absolute_path, SB_PATH_MAX))
 		return 1;
 
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
 
-	if (!sb_realpathat(dirfd, file, resolved_path, sizeof(resolved_path),
+	if (!sb_realpathat(dirfd, file, resolved_path, SB_PATH_MAX,
 				flags, is_create(sb_nr)))
 		return 1;
 
