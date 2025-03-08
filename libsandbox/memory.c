@@ -53,15 +53,16 @@ static void *sb_mremap(void *old_address, size_t old_size, size_t new_size, int 
 #define ALIGN_FACTOR 2
 #define ALIGN_SIZE (ALIGN_FACTOR * sizeof(size_t))
 
-void *malloc(size_t size)
+static size_t round_to_page(size_t size)
 {
 	long pagesize = sysconf(_SC_PAGESIZE);
+	size_t remainder = size % pagesize;
+	return remainder ? size + pagesize - remainder : size;
+}
 
-	if (__builtin_add_overflow(size, ALIGN_SIZE, &size) ||
-			__builtin_add_overflow(size, pagesize - size % pagesize, &size)) {
-		errno = ENOMEM;
-		return NULL;
-	}
+void *malloc(size_t size)
+{
+	size = round_to_page(size + ALIGN_SIZE);
 
 	size_t *sp = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 	if (sp == MAP_FAILED)
@@ -103,18 +104,13 @@ void *realloc(void *ptr, size_t size)
 {
 	if (ptr == NULL)
 		return malloc(size);
+
 	if (size == 0) {
 		free(ptr);
 		return NULL;
 	}
 
-	long pagesize = sysconf(_SC_PAGESIZE);
-
-	if (__builtin_add_overflow(size, ALIGN_SIZE, &size) ||
-			__builtin_add_overflow(size, pagesize - size % pagesize, &size)) {
-		errno = ENOMEM;
-		return NULL;
-	}
+	size = round_to_page(size + ALIGN_SIZE);
 
 	size_t *sp = ptr;
 	sp -= 2;
