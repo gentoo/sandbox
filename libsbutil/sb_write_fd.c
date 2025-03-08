@@ -12,16 +12,15 @@
 
 int sb_copy_file_to_fd(const char *file, int ofd)
 {
+	char buf[128];
 	int ret = -1;
 
 	int ifd = sb_open(file, O_RDONLY|O_CLOEXEC, 0);
 	if (ifd == -1)
 		return ret;
 
-	size_t pagesz = getpagesize();
-	char *buf = xmalloc(pagesz);
 	while (1) {
-		size_t len = sb_read(ifd, buf, pagesz);
+		size_t len = sb_read(ifd, buf, sizeof(buf));
 		if (len == -1)
 			goto error;
 		else if (!len)
@@ -37,6 +36,5 @@ int sb_copy_file_to_fd(const char *file, int ofd)
 	ret = 0;
  error:
 	sb_close(ifd);
-	free(buf);
 	return ret;
 }
