@@ -49,6 +49,17 @@ static void *sb_mremap(void *old_address, size_t old_size, size_t new_size, int 
 }
 #define mremap sb_mremap
 
+char *sb_map_path(void)
+{
+	void *p = mmap(NULL, PATH_MAX, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	return p == MAP_FAILED ? NULL : p;
+}
+
+int sb_unmap_path(char *path)
+{
+	return munmap(path, PATH_MAX);
+}
+
 /* Ensure malloc returns aligned memory #565630 */
 #define ALIGN_FACTOR 2
 #define ALIGN_SIZE (ALIGN_FACTOR * sizeof(size_t))

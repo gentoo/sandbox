@@ -566,13 +566,13 @@ static int get_pid_fd(pid_t pid, int dirfd)
 	return r;
 }
 
-static void cleanup_free(void *vp)
+static void cleanup_path(char **p)
 {
-	void **vpp = vp;
-	free(*vpp);
+	if (*p)
+		sb_unmap_path(*p);
 }
 
-#define _cleanup_free_ __attribute__((cleanup(cleanup_free)))
+#define _cleanup_path_ __attribute__((cleanup(cleanup_path)))
 
 /* Return values:
  *  0: failure, caller should abort
@@ -586,8 +586,8 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	int result;
 	bool access, debug, verbose, set;
 	char *absolute_path, *resolved_path;
-	_cleanup_free_ char *abuf = NULL;
-	_cleanup_free_ char *rbuf = NULL;
+	_cleanup_path_ char *abuf = NULL;
+	_cleanup_path_ char *rbuf = NULL;
 
 	int trace_dirfd = -1;
 	if (trace_pid && (file == NULL || file[0] != '/')) {
@@ -606,7 +606,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (is_symlink_func(sb_nr))
 		flags |= AT_SYMLINK_NOFOLLOW;
 
-	absolute_path = abuf = malloc(PATH_MAX);
+	absolute_path = abuf = sb_map_path();
 	if (!absolute_path)
 		absolute_path = alloca(PATH_MAX);
 
@@ -615,7 +615,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
 
-	resolved_path = rbuf = malloc(PATH_MAX);
+	resolved_path = rbuf = sb_map_path();
 	if (!resolved_path)
 		resolved_path = alloca(PATH_MAX);
 
