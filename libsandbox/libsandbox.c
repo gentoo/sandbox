@@ -15,6 +15,7 @@
 #include "libsandbox.h"
 #include "wrappers.h"
 #include "sb_nr.h"
+#include <alloca.h>
 
 #define LOG_VERSION			"1.0"
 #define LOG_STRING			"VERSION " LOG_VERSION "\n"
@@ -584,8 +585,9 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	int old_errno = errno;
 	int result;
 	bool access, debug, verbose, set;
-	_cleanup_free_ char *absolute_path = xmalloc(SB_PATH_MAX);
-	_cleanup_free_ char *resolved_path = xmalloc(SB_PATH_MAX);
+	char *absolute_path, *resolved_path;
+	_cleanup_free_ char *abuf = NULL;
+	_cleanup_free_ char *rbuf = NULL;
 
 	int trace_dirfd = -1;
 	if (trace_pid && (file == NULL || file[0] != '/')) {
@@ -604,10 +606,18 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (is_symlink_func(sb_nr))
 		flags |= AT_SYMLINK_NOFOLLOW;
 
+	absolute_path = abuf = malloc(SB_PATH_MAX);
+	if (!absolute_path)
+		absolute_path = alloca(SB_PATH_MAX);
+
 	if (!sb_abspathat(dirfd, file, absolute_path, SB_PATH_MAX))
 		return 1;
 
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
+
+	resolved_path = rbuf = malloc(SB_PATH_MAX);
+	if (!resolved_path)
+		resolved_path = alloca(SB_PATH_MAX);
 
 	if (!sb_realpathat(dirfd, file, resolved_path, SB_PATH_MAX,
 				flags, is_create(sb_nr)))
