@@ -14,7 +14,7 @@ bool sb_unlinkat_pre_check(const char *func, const char *pathname, int dirfd)
 {
 	save_errno();
 
-	char canonic[SB_PATH_MAX];
+	char canonic[PATH_MAX];
 	if (sb_realpathat(dirfd, pathname, canonic, sizeof(canonic), AT_SYMLINK_NOFOLLOW, false)) {
 		if (!strcmp(canonic, "/dev/null") || !strcmp(canonic, "/dev/zero")) {
 			errno = EACCES;

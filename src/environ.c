@@ -113,7 +113,7 @@ static int setup_access_var(const char *access_var)
 {
 	rc_dynbuf_t *env_data;
   	int count = 0;
-	char confd_path[SB_PATH_MAX];
+	char confd_path[PATH_MAX];
 	char *config;
 	char **confd_files = NULL;
 	bool use_confd = true;

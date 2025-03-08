@@ -89,7 +89,7 @@ static bool chase_linkfd(int linkfd, char *buf, size_t bufsiz)
 	if (buf[0] != '/')
 		return true;
 
-	char target[SB_PATH_MAX];
+	char target[PATH_MAX];
 	ssize_t tlen = zreadlinkat(linkfd, "", target, sizeof(target));
 
 	int i;

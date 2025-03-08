@@ -66,7 +66,7 @@ enum sandbox_method_t get_sandbox_method(void);
 
 void *get_dlsym(const char *symname, const char *symver);
 
-extern char sandbox_lib[SB_PATH_MAX];
+extern char sandbox_lib[PATH_MAX];
 extern bool sandbox_on;
 
 struct sb_envp_ctx {

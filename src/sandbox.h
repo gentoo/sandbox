@@ -14,13 +14,13 @@
 #define __SANDBOX_H__
 
 struct sandbox_info_t {
-	char sandbox_log[SB_PATH_MAX];
-	char sandbox_debug_log[SB_PATH_MAX];
-	char sandbox_message_path[SB_PATH_MAX];
-	char sandbox_lib[SB_PATH_MAX];
-	char sandbox_rc[SB_PATH_MAX];
-	char work_dir[SB_PATH_MAX];
-	char tmp_dir[SB_PATH_MAX];
+	char sandbox_log[PATH_MAX];
+	char sandbox_debug_log[PATH_MAX];
+	char sandbox_message_path[PATH_MAX];
+	char sandbox_lib[PATH_MAX];
+	char sandbox_rc[PATH_MAX];
+	char work_dir[PATH_MAX];
+	char tmp_dir[PATH_MAX];
 	char *home_dir;
 };
 

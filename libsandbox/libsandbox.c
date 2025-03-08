@@ -26,7 +26,7 @@
 #define LOG_FMT_RPATH			"FORMAT: R - Canonical Path\n"
 #define LOG_FMT_CMDLINE			"FORMAT: C - Command Line\n"
 
-char sandbox_lib[SB_PATH_MAX];
+char sandbox_lib[PATH_MAX];
 
 typedef struct {
 	bool show_access_violation, on, active, testing, verbose, debug;
@@ -43,9 +43,9 @@ typedef struct {
 static sbcontext_t sbcontext;
 
 static char *cached_env_vars[MAX_DYN_PREFIXES];
-static char log_path[SB_PATH_MAX];
-static char debug_log_path[SB_PATH_MAX];
-static char message_path[SB_PATH_MAX];
+static char log_path[PATH_MAX];
+static char debug_log_path[PATH_MAX];
+static char message_path[PATH_MAX];
 bool sandbox_on = true;
 static bool sb_init = false;
 static bool sb_env_init = false;
@@ -229,7 +229,7 @@ static void init_env_entries(char **prefixes, const char *env, const char *prefi
 	size_t offset = 0;
 
 	while (token && strlen(token) > 0) {
-		char buf[SB_PATH_MAX];
+		char buf[PATH_MAX];
 		if (sb_abspathat(AT_FDCWD, token, buf, sizeof(buf))) {
 			size_t prev_offset = offset;
 			offset = strv_append(prefixes, offset, buf);
@@ -446,7 +446,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		 * to be here as for each process, the '/proc/self' symlink
 		 * will differ ...
 		 */
-		char proc_self_fd[SB_PATH_MAX];
+		char proc_self_fd[PATH_MAX];
 		if (realpath(sb_get_fd_dir(), proc_self_fd) &&
 		    !strncmp(resolv_path, proc_self_fd, strlen(proc_self_fd)))
 		{
@@ -606,20 +606,20 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (is_symlink_func(sb_nr))
 		flags |= AT_SYMLINK_NOFOLLOW;
 
-	absolute_path = abuf = malloc(SB_PATH_MAX);
+	absolute_path = abuf = malloc(PATH_MAX);
 	if (!absolute_path)
-		absolute_path = alloca(SB_PATH_MAX);
+		absolute_path = alloca(PATH_MAX);
 
-	if (!sb_abspathat(dirfd, file, absolute_path, SB_PATH_MAX))
+	if (!sb_abspathat(dirfd, file, absolute_path, PATH_MAX))
 		return 1;
 
 	sb_debug_dyn("absolute_path: %s\n", absolute_path);
 
-	resolved_path = rbuf = malloc(SB_PATH_MAX);
+	resolved_path = rbuf = malloc(PATH_MAX);
 	if (!resolved_path)
-		resolved_path = alloca(SB_PATH_MAX);
+		resolved_path = alloca(PATH_MAX);
 
-	if (!sb_realpathat(dirfd, file, resolved_path, SB_PATH_MAX,
+	if (!sb_realpathat(dirfd, file, resolved_path, PATH_MAX,
 				flags, is_create(sb_nr)))
 		return 1;
 

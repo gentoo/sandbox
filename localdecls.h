@@ -32,19 +32,6 @@
 
 #endif
 
-#ifdef PATH_MAX
-# define SB_PATH_MAX PATH_MAX * 2
-# if (SB_PATH_MAX >= INT_MAX) || (SB_PATH_MAX < PATH_MAX)
-#  undef SB_PATH_MAX
-#  define SB_PATH_MAX PATH_MAX + 25
-#  if (SB_PATH_MAX >= INT_MAX) || (SB_PATH_MAX < PATH_MAX)
-#   error SB_PATH_MAX too big!
-#  endif
-# endif
-#else
-# error PATH_MAX not defined!
-#endif
-
 #ifndef MAP_ANONYMOUS
 # define MAP_ANONYMOUS MAP_ANON
 #endif

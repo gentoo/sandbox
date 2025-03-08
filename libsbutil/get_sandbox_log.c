@@ -26,7 +26,7 @@ static void _get_sb_log(char *path, const char *tmpdir, const char *env, const c
 		 * about people breaking the security of the sandbox by
 		 * exporting SANDBOX_LOG=/dev/null.
 		 */
-		strncpy(path, sandbox_log_env, SB_PATH_MAX);
+		strncpy(path, sandbox_log_env, PATH_MAX);
 	} else {
 		/* If running as a user w/out write access to /var/log, don't
 		 * shit ourselves.
@@ -35,7 +35,7 @@ static void _get_sb_log(char *path, const char *tmpdir, const char *env, const c
 		if (tmpdir && access(sb_log_dir, W_OK))
 			sb_log_dir = tmpdir;
 
-		snprintf(path, SB_PATH_MAX, "%s%s%s%s%d%s",
+		snprintf(path, PATH_MAX, "%s%s%s%s%d%s",
 			sb_log_dir, prefix,
 			(sandbox_log_env == NULL ? "" : sandbox_log_env),
 			(sandbox_log_env == NULL ? "" : "-"),

@@ -39,7 +39,7 @@ static int setup_sandbox(struct sandbox_info_t *sandbox_info, bool interactive)
 		/* Portage handle setting SANDBOX_WRITE itself. */
 		sandbox_info->work_dir[0] = '\0';
 	} else {
-		if (NULL == getcwd(sandbox_info->work_dir, SB_PATH_MAX)) {
+		if (NULL == getcwd(sandbox_info->work_dir, PATH_MAX)) {
 			sb_pwarn("failed to get current directory");
 			return -1;
 		}
