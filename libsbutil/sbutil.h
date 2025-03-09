@@ -107,7 +107,6 @@ extern const char sbio_fallback_path[];
 int sb_open(const char *path, int flags, mode_t mode);
 size_t sb_read(int fd, void *buf, size_t count);
 size_t sb_write(int fd, const void *buf, size_t count);
-int sb_close(int fd);
 void sb_close_all_fds(void);
 int sb_copy_file_to_fd(const char *file, int ofd);
 int sb_exists(int dirfd, const char *pathname, int flags);

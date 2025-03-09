@@ -178,7 +178,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	ret = true;
 
  error:
-	sb_close(logfd);
+	close(logfd);
 
 	return ret;
 }

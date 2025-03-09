@@ -127,7 +127,7 @@ static void print_sandbox_log(char *sandbox_log)
 			break;
 		sb_eerror("\n%s", buffer);
 	}
-	sb_close(sandbox_log_file);
+	close(sandbox_log_file);
 
 	sb_eerror("--------------------------------------------------------------------------------\n");
 }

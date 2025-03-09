@@ -35,6 +35,6 @@ int sb_copy_file_to_fd(const char *file, int ofd)
 
 	ret = 0;
  error:
-	sb_close(ifd);
+	close(ifd);
 	return ret;
 }
