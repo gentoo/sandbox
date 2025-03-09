@@ -524,6 +524,29 @@ static void trace_loop(void)
 	} while (1);
 }
 
+static void close_all_fds(void)
+{
+	DIR *dirp;
+	struct dirent *de;
+	int dfd, fd;
+	const char *fd_dir = sb_get_fd_dir();
+
+	dirp = opendir(fd_dir);
+	if (!dirp)
+		sb_ebort("could not process %s\n", fd_dir);
+	dfd = dirfd(dirp);
+
+	while ((de = readdir(dirp)) != NULL) {
+		if (de->d_name[0] == '.')
+			continue;
+		fd = atoi(de->d_name);
+		if (fd != dfd)
+			close(fd);
+	}
+
+	closedir(dirp);
+}
+
 void trace_main(void)
 {
 	struct sigaction old_sa, sa = { .sa_handler = SIG_DFL, };
@@ -545,7 +568,7 @@ void trace_main(void)
 				PTRACE_O_TRACEEXIT |
 				PTRACE_O_TRACESYSGOOD
 			));
-		sb_close_all_fds();
+		close_all_fds();
 		trace_loop();
 		sb_ebort("ISE: child should have quit, as should we\n");
 	}

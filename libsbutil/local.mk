@@ -25,7 +25,6 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	%D%/sb_stat.c                             \
 	%D%/sb_write.c                            \
 	%D%/sb_write_fd.c                         \
-	%D%/sb_close.c                            \
 	%D%/sb_printf.c                           \
 	%D%/sb_proc.c                             \
 	%D%/sb_memory.c                           \
