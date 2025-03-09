@@ -526,6 +526,9 @@ static void trace_loop(void)
 
 static void close_all_fds(void)
 {
+#ifdef HAVE_CLOSEFROM
+	closefrom(0);
+#else
 	DIR *dirp;
 	struct dirent *de;
 	int dfd, fd;
@@ -545,6 +548,7 @@ static void close_all_fds(void)
 	}
 
 	closedir(dirp);
+#endif
 }
 
 void trace_main(void)

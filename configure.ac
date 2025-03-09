@@ -171,6 +171,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	backtrace
 	clone
 	__clone2
+	closefrom
 	creat64
 	faccessat
 	fchmodat
