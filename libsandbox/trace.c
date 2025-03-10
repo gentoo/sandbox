@@ -529,6 +529,10 @@ static void close_all_fds(void)
 #ifdef HAVE_CLOSEFROM
 	closefrom(0);
 #else
+#ifdef SYS_close_range
+	if (0 == syscall(SYS_close_range, 0U, ~0U, 0))
+		return;
+#endif
 	DIR *dirp;
 	struct dirent *de;
 	int dfd, fd;
