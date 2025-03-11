@@ -530,7 +530,7 @@ static void close_all_fds(void)
 	closefrom(0);
 #else
 #ifdef SYS_close_range
-	if (0 == syscall(SYS_close_range, 0U, ~0U, 0))
+	if (0 == syscall(SYS_close_range, 0U, UINT_MAX, 0))
 		return;
 #endif
 	DIR *dirp;
