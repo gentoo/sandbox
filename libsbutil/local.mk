@@ -4,8 +4,7 @@ noinst_LIBRARIES += %D%/libsbutil.a
 	$(AM_CPPFLAGS) \
 	$(SIXTY_FOUR_FLAGS) \
 	-I$(top_srcdir)/%D% \
-	-I$(top_srcdir)/%D%/include \
-	-I$(top_srcdir)/%D%/gnulib
+	-I$(top_srcdir)/%D%/include
 %C%_libsbutil_a_CFLAGS = -fPIC
 %C%_libsbutil_a_SOURCES = \
 	%D%/sbutil.h                              \
