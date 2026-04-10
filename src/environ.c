@@ -96,7 +96,7 @@ static void setup_cfg_var(const char *env_var)
 	 * environment if not already present. */
 	config = rc_get_cnf_entry(sb_conf_file(), env_var, NULL);
 	if (NULL != config) {
-		setenv(ENV_SANDBOX_VERBOSE, config, 0);
+		setenv(env_var, config, 0);
 		free(config);
 	}
 }
