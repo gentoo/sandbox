@@ -1,5 +1,6 @@
 a.out
 *~
+*.a
 *.gch
 *.lo
 *.la
