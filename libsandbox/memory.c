@@ -150,9 +150,6 @@ char *strdup(const char *s)
 	size_t len;
 	char *ret;
 
-	if (s == NULL)
-		return NULL;
-
 	len = strlen(s);
 	ret = malloc(len + 1);
 	if (!ret)

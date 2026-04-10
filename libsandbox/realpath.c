@@ -154,7 +154,7 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 		}
 
 		if (create) {
-			char *slash = strrchr(path, '/');
+			const char *slash = strrchr(path, '/');
 			if (slash) {
 				bname = slash + 1;
 
