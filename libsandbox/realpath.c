@@ -130,6 +130,14 @@ static int get_path_fd(int dirfd, const char *restrict path, int atflags, int of
 	return sb_unwrapped_openat(dirfd, path, oflags, 0);
 }
 
+static int libc_close(int fd)
+{
+	static int (*close)(int);
+	if (!close)
+		close = sb_libc_symbol("close");
+	return close(fd);
+}
+
 bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsiz, int flags, bool create)
 {
 	const char *bname = NULL;
@@ -196,7 +204,8 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 
 	if (pathfd != dirfd) {
 		int save_errno = errno;
-		close(pathfd);
+		/* Avoid calling close() from libsocket_wrapper, bug 961961 */
+		libc_close(pathfd);
 		errno = save_errno;
 	}
 
