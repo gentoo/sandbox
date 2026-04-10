@@ -23,58 +23,53 @@
 # define USE_RTLD_NEXT
 #endif
 
-static void *libc_handle;
-
-static void load_libc_handle(void)
+static void *libc_handle(void)
 {
-	save_errno();	/* #260765 */
-	libc_handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-	restore_errno();
-
-	if (!libc_handle) {
-		fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
-			dlerror());
-		exit(EXIT_FAILURE);
+	static void *handle;
+	if (!handle) {
+		save_errno();	/* #260765 */
+		handle = dlopen(LIBC_VERSION, RTLD_LAZY);
+		restore_errno();
+		if (!handle) {
+			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
+				dlerror());
+			exit(EXIT_FAILURE);
+		}
 	}
+	return handle;
 }
 
-void *get_dlsym(const char *symname, const char *symver)
+static void *get_symbol(void *handle, const char *symbol, const char *version)
 {
 	void *symaddr;
 
-	if (!libc_handle) {
-#ifdef USE_RTLD_NEXT
-		libc_handle = RTLD_NEXT;
- try_again: ;
-#else
-		load_libc_handle();
-#endif
-	}
-
-	if (NULL == symver)
-		symaddr = dlsym(libc_handle, symname);
+	if (!version)
+		symaddr = dlsym(handle, symbol);
 	else
-		symaddr = dlvsym(libc_handle, symname, symver);
+		symaddr = dlvsym(handle, symbol, version);
 
 	if (!symaddr) {
-#ifdef USE_RTLD_NEXT
-		/* Maybe RTLD_NEXT is broken for some screwed up reason as
-		 * can be seen with some specific glibc/kernel versions.
-		 * Recover dynamically so that we can be deployed easily
-		 * via binpkgs and upgrades #202765 #206678
-		 */
-		if (libc_handle == RTLD_NEXT) {
-			load_libc_handle();
-			goto try_again;
-		}
-#endif
-
 		fprintf(stderr, "libsandbox:  Can't resolve %s: %s\n",
-			symname, dlerror());
+			symbol, dlerror());
 		exit(EXIT_FAILURE);
 	}
 
 	return symaddr;
+}
+
+void *sb_get_symbol(const char *symbol, const char *version)
+{
+#ifdef USE_RTLD_NEXT
+	void *handle = RTLD_NEXT;
+#else
+	void *handle = libc_handle();
+#endif
+	return get_symbol(handle, symbol, version);
+}
+
+void *sb_libc_symbol(const char *symbol)
+{
+	return get_symbol(libc_handle(), symbol, NULL);
 }
 
 /* Macro to check if a wrapper is defined, if not
@@ -83,7 +78,7 @@ void *get_dlsym(const char *symname, const char *symver)
 #define check_dlsym(_name, _symname, _symver) \
 { \
 	if (NULL == _name) \
-		_name = get_dlsym(_symname, _symver); \
+		_name = sb_get_symbol(_symname, _symver); \
 }
 
 /* Need to include the function wrappers here, as they are needed below */

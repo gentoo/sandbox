@@ -23,9 +23,9 @@ static void *sb_mmap(void *addr, size_t length, int prot, int flags, int fd, off
 {
 	if (!_sb_mmap)
 #ifdef HAVE_MMAP64
-		_sb_mmap = get_dlsym("mmap64", NULL);
+		_sb_mmap = sb_get_symbol("mmap64", NULL);
 #else
-		_sb_mmap = get_dlsym("mmap", NULL);
+		_sb_mmap = sb_get_symbol("mmap", NULL);
 #endif
 	return _sb_mmap(addr, length, prot, flags, fd, offset);
 }
@@ -35,7 +35,7 @@ static int (*_sb_munmap)(void *addr, size_t length);
 static int sb_munmap(void *addr, size_t length)
 {
 	if (!_sb_munmap)
-		_sb_munmap = get_dlsym("munmap", NULL);
+		_sb_munmap = sb_get_symbol("munmap", NULL);
 	return _sb_munmap(addr, length);
 }
 #define munmap sb_munmap
@@ -44,7 +44,7 @@ static void *(*_sb_mremap)(void *old_address, size_t old_size, size_t new_size, 
 static void *sb_mremap(void *old_address, size_t old_size, size_t new_size, int flags)
 {
 	if (!_sb_mremap)
-		_sb_mremap = get_dlsym("mremap", NULL);
+		_sb_mremap = sb_get_symbol("mremap", NULL);
 	return _sb_mremap(old_address, old_size, new_size, flags);
 }
 #define mremap sb_mremap

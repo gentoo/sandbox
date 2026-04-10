@@ -64,7 +64,8 @@ bool before_syscall_fd(int sb_nr, const char *func, int fd);
 
 enum sandbox_method_t get_sandbox_method(void);
 
-void *get_dlsym(const char *symname, const char *symver);
+void *sb_get_symbol(const char *symname, const char *symver);
+void *sb_libc_symbol(const char *symname);
 
 extern char sandbox_lib[PATH_MAX];
 extern bool sandbox_on;
