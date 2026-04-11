@@ -8,7 +8,7 @@
 #define __SB_HEADERS_H__
 
 #ifdef HAVE_CONFIG_H
-# include <sandboxconfig.h>
+# include <config.h>
 #endif
 
 #ifdef HAVE_DIRENT_H

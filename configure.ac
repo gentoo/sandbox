@@ -2,7 +2,7 @@ AC_PREREQ([2.71])
 AC_INIT([sandbox], [2.47], [sandbox@gentoo.org])
 AM_INIT_AUTOMAKE([1.15 dist-xz foreign no-dist-gzip silent-rules subdir-objects -Wall])
 AM_SILENT_RULES([yes]) # AM_INIT_AUTOMAKE([silent-rules]) is broken atm
-AC_CONFIG_HEADERS([sandboxconfig.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_MSG_CHECKING([environment state])

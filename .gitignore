@@ -30,6 +30,8 @@ core
 /compile
 /config.cache
 /config.guess
+/config.h
+/config.h.in
 /config.log
 /config.status
 /config.sub
@@ -40,8 +42,6 @@ core
 /libtool
 /ltmain.sh
 /missing
-/sandboxconfig.h
-/sandboxconfig.h.in
 /stamp-h1
 
 /m4/libtool.m4
