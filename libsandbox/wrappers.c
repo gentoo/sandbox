@@ -29,12 +29,10 @@ static void *libc_handle(void)
 	if (!handle) {
 		save_errno();	/* #260765 */
 		handle = dlopen(LIBC_VERSION, RTLD_LAZY);
-		restore_errno();
-		if (!handle) {
+		if (!handle)
 			fprintf(stderr, "libsandbox:  Can't dlopen libc: %s\n",
 				dlerror());
-			exit(EXIT_FAILURE);
-		}
+		restore_errno();
 	}
 	return handle;
 }
@@ -69,7 +67,15 @@ void *sb_get_symbol(const char *symbol, const char *version)
 
 void *sb_libc_symbol(const char *symbol)
 {
-	return get_symbol(libc_handle(), symbol, NULL);
+	void *handle = libc_handle();
+	if (!handle)
+#ifdef USE_RTLD_NEXT
+		/* Use RTLD_NEXT as a fallback if libc cannot be found, bug 973482 */
+		handle = RTLD_NEXT;
+#else
+		exit(EXIT_FAILURE);
+#endif
+	return get_symbol(handle, symbol, NULL);
 }
 
 /* Macro to check if a wrapper is defined, if not
