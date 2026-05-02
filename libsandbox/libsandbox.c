@@ -869,6 +869,52 @@ bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char
 	return before_syscall(sb_nr, ext_func, dirfd, file, 0);
 }
 
+/* Return true if LD_PRELOAD is set but does not start with libsandbox.so */
+static bool ld_preload_needs_merge(const char *lp) {
+	if (!lp)
+		return false;
+	lp += strlen(ENV_LD_PRELOAD) + 1;
+	size_t sblen = strlen(sandbox_lib);
+	return strcspn(lp, " :") != sblen || strncmp(lp, sandbox_lib, sblen);
+}
+
+/* Ensure libsandbox.so appears first in LD_PRELOAD */
+static char *ld_preload_merge(const char *lp) {
+	if (lp)
+		lp += strlen(ENV_LD_PRELOAD) + 1;
+	else
+		lp = "";
+
+	const char *lpend = strchr(lp, '\0');
+	size_t sblen = strlen(sandbox_lib);
+	/* Result size: start with "LD_PRELOAD=libsandbox.so" */
+	size_t rsize = strlen(ENV_LD_PRELOAD) + 1 + sblen + 1;
+
+	/* Compute length of original string, excluding separators and libsandbox.so */
+	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
+		size_t len = strcspn(p, " :");
+		if (len != sblen || strncmp(p, sandbox_lib, len))
+			rsize += len + 1;
+		p += len;
+	}
+
+	char *result = xmalloc(rsize);
+	char *r = result + sprintf(result, "%s=%s", ENV_LD_PRELOAD, sandbox_lib);
+
+	/* Copy the existing string, excluding separators and libsandbox.so */
+	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
+		size_t len = strcspn(p, " :");
+		if (len != sblen || strncmp(p, sandbox_lib, len)) {
+			*(r++) = ' ';
+			r = memcpy(r, p, len) + len;
+			*r = '\0';
+		}
+		p += len;
+	}
+
+	return result;
+}
+
 typedef struct {
 	const char *name;
 	size_t len;
@@ -957,16 +1003,11 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 
 	/* Now specially handle merging of LD_PRELOAD */
 	char *ld_preload;
-	bool merge_ld_preload = found_vars[0] && !strstr(found_vars[0], sandbox_lib);
+	bool merge_ld_preload = ld_preload_needs_merge(found_vars[0]);
 	if (unlikely(merge_ld_preload)) {
 		/* Ok, there's an existing LD_PRELOAD value that we need to merge
 		 * with.  Handle this specially. */
-		size_t ld_preload_len = strlen(ENV_LD_PRELOAD);
-		count = ld_preload_len + 1 + strlen(sandbox_lib) + 1 +
-			strlen(found_vars[0] + ld_preload_len + 1);
-		ld_preload = xmalloc(count * sizeof(char));
-		sprintf(ld_preload, "%s=%s %s", ENV_LD_PRELOAD, sandbox_lib,
-			found_vars[0] + ld_preload_len + 1);
+		ld_preload = ld_preload_merge(found_vars[0]);
 		goto mod_env;
 	}
 
