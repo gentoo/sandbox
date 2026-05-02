@@ -880,17 +880,22 @@ static bool ld_preload_needs_merge(const char *lp) {
 
 /* Ensure libsandbox.so appears first in LD_PRELOAD */
 static char *ld_preload_merge(const char *lp) {
-	if (lp)
-		lp += strlen(ENV_LD_PRELOAD) + 1;
-	else
-		lp = "";
-
-	const char *lpend = strchr(lp, '\0');
 	size_t sblen = strlen(sandbox_lib);
 	/* Result size: start with "LD_PRELOAD=libsandbox.so" */
 	size_t rsize = strlen(ENV_LD_PRELOAD) + 1 + sblen + 1;
 
-	/* Compute length of original string, excluding separators and libsandbox.so */
+	if (lp)
+		/* Skip "LD_PRELOAD=" */
+		lp += strlen(ENV_LD_PRELOAD) + 1;
+	else
+		lp = "";
+
+	/* Skip initial separators */
+	lp += strspn(lp, " :");
+
+	const char *lpend = strchr(lp, '\0');
+
+	/* Compute length of original string excluding duplicate separators and "libsandbox.so" */
 	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
 		size_t len = strcspn(p, " :");
 		if (len != sblen || strncmp(p, sandbox_lib, len))
@@ -901,7 +906,7 @@ static char *ld_preload_merge(const char *lp) {
 	char *result = xmalloc(rsize);
 	char *r = result + sprintf(result, "%s=%s", ENV_LD_PRELOAD, sandbox_lib);
 
-	/* Copy the existing string, excluding separators and libsandbox.so */
+	/* Copy the original string excluding duplicate separators and "libsandbox.so" */
 	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
 		size_t len = strcspn(p, " :");
 		if (len != sblen || strncmp(p, sandbox_lib, len)) {
