@@ -869,54 +869,36 @@ bool before_syscall_open_char(int sb_nr, const char *func, int dirfd, const char
 	return before_syscall(sb_nr, ext_func, dirfd, file, 0);
 }
 
-/* Return true if LD_PRELOAD is set but does not start with libsandbox.so */
+/* Return true if LD_PRELOAD is set but does not contain libsandbox.so */
 static bool ld_preload_needs_merge(const char *lp) {
+	size_t sblen = strlen(sandbox_lib);
+
 	if (!lp)
 		return false;
+
 	lp += strlen(ENV_LD_PRELOAD) + 1;
-	size_t sblen = strlen(sandbox_lib);
-	return strcspn(lp, " :") != sblen || memcmp(lp, sandbox_lib, sblen);
-}
-
-/* Ensure libsandbox.so appears first in LD_PRELOAD */
-static char *ld_preload_merge(const char *lp) {
-	size_t sblen = strlen(sandbox_lib);
-	/* Result size: start with "LD_PRELOAD=libsandbox.so" */
-	size_t rsize = strlen(ENV_LD_PRELOAD) + 1 + sblen + 1;
-
-	if (lp)
-		/* Skip "LD_PRELOAD=" */
-		lp += strlen(ENV_LD_PRELOAD) + 1;
-	else
-		lp = "";
 
 	/* Skip initial separators */
 	lp += strspn(lp, " :");
 
 	const char *lpend = strchr(lp, '\0');
 
-	/* Compute length of original string excluding duplicate separators and "libsandbox.so" */
 	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
 		size_t len = strcspn(p, " :");
-		if (len != sblen || memcmp(p, sandbox_lib, len))
-			rsize += len + 1;
+		if (len == sblen && !memcmp(p, sandbox_lib, len))
+			return false;
 		p += len;
 	}
 
-	char *result = xmalloc(rsize);
-	char *r = result + sprintf(result, "%s=%s", ENV_LD_PRELOAD, sandbox_lib);
+	return true;
+}
 
-	/* Copy the original string excluding duplicate separators and "libsandbox.so" */
-	for (const char *p = lp; p < lpend; p += strspn(p, " :")) {
-		size_t len = strcspn(p, " :");
-		if (len != sblen || memcmp(p, sandbox_lib, len)) {
-			*(r++) = ' ';
-			r = memcpy(r, p, len) + len;
-			*r = '\0';
-		}
-		p += len;
-	}
-
+/* Ensure libsandbox.so appears in LD_PRELOAD */
+static char *ld_preload_merge(const char *lp) {
+	lp += strlen(ENV_LD_PRELOAD) + 1;
+	int size = snprintf(NULL, 0, "%s=%s %s", ENV_LD_PRELOAD, sandbox_lib, lp) + 1;
+	char *result = xmalloc(size);
+	snprintf(result, size, "%s=%s %s", ENV_LD_PRELOAD, sandbox_lib, lp);
 	return result;
 }
 
