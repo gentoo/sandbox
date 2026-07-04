@@ -15,7 +15,7 @@ BEGIN {
 		sym_regex = sym_regex symbol;
 	}
 	SYMBOL_REGEX = "^(" sym_regex ")(@|$)";
-	WEAK_SYMBOL_REGEX = "^__(" sym_regx ")(@@|$)";
+	WEAK_SYMBOL_REGEX = "^__(" sym_regex ")(@@|$)";
 }
 
 /^  OS\/ABI:/ {
