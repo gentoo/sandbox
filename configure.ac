@@ -403,7 +403,7 @@ dnl (nptl/tst-cancelx4.c in glibc among others fails for wrapped functions)
 AC_MSG_CHECKING([how to enable exception handling])
 for CFLAG_EXCEPTIONS in -fexceptions "" ; do
 	ac_save_CFLAGS=$CFLAGS
-	CFLAGS="$CFLAGS -fexceptions"
+	CFLAGS="$CFLAGS $CFLAG_EXCEPTIONS"
 	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],[ok=yes],[ok=no])
 	CFLAGS=$ac_save_CFLAGS
 	test "$ok" = "yes" && break
