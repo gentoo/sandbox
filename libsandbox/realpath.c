@@ -1,6 +1,7 @@
 #include <headers.h>
 #include "libsandbox.h"
 #include "wrappers.h"
+#include <alloca.h>
 
 static ssize_t zreadlink(const char *pathname, char *buf, size_t bufsiz)
 {
@@ -141,15 +142,20 @@ static int libc_close(int fd)
 bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsiz, int flags, bool create)
 {
 	const char *bname = NULL;
+	_cleanup_path_ char *lbuf = NULL;
 
 	int pathfd = get_path_fd(dirfd, path, flags, 0);
 	if (pathfd != AT_FDCWD && pathfd < 0 && errno == ENOENT) {
 		if (!(flags & AT_SYMLINK_NOFOLLOW)) {
 			pathfd = get_path_fd(dirfd, path, flags, O_NOFOLLOW);
 			if (pathfd == AT_FDCWD || pathfd >= 0) {
-				if (!chase_linkfd(pathfd, buf, bufsiz))
+				char *link = lbuf = sb_map_path();
+				if (!link)
+					link = alloca(PATH_MAX);
+
+				if (!chase_linkfd(pathfd, link, MIN(bufsiz, PATH_MAX)))
 					return false;
-				path = buf;
+				path = link;
 			}
 		}
 

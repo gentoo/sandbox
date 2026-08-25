@@ -102,6 +102,14 @@ char *sb_map_path(void);
 int sb_unmap_path(char *path);
 size_t malloc_size(void *ptr);
 
+static inline void cleanup_path(char **p)
+{
+	if (*p)
+		sb_unmap_path(*p);
+}
+
+#define _cleanup_path_ __attribute__((cleanup(cleanup_path)))
+
 #include "sbutil.h"
 
 /* glibc sometimes redefines this crap on us */

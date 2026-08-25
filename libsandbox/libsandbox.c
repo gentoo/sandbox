@@ -566,14 +566,6 @@ static int get_pid_fd(pid_t pid, int dirfd)
 	return r;
 }
 
-static void cleanup_path(char **p)
-{
-	if (*p)
-		sb_unmap_path(*p);
-}
-
-#define _cleanup_path_ __attribute__((cleanup(cleanup_path)))
-
 /* Return values:
  *  0: failure, caller should abort
  *  1: things worked out fine
