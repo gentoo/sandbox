@@ -139,6 +139,17 @@ static int libc_close(int fd)
 	return close(fd);
 }
 
+static void close_path_fd(int fd, int dirfd)
+{
+	if (fd < 0 || fd == dirfd)
+		return;
+
+	int save_errno = errno;
+	/* Avoid calling close() from libsocket_wrapper, bug 961961 */
+	libc_close(fd);
+	errno = save_errno;
+}
+
 bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsiz, int flags, bool create)
 {
 	const char *bname = NULL;
@@ -153,13 +164,18 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 				if (!link)
 					link = alloca(PATH_MAX);
 
-				if (!chase_linkfd(pathfd, link, MIN(bufsiz, PATH_MAX)))
+				if (!chase_linkfd(pathfd, link, MIN(bufsiz, PATH_MAX))) {
+					close_path_fd(pathfd, dirfd);
 					return false;
+				}
 				path = link;
 			}
 		}
 
 		if (create) {
+			close_path_fd(pathfd, dirfd);
+			pathfd = -1;
+
 			const char *slash = strrchr(path, '/');
 			if (slash) {
 				bname = slash + 1;
@@ -208,12 +224,7 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 			memcpy(buf + len, bname, blen + 1);
 	}
 
-	if (pathfd != dirfd) {
-		int save_errno = errno;
-		/* Avoid calling close() from libsocket_wrapper, bug 961961 */
-		libc_close(pathfd);
-		errno = save_errno;
-	}
+	close_path_fd(pathfd, dirfd);
 
 	return ret;
 }
