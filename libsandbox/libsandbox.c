@@ -124,15 +124,14 @@ static void cleanup_fd(int *fd)
 	do { \
 		size_t _len = strlen(str); \
 		if (sb_write(logfd, str, _len) != _len) \
-			goto error; \
+			return false; \
 	} while (0)
 static bool write_logfile(const char *logfile, const char *func, const char *path,
                           const char *apath, const char *rpath, bool access)
 {
 	struct stat log_stat;
 	int stat_ret;
-	int logfd;
-	bool ret = false;
+	_cleanup_fd_ int logfd = -1;
 
 	stat_ret = lstat(logfile, &log_stat);
 	/* Do not care about failure */
@@ -145,9 +144,12 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 		O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC,
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (logfd == -1) {
+		/* Our own reporting must not eat the errno the caller acts on */
+		save_errno();
 		sb_eerror("ISE:%s: unable to append logfile: %s\n",
 			__func__, logfile);
-		goto error;
+		restore_errno();
+		return false;
 	}
 
 	if (0 != stat_ret)
@@ -186,12 +188,7 @@ static bool write_logfile(const char *logfile, const char *func, const char *pat
 	}
 	_SB_WRITE_STR("\n");
 
-	ret = true;
-
- error:
-	close(logfd);
-
-	return ret;
+	return true;
 }
 
 static size_t strv_append(char **basep, size_t offset, const char *value)
@@ -655,42 +652,18 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	else
 		access = true;
 
-	if (unlikely(!access)) {
-		bool worked = write_logfile(log_path, func, file, absolute_path, resolved_path, access);
-		if (!worked && errno)
-			goto error;
-	}
+	/* Failing to log must not turn a denied access into an allowed one:
+	 * the error path below is for a path we could not canonicalize.
+	 */
+	if (unlikely(!access))
+		write_logfile(log_path, func, file, absolute_path, resolved_path, access);
 
-	if (unlikely(debug)) {
-		bool worked = write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
-		if (!worked && errno)
-			goto error;
-	}
+	if (unlikely(debug))
+		write_logfile(debug_log_path, func, file, absolute_path, resolved_path, access);
 
 	errno = old_errno;
 
 	return result;
-
- error:
-	/* The path is too long to be canonicalized, so just warn and let the
-	 * function handle it (see bugs #21766 #94630 #101728 #227947)
-	 */
-	if (errno_is_too_long())
-		return 2;
-
-	/* Process went away while we were tracing it ... #264478 */
-	if (trace_pid && errno == ESRCH)
-		return 2;
-
-	/* If we get here, something bad happened */
-	sb_ebort("ISE: %s(%i, '%s')\n"
-		"\tabs_path: %s\n"
-		"\tres_path: %s\n"
-		"\terrno=%i: %s\n",
-		func, dirfd, file,
-		absolute_path,
-		resolved_path,
-		errno, strerror(errno));
 }
 
 bool is_sandbox_on(void)
