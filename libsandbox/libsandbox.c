@@ -109,6 +109,17 @@ void __sb_dump_backtrace(void)
 	sb_printf("\n\n");
 }
 
+static void cleanup_fd(int *fd)
+{
+	if (*fd >= 0) {
+		int save_errno = errno;
+		close(*fd);
+		errno = save_errno;
+	}
+}
+
+#define _cleanup_fd_ __attribute__((cleanup(cleanup_fd)))
+
 #define _SB_WRITE_STR(str) \
 	do { \
 		size_t _len = strlen(str); \
@@ -581,7 +592,7 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	_cleanup_path_ char *abuf = NULL;
 	_cleanup_path_ char *rbuf = NULL;
 
-	int trace_dirfd = -1;
+	_cleanup_fd_ int trace_dirfd = -1;
 	if (trace_pid && (file == NULL || file[0] != '/')) {
 		trace_dirfd = get_pid_fd(trace_pid, dirfd);
 		if (trace_dirfd < 0)
@@ -655,9 +666,6 @@ static int check_syscall(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		if (!worked && errno)
 			goto error;
 	}
-
-	if (trace_dirfd >= 0)
-		close(trace_dirfd);
 
 	errno = old_errno;
 
