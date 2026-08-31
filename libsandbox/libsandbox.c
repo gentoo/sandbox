@@ -962,7 +962,7 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 	}
 
 	/* Now specially handle merging of LD_PRELOAD */
-	char *ld_preload;
+	char *ld_preload = NULL;
 	bool merge_ld_preload = ld_preload_needs_merge(found_vars[0]);
 	if (unlikely(merge_ld_preload)) {
 		/* Ok, there's an existing LD_PRELOAD value that we need to merge
@@ -999,11 +999,13 @@ struct sb_envp_ctx sb_new_envp(char **envp, bool insert)
 
 	char ** my_env = NULL;
 	if (!insert) {
+		/* Everything kept below is the caller's, so __mod_cnt stays 0, and
+		 * a merged LD_PRELOAD is not wanted when we are stripping. */
+		free(ld_preload);
 		str_list_for_each_item(envp, entry, count) {
 			for (i = 0; i < num_vars; ++i)
 				if (i != 12 /* LD_LIBRARY_PATH index */
 				    && is_env_var(entry, vars[i].name, vars[i].len)) {
-					r.__mod_cnt++;
 					goto skip;
 				}
 			str_list_add_item(my_env, entry, error);
