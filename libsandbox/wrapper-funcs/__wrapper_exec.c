@@ -47,12 +47,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	if (elf == MAP_FAILED)
 		goto out_fd;
 
-	if (elf[EI_MAG0] != ELFMAG0 &&
-	    elf[EI_MAG1] != ELFMAG1 &&
-	    elf[EI_MAG2] != ELFMAG2 &&
-	    elf[EI_MAG3] != ELFMAG3 &&
-	    !(elf[EI_CLASS] != ELFCLASS32 ||
-	      elf[EI_CLASS] != ELFCLASS64))
+	if (memcmp(elf, ELFMAG, SELFMAG) ||
+	    (elf[EI_CLASS] != ELFCLASS32 && elf[EI_CLASS] != ELFCLASS64))
 		goto out_mmap;
 
 	/* If we are non-root but attempt to execute a set*id program,
