@@ -20,6 +20,12 @@ static WRAPPER_RET_TYPE (*WRAPPER_TRUE_NAME)(WRAPPER_ARGS_PROTO) = NULL;
 #ifndef SB_EXEC_COMMON
 #define SB_EXEC_COMMON
 
+/* Is [off, off + len) inside the file we mapped? */
+static bool elf_in_range(int64_t size, uint64_t off, uint64_t len)
+{
+	return off <= (uint64_t)size && len <= (uint64_t)size - off;
+}
+
 /* Check to see if we can run this program in-process.  If not, try to fall back
  * tracing it out-of-process via some trace mechanisms (e.g. ptrace).
  */
@@ -83,25 +89,31 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 #define PARSE_ELF(n) \
 ({ \
 	Elf##n##_Ehdr *ehdr = (void *)elf; \
-	Elf##n##_Phdr *phdr = (void *)(elf + ehdr->e_phoff); \
+	Elf##n##_Phdr *phdr; \
 	Elf##n##_Addr vaddr, filesz, vsym = 0, vstr = 0, vhash = 0, vgnuhash = 0; \
 	Elf##n##_Off offset, symoff = 0, stroff = 0, hashoff = 0, gnuhashoff = 0; \
-	Elf##n##_Dyn *dyn; \
+	Elf##n##_Dyn *dyn, *dynend; \
 	Elf##n##_Sym *sym, *symend; \
 	uint##n##_t ent_size = 0, str_size = 0; \
 	bool dynamic = false; \
 	size_t i; \
 	\
-	if (size < ehdr->e_phoff + ehdr->e_phentsize * ehdr->e_phnum) \
+	if (ehdr->e_phentsize != sizeof(*phdr) || \
+	    !elf_in_range(size, ehdr->e_phoff, \
+	                  (uint64_t)ehdr->e_phentsize * ehdr->e_phnum)) \
 		goto out_mmap; \
+	phdr = (void *)(elf + ehdr->e_phoff); \
 	\
 	/* First gather the tags we care about. */ \
 	for (i = 0; i < ehdr->e_phnum; ++i) { \
 		switch (phdr[i].p_type) { \
 		case PT_INTERP: dynamic = true; break; \
 		case PT_DYNAMIC: \
+			if (!elf_in_range(size, phdr[i].p_offset, phdr[i].p_filesz)) \
+				goto out_mmap; \
 			dyn = (void *)(elf + phdr[i].p_offset); \
-			while (dyn->d_tag != DT_NULL) { \
+			dynend = dyn + phdr[i].p_filesz / sizeof(*dyn); \
+			while (dyn < dynend && dyn->d_tag != DT_NULL) { \
 				switch (dyn->d_tag) { \
 				case DT_SYMTAB:      vsym = dyn->d_un.d_val; break; \
 				case DT_SYMENT:      ent_size = dyn->d_un.d_val; break; \
@@ -136,7 +148,9 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 		 * we only look at exported symbols, and the vast majority of exes \
 		 * out there do not export any symbols at all. \
 		 */ \
-		if (symoff && stroff) { \
+		if (symoff && stroff && \
+		    elf_in_range(size, stroff, str_size) && \
+		    elf_in_range(size, symoff, ent_size)) { \
 			/* Nowhere is the # of symbols recorded, or the size of the symbol \
 			 * table.  Instead, we do what glibc does: use the gnu or sysv hash \
 			 * table if it exists, else assume that the string table always directly \
@@ -144,8 +158,8 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 			 * make, but glibc has gotten by this long.  See determine_info in \
 			 * glibc's elf/dl-addr.c. \
 			 * \
-			 * We don't sanity check the ranges here as you aren't executing \
-			 * corrupt programs in the sandbox. \
+			 * The tables are known to lie inside the file by this point, \
+			 * but the walk below still trusts what it reads out of them. \
 			 */ \
 			sym = (void *)(elf + symoff); \
 			if (vgnuhash) { \
