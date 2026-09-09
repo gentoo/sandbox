@@ -49,7 +49,7 @@ jobs:
       options: --cap-add=SYS_PTRACE --platform=${{ matrix.platform }}
     steps:
       - name: Install dependencies
-        run: apk add bash coreutils build-base automake autoconf autoconf-archive libtool pax-utils gawk sed
+        run: apk add bash coreutils build-base automake autoconf autoconf-archive libtool pax-utils gawk sed git
 
       - name: Checkout
         uses: taiki-e/checkout-action@v1
