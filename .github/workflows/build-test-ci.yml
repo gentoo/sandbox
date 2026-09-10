@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo rm -f /etc/apt/sources.list.d/google-chrome.sources /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get update -q
-        sudo apt-get install -qy build-essential gcc ${{ matrix.platform.multilib }} clang automake autoconf autoconf-archive libtool pax-utils
+        sudo apt-get install -qy autoconf-archive pax-utils ${{ matrix.platform.multilib }}
 
     - name: Checkout
       uses: actions/checkout@v7
