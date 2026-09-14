@@ -178,8 +178,21 @@ END {
 					       sym_real_name, sym_index, symbol_array[2]);
 			} else {
 				# For non-versioned libc's we use strong aliases
-				printf("strong_alias(%s, %s);\n", sym_real_name,
-				       sym_index);
+				
+				# 32-bit musl redirects time interfaces to time64 ABI names.
+				# A strong_alias inerits these asm names, does not emit the
+				# legacy symbols and fails during linking (bug #978656).
+				if( sym_index == "utime" ||
+					sym_index == "utimes" ||
+					sym_index == "lutimes" ||
+					sym_index == "futimesat" ||
+					sym_index == "utimensat") {
+					printf("strong_asm_alias(%s, %s);\n", sym_real_name,
+				    	   sym_index);
+				} else {
+					printf("strong_alias(%s, %s);\n", sym_real_name,
+				    	   sym_index);
+				}
 			}
 
 			if (WEAK_SYMBOLS[sym_index]) {
