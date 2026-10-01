@@ -164,7 +164,7 @@ bool sb_realpathat(int dirfd, const char *restrict path, char *buf, size_t bufsi
 				if (!link)
 					link = alloca(PATH_MAX);
 
-				if (!chase_linkfd(pathfd, link, MIN(bufsiz, PATH_MAX))) {
+				if (!chase_linkfd(pathfd, link, PATH_MAX)) {
 					close_path_fd(pathfd, dirfd);
 					return false;
 				}
