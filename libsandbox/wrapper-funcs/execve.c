@@ -8,6 +8,6 @@
 #define WRAPPER_ARGS_PROTO const char *path, char *const argv[], char *const envp[]
 #define WRAPPER_ARGS path, argv, envp
 #define EXEC_ARGS path, argv, my_env
+#define EXEC_ARG_FILE path
 #define EXEC_MY_ENV
-#define EXEC_NO_PATH
 #include "__wrapper_exec.c"

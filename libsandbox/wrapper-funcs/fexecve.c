@@ -9,5 +9,4 @@
 #define WRAPPER_ARGS fd, argv, envp
 #define EXEC_ARGS fd, argv, my_env
 #define EXEC_MY_ENV
-#define EXEC_NO_FILE
 #include "__wrapper_exec.c"

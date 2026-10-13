@@ -7,5 +7,5 @@
 
 #define WRAPPER_ARGS_PROTO const char *path, char *const argv[]
 #define WRAPPER_ARGS path, argv
-#define EXEC_NO_PATH
+#define EXEC_ARG_FILE path
 #include "__wrapper_exec.c"

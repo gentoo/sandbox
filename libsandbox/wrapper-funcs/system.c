@@ -7,5 +7,4 @@
 
 #define WRAPPER_ARGS_PROTO const char *command
 #define WRAPPER_ARGS command
-#define EXEC_NO_FILE
 #include "__wrapper_exec.c"
