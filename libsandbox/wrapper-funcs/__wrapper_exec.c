@@ -343,8 +343,13 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	const char *check_path = NULL;
 #endif
 	if (check_dirfd >= 0 || check_path) {
-		if (!SB_SAFE_AT(check_dirfd, check_path, check_flags))
+		if (!SB_SAFE_AT(check_dirfd, check_path, check_flags)) {
+#ifdef EXEC_RETURN_ERRNO
+			result = errno;
+			restore_errno();
+#endif
 			goto done;
+		}
 
 		run_in_process = sb_check_exec(check_dirfd, check_path, check_flags, argv);
 	}
@@ -387,6 +392,7 @@ done:
 #undef EXEC_ARG_FILE
 #undef EXEC_ARG_FLAGS
 #undef EXEC_MY_ENV
+#undef EXEC_RETURN_ERRNO
 #undef EXEC_SHELL_COMMAND
 #undef EXEC_USE_PATH
 #undef WRAPPER_ARGS_FULL

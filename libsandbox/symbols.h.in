@@ -72,6 +72,10 @@ execvpe
 fexecve
 system
 popen
+posix_spawn
+posix_spawnp
+pidfd_spawn
+pidfd_spawnp
 removexattr
 lremovexattr
 setxattr

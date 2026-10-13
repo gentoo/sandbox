@@ -344,6 +344,10 @@ static bool is_read_func(int sb_nr)
 		case SB_NR_EXECVEAT:
 		case SB_NR_EXECVPE:
 		case SB_NR_FEXECVE:
+		case SB_NR_POSIX_SPAWN:
+		case SB_NR_POSIX_SPAWNP:
+		case SB_NR_PIDFD_SPAWN:
+		case SB_NR_PIDFD_SPAWNP:
 			return true;
 		default:
 			return false;

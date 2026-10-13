@@ -56,6 +56,9 @@
 #ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
+#ifdef HAVE_SPAWN_H
+# include <spawn.h>
+#endif
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>

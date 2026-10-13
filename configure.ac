@@ -107,6 +107,7 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	sched.h
 	siginfo.h
 	sigsegv.h
+	spawn.h
 	syscall.h
 	unistd.h
 	utime.h
