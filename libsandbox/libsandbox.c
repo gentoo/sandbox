@@ -324,6 +324,96 @@ static bool check_prefixes(char *prefixes, const char *path)
 	return false;
 }
 
+static bool is_read_func(int sb_nr)
+{
+	switch (sb_nr) {
+		case SB_NR_ACCESS_RD:
+		case SB_NR_OPEN_RD:
+		case SB_NR_OPEN_RD_CREAT:
+		case SB_NR_OPENDIR:
+		case SB_NR_POPEN:
+		case SB_NR_SYSTEM:
+#if 0
+		case SB_NR_EXECL:
+		case SB_NR_EXECLP:
+		case SB_NR_EXECLE:
+#endif
+		case SB_NR_EXECV:
+		case SB_NR_EXECVP:
+		case SB_NR_EXECVE:
+		case SB_NR_EXECVPE:
+		case SB_NR_FEXECVE:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool is_write_func(int sb_nr)
+{
+	switch (sb_nr) {
+		case SB_NR_ACCESS_WR:
+		case SB_NR_CHMOD:
+		case SB_NR_CHOWN:
+		case SB_NR_CREAT:
+		case SB_NR_CREAT64:
+		case SB_NR_FCHMOD:
+		case SB_NR_FCHMODAT:
+		case SB_NR_FCHOWN:
+		case SB_NR_FCHOWNAT:
+#if 0
+		case SB_NR_FTRUNCATE:
+		case SB_NR_FTRUNCATE64:
+#endif
+		case SB_NR_FUTIMESAT:
+		case SB_NR_LCHOWN:
+		case SB_NR_LINK:
+		case SB_NR_LINKAT:
+		case SB_NR_LREMOVEXATTR:
+		case SB_NR_LSETXATTR:
+		case SB_NR_LUTIMES:
+		case SB_NR_MKDIR:
+		case SB_NR_MKDIRAT:
+		case SB_NR_MKDTEMP:
+		case SB_NR_MKFIFO:
+		case SB_NR_MKFIFOAT:
+		case SB_NR_MKNOD:
+		case SB_NR_MKNODAT:
+		case SB_NR_MKOSTEMP:
+		case SB_NR_MKOSTEMP64:
+		case SB_NR_MKOSTEMPS:
+		case SB_NR_MKOSTEMPS64:
+		case SB_NR_MKSTEMP:
+		case SB_NR_MKSTEMP64:
+		case SB_NR_MKSTEMPS:
+		case SB_NR_MKSTEMPS64:
+		case SB_NR_OPEN_WR:
+		case SB_NR_OPEN_WR_CREAT:
+		case SB_NR_REMOVE:
+		case SB_NR_REMOVEXATTR:
+		case SB_NR_RENAME:
+		case SB_NR_RENAMEAT:
+		case SB_NR_RENAMEAT2:
+		case SB_NR_RMDIR:
+		case SB_NR_SETXATTR:
+		case SB_NR_SYMLINK:
+		case SB_NR_SYMLINKAT:
+		case SB_NR_TRUNCATE:
+		case SB_NR_TRUNCATE64:
+		case SB_NR_UNLINK:
+		case SB_NR_UNLINKAT:
+		case SB_NR_UTIME:
+		case SB_NR_UTIMENSAT:
+		case SB_NR_UTIMES:
+		case SB_NR__XMKNOD:
+		case SB_NR___XMKNOD:
+		case SB_NR___XMKNODAT:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
                         int flags, const char *abs_path, const char *resolv_path)
 {
@@ -345,22 +435,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 		/* Fall in a read/write denied path, Deny Access */
 		goto out;
 
-	if (sbcontext->read_prefixes &&
-	    (sb_nr == SB_NR_ACCESS_RD ||
-	     sb_nr == SB_NR_OPEN_RD   ||
-	     sb_nr == SB_NR_OPEN_RD_CREAT ||
-	     sb_nr == SB_NR_OPENDIR   ||
-	     sb_nr == SB_NR_POPEN     ||
-	     sb_nr == SB_NR_SYSTEM    ||
-	   /*sb_nr == SB_NR_EXECL     ||
-	     sb_nr == SB_NR_EXECLP    ||
-	     sb_nr == SB_NR_EXECLE    ||*/
-	     sb_nr == SB_NR_EXECV     ||
-	     sb_nr == SB_NR_EXECVP    ||
-	     sb_nr == SB_NR_EXECVE    ||
-	     sb_nr == SB_NR_EXECVPE   ||
-	     sb_nr == SB_NR_FEXECVE))
-	{
+	if (sbcontext->read_prefixes && is_read_func(sb_nr)) {
 		if (check_prefixes(sbcontext->read_prefixes, resolv_path)) {
 			/* Fall in a readable path, Grant Access */
 			result = 1;
@@ -384,62 +459,7 @@ static int check_access(sbcontext_t *sbcontext, int sb_nr, const char *func,
 	if (!strncmp(resolv_path, SANDBOX_LOG_LOCATION, strlen(SANDBOX_LOG_LOCATION)))
 		goto out;
 
-	if (sb_nr == SB_NR_ACCESS_WR   ||
-	    sb_nr == SB_NR_CHMOD       ||
-	    sb_nr == SB_NR_CHOWN       ||
-	    sb_nr == SB_NR_CREAT       ||
-	    sb_nr == SB_NR_CREAT64     ||
-	    sb_nr == SB_NR_FCHMOD      ||
-	    sb_nr == SB_NR_FCHMODAT    ||
-	    sb_nr == SB_NR_FCHOWN      ||
-	    sb_nr == SB_NR_FCHOWNAT    ||
-	  /*sb_nr == SB_NR_FTRUNCATE   ||
-	    sb_nr == SB_NR_FTRUNCATE64 ||*/
-	    sb_nr == SB_NR_FUTIMESAT   ||
-	    sb_nr == SB_NR_LCHOWN      ||
-	    sb_nr == SB_NR_LINK        ||
-	    sb_nr == SB_NR_LINKAT      ||
-	    sb_nr == SB_NR_LREMOVEXATTR||
-	    sb_nr == SB_NR_LSETXATTR   ||
-	    sb_nr == SB_NR_LUTIMES     ||
-	    sb_nr == SB_NR_MKDIR       ||
-	    sb_nr == SB_NR_MKDIRAT     ||
-	    sb_nr == SB_NR_MKDTEMP     ||
-	    sb_nr == SB_NR_MKFIFO      ||
-	    sb_nr == SB_NR_MKFIFOAT    ||
-	    sb_nr == SB_NR_MKNOD       ||
-	    sb_nr == SB_NR_MKNODAT     ||
-	    sb_nr == SB_NR_MKOSTEMP    ||
-	    sb_nr == SB_NR_MKOSTEMP64  ||
-	    sb_nr == SB_NR_MKOSTEMPS   ||
-	    sb_nr == SB_NR_MKOSTEMPS64 ||
-	    sb_nr == SB_NR_MKSTEMP     ||
-	    sb_nr == SB_NR_MKSTEMP64   ||
-	    sb_nr == SB_NR_MKSTEMPS    ||
-	    sb_nr == SB_NR_MKSTEMPS64  ||
-	    sb_nr == SB_NR_OPEN_WR     ||
-	    sb_nr == SB_NR_OPEN_WR_CREAT ||
-	    sb_nr == SB_NR_REMOVE      ||
-	    sb_nr == SB_NR_REMOVEXATTR ||
-	    sb_nr == SB_NR_RENAME      ||
-	    sb_nr == SB_NR_RENAMEAT    ||
-	    sb_nr == SB_NR_RENAMEAT2   ||
-	    sb_nr == SB_NR_RMDIR       ||
-	    sb_nr == SB_NR_SETXATTR    ||
-	    sb_nr == SB_NR_SYMLINK     ||
-	    sb_nr == SB_NR_SYMLINKAT   ||
-	    sb_nr == SB_NR_TRUNCATE    ||
-	    sb_nr == SB_NR_TRUNCATE64  ||
-	    sb_nr == SB_NR_UNLINK      ||
-	    sb_nr == SB_NR_UNLINKAT    ||
-	    sb_nr == SB_NR_UTIME       ||
-	    sb_nr == SB_NR_UTIMENSAT   ||
-	    sb_nr == SB_NR_UTIMES      ||
-	    sb_nr == SB_NR__XMKNOD     ||
-	    sb_nr == SB_NR___XMKNOD    ||
-	    sb_nr == SB_NR___XMKNODAT)
-	{
-
+	if (is_write_func(sb_nr)) {
 		if (check_prefixes(sbcontext->write_denied_prefixes, resolv_path))
 			/* Falls in a write denied path, Deny Access */
 			goto out;
