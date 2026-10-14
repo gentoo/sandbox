@@ -81,6 +81,7 @@ check_PROGRAMS += \
 	%D%/rmdir-0 \
 	%D%/setxattr-0 \
 	%D%/signal_static-0 \
+	%D%/posix_spawnp-0 \
 	%D%/symlink-0 \
 	%D%/symlinkat-0 \
 	%D%/system-0 \

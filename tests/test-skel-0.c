@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 		char *s;
 
 		s = argv[i++];
-		long want_ret = atoi(s);
+		long want_ret = s[0] == '0' ? atoi(s) : lookup_errno(s);
 
 		int want_errno = 0;
 		s = strchr(s, ',');
