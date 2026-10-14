@@ -341,6 +341,7 @@ static bool is_read_func(int sb_nr)
 		case SB_NR_EXECV:
 		case SB_NR_EXECVP:
 		case SB_NR_EXECVE:
+		case SB_NR_EXECVEAT:
 		case SB_NR_EXECVPE:
 		case SB_NR_FEXECVE:
 			return true;
