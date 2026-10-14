@@ -129,6 +129,14 @@ static size_t strlcpy(char *dst, const char *src, size_t size)
 # define weak_alias(_name, _aliasname) \
 	extern __typeof (_name) _aliasname __attribute__ ((weak, alias (#_name)));
 
+/* Based on glibc (__hidden_ver2) */
+# define strong_asm_alias(_name, _aliasname) \
+	extern __typeof (_name) __sandbox_strong_asm_alias_##_aliasname \
+		__asm__ (#_aliasname) __attribute__ ((alias (#_name)));
+# define strong_asm_alias(_name, _aliasname) \
+	extern __typeof (_name) __sandbox_strong_asm_alias_##_aliasname \
+		__asm__ (#_aliasname) __attribute__ ((weak, alias (#_name)));
+
 #define attribute_hidden __attribute__((visibility("hidden")))
 
 #define likely(x)   __builtin_expect(!!(x), 1)
