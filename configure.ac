@@ -96,29 +96,17 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 	dirent.h
 	dlfcn.h
 	elf.h
-	errno.h
 	execinfo.h
 	fcntl.h
 	getopt.h
 	grp.h
-	inttypes.h
 	libgen.h
-	limits.h
 	memory.h
 	pthread.h
 	pwd.h
 	sched.h
 	siginfo.h
-	signal.h
 	sigsegv.h
-	stdarg.h
-	stdbool.h
-	stddef.h
-	stdint.h
-	stdio.h
-	stdlib.h
-	string.h
-	strings.h
 	syscall.h
 	unistd.h
 	utime.h
@@ -145,12 +133,10 @@ AC_CHECK_HEADERS_ONCE(m4_flatten([
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl Do this after all headers have been checked.
-AC_C_CONST
 AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
 AC_CHECK_DECLS_ONCE([environ])
-AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_TYPES([sighandler_t, sig_t, __sighandler_t],,,[#include <signal.h>])
 
 save_CPPFLAGS=$CPPFLAGS
@@ -185,9 +171,6 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	lremovexattr
 	lsetxattr
 	lutimes
-	memmove
-	memcpy
-	memset
 	mkdir
 	mkdirat
 	mkdtemp
@@ -218,14 +201,9 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	setenv
 	setxattr
 	strcasecmp
-	strchr
 	strdup
-	strerror
 	strlcpy
 	strndup
-	strrchr
-	strspn
-	strstr
 	strtok_r
 	symlinkat
 	truncate64

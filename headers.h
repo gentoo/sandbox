@@ -20,9 +20,7 @@
 #ifdef HAVE_ELF_H
 # include <elf.h>
 #endif
-#ifdef HAVE_ERRNO_H
-# include <errno.h>
-#endif
+#include <errno.h>
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
 #endif
@@ -35,15 +33,11 @@
 #ifdef HAVE_GRP_H
 # include <grp.h>
 #endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
+#include <inttypes.h>
 #ifdef HAVE_LIBGEN_H
 # include <libgen.h>
 #endif
-#ifdef HAVE_LIMITS_H
-# include <limits.h>
-#endif
+#include <limits.h>
 #ifdef HAVE_MEMORY_H
 # include <memory.h>
 #endif
@@ -62,30 +56,13 @@
 #ifdef HAVE_SIGNAL_H
 # include <signal.h>
 #endif
-#ifdef HAVE_STDARG_H
-# include <stdarg.h>
-#endif
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#endif
-#ifdef HAVE_STDDEF_H
-# include <stddef.h>
-#endif
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_STDIO_H
-# include <stdio.h>
-#endif
-#ifdef HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #ifdef HAVE_SYSCALL_H
 # include <syscall.h>
 #endif
