@@ -31,6 +31,7 @@ check_PROGRAMS += \
 	%D%/chown-0 \
 	%D%/creat-0 \
 	%D%/creat64-0 \
+	%D%/execle-0 \
 	%D%/execv-0 \
 	%D%/execvp-0 \
 	%D%/execveat-0 \
