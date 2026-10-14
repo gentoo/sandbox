@@ -81,6 +81,7 @@ check_PROGRAMS += \
 	%D%/signal_static-0 \
 	%D%/symlink-0 \
 	%D%/symlinkat-0 \
+	%D%/system-0 \
 	%D%/truncate-0 \
 	%D%/truncate64-0 \
 	%D%/unlink-0 \

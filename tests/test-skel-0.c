@@ -190,6 +190,7 @@ int main(int argc, char *argv[])
 			"<dev>", V_DEV_T,
 			"<uid>", "# (decimal)",
 			"<gid>", "# (decimal)",
+			"<command>", "command",
 		};
 		for (i = 0; i < ARRAY_SIZE(vusage); i += 2)
 			if (strstr(_ARG_USE, vusage[i]))
