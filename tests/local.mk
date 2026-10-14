@@ -11,6 +11,7 @@ EXTRA_DIST += \
 	$(TESTSUITE_LIST) \
 	%D%/atlocal.in \
 	%D%/package.m4.in \
+	%D%/exec-test-body.c \
 	%D%/test-skel-0.c \
 	%D%/tests.h \
 	%D%/malloc-0 \
@@ -32,6 +33,7 @@ check_PROGRAMS += \
 	%D%/creat64-0 \
 	%D%/execv-0 \
 	%D%/execvp-0 \
+	%D%/execveat-0 \
 	%D%/faccessat-0 \
 	%D%/faccessat_static-0 \
 	%D%/fchmod-0 \

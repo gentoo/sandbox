@@ -159,6 +159,7 @@ AC_CHECK_FUNCS_ONCE(m4_flatten([
 	__clone2
 	closefrom
 	creat64
+	execveat
 	faccessat
 	fchmodat
 	fchownat
