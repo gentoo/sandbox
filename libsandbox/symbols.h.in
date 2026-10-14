@@ -61,14 +61,14 @@ mkstemp
 mkstemp64
 mkstemps
 mkstemps64
-#execl
-#execle
-#execlp
 execv
 execve
 execveat
 execvp
 execvpe
+execl
+execle
+execlp
 fexecve
 system
 popen

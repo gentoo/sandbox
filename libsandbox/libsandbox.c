@@ -333,14 +333,12 @@ static bool is_read_func(int sb_nr)
 		case SB_NR_OPENDIR:
 		case SB_NR_POPEN:
 		case SB_NR_SYSTEM:
-#if 0
 		case SB_NR_EXECL:
-		case SB_NR_EXECLP:
 		case SB_NR_EXECLE:
-#endif
+		case SB_NR_EXECLP:
 		case SB_NR_EXECV:
-		case SB_NR_EXECVP:
 		case SB_NR_EXECVE:
+		case SB_NR_EXECVP:
 		case SB_NR_EXECVEAT:
 		case SB_NR_EXECVPE:
 		case SB_NR_FEXECVE:
