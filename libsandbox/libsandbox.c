@@ -725,6 +725,7 @@ static bool reject_empty_path(int sb_nr, int flags)
 	switch (sb_nr) {
 		case SB_NR_ACCESS_RD:
 		case SB_NR_ACCESS_WR:
+		case SB_NR_EXECVEAT:
 		case SB_NR_FCHOWNAT:
 		case SB_NR_FCHMODAT:
 		case SB_NR_UTIMENSAT:
@@ -739,6 +740,7 @@ static bool reject_null_path(int sb_nr)
 	switch (sb_nr) {
 		case SB_NR_FCHMOD:
 		case SB_NR_FCHOWN:
+		case SB_NR_FEXECVE:
 		case SB_NR_FUTIMESAT:
 		case SB_NR_UTIMENSAT:
 			return false;

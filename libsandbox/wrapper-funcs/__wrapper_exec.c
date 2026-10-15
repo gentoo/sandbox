@@ -29,7 +29,7 @@ static bool elf_in_range(int64_t size, uint64_t off, uint64_t len)
 /* Check to see if we can run this program in-process.  If not, try to fall back
  * tracing it out-of-process via some trace mechanisms (e.g. ptrace).
  */
-static bool sb_check_exec(const char *filename, char *const argv[])
+static bool sb_check_exec(int dirfd, const char *filename, int flags, char *const argv[])
 {
 	int fd;
 	unsigned char *elf;
@@ -42,10 +42,20 @@ static bool sb_check_exec(const char *filename, char *const argv[])
 	if (unlikely(method == SANDBOX_METHOD_PRELOAD))
 		return true;
 
-	fd = sb_unwrapped_open_DEFAULT(filename, O_RDONLY|O_CLOEXEC, 0);
+	if (!filename || (!filename[0] && (flags & AT_EMPTY_PATH)))
+		fd = fcntl(dirfd, F_DUPFD_CLOEXEC, 0);
+	else {
+		int oflags = O_RDONLY|O_CLOEXEC;
+		if (flags & AT_SYMLINK_NOFOLLOW)
+			oflags |= O_NOFOLLOW;
+		fd = sb_unwrapped_openat(dirfd, filename, oflags, 0);
+	}
+
 	if (fd == -1)
 		return true;
 	if (sb_fstat(fd, &mode, &size))
+		goto out_fd;
+	if (!S_ISREG(mode))
 		goto out_fd;
 	if (size < sizeof(Elf64_Ehdr))
 		goto out_fd;
@@ -291,6 +301,16 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 
 	save_errno();
 
+#ifdef EXEC_ARG_DIRFD
+	int check_dirfd = EXEC_ARG_DIRFD;
+#else
+	int check_dirfd = AT_FDCWD;
+#endif
+#ifdef EXEC_ARG_FLAGS
+	int check_flags = EXEC_ARG_FLAGS;
+#else
+	int check_flags = 0;
+#endif
 #ifdef EXEC_ARG_FILE
 	const char *check_path = EXEC_ARG_FILE;
 # ifdef EXEC_USE_PATH
@@ -322,11 +342,11 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 #else
 	const char *check_path = NULL;
 #endif
-	if (check_path) {
-		if (!SB_SAFE(check_path))
+	if (check_dirfd >= 0 || check_path) {
+		if (!SB_SAFE_AT(check_dirfd, check_path, check_flags))
 			goto done;
 
-		run_in_process = sb_check_exec(check_path, argv);
+		run_in_process = sb_check_exec(check_dirfd, check_path, check_flags, argv);
 	}
 
 #ifdef EXEC_MY_ENV
@@ -363,7 +383,9 @@ done:
 }
 
 #undef EXEC_ARGS
+#undef EXEC_ARG_DIRFD
 #undef EXEC_ARG_FILE
+#undef EXEC_ARG_FLAGS
 #undef EXEC_MY_ENV
 #undef EXEC_SHELL_COMMAND
 #undef EXEC_USE_PATH
