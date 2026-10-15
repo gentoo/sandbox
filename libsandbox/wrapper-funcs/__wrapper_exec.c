@@ -316,13 +316,18 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 		}
 	}
 # endif
+#elif defined(EXEC_SHELL_COMMAND)
+	const char *check_path = "/bin/sh";
+	char *argv[] = { "sh", "-c", "--", (char *)command, NULL };
+#else
+	const char *check_path = NULL;
+#endif
 	if (check_path) {
 		if (!SB_SAFE(check_path))
 			goto done;
 
 		run_in_process = sb_check_exec(check_path, argv);
 	}
-#endif
 
 #ifdef EXEC_MY_ENV
 	struct sb_envp_ctx ec = sb_new_envp((char**)envp, run_in_process);
@@ -349,12 +354,10 @@ WRAPPER_RET_TYPE WRAPPER_NAME(WRAPPER_ARGS_PROTO)
 	--recursive;
 #endif
 
-#ifdef EXEC_ARG_FILE
 done:
-# ifdef EXEC_USE_PATH
+#if defined(EXEC_ARG_FILE) && defined(EXEC_USE_PATH)
 	free(mem1);
 	free(mem2);
-# endif
 #endif
 	return result;
 }
@@ -362,6 +365,7 @@ done:
 #undef EXEC_ARGS
 #undef EXEC_ARG_FILE
 #undef EXEC_MY_ENV
+#undef EXEC_SHELL_COMMAND
 #undef EXEC_USE_PATH
 #undef WRAPPER_ARGS_FULL
 #undef WRAPPER_ARGS_PROTO_FULL

@@ -9,4 +9,5 @@
 #define WRAPPER_ARGS command, type
 #define WRAPPER_RET_TYPE FILE *
 #define WRAPPER_RET_DEFAULT NULL
+#define EXEC_SHELL_COMMAND
 #include "__wrapper_exec.c"
