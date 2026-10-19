@@ -417,7 +417,7 @@ static void trace_loop(void)
 	bool before_exec, before_syscall, fake_syscall_ret;
 	unsigned event;
 	long ret;
-	int status, sig;
+	int restart, status, sig;
 	const struct syscall_entry *tbl_after_fork;
 	void *data;
 
@@ -426,10 +426,18 @@ static void trace_loop(void)
 	fake_syscall_ret = false;
 	tbl_after_fork = NULL;
 	data = NULL;
+	restart = PTRACE_SYSCALL;
 	do {
-		ret = do_ptrace(PTRACE_SYSCALL, NULL, data);
+		ret = do_ptrace(restart, NULL, data);
 		data = NULL;
-		waitpid(trace_pid, &status, 0);
+		restart = PTRACE_SYSCALL;
+
+		pid_t pid = waitpid(-1, &status, 0);
+		if (pid == -1)
+			break;
+
+		/* pid might change when exec occurs in a multi-threaded program */
+		trace_pid = pid;
 
 		event = (unsigned)status >> 16;
 
@@ -479,10 +487,13 @@ static void trace_loop(void)
 			continue;
 
 		case PTRACE_EVENT_EXIT:
-			/* We'll tell the process to resume, which should make it exit,
-			 * and then we'll pick up its exit status and exit above.
-			 */
 			__sb_debug(" exit event!\n");
+			trace_exit(0);
+
+		case PTRACE_EVENT_STOP:
+			__sb_debug("stop event!\n");
+			if (sig != SIGTRAP)
+				restart = PTRACE_LISTEN;
 			continue;
 
 		default:
@@ -557,35 +568,102 @@ static void close_all_fds(void)
 
 void trace_main(void)
 {
-	struct sigaction old_sa, sa = { .sa_handler = SIG_DFL, };
-
 	if (trace_pid)
 		sb_ebort("ISE: trace code assumes multiple threads are not forking\n");
 
-	sigaction(SIGCHLD, &sa, &old_sa);
-	trace_pid = fork();
-	if (unlikely(trace_pid == -1)) {
-		sb_ebort("ISE: vfork() failed: %s\n", strerror(errno));
-	} else if (trace_pid) {
-		sb_debug("parent waiting for child (pid=%i) to signal", trace_pid);
-		waitpid(trace_pid, NULL, 0);
-		do_ptrace(PTRACE_SETOPTIONS, NULL,
+	/* Block all signals to avoid any surprises. */
+	sigset_t ss, old_ss;
+	sigfillset(&ss);
+	sigprocmask(SIG_BLOCK, &ss, &old_ss);
+
+	int sv[2];
+	if (socketpair(AF_UNIX, SOCK_SEQPACKET|SOCK_CLOEXEC, 0, sv) == -1)
+		goto out_noclose;
+
+	pid_t pid = fork();
+
+	if (pid == -1)
+		sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
+
+	if (pid == 0) {
+		/* child */
+
+		/* Ensure signals behave normally in the tracer. */
+		/* Do this early just to optimize sb_ebort (SIGABRT). */
+		struct sigaction sa = { .sa_handler = SIG_DFL };
+		for (int sig = 1; sig < NSIG; ++sig)
+			sigaction(sig, &sa, NULL);
+
+		sigprocmask(SIG_UNBLOCK, &ss, NULL);
+
+		close(sv[0]);
+
+		pid = fork();
+		if (pid == -1)
+			sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
+
+		if (pid) {
+			/* Send the tracer pid to the tracee. */
+			if (write(sv[1], &pid, sizeof(pid)) != sizeof(pid))
+				sb_ebort("ISE: write() failed: %s\n", strerror(errno));
+			_exit(0);
+		}
+
+		/* tracer (grandchild) */
+
+		/* Receive a pid from the tracee. */
+		/* Blocks until the tracee does PR_SET_PTRACER. */
+		if (read(sv[1], &pid, sizeof(pid)) != sizeof(pid))
+			sb_ebort("ISE: read() failed: %s\n", strerror(errno));
+
+		/* TODO: eliminate the trace_pid global var */
+		trace_pid = pid;
+
+		do_ptrace(PTRACE_SEIZE, NULL,
 			(void *)(uintptr_t)(
 				PTRACE_O_EXITKILL |
 				PTRACE_O_TRACEEXEC |
 				PTRACE_O_TRACEEXIT |
 				PTRACE_O_TRACESYSGOOD
 			));
+
+		do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
+
+		/* tracee blocks on read(sv[0]) until we close sv[1] */
 		close_all_fds();
 		trace_loop();
-		sb_ebort("ISE: child should have quit, as should we\n");
+		sb_ebort("ISE: traced process should have quit, as should we\n");
 	}
 
-	sb_debug("child setting up ...");
-	sigaction(SIGCHLD, &old_sa, NULL);
-	do_ptrace(PTRACE_TRACEME, NULL, NULL);
-	kill(getpid(), SIGSTOP);
-	/* child returns */
+	/* tracee (parent) */
+
+	close(sv[1]);
+
+	/* Get the pid of the tracer (our grandchild). */
+	pid_t tracer_pid;
+	if (read(sv[0], &tracer_pid, sizeof(tracer_pid)) != sizeof(tracer_pid))
+		goto out;
+
+	/* Reap our child. */
+	waitpid(pid, NULL, 0);
+
+	/* Allow the tracer to trace us. */
+	if (prctl(PR_SET_PTRACER, tracer_pid) == -1)
+		goto out;
+
+	/* Tell the tracer our pid (task id really). */
+	/* Tracer blocks on read(sv[1]). */
+	pid = gettid();
+	if (write(sv[0], &pid, sizeof(pid)) != sizeof(pid))
+		goto out;
+
+	/* Wait for the tracer to close the socket. */
+	if (read(sv[0], &pid, sizeof(pid)));
+
+out:
+	close(sv[0]);
+out_noclose:
+	sigprocmask(SIG_SETMASK, &old_ss, NULL);
 }
 
 #else
