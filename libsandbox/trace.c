@@ -646,11 +646,10 @@ void trace_main(void)
 		trace_pid = pid;
 
 		do_ptrace(PTRACE_SEIZE, NULL,
-			(void *)(uintptr_t)(
-				PTRACE_O_EXITKILL |
-				PTRACE_O_TRACEEXEC |
-				PTRACE_O_TRACEEXIT |
-				PTRACE_O_TRACESYSGOOD
+			(void *)(uintptr_t)(0
+				|PTRACE_O_TRACEEXEC
+				|PTRACE_O_TRACEEXIT
+				|PTRACE_O_TRACESYSGOOD
 			));
 
 		do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
