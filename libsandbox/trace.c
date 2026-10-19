@@ -535,13 +535,22 @@ static void trace_loop(void)
 	} while (1);
 }
 
-static void close_all_fds(void)
+#ifndef HAVE_CLOSEFROM
+static int str_to_fd(const char *nptr)
 {
-#ifdef HAVE_CLOSEFROM
-	closefrom(0);
-#else
+	char *endptr;
+	long val;
+	errno = 0;
+	val = strtol(nptr, &endptr, 10);
+	if (errno || endptr[0] || val < 0 || val > INT_MAX)
+		return -1;
+	return val;
+}
+
+static void closefrom(int lowfd)
+{
 #ifdef SYS_close_range
-	if (0 == syscall(SYS_close_range, 0U, UINT_MAX, 0))
+	if (0 == syscall(SYS_close_range, lowfd, UINT_MAX, 0))
 		return;
 #endif
 	DIR *dirp;
@@ -555,15 +564,32 @@ static void close_all_fds(void)
 	dfd = dirfd(dirp);
 
 	while ((de = readdir(dirp)) != NULL) {
-		if (de->d_name[0] == '.')
-			continue;
-		fd = atoi(de->d_name);
-		if (fd != dfd)
+		fd = str_to_fd(de->d_name);
+		if (fd >= lowfd && fd != dfd)
 			close(fd);
 	}
 
 	closedir(dirp);
+}
 #endif
+
+static int cleanup_fds(int sockfd)
+{
+	int devnull = sb_unwrapped_open("/dev/null", O_RDWR, 0);
+	if (devnull == -1) {
+		close(0);
+		close(1);
+		close(2);
+	}
+	else {
+		dup2(devnull, 0);
+		dup2(devnull, 1);
+		dup2(devnull, 2);
+	}
+	if (sockfd != 3)
+		sockfd = dup3(sockfd, 3, O_CLOEXEC);
+	closefrom(4);
+	return sockfd;
 }
 
 void trace_main(void)
@@ -596,7 +622,7 @@ void trace_main(void)
 
 		sigprocmask(SIG_UNBLOCK, &ss, NULL);
 
-		close(sv[0]);
+		int sockfd = cleanup_fds(sv[1]);
 
 		pid = fork();
 		if (pid == -1)
@@ -604,7 +630,7 @@ void trace_main(void)
 
 		if (pid) {
 			/* Send the tracer pid to the tracee. */
-			if (write(sv[1], &pid, sizeof(pid)) != sizeof(pid))
+			if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid))
 				sb_ebort("ISE: write() failed: %s\n", strerror(errno));
 			_exit(0);
 		}
@@ -613,7 +639,7 @@ void trace_main(void)
 
 		/* Receive a pid from the tracee. */
 		/* Blocks until the tracee does PR_SET_PTRACER. */
-		if (read(sv[1], &pid, sizeof(pid)) != sizeof(pid))
+		if (read(sockfd, &pid, sizeof(pid)) != sizeof(pid))
 			sb_ebort("ISE: read() failed: %s\n", strerror(errno));
 
 		/* TODO: eliminate the trace_pid global var */
@@ -629,8 +655,8 @@ void trace_main(void)
 
 		do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
 
-		/* tracee blocks on read(sv[0]) until we close sv[1] */
-		close_all_fds();
+		/* tracee blocks on read(sv[0]) until we close this */
+		close(sockfd);
 		trace_loop();
 		sb_ebort("ISE: traced process should have quit, as should we\n");
 	}
@@ -638,10 +664,11 @@ void trace_main(void)
 	/* tracee (parent) */
 
 	close(sv[1]);
+	int sockfd = sv[0];
 
 	/* Get the pid of the tracer (our grandchild). */
 	pid_t tracer_pid;
-	if (read(sv[0], &tracer_pid, sizeof(tracer_pid)) != sizeof(tracer_pid))
+	if (read(sockfd, &tracer_pid, sizeof(tracer_pid)) != sizeof(tracer_pid))
 		goto out;
 
 	/* Reap our child. */
@@ -654,14 +681,14 @@ void trace_main(void)
 	/* Tell the tracer our pid (task id really). */
 	/* Tracer blocks on read(sv[1]). */
 	pid = gettid();
-	if (write(sv[0], &pid, sizeof(pid)) != sizeof(pid))
+	if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid))
 		goto out;
 
 	/* Wait for the tracer to close the socket. */
-	if (read(sv[0], &pid, sizeof(pid)));
+	if (read(sockfd, &pid, sizeof(pid)));
 
 out:
-	close(sv[0]);
+	close(sockfd);
 out_noclose:
 	sigprocmask(SIG_SETMASK, &old_ss, NULL);
 }
