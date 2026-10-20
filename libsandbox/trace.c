@@ -630,8 +630,13 @@ void trace_main(void)
 
 		if (pid) {
 			/* Send the tracer pid to the tracee. */
-			if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid))
+			if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid)) {
+				save_errno();
+				kill(pid, SIGKILL);
+				wait(NULL);
+				restore_errno();
 				sb_ebort("ISE: write() failed: %s\n", strerror(errno));
+			}
 			_exit(0);
 		}
 
