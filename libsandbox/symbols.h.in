@@ -95,4 +95,3 @@ lutimes
 __lutimes64
 __lutimes_time64
 fork
-vfork
