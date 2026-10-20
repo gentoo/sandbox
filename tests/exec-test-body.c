@@ -18,6 +18,9 @@
 		_exit(127);
 	}
 
+	kill(pid, SIGKILL);
+	wait(NULL);
+
 	errno = exec_errno;
 	return exec_result;
 }
