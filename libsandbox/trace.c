@@ -575,20 +575,28 @@ static void closefrom(int lowfd)
 
 static int cleanup_fds(int sockfd)
 {
+	if (sockfd != 3)
+		sockfd = dup3(sockfd, 3, O_CLOEXEC);
+
+	if (sockfd == -1)
+		sb_ebort("ISE: dup3() failed");
+
 	int devnull = sb_unwrapped_open("/dev/null", O_RDWR, 0);
 	if (devnull == -1) {
+		/* Can't open /dev/null; close stdio */
 		close(0);
 		close(1);
 		close(2);
 	}
 	else {
+		/* Redirect stdio to /dev/null */
 		dup2(devnull, 0);
 		dup2(devnull, 1);
 		dup2(devnull, 2);
 	}
-	if (sockfd != 3)
-		sockfd = dup3(sockfd, 3, O_CLOEXEC);
+
 	closefrom(4);
+
 	return sockfd;
 }
 
