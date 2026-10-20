@@ -573,12 +573,12 @@ static void closefrom(int lowfd)
 }
 #endif
 
-static int cleanup_fds(int sockfd)
+static int cleanup_fds(int keepfd)
 {
-	if (sockfd != 3)
-		sockfd = dup3(sockfd, 3, O_CLOEXEC);
+	if (keepfd != 3)
+		keepfd = dup3(keepfd, 3, O_CLOEXEC);
 
-	if (sockfd == -1)
+	if (keepfd == -1)
 		sb_ebort("ISE: dup3() failed");
 
 	int devnull = sb_unwrapped_open("/dev/null", O_RDWR, 0);
@@ -597,7 +597,7 @@ static int cleanup_fds(int sockfd)
 
 	closefrom(4);
 
-	return sockfd;
+	return keepfd;
 }
 
 void trace_main(void)
@@ -610,99 +610,67 @@ void trace_main(void)
 	sigfillset(&ss);
 	sigprocmask(SIG_BLOCK, &ss, &old_ss);
 
-	int sv[2];
-	if (socketpair(AF_UNIX, SOCK_SEQPACKET|SOCK_CLOEXEC, 0, sv) == -1)
-		goto out_noclose;
-
-	pid_t pid = fork();
-
-	if (pid == -1)
-		sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
-
-	if (pid == 0) {
-		/* child */
-
-		/* Ensure signals behave normally in the tracer. */
-		/* Do this early just to optimize sb_ebort (SIGABRT). */
-		struct sigaction sa = { .sa_handler = SIG_DFL };
-		for (int sig = 1; sig < NSIG; ++sig)
-			sigaction(sig, &sa, NULL);
-
-		sigprocmask(SIG_UNBLOCK, &ss, NULL);
-
-		int sockfd = cleanup_fds(sv[1]);
-
-		pid = fork();
-		if (pid == -1)
-			sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
-
-		if (pid) {
-			/* Send the tracer pid to the tracee. */
-			if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid)) {
-				save_errno();
-				kill(pid, SIGKILL);
-				wait(NULL);
-				restore_errno();
-				sb_ebort("ISE: write() failed: %s\n", strerror(errno));
-			}
-			_exit(0);
-		}
-
-		/* tracer (grandchild) */
-
-		/* Receive a pid from the tracee. */
-		/* Blocks until the tracee does PR_SET_PTRACER. */
-		if (read(sockfd, &pid, sizeof(pid)) != sizeof(pid))
-			sb_ebort("ISE: read() failed: %s\n", strerror(errno));
-
-		/* TODO: eliminate the trace_pid global var */
-		trace_pid = pid;
-
-		do_ptrace(PTRACE_SEIZE, NULL,
-			(void *)(uintptr_t)(0
-				|PTRACE_O_TRACEEXEC
-				|PTRACE_O_TRACEEXIT
-				|PTRACE_O_TRACESYSGOOD
-			));
-
-		do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
-
-		/* tracee blocks on read(sv[0]) until we close this */
-		close(sockfd);
-		trace_loop();
-		sb_ebort("ISE: traced process should have quit, as should we\n");
+	int pipefd[2];
+	if (pipe2(pipefd, O_CLOEXEC) == -1) {
+		sigprocmask(SIG_SETMASK, &old_ss, NULL);
+		return;
 	}
 
-	/* tracee (parent) */
-
-	close(sv[1]);
-	int sockfd = sv[0];
-
-	/* Get the pid of the tracer (our grandchild). */
-	pid_t tracer_pid;
-	if (read(sockfd, &tracer_pid, sizeof(tracer_pid)) != sizeof(tracer_pid))
-		goto out;
-
-	/* Reap our child. */
-	waitpid(pid, NULL, 0);
-
 	/* Allow the tracer to trace us. */
-	if (prctl(PR_SET_PTRACER, tracer_pid) == -1)
-		goto out;
+	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY);
 
-	/* Tell the tracer our pid (task id really). */
-	/* Tracer blocks on read(sv[1]). */
-	pid = gettid();
-	if (write(sockfd, &pid, sizeof(pid)) != sizeof(pid))
-		goto out;
+	pid_t mytid = gettid();
 
-	/* Wait for the tracer to close the socket. */
-	if (read(sockfd, &pid, sizeof(pid)));
+	pid_t pid = fork();
+	if (pid == -1)
+		sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
+	else if (pid) {
+		/* tracee (parent) */
+		close(pipefd[1]);
+		waitpid(pid, NULL, 0);
 
-out:
-	close(sockfd);
-out_noclose:
-	sigprocmask(SIG_SETMASK, &old_ss, NULL);
+		/* Wait for the tracer to close the pipe. */
+		if (read(pipefd[0], &pid, sizeof(pid)));
+
+		close(pipefd[0]);
+		sigprocmask(SIG_SETMASK, &old_ss, NULL);
+		return;
+	}
+
+	/* child */
+	pid = fork();
+	if (pid == -1)
+		sb_ebort("ISE: fork() failed: %s\n", strerror(errno));
+	else if (pid)
+		_exit(0);
+
+	/* tracer (grandchild) */
+
+	/* Ensure signals behave normally in the tracer. */
+	struct sigaction sa = { .sa_handler = SIG_DFL };
+	for (int sig = 1; sig < NSIG; ++sig)
+		sigaction(sig, &sa, NULL);
+
+	sigprocmask(SIG_UNBLOCK, &ss, NULL);
+
+	int mypipe = cleanup_fds(pipefd[1]);
+
+	/* TODO: eliminate the trace_pid global var */
+	trace_pid = mytid;
+
+	do_ptrace(PTRACE_SEIZE, NULL,
+		(void *)(uintptr_t)(0
+			|PTRACE_O_TRACEEXEC
+			|PTRACE_O_TRACEEXIT
+			|PTRACE_O_TRACESYSGOOD
+		));
+
+	do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
+
+	/* tracee blocks until we close this */
+	close(mypipe);
+	trace_loop();
+	sb_ebort("ISE: traced process should have quit, as should we\n");
 }
 
 #else
