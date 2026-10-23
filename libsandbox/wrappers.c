@@ -14,6 +14,8 @@
 #undef _TIME_BITS
 #define _LARGEFILE64_SOURCE
 
+#define SB_WRAPPER_SOURCE
+
 #include "headers.h"
 #include "sbutil.h"
 #include "libsandbox.h"
