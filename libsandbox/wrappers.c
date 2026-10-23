@@ -14,6 +14,12 @@
 #undef _TIME_BITS
 #define _LARGEFILE64_SOURCE
 
+/* Prevent musl headers from mangling the wrapper symbol names, bug 978656 */
+#include <config.h>
+#include <features.h>
+#undef __REDIR
+#define __REDIR(x,y)
+
 #include "headers.h"
 #include "sbutil.h"
 #include "libsandbox.h"
