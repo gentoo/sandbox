@@ -19,8 +19,6 @@
 # include "hppa.c"
 #elif defined(__i386__)
 # include "i386.c"
-#elif defined(__ia64__)
-# include "ia64.c"
 #elif defined(__powerpc__)
 # include "powerpc.c"
 #elif defined(__s390__)
