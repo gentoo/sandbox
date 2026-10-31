@@ -29,7 +29,7 @@ static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr
 # define SBDEBUG 0
 #endif
 #define __sb_debug(fmt, args...) do { if (SBDEBUG) sb_eraw(fmt, ## args); } while (0)
-#define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i):%s: " fmt, getpid(), __func__, ## args); } while (0)
+#define _sb_debug(fmt, args...)  do { if (SBDEBUG) sb_ewarn("TRACE (pid=%i trace_pid=%i):%s: " fmt, getpid(), trace_pid, __func__, ## args); } while (0)
 #define sb_debug(fmt, args...)   _sb_debug(fmt "\n", ## args)
 
 #include "trace/os.c"
@@ -474,26 +474,41 @@ static void trace_loop(void)
 			}
 
 			if (before_exec) {
-				_sb_debug("waiting for exec; status: %#x", status);
+				sb_debug("waiting for exec; status: %#x", status);
 				continue;
 			}
 			break;
 
 		case PTRACE_EVENT_EXEC:
 			__sb_debug("hit exec!");
-			before_exec = false;
 			ret = trace_get_regs(&regs);
 			tbl_after_fork = trace_check_personality(&regs);
+			if (before_exec) {
+				before_exec = false;
+				/* ignore forks after an exec */
+				do_ptrace(PTRACE_SETOPTIONS, NULL, (void *)(uintptr_t)(0
+					|PTRACE_O_TRACEEXEC
+					|PTRACE_O_TRACEEXIT
+					|PTRACE_O_TRACESYSGOOD));
+			}
 			continue;
 
 		case PTRACE_EVENT_EXIT:
-			__sb_debug(" exit event!\n");
+			sb_debug(" exit event!\n");
 			trace_exit(0);
 
 		case PTRACE_EVENT_STOP:
-			__sb_debug("stop event!\n");
+			sb_debug("stop event!\n");
 			if (sig != SIGTRAP)
 				restart = PTRACE_LISTEN;
+			continue;
+
+		case PTRACE_EVENT_CLONE:
+		case PTRACE_EVENT_FORK:
+		case PTRACE_EVENT_VFORK:
+			/* detach from the parent if it forks */
+			sb_debug("fork event!");
+			restart = PTRACE_DETACH;
 			continue;
 
 		default:
@@ -660,9 +675,12 @@ void trace_main(void)
 
 	do_ptrace(PTRACE_SEIZE, NULL,
 		(void *)(uintptr_t)(0
+			|PTRACE_O_TRACECLONE
+			|PTRACE_O_TRACEFORK
 			|PTRACE_O_TRACEEXEC
 			|PTRACE_O_TRACEEXIT
 			|PTRACE_O_TRACESYSGOOD
+			|PTRACE_O_TRACEVFORK
 		));
 
 	do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
