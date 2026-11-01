@@ -516,14 +516,9 @@ static void trace_loop(void)
 				/* ignore forks after an exec */
 				do_ptrace(PTRACE_SETOPTIONS, NULL, (void *)(uintptr_t)(0
 					|PTRACE_O_TRACEEXEC
-					|PTRACE_O_TRACEEXIT
 					|PTRACE_O_TRACESYSGOOD));
 			}
 			break;
-
-		case PTRACE_EVENT_EXIT:
-			sb_debug(" exit event!\n");
-			trace_exit(0);
 
 		case PTRACE_EVENT_STOP:
 			sb_debug("stop event!\n");
@@ -676,7 +671,6 @@ void trace_main(void)
 			|PTRACE_O_TRACECLONE
 			|PTRACE_O_TRACEFORK
 			|PTRACE_O_TRACEEXEC
-			|PTRACE_O_TRACEEXIT
 			|PTRACE_O_TRACESYSGOOD
 			|PTRACE_O_TRACEVFORK
 		));
