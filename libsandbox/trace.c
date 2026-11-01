@@ -472,13 +472,12 @@ static void trace_loop(void)
 		if (WIFSIGNALED(status)) {
 			int sig = WTERMSIG(status);
 			sb_debug("signaled %s %i", strsig(sig), sig);
-			kill(getpid(), sig);
-			trace_exit(128 + sig);
+			trace_exit(0);
 
 		} else if (WIFEXITED(status)) {
 			int ec = WEXITSTATUS(status);
 			sb_debug("exited %i", ec);
-			trace_exit(ec);
+			trace_exit(0);
 		}
 
 		sb_assert(WIFSTOPPED(status));
