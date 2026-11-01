@@ -42,13 +42,6 @@ pid_t trace_pid;
 # error "unable to find struct for tracing regs"
 #endif
 
-static void trace_exit(int status)
-{
-	/* if we were vfork-ed, clear trace_pid and exit */
-	trace_pid = 0;
-	_exit(status);
-}
-
 static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data)
 {
 	long ret;
@@ -61,7 +54,7 @@ static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr
 			int status;
 			if (waitpid(trace_pid, &status, 0) == -1) {
 				/* nah, it's dead ... should we whine though ? */
-				trace_exit(0);
+				_exit(0);
 			}
 			sched_yield();
 			goto try_again;
@@ -472,12 +465,11 @@ static void trace_loop(void)
 		if (WIFSIGNALED(status)) {
 			int sig = WTERMSIG(status);
 			sb_debug("signaled %s %i", strsig(sig), sig);
-			trace_exit(0);
-
+			_exit(0);
 		} else if (WIFEXITED(status)) {
 			int ec = WEXITSTATUS(status);
 			sb_debug("exited %i", ec);
-			trace_exit(0);
+			_exit(0);
 		}
 
 		sb_assert(WIFSTOPPED(status));
