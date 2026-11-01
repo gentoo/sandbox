@@ -414,20 +414,55 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
+static void handle_syscall(void)
+{
+	static bool before_syscall = false;
+	static bool fake_syscall_ret = false;
+	trace_regs regs;
+
+	trace_get_regs(&regs);
+
+	if (before_syscall) {
+		/* NB: The kernel guarantees syscall NR is valid only on entry. */
+		int nr = trace_get_sysnum(&regs);
+		const struct syscall_entry *tbl = trace_check_personality(&regs);
+		const struct syscall_entry *se = lookup_syscall_in_tbl(tbl, nr);
+
+		_sb_debug("%s:%i", se ? se->name : "IDK", nr);
+		if (!trace_check_syscall(se, &regs)) {
+			sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
+			trace_set_sysnum(&regs, -1);
+			fake_syscall_ret = true;
+		}
+	} else {
+		long ret;
+		int err;
+
+		if (unlikely(fake_syscall_ret)) {
+			ret = -1;
+			err = EPERM;
+			trace_set_ret(&regs, err);
+			fake_syscall_ret = false;
+		} else
+			ret = trace_result(&regs, &err);
+
+		__sb_debug(" = %li", ret);
+		if (err)
+			__sb_debug(" (errno: %i: %s)", err, strerror(err));
+		__sb_debug("\n");
+	}
+
+	before_syscall = !before_syscall;
+}
+
 static void trace_loop(void)
 {
-	trace_regs regs;
-	bool before_exec, before_syscall, fake_syscall_ret;
+	bool before_exec = true;
 	unsigned event;
 	long ret;
 	int restart, status, sig;
-	const struct syscall_entry *tbl_after_fork;
 	void *data;
 
-	before_exec = true;
-	before_syscall = false;
-	fake_syscall_ret = false;
-	tbl_after_fork = NULL;
 	data = NULL;
 	restart = PTRACE_SYSCALL;
 	do {
@@ -484,8 +519,6 @@ static void trace_loop(void)
 
 		case PTRACE_EVENT_EXEC:
 			__sb_debug("hit exec!");
-			ret = trace_get_regs(&regs);
-			tbl_after_fork = trace_check_personality(&regs);
 			if (before_exec) {
 				before_exec = false;
 				/* ignore forks after an exec */
@@ -519,37 +552,7 @@ static void trace_loop(void)
 			         strsig(sig), sig, event);
 		}
 
-		ret = trace_get_regs(&regs);
-
-		if (before_syscall) {
-			/* NB: The kernel guarantees syscall NR is valid only on entry. */
-			int nr = trace_get_sysnum(&regs);
-			const struct syscall_entry *se = lookup_syscall_in_tbl(tbl_after_fork, nr);
-
-			_sb_debug("%s:%i", se ? se->name : "IDK", nr);
-			if (!trace_check_syscall(se, &regs)) {
-				sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
-				trace_set_sysnum(&regs, -1);
-				fake_syscall_ret = true;
-			}
-		} else {
-			int err;
-
-			if (unlikely(fake_syscall_ret)) {
-				ret = -1;
-				err = EPERM;
-				trace_set_ret(&regs, err);
-				fake_syscall_ret = false;
-			} else
-				ret = trace_result(&regs, &err);
-
-			__sb_debug(" = %li", ret);
-			if (err)
-				__sb_debug(" (errno: %i: %s)", err, strerror(err));
-			__sb_debug("\n");
-		}
-
-		before_syscall = !before_syscall;
+		handle_syscall();
 	} while (1);
 }
 
