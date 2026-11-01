@@ -458,23 +458,16 @@ static void handle_syscall(void)
 static void trace_loop(void)
 {
 	bool before_exec = true;
-	unsigned event;
-	long ret;
-	int restart, status, sig;
-	void *data;
 
-	do {
-		data = NULL;
-		restart = PTRACE_SYSCALL;
-
-		pid_t pid = waitpid(-1, &status, 0);
-		if (pid == -1)
-			break;
-
+	for (;;) {
+		int status;
 		/* pid might change when exec occurs in a multi-threaded program */
-		trace_pid = pid;
-
-		event = (unsigned)status >> 16;
+		trace_pid = waitpid(-1, &status, 0);
+		if (trace_pid == -1) {
+			if (errno == EINTR)
+				continue;
+			break;
+		}
 
 		if (WIFSIGNALED(status)) {
 			int sig = WTERMSIG(status);
@@ -483,14 +476,17 @@ static void trace_loop(void)
 			trace_exit(128 + sig);
 
 		} else if (WIFEXITED(status)) {
-			ret = WEXITSTATUS(status);
-			sb_debug("exited %li", ret);
-			trace_exit(ret);
-
+			int ec = WEXITSTATUS(status);
+			sb_debug("exited %i", ec);
+			trace_exit(ec);
 		}
 
 		sb_assert(WIFSTOPPED(status));
-		sig = WSTOPSIG(status);
+
+		unsigned event = (unsigned)status >> 16;
+		int sig = WSTOPSIG(status);
+		void *data = NULL;
+		sb_ptrace_req_t restart = PTRACE_SYSCALL;
 
 		switch (event) {
 		case 0:
@@ -548,8 +544,8 @@ static void trace_loop(void)
 			         strsig(sig), sig, event);
 		}
 
-		ret = do_ptrace(restart, NULL, data);
-	} while (1);
+		do_ptrace(restart, NULL, data);
+	}
 }
 
 #ifndef HAVE_CLOSEFROM
