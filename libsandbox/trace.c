@@ -463,10 +463,7 @@ static void trace_loop(void)
 	int restart, status, sig;
 	void *data;
 
-	data = NULL;
-	restart = PTRACE_SYSCALL;
 	do {
-		ret = do_ptrace(restart, NULL, data);
 		data = NULL;
 		restart = PTRACE_SYSCALL;
 
@@ -497,7 +494,12 @@ static void trace_loop(void)
 
 		switch (event) {
 		case 0:
-			if (sig != (SIGTRAP | 0x80)) {
+			if (sig == (SIGTRAP | 0x80)) {
+				if (before_exec)
+					sb_debug("waiting for exec; status: %#x", status);
+				else
+					handle_syscall();
+			} else {
 				/* For whatever signal the child caught, let's ignore it and
 				 * continue on.  If it aborted, segfaulted, whatever, that's
 				 * its problem, not ours, so don't whine about it.  We just
@@ -508,12 +510,6 @@ static void trace_loop(void)
 				 */
 				sb_debug("passing signal through %s (%i)", strsig(sig), sig);
 				data = (void *)(uintptr_t)(sig);
-				continue;
-			}
-
-			if (before_exec) {
-				sb_debug("waiting for exec; status: %#x", status);
-				continue;
 			}
 			break;
 
@@ -527,7 +523,7 @@ static void trace_loop(void)
 					|PTRACE_O_TRACEEXIT
 					|PTRACE_O_TRACESYSGOOD));
 			}
-			continue;
+			break;
 
 		case PTRACE_EVENT_EXIT:
 			sb_debug(" exit event!\n");
@@ -537,7 +533,7 @@ static void trace_loop(void)
 			sb_debug("stop event!\n");
 			if (sig != SIGTRAP)
 				restart = PTRACE_LISTEN;
-			continue;
+			break;
 
 		case PTRACE_EVENT_CLONE:
 		case PTRACE_EVENT_FORK:
@@ -545,14 +541,14 @@ static void trace_loop(void)
 			/* detach from the parent if it forks */
 			sb_debug("fork event!");
 			restart = PTRACE_DETACH;
-			continue;
+			break;
 
 		default:
 			sb_ebort("ISE: unhandle ptrace signal %s (%i) event %u\n",
 			         strsig(sig), sig, event);
 		}
 
-		handle_syscall();
+		ret = do_ptrace(restart, NULL, data);
 	} while (1);
 }
 
