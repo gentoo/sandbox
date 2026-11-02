@@ -407,15 +407,69 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	return ret;
 }
 
-static void handle_syscall(void)
-{
-	static bool before_syscall = false;
-	static bool fake_syscall_ret = false;
-	trace_regs regs;
+struct trace_task {
+	pid_t pid;
+	bool before_syscall;
+	bool fake_syscall_ret;
+	bool detach;
+};
 
+static struct trace_task *task_list;
+static size_t task_list_count;
+
+static struct trace_task * find_task(pid_t pid)
+{
+	for (size_t i = 0; i < task_list_count; ++i)
+		if (task_list[i].pid == pid)
+			return &task_list[i];
+	return NULL;
+}
+
+static void clear_task(struct trace_task *tt)
+{
+	memset(tt, 0, sizeof(struct trace_task));
+}
+
+static struct trace_task * create_task(pid_t pid)
+{
+	struct trace_task *tt = find_task(0);
+	if (!tt) {
+		++task_list_count;
+		task_list = xrealloc(task_list, sizeof(struct trace_task) * task_list_count);
+		tt = &task_list[task_list_count - 1];
+		clear_task(tt);
+	}
+	tt->pid = pid;
+	return tt;
+}
+
+static struct trace_task * get_task(pid_t pid)
+{
+	struct trace_task *tt = find_task(pid);
+	if (!tt)
+		tt = create_task(pid);
+	return tt;
+}
+
+static void delete_task(pid_t pid)
+{
+	struct trace_task *tt;
+	if ((tt = find_task(pid)))
+		clear_task(tt);
+}
+
+static void detach_others(void) {
+	for (size_t i = 0; i < task_list_count; ++i)
+		if (task_list[i].pid != 0 && task_list[i].pid != trace_pid)
+			task_list[i].detach = true;
+}
+
+static void handle_syscall(struct trace_task *tt)
+{
+	trace_regs regs;
 	trace_get_regs(&regs);
 
-	if (before_syscall) {
+	if (tt->before_syscall) {
 		/* NB: The kernel guarantees syscall NR is valid only on entry. */
 		int nr = trace_get_sysnum(&regs);
 		const struct syscall_entry *tbl = trace_check_personality(&regs);
@@ -425,17 +479,17 @@ static void handle_syscall(void)
 		if (!trace_check_syscall(se, &regs)) {
 			sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
 			trace_set_sysnum(&regs, -1);
-			fake_syscall_ret = true;
+			tt->fake_syscall_ret = true;
 		}
 	} else {
 		long ret;
 		int err;
 
-		if (unlikely(fake_syscall_ret)) {
+		if (unlikely(tt->fake_syscall_ret)) {
 			ret = -1;
 			err = EPERM;
 			trace_set_ret(&regs, err);
-			fake_syscall_ret = false;
+			tt->fake_syscall_ret = false;
 		} else
 			ret = trace_result(&regs, &err);
 
@@ -444,8 +498,6 @@ static void handle_syscall(void)
 			__sb_debug(" (errno: %i: %s)", err, strerror(err));
 		__sb_debug("\n");
 	}
-
-	before_syscall = !before_syscall;
 }
 
 static void trace_loop(void)
@@ -459,17 +511,23 @@ static void trace_loop(void)
 		if (trace_pid == -1) {
 			if (errno == EINTR)
 				continue;
-			break;
+			if (errno == ECHILD) {
+				sb_debug("tracer exiting");
+				_exit(0);
+			}
+			sb_ebort("ISE: waitpid() failed: %s\n", strerror(errno));
 		}
 
 		if (WIFSIGNALED(status)) {
 			int sig = WTERMSIG(status);
 			sb_debug("signaled %s %i", strsig(sig), sig);
-			_exit(0);
+			delete_task(trace_pid);
+			continue;
 		} else if (WIFEXITED(status)) {
 			int ec = WEXITSTATUS(status);
 			sb_debug("exited %i", ec);
-			_exit(0);
+			delete_task(trace_pid);
+			continue;
 		}
 
 		sb_assert(WIFSTOPPED(status));
@@ -478,14 +536,21 @@ static void trace_loop(void)
 		int sig = WSTOPSIG(status);
 		void *data = NULL;
 		sb_ptrace_req_t restart = PTRACE_SYSCALL;
+		struct trace_task *tt;
+
+		if (event != PTRACE_EVENT_EXEC)
+			tt = get_task(trace_pid);
 
 		switch (event) {
 		case 0:
 			if (sig == (SIGTRAP | 0x80)) {
+				tt->before_syscall = !tt->before_syscall;
+				if (tt->detach)
+					break;
 				if (before_exec)
 					sb_debug("waiting for exec; status: %#x", status);
 				else
-					handle_syscall();
+					handle_syscall(tt);
 			} else {
 				/* For whatever signal the child caught, let's ignore it and
 				 * continue on.  If it aborted, segfaulted, whatever, that's
@@ -501,18 +566,38 @@ static void trace_loop(void)
 			break;
 
 		case PTRACE_EVENT_EXEC:
-			__sb_debug("hit exec!");
+			sb_debug("exec event!");
+
+			unsigned long oldpid;
+			if (!do_ptrace(PTRACE_GETEVENTMSG, NULL, &oldpid) && trace_pid != oldpid) {
+				delete_task(trace_pid);
+				tt = get_task(oldpid);
+				tt->pid = trace_pid;
+			} else {
+				tt = get_task(trace_pid);
+			}
+
+			if (tt->detach)
+				break;
+
 			if (before_exec) {
 				before_exec = false;
-				/* ignore forks after an exec */
-				do_ptrace(PTRACE_SETOPTIONS, NULL, (void *)(uintptr_t)(0
-					|PTRACE_O_TRACEEXEC
-					|PTRACE_O_TRACESYSGOOD));
+				/* Detach from any other processes that existed before exec.
+				 * Needed when the parent loses the race after fork.
+				 * parent calls fork()
+				 * child emits PTRACE_EVENT_EXEC
+				 * parent emits PTRACE_EVENT_FORK
+				 */
+				detach_others();
+			} else {
+				/* Avoid tracing a dynamic linked binary */
+				/* TODO: check if new binary is static */
+				tt->detach = true;
 			}
 			break;
 
 		case PTRACE_EVENT_STOP:
-			sb_debug("stop event!\n");
+			sb_debug("stop event!");
 			if (sig != SIGTRAP)
 				restart = PTRACE_LISTEN;
 			break;
@@ -520,14 +605,27 @@ static void trace_loop(void)
 		case PTRACE_EVENT_CLONE:
 		case PTRACE_EVENT_FORK:
 		case PTRACE_EVENT_VFORK:
-			/* detach from the parent if it forks */
 			sb_debug("fork event!");
-			restart = PTRACE_DETACH;
+			if (before_exec) {
+				/* Detach from the parent assuming the child will exec.
+				 * Shortcut when the parent wins the race after fork.
+				 * parent calls fork()
+				 * parent emits PTRACE_EVENT_FORK
+				 * child emits PTRACE_EVENT_EXEC
+				 */
+				tt->detach = true;
+			}
 			break;
 
 		default:
 			sb_ebort("ISE: unhandle ptrace signal %s (%i) event %u\n",
 			         strsig(sig), sig, event);
+		}
+
+		if (tt->detach) {
+			sb_debug("detaching");
+			restart = PTRACE_DETACH;
+			clear_task(tt);
 		}
 
 		do_ptrace(restart, NULL, data);
