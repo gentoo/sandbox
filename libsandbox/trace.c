@@ -312,8 +312,9 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	     if (nr == SB_NR_CHMOD)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_CHOWN)     return  trace_check_syscall_C  (&state);
 	else if (nr == SB_NR_CREAT)     return  trace_check_syscall_C  (&state);
-	/* NB: Linux syscall does not have a flags argument. */
+	/* NB: Linux fchmodat does not have a flags argument. */
 	else if (nr == SB_NR_FCHMODAT)  return  trace_check_syscall_DC (&state);
+	else if (nr == SB_NR_FCHMODAT2) return _trace_check_syscall_DCF(&state, 1, 5);
 	else if (nr == SB_NR_FCHOWNAT)  return _trace_check_syscall_DCF(&state, 1, 5);
 	else if (nr == SB_NR_FUTIMESAT) return  trace_check_syscall_DC (&state);
 	else if (nr == SB_NR_LCHOWN)    return  trace_check_syscall_C  (&state);

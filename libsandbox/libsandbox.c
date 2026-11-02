@@ -362,6 +362,7 @@ static bool is_write_func(int sb_nr)
 		case SB_NR_CREAT64:
 		case SB_NR_FCHMOD:
 		case SB_NR_FCHMODAT:
+		case SB_NR_FCHMODAT2:
 		case SB_NR_FCHOWN:
 		case SB_NR_FCHOWNAT:
 #if 0
@@ -730,6 +731,7 @@ static bool reject_empty_path(int sb_nr, int flags)
 		case SB_NR_EXECVEAT:
 		case SB_NR_FCHOWNAT:
 		case SB_NR_FCHMODAT:
+		case SB_NR_FCHMODAT2:
 		case SB_NR_UTIMENSAT:
 			return !(flags & AT_EMPTY_PATH);
 		default:

@@ -9,6 +9,7 @@
 chmod
 fchmod
 fchmodat
+fchmodat2
 chown
 fchown
 fchownat
