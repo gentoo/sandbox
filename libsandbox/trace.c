@@ -44,20 +44,13 @@ pid_t trace_pid;
 
 static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data)
 {
-	long ret;
- try_again:
 	errno = 0;
-	ret = ptrace(request, trace_pid, addr, data);
+	long ret = ptrace(request, trace_pid, addr, data);
 	if (ret == -1) {
 		/* Child hasn't gotten to the next marker yet ? */
 		if (errno == ESRCH) {
-			int status;
-			if (waitpid(trace_pid, &status, 0) == -1) {
-				/* nah, it's dead ... should we whine though ? */
-				_exit(0);
-			}
-			sched_yield();
-			goto try_again;
+			sb_ewarn("ptrace failed with ESRCH\n");
+			return ret;
 		} else if (errno == EIO || errno == EFAULT) {
 			/* This comes up when the child itself tries to use a bad pointer.
 			 * That's not something the sandbox should abort on. #560396
@@ -755,16 +748,19 @@ void trace_main(void)
 	/* TODO: eliminate the trace_pid global var */
 	trace_pid = mytid;
 
-	do_ptrace(PTRACE_SEIZE, NULL,
+	if (do_ptrace(PTRACE_SEIZE, NULL,
 		(void *)(uintptr_t)(0
 			|PTRACE_O_TRACECLONE
 			|PTRACE_O_TRACEFORK
 			|PTRACE_O_TRACEEXEC
 			|PTRACE_O_TRACESYSGOOD
 			|PTRACE_O_TRACEVFORK
-		));
+	))) {
+		sb_ebort("ISE: PTRACE_SEIZE failed: %s\n", strerror(errno));
+	}
 
-	do_ptrace(PTRACE_INTERRUPT, NULL, NULL);
+	if (do_ptrace(PTRACE_INTERRUPT, NULL, NULL))
+		sb_ebort("ISE: PTRACE_INTERRUPT failed: %s\n", strerror(errno));
 
 	/* tracee blocks until we close this */
 	close(mypipe);
