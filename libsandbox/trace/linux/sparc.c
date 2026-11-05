@@ -48,13 +48,20 @@ static bool pers_is_32(trace_regs *regs)
 #endif
 }
 
-static const struct syscall_entry *trace_check_personality(void *vregs)
+static __u32 trace_get_arch(trace_regs *regs)
 {
-	trace_regs *regs = vregs;
 	if (pers_is_32(regs))
+		return AUDIT_ARCH_SPARC;
+	return AUDIT_ARCH_SPARC64;
+}
+
+static const struct syscall_entry *psi_to_personality(struct ptrace_syscall_info *psi)
+{
+	if (psi->arch == AUDIT_ARCH_SPARC)
 		return syscall_table_32;
-	else
+	if (psi->arch == AUDIT_ARCH_SPARC64)
 		return syscall_table_64;
+	sb_ebort("unknown personality: %u\n", psi->arch);
 }
 
 static bool _trace_possible(const void *data)

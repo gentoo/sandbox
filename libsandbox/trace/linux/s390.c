@@ -25,10 +25,20 @@ static bool pers_is_31(trace_regs *regs)
 	return regs->psw.mask & 0x100000000ul ? false : true;
 }
 
-static const struct syscall_entry *trace_check_personality(void *vregs)
+static __u32 trace_get_arch(trace_regs *regs)
 {
-	trace_regs *regs = vregs;
-	return pers_is_31(regs) ? syscall_table_32 : syscall_table_64;
+	if (pers_is_31(regs))
+		return AUDIT_ARCH_S390;
+	return AUDIT_ARCH_S390X;
+}
+
+static const struct syscall_entry *psi_to_personality(struct ptrace_syscall_info *psi)
+{
+	if (psi->arch == AUDIT_ARCH_S390)
+		return syscall_table_32;
+	if (psi->arch == AUDIT_ARCH_S390X)
+		return syscall_table_64;
+	sb_ebort("unknown personality: %u\n", psi->arch);
 }
 
 static bool _trace_possible(const void *data)

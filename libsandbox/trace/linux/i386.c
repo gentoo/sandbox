@@ -15,7 +15,8 @@ static const struct syscall_entry syscall_table[] = {
 #undef S
 	{ SB_NR_UNDEF, SB_NR_UNDEF, NULL },
 };
-# define trace_check_personality(regs) syscall_table
+# define trace_get_arch(regs) AUDIT_ARCH_I386
+# define psi_to_personality(psi) syscall_table
 #endif
 
 #define trace_reg_sysnum orig_eax

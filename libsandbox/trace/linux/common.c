@@ -1,3 +1,5 @@
+#include <linux/audit.h>
+
 /*
  * Some arches (like hppa) don't implement PTRACE_GETREGS, while others (like
  * sparc) swap the meaning of "addr" and "data.  What a bunch of asshats.

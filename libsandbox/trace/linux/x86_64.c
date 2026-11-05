@@ -37,24 +37,23 @@ static bool pers_is_32(trace_regs *regs)
 	}
 }
 
-static bool pers_is_x32(trace_regs *regs)
+static __u32 trace_get_arch(trace_regs *regs)
 {
-	switch (regs->ds) {
-		case 0x2b: return true;
-		case 0x00: return false;
-		default:   sb_ebort("unknown x86_64 (DS) personality");
-	}
+	if (pers_is_32(regs))
+		return AUDIT_ARCH_I386;
+	return AUDIT_ARCH_X86_64;
 }
 
-static const struct syscall_entry *trace_check_personality(void *vregs)
+static const struct syscall_entry *psi_to_personality(struct ptrace_syscall_info *psi)
 {
-	trace_regs *regs = vregs;
-	if (pers_is_32(regs))
-		return syscall_table_32;
-	else if (pers_is_x32(regs))
-		return syscall_table_x32;
-	else
+	if (psi->arch == AUDIT_ARCH_X86_64) {
+		if (psi->entry.nr & __X32_SYSCALL_BIT)
+			return syscall_table_x32;
 		return syscall_table_64;
+	}
+	if (psi->arch == AUDIT_ARCH_I386)
+		return syscall_table_32;
+	sb_ebort("unknown personality: %u\n", psi->arch);
 }
 
 static bool _trace_possible(const void *data)

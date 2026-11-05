@@ -193,7 +193,7 @@ static const struct syscall_entry *lookup_syscall_in_tbl(const struct syscall_en
 }
 
 struct syscall_state {
-	void *regs;
+	__u64 *args;
 	int nr;
 	const char *func;
 	bool (*pre_check)(const char *func, const char *pathname, int dirfd);
@@ -202,7 +202,7 @@ struct syscall_state {
 /* Check syscall that only takes a path as its |ibase| argument. */
 static bool _trace_check_syscall_C(struct syscall_state *state, int ibase)
 {
-	char *path = do_peekstr(trace_arg(state->regs, ibase));
+	char *path = do_peekstr(state->args[ibase - 1]);
 	__sb_debug("(\"%s\")", path);
 	bool pre_ret, ret;
 	if (state->pre_check)
@@ -224,8 +224,8 @@ static bool trace_check_syscall_C(struct syscall_state *state)
 
 static bool __trace_check_syscall_DCF(struct syscall_state *state, int ibase, int flags)
 {
-	int dirfd = trace_arg(state->regs, ibase);
-	char *path = do_peekstr(trace_arg(state->regs, ibase + 1));
+	int dirfd = state->args[ibase - 1];
+	char *path = do_peekstr(state->args[ibase]);
 	__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
 	bool pre_ret, ret;
 	if (state->pre_check)
@@ -242,7 +242,7 @@ static bool __trace_check_syscall_DCF(struct syscall_state *state, int ibase, in
 /* Check syscall that takes a dirfd & path starting at |ibase| argument, and flags at |fbase|. */
 static bool _trace_check_syscall_DCF(struct syscall_state *state, int ibase, int fbase)
 {
-	int flags = trace_arg(state->regs, fbase);
+	int flags = state->args[fbase - 1];
 	return __trace_check_syscall_DCF(state, ibase, flags);
 }
 /* Check syscall that takes a dirfd, path, and flags as its first 3 arguments. */
@@ -262,7 +262,7 @@ static bool trace_check_syscall_DC(struct syscall_state *state)
 	return _trace_check_syscall_DC(state, 1);
 }
 
-static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
+static bool trace_check_syscall(const struct syscall_entry *se, __u64 args[6])
 {
 	struct syscall_state state;
 	bool ret = true;
@@ -284,7 +284,7 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	if (!se)
 		goto done;
 
-	state.regs = regs;
+	state.args = args;
 	state.nr = nr = se->sys;
 	state.func = name = se->name;
 	if (!SB_NR_IS_DEFINED(se->nr))  goto done;
@@ -337,59 +337,59 @@ static bool trace_check_syscall(const struct syscall_entry *se, void *regs)
 	}
 
 	else if (nr == SB_NR_ACCESS) {
-		char *path = do_peekstr(trace_arg(regs, 1));
-		int mode = trace_arg(regs, 2);
+		char *path = do_peekstr(args[0]);
+		int mode = args[1];
 		__sb_debug("(\"%s\", %x)", path, mode);
 		ret = _SB_SAFE_ACCESS(nr, name, path, mode);
 		free(path);
 		return ret;
 
 	} else if (nr == SB_NR_FACCESSAT) {
-		int dirfd = trace_arg(regs, 1);
-		char *path = do_peekstr(trace_arg(regs, 2));
-		int mode = trace_arg(regs, 3);
+		int dirfd = args[0];
+		char *path = do_peekstr(args[1]);
+		int mode = args[2];
 		__sb_debug("(%i, \"%s\", %x)", dirfd, path, mode);
 		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, mode, 0);
 		free(path);
 		return ret;
 
 	} else if (nr == SB_NR_FACCESSAT2) {
-		int dirfd = trace_arg(regs, 1);
-		char *path = do_peekstr(trace_arg(regs, 2));
-		int mode = trace_arg(regs, 3);
-		int flags = trace_arg(regs, 4);
+		int dirfd = args[0];
+		char *path = do_peekstr(args[1]);
+		int mode = args[2];
+		int flags = args[3];
 		__sb_debug("(%i, \"%s\", %x, %x)", dirfd, path, mode, flags);
 		ret = _SB_SAFE_ACCESS_AT(nr, name, dirfd, path, mode, flags);
 		free(path);
 		return ret;
 
 	} else if (nr == SB_NR_OPEN) {
-		char *path = do_peekstr(trace_arg(regs, 1));
-		int flags = trace_arg(regs, 2);
+		char *path = do_peekstr(args[0]);
+		int flags = args[1];
 		__sb_debug("(\"%s\", %x)", path, flags);
 		ret = _SB_SAFE_OPEN_INT(nr, name, path, flags);
 		free(path);
 		return ret;
 
 	} else if (nr == SB_NR_OPENAT) {
-		int dirfd = trace_arg(regs, 1);
-		char *path = do_peekstr(trace_arg(regs, 2));
-		int flags = trace_arg(regs, 3);
+		int dirfd = args[0];
+		char *path = do_peekstr(args[1]);
+		int flags = args[2];
 		__sb_debug("(%i, \"%s\", %x)", dirfd, path, flags);
 		ret = _SB_SAFE_OPEN_INT_AT(nr, name, dirfd, path, flags);
 		free(path);
 		return ret;
 
 	} else if (nr == SB_NR_FCHMOD) {
-		int fd = trace_arg(regs, 1);
-		mode_t mode = trace_arg(regs, 2);
+		int fd = args[0];
+		mode_t mode = args[1];
 		__sb_debug("(%i, %o)", fd, mode);
 		return _SB_SAFE_FD(nr, name, fd);
 
 	} else if (nr == SB_NR_FCHOWN) {
-		int fd = trace_arg(regs, 1);
-		uid_t uid = trace_arg(regs, 2);
-		gid_t gid = trace_arg(regs, 3);
+		int fd = args[0];
+		uid_t uid = args[1];
+		gid_t gid = args[1];
 		__sb_debug("(%i, %i, %i)", fd, uid, gid);
 		return _SB_SAFE_FD(nr, name, fd);
 	}
@@ -457,39 +457,118 @@ static void detach_others(void) {
 			task_list[i].detach = true;
 }
 
-static void handle_syscall(struct trace_task *tt)
+static void populate_syscall_info(bool entry, trace_regs *regs, struct ptrace_syscall_info *psi)
 {
+	if (entry) {
+		psi->op = PTRACE_SYSCALL_INFO_ENTRY;
+		psi->arch = trace_get_arch(regs);
+		psi->entry.nr = trace_get_sysnum(regs);
+		for (int i = 0; i < 6; ++i)
+			psi->entry.args[i] = trace_arg(regs, i + 1);
+	} else {
+		int err;
+		long ret = trace_result(regs, &err);
+		psi->op = PTRACE_SYSCALL_INFO_EXIT;
+		if (ret == -1) {
+			psi->exit.rval = -err;
+			psi->exit.is_error = true;
+		} else {
+			psi->exit.rval = ret;
+			psi->exit.is_error = false;
+		}
+	}
+}
+
+static void handle_syscall(struct trace_task *tt) {
+	static bool legacy_get = false;
+	static bool legacy_set = false;
+	struct ptrace_syscall_info psi;
 	trace_regs regs;
-	trace_get_regs(&regs);
 
-	if (tt->before_syscall) {
-		/* NB: The kernel guarantees syscall NR is valid only on entry. */
-		int nr = trace_get_sysnum(&regs);
-		const struct syscall_entry *tbl = trace_check_personality(&regs);
-		const struct syscall_entry *se = lookup_syscall_in_tbl(tbl, nr);
+	if (!legacy_get) {
+		long r = ptrace(PTRACE_GET_SYSCALL_INFO, trace_pid, sizeof(psi), &psi);
+		if (r == -1) {
+			int e = errno;
+			sb_debug("PTRACE_GET_SYSCALL_INFO failed: %s", strerror(e));
+			if (e != EIO)
+				return;
+			legacy_get = legacy_set = true;
+		}
+	}
 
-		_sb_debug("%s:%i", se ? se->name : "IDK", nr);
-		if (!trace_check_syscall(se, &regs)) {
+	if (legacy_get) {
+		if (trace_get_regs(&regs) == -1) {
+			sb_debug("trace_get_regs failed: %s\n", strerror(errno));
+			return;
+		}
+		populate_syscall_info(tt->before_syscall, &regs, &psi);
+	}
+
+	switch (psi.op) {
+	case PTRACE_SYSCALL_INFO_ENTRY:
+		tt->before_syscall = true;
+
+		const struct syscall_entry *tbl = psi_to_personality(&psi);
+		const struct syscall_entry *se = lookup_syscall_in_tbl(tbl, psi.entry.nr);
+
+		_sb_debug("%s:%llu", se ? se->name : "IDK", psi.entry.nr);
+
+		if (!trace_check_syscall(se, psi.entry.args)) {
 			sb_debug_dyn("trace_loop: forcing EPERM after %s\n", se->name);
-			trace_set_sysnum(&regs, -1);
+			psi.entry.nr = -1;
+
+			if (!legacy_set) {
+				long r = ptrace(PTRACE_SET_SYSCALL_INFO, trace_pid, sizeof(psi), &psi);
+				if (r == -1) {
+					if (errno == EIO)
+						legacy_set = true;
+					sb_debug("PTRACE_SET_SYSCALL_INFO failed: %s", strerror(errno));
+				}
+			}
+
+			if (legacy_set) {
+				if (legacy_get || trace_get_regs(&regs) == 0)
+					trace_set_sysnum(&regs, -1);
+			}
+
 			tt->fake_syscall_ret = true;
 		}
-	} else {
-		long ret;
-		int err;
 
-		if (unlikely(tt->fake_syscall_ret)) {
-			ret = -1;
-			err = EPERM;
-			trace_set_ret(&regs, err);
+		break;
+
+	case PTRACE_SYSCALL_INFO_EXIT:
+		tt->before_syscall = false;
+
+		if (tt->fake_syscall_ret) {
+			int err = EPERM;
+			psi.exit.rval = -err;
+			psi.exit.is_error = true;
+
+			if (!legacy_set) {
+				long r = ptrace(PTRACE_SET_SYSCALL_INFO, trace_pid, sizeof(psi), &psi);
+				if (r == -1) {
+					if (errno == EIO)
+						legacy_set = true;
+					sb_debug("PTRACE_SET_SYSCALL_INFO failed: %s", strerror(errno));
+				}
+			}
+
+			if (legacy_set) {
+				if (legacy_get || trace_get_regs(&regs) == 0)
+					trace_set_ret(&regs, err);
+			}
+
 			tt->fake_syscall_ret = false;
-		} else
-			ret = trace_result(&regs, &err);
+		}
 
-		__sb_debug(" = %li", ret);
-		if (err)
-			__sb_debug(" (errno: %i: %s)", err, strerror(err));
-		__sb_debug("\n");
+		if (psi.exit.is_error) {
+			int err = -psi.exit.rval;
+			__sb_debug(" = -1 (errno: %i: %s)\n", err, strerror(err));
+		} else {
+			__sb_debug(" = %lli\n", psi.exit.rval);
+		}
+
+		break;
 	}
 }
 
