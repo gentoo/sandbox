@@ -123,21 +123,3 @@ static unsigned long trace_arg(void *vregs, int num)
 			default: return -1;
 		}
 }
-
-#ifdef DEBUG
-static void trace_dump_regs(void *vregs)
-{
-	trace_regs *regs = vregs;
-	__sb_debug("{ ");
-#define D(r) __sb_debug(#r":%"PRIu64" ", regs->r)
-	D(rax);
-	D(rdi);
-	D(rsi);
-	D(rdx);
-	D(r10);
-	D(r8);
-	D(r9);
-#undef D
-	__sb_debug("}");
-}
-#endif
