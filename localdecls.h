@@ -77,6 +77,10 @@ typedef struct user_regs_struct trace_regs;
 # undef HAVE_TRACE_REGS
 #endif
 
+#ifndef PTRACE_SET_SYSCALL_INFO
+# define PTRACE_SET_SYSCALL_INFO 0x4212
+#endif
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #endif
