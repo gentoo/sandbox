@@ -1,3 +1,5 @@
+#include <asm/unistd.h>
+
 #undef _trace_possible
 #define _trace_possible _trace_possible
 
