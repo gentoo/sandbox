@@ -572,7 +572,7 @@ static void handle_syscall(struct trace_task *tt) {
 	}
 }
 
-static void trace_loop(void)
+static void trace_loop(int mypipe)
 {
 	bool before_exec = true;
 
@@ -698,6 +698,12 @@ static void trace_loop(void)
 			sb_debug("detaching");
 			restart = PTRACE_DETACH;
 			clear_task(tt);
+		}
+
+		if (mypipe != -1) {
+			/* tracee blocks until we close this */
+			close(mypipe);
+			mypipe = -1;
 		}
 
 		do_ptrace(restart, NULL, data);
@@ -841,9 +847,7 @@ void trace_main(void)
 	if (do_ptrace(PTRACE_INTERRUPT, NULL, NULL))
 		sb_ebort("ISE: PTRACE_INTERRUPT failed: %s\n", strerror(errno));
 
-	/* tracee blocks until we close this */
-	close(mypipe);
-	trace_loop();
+	trace_loop(mypipe);
 	sb_ebort("ISE: traced process should have quit, as should we\n");
 }
 
