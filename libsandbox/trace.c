@@ -19,8 +19,7 @@ static long do_peekdata(long offset);
    Let's clobber to 'int' lowest common denominator.
  */
 typedef int sb_ptrace_req_t;
-static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data);
-#define do_ptrace(request, addr, data) _do_ptrace(request, #request, addr, data)
+static long do_ptrace(sb_ptrace_req_t request, void *addr, void *data);
 #define _trace_possible(data) true
 
 #ifdef DEBUG
@@ -42,7 +41,35 @@ pid_t trace_pid;
 # error "unable to find struct for tracing regs"
 #endif
 
-static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr, void *data)
+static const char *req_to_str(sb_ptrace_req_t request)
+{
+	switch (request) {
+#define S(s) case PTRACE_##s: return "PTRACE_"#s;
+		S(PEEKTEXT)
+		S(PEEKDATA)
+		S(PEEKUSER)
+		S(CONT)
+		S(KILL)
+		S(GETREGS)
+		S(SETREGS)
+		S(ATTACH)
+		S(DETACH)
+		S(SYSCALL)
+		S(SETOPTIONS)
+		S(GETEVENTMSG)
+		S(GETREGSET)
+		S(SETREGSET)
+		S(SEIZE)
+		S(INTERRUPT)
+		S(LISTEN)
+		S(GET_SYSCALL_INFO)
+		S(SET_SYSCALL_INFO)
+#undef S
+		default: return "PTRACE_???";
+	}
+}
+
+static long do_ptrace(sb_ptrace_req_t request, void *addr, void *data)
 {
 	errno = 0;
 	long ret = ptrace(request, trace_pid, addr, data);
@@ -62,8 +89,8 @@ static long _do_ptrace(sb_ptrace_req_t request, const char *srequest, void *addr
 			    request == PTRACE_PEEKUSER)
 				return ret;
 
-		sb_ebort("ISE:_do_ptrace: ptrace(%s, ..., %p, %p): %s\n",
-			srequest, addr, data, strerror(errno));
+		sb_ebort("ISE:do_ptrace: ptrace(%s, ..., %p, %p): %s\n",
+			req_to_str(request), addr, data, strerror(errno));
 	}
 	return ret;
 }
