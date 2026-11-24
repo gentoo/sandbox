@@ -821,7 +821,8 @@ void trace_main(void)
 	/* Allow the tracer to trace us. */
 	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY);
 
-	pid_t mytid = gettid();
+	/* musl's gettid() uses a cached value which is invalid if the caller used vfork() */
+	pid_t mytid = syscall(SYS_gettid);
 
 	pid_t pid = fork();
 	if (pid == -1)
